@@ -1,0 +1,36 @@
+# Local machine configuration
+/GamePath.props
+/environment.json
+/runtime-contracts.json
+
+# Build and package output
+/artifacts/
+/bin/
+/obj/
+**/bin/
+**/obj/
+*.dll
+*.pdb
+*.mdb
+*.cache
+*.zip
+
+# IDE / test output
+/.vs/
+/.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+/TestResults/
+*.trx
+*.log
+
+# Python tooling
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# OS files
+.DS_Store
+Thumbs.db

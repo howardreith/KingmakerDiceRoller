@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <!-- Copy this file to GamePath.props and update the install path. -->
+    <KingmakerInstallDir>C:\Program Files (x86)\Steam\steamapps\common\Pathfinder Kingmaker</KingmakerInstallDir>
+    <KingmakerManagedDir>$(KingmakerInstallDir)\Kingmaker_Data\Managed</KingmakerManagedDir>
+    <!-- Adjust this only when Unity Mod Manager is installed elsewhere. -->
+    <UnityModManagerDir>$(KingmakerManagedDir)\UnityModManager</UnityModManagerDir>
+  </PropertyGroup>
+</Project>
