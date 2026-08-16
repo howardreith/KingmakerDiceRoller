@@ -54,6 +54,10 @@ A mismatch between displayed values and preview/base values is a hard failure.
    are applied by Kingmaker, and no second array is generated.
 4. Confirm diagnostic application count may increase because the preview was
    rebuilt, but the owned array never changes.
+5. Cancel back to the main menu, remain there for at least one second, and
+   confirm the UMM panel increments the released-session count.
+6. Start a second new character and confirm it receives one fresh owned session
+   without an "another unit" rejection or values from the canceled character.
 
 ## Gate D — point-buy restoration
 

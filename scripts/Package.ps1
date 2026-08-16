@@ -16,6 +16,7 @@ $packageDir = Join-Path $root 'artifacts\packages'
 New-Item -ItemType Directory -Force -Path $packageDir | Out-Null
 $zip = Join-Path $packageDir ("KingmakerDiceRoller-{0}.zip" -f $info.Version)
 Invoke-RepositoryPython @((Join-Path $root 'tools\create_deterministic_zip.py'), $stageRoot, $zip)
+& (Join-Path $PSScriptRoot 'Validate-Package.ps1') -PackagePath $zip -ReportPath 'artifacts\packages\package-validation.json'
 $manifest = [ordered]@{
     package = [IO.Path]::GetFileName($zip)
     package_sha256 = Get-Sha256 $zip

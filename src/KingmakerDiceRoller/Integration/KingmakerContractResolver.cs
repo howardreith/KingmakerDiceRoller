@@ -129,6 +129,11 @@ namespace KingmakerDiceRoller.Integration
             MemberInfo gameInstance = ReflectionAccess.RequireStaticMember(gameType, "Instance");
             MemberInfo levelUpController = ReflectionAccess.RequireInstanceMember(gameType, "LevelUpController");
             Type controllerType = ReflectionAccess.GetMemberType(levelUpController);
+            MemberInfo controllerState = ReflectionAccess.RequireInstanceMember(controllerType, "State");
+            if (!levelUpStateType.IsAssignableFrom(ReflectionAccess.GetMemberType(controllerState)))
+            {
+                throw new ContractResolutionException("LevelUpController.State is not a LevelUpState contract.");
+            }
             FieldInfo recalculate = controllerType.GetField("m_RecalculatePreview", InstanceFlags);
             MethodInfo updatePreview = controllerType.GetMethod("UpdatePreview", InstanceFlags, null, Type.EmptyTypes, null);
             if (recalculate == null || recalculate.FieldType != typeof(bool) || updatePreview == null || updatePreview.ReturnType != typeof(void))
@@ -139,6 +144,7 @@ namespace KingmakerDiceRoller.Integration
             evidence.Add("Assembly=" + gameAssembly.FullName);
             evidence.Add("MVID=" + gameAssembly.ManifestModule.ModuleVersionId.ToString("D"));
             evidence.Add("Abilities=" + string.Join(",", abilityKeys.Select(value => value.ToString()).ToArray()));
+            evidence.Add("Lifecycle=" + controllerType.FullName + ".State");
             evidence.Add("Preview=" + controllerType.FullName + ".m_RecalculatePreview + UpdatePreview()");
 
             return new KingmakerContracts(
@@ -162,6 +168,7 @@ namespace KingmakerDiceRoller.Integration
                 abilityKeys,
                 gameInstance,
                 levelUpController,
+                controllerState,
                 recalculate,
                 updatePreview,
                 evidence);

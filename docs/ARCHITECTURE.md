@@ -14,7 +14,8 @@ payload.
 `Domain/` contains the bounded expression parser, deterministic random-source
 abstraction, presets, immutable six-score arrays, position-based assignment,
 explicit low-score policies, saved-array validation, point-buy-equivalent
-reporting, and a lifecycle state machine. It has no Kingmaker, Unity, Harmony,
+reporting, a lifecycle state machine, and the deterministic session-liveness
+grace policy. It has no Kingmaker, Unity, Harmony,
 or UMM dependency.
 
 ### Reflection contracts
@@ -29,7 +30,9 @@ or ambiguous contract disables the mod rather than applying a partial patch.
 The coordinator owns all stateful behavior. A `RollSession` binds one unit, one
 current `LevelUpState`, one current `StatsDistribution`, the original point-buy
 budget, the baseline values, and one immutable assignment. Preview rebuilds for
-the same unit rebind the same assignment; a second unit is rejected.
+the same unit rebind the same assignment; a second unit is rejected. UMM
+updates observe the exact live controller state and release stale ownership only
+after the domain-tested grace policy.
 
 ### Harmony boundary
 

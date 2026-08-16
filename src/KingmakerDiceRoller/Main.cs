@@ -18,6 +18,7 @@ namespace KingmakerDiceRoller
                 root = new CompositionRoot(settings, new UmmLogger(modEntry.Logger));
                 modEntry.OnToggle = OnToggle;
                 modEntry.OnGUI = OnGui;
+                modEntry.OnUpdate = OnUpdate;
                 modEntry.OnSaveGUI = OnSaveGui;
                 modEntry.OnUnload = OnUnload;
                 modEntry.Logger.Log("Kingmaker Dice Roller 0.0.1-alpha.1 loaded; patches are installed only when enabled.");
@@ -38,6 +39,12 @@ namespace KingmakerDiceRoller
             catch (Exception exception) { modEntry.Logger.LogException("Toggle Kingmaker Dice Roller", exception); return false; }
         }
 
+        private static void OnUpdate(UnityModManager.ModEntry modEntry, float deltaTime)
+        {
+            try { root?.Update(deltaTime); }
+            catch (Exception exception) { modEntry.Logger.LogException("Update Kingmaker Dice Roller", exception); }
+        }
+
         private static void OnGui(UnityModManager.ModEntry modEntry)
         {
             try { root?.DrawGui(); }
@@ -52,8 +59,18 @@ namespace KingmakerDiceRoller
 
         private static bool OnUnload(UnityModManager.ModEntry modEntry)
         {
-            try { root?.Dispose(); root = null; settings = null; return true; }
-            catch (Exception exception) { modEntry.Logger.LogException("Unload Kingmaker Dice Roller", exception); return false; }
+            try
+            {
+                if (root != null && !root.TryUnload()) return false;
+                root = null;
+                settings = null;
+                return true;
+            }
+            catch (Exception exception)
+            {
+                modEntry.Logger.LogException("Unload Kingmaker Dice Roller", exception);
+                return false;
+            }
         }
     }
 }

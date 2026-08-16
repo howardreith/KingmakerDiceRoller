@@ -116,7 +116,9 @@ namespace KingmakerDiceRoller.CharacterCreation
             string error;
             if (!application.TryApply(session, contracts, out error))
             {
-                diagnostics.SetStatus("Owned allocator restart failed closed: " + error);
+                session.Lifecycle.Abandon();
+                sessions.Clear(session);
+                diagnostics.SetStatus("Owned allocator restart failed closed and released completion ownership: " + error);
             }
         }
 
@@ -127,6 +129,22 @@ namespace KingmakerDiceRoller.CharacterCreation
             {
                 result = true;
             }
+        }
+
+        public void Update(float deltaTime)
+        {
+            if (!HasActiveSession) return;
+            KingmakerContracts contracts = contractsProvider();
+            if (contracts == null) return;
+
+            object currentState;
+            bool observationSucceeded = contracts.TryGetCurrentLevelUpState(out currentState);
+            RollSession released;
+            if (!sessions.ReleaseIfStale(currentState, observationSucceeded, deltaTime, out released)) return;
+
+            diagnostics.Released("The active LevelUpState left the controller; stale session ownership was cleared.");
+            diagnostics.SetStatus("Canceled or completed character-creation session released; waiting for a new exact context.");
+            logger.Info("Released stale Kingmaker Dice Roller session after the LevelUpController moved away from its owned state.");
         }
 
         public bool TryRestorePointBuy(out string error)

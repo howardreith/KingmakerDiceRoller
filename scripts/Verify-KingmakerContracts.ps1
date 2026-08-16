@@ -82,7 +82,8 @@ try {
     $baseValue = Require-Member $getStat.ReturnType 'BaseValue'
     if ((Member-Type $baseValue) -ne [int]) { throw 'BaseValue is not Int32.' }
     $statValues = Require-Member $distribution 'StatValues'
-    if (-not [Collections.IDictionary].IsAssignableFrom((Member-Type $statValues))) { throw 'StatValues is not IDictionary-compatible.' }
+    $dictionaryType = [System.Collections.IDictionary]
+    if (-not $dictionaryType.IsAssignableFrom((Member-Type $statValues))) { throw 'StatValues is not IDictionary-compatible.' }
     $attributes = Require-Member $statHelper 'Attributes' $true
     $attributeValues = if ($attributes -is [Reflection.PropertyInfo]) { $attributes.GetValue($null,$null) } else { $attributes.GetValue($null) }
     if (-not $attributeValues -or $attributeValues.Length -ne 6) { throw 'StatTypeHelper.Attributes does not contain six values.' }
@@ -98,6 +99,8 @@ try {
     $gameInstance = Require-Member $game 'Instance' $true
     $controllerMember = Require-Member $game 'LevelUpController'
     $controller = Member-Type $controllerMember
+    $controllerState = Require-Member $controller 'State'
+    if (-not $state.IsAssignableFrom((Member-Type $controllerState))) { throw 'LevelUpController.State is not a LevelUpState contract.' }
     $recalculate = $controller.GetField('m_RecalculatePreview',$flags)
     $update = $controller.GetMethod('UpdatePreview',$flags,$null,[Type[]]@(),$null)
     if (-not $recalculate -or $recalculate.FieldType -ne [bool] -or -not $update -or $update.ReturnType -ne [void]) { throw 'Exact preview refresh contract is unavailable.' }
@@ -111,7 +114,7 @@ try {
         assembly_mvid = $assembly.ManifestModule.ModuleVersionId.ToString('D')
         signatures = @(
             $constructor.ToString(), $start.ToString(), $complete.ToString(),
-            "$($controller.FullName).m_RecalculatePreview", "$($controller.FullName).UpdatePreview()"
+            "$($controller.FullName).State", "$($controller.FullName).m_RecalculatePreview", "$($controller.FullName).UpdatePreview()"
         )
         abilities = $abilityNames
         context_paths = [ordered]@{ main_character=$mainPath; player_faction=$playerPath; pet=$petPath; enemy=$enemyPath }

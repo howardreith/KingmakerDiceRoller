@@ -2,6 +2,7 @@
 """Fail-fast source qualification for Kingmaker Dice Roller."""
 from __future__ import annotations
 import argparse
+import ast
 import hashlib
 import json
 from pathlib import Path
@@ -17,7 +18,7 @@ REQUIRED = [
     'tests/KingmakerDiceRoller.DomainTests/KingmakerDiceRoller.DomainTests.csproj',
     'scripts/Common.ps1','scripts/Initialize-GamePath.ps1','scripts/Validate-Repository.ps1',
     'scripts/Test-SourceOracle.ps1','scripts/Test-Domain.ps1','scripts/Verify-KingmakerContracts.ps1',
-    'scripts/Build-Local.ps1','scripts/Package.ps1','scripts/Install.ps1','scripts/Uninstall.ps1',
+    'scripts/Build-Local.ps1','scripts/Package.ps1','scripts/Validate-Package.ps1','scripts/Install.ps1','scripts/Uninstall.ps1',
     'scripts/Qualify.ps1','scripts/Collect-RuntimeEvidence.ps1',
     'docs/ARCHITECTURE.md','docs/INTEGRATION-SEAMS.md','docs/COMPATIBILITY.md',
     'docs/SMOKE-TEST.md','docs/RUNTIME-DIAGNOSTICS.md','docs/BUILD-AND-RELEASE.md',
@@ -75,6 +76,39 @@ def balanced(text, path):
             stack.pop()
     require(not stack, f'{path}: unclosed delimiter {stack[-1][0] if stack else ""}')
 
+
+def strip_powershell(text):
+    require(not re.search(r'(?m)^\s*@(?:"|\')', text), 'PowerShell here-strings are not supported by the source validator')
+    out=[]; i=0; state='normal'
+    while i < len(text):
+        c=text[i]; n=text[i+1] if i+1<len(text) else ''
+        if state=='normal':
+            if c=='<' and n=='#': state='block'; out.extend('  '); i+=2; continue
+            if c=='#': state='line'; out.append(' '); i+=1; continue
+            if c=="'": state='single'; out.append(' '); i+=1; continue
+            if c=='"': state='double'; out.append(' '); i+=1; continue
+            out.append(c); i+=1; continue
+        if state=='line':
+            if c=='\n': state='normal'; out.append('\n')
+            else: out.append(' ')
+            i+=1; continue
+        if state=='block':
+            if c=='#' and n=='>': state='normal'; out.extend('  '); i+=2
+            else: out.append('\n' if c=='\n' else ' '); i+=1
+            continue
+        if state=='single':
+            if c=="'" and n=="'": out.extend('  '); i+=2
+            elif c=="'": state='normal'; out.append(' '); i+=1
+            else: out.append('\n' if c=='\n' else ' '); i+=1
+            continue
+        if state=='double':
+            if c=='`' and i+1<len(text): out.extend('  '); i+=2
+            elif c=='"': state='normal'; out.append(' '); i+=1
+            else: out.append('\n' if c=='\n' else ' '); i+=1
+            continue
+    require(state in {'normal','line'}, f'unterminated PowerShell token state: {state}')
+    return ''.join(out)
+
 def sha256(path):
     h=hashlib.sha256()
     with path.open('rb') as f:
@@ -102,6 +136,21 @@ def main():
     for path in xml_files: ET.parse(path)
     ok(f'XML parse ({len(xml_files)})')
 
+    json_files=[p for p in ROOT.rglob('*.json') if '.git' not in p.parts and 'artifacts' not in p.parts]
+    for path in json_files: json.loads(path.read_text(encoding='utf-8-sig'))
+    ok(f'JSON parse ({len(json_files)})')
+
+    python_files=[p for p in ROOT.rglob('*.py') if '.git' not in p.parts and 'artifacts' not in p.parts]
+    for path in python_files: ast.parse(path.read_text(encoding='utf-8'), filename=str(path.relative_to(ROOT)))
+    ok(f'Python parse ({len(python_files)})')
+
+    powershell_files=list((ROOT/'scripts').glob('*.ps1'))
+    for path in powershell_files:
+        raw=path.read_text(encoding='utf-8')
+        require('\r' not in raw, f'{path.relative_to(ROOT)} uses CRLF')
+        balanced(strip_powershell(raw), path.relative_to(ROOT))
+    ok(f'PowerShell lexical/balance audit ({len(powershell_files)})')
+
     tracked_candidates=[p for p in ROOT.rglob('*') if p.is_file() and '.git' not in p.parts and 'artifacts' not in p.parts]
     bad=[str(p.relative_to(ROOT)) for p in tracked_candidates if p.suffix.lower() in FORBIDDEN_BINARY_SUFFIXES]
     require(not bad, 'binary/game artifacts present: '+', '.join(bad))
@@ -110,7 +159,7 @@ def main():
     csharp=list(ROOT.rglob('*.cs'))
     require(len(csharp)>=35, f'expected substantial C# source tree, found {len(csharp)} files')
     forbidden_patterns=[
-        (r'\brecord\s+', 'records require newer C#'),
+        (r'\brecord\s+(?:(?:class|struct)\s+)?[A-Za-z_]\w*\s*(?:[({:])', 'records require newer C#'),
         (r'\binit\s*;', 'init accessors require newer C#'),
         (r'\busing\s+var\b', 'using declarations require newer C#'),
         (r'\bnamespace\s+[A-Za-z0-9_.]+\s*;', 'file-scoped namespace requires newer C#'),
@@ -148,15 +197,29 @@ def main():
     context=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/CharacterCreationContextPolicy.cs').read_text(encoding='utf-8')
     for token in ['CharGen','IsFirstLevel','IsMainCharacter','IsPlayerFaction','IsPet','IsPlayersEnemy']:
         require(token in context, f'context guard missing: {token}')
-    ok('fixed-array, restoration, and context invariants')
+    liveness=(ROOT/'src/KingmakerDiceRoller/Domain/SessionLivenessTracker.cs').read_text(encoding='utf-8')
+    manager=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/RollSessionManager.cs').read_text(encoding='utf-8')
+    contracts=(ROOT/'src/KingmakerDiceRoller/Integration/KingmakerContractResolver.cs').read_text(encoding='utf-8')
+    main_source=(ROOT/'src/KingmakerDiceRoller/Main.cs').read_text(encoding='utf-8')
+    require('UnconfirmedGraceSeconds' in liveness and 'ConfirmedGraceSeconds' in liveness,'session liveness grace policy missing')
+    require('ReleaseIfStale' in manager and 'Lifecycle.Abandon' in manager,'stale session release missing')
+    require('RequireInstanceMember(controllerType, "State")' in contracts,'LevelUpController.State contract guard missing')
+    require('modEntry.OnUpdate = OnUpdate' in main_source,'UMM update lifecycle hook missing')
+    ok('fixed-array, restoration, context, and stale-session invariants')
 
     tests=(ROOT/'tests/KingmakerDiceRoller.DomainTests/Program.cs').read_text(encoding='utf-8')
     test_count=tests.count('new TestCase(')
-    require(test_count>=40,f'expected at least 40 C# behavior cases, found {test_count}')
+    require(test_count>=45,f'expected at least 45 C# behavior cases, found {test_count}')
     python_tests=(ROOT/'tests/python/test_domain_reference.py').read_text(encoding='utf-8')
     python_count=len(re.findall(r'^\s+def test_',python_tests,re.MULTILINE))
-    require(python_count>=20,f'expected at least 20 Python oracle cases, found {python_count}')
+    require(python_count>=25,f'expected at least 25 Python oracle cases, found {python_count}')
     ok(f'test inventories (C# {test_count}, Python {python_count})')
+
+    package_validator=(ROOT/'scripts/Validate-Package.ps1').read_text(encoding='utf-8')
+    installer=(ROOT/'scripts/Install.ps1').read_text(encoding='utf-8')
+    require('Duplicate package entry' in package_validator and 'exactly $($allowed.Count) files' in package_validator,'exact package allowlist validation missing')
+    require('rollback was attempted' in installer and '.KingmakerDiceRoller.install.' in installer,'transactional install rollback missing')
+    ok('package allowlist and transactional installation guards')
 
     notices=(ROOT/'THIRD-PARTY-NOTICES.md').read_text(encoding='utf-8')
     upstream=(ROOT/'licenses/UPSTREAM-WOTR-DICE-ROLLER-MIT.txt').read_text(encoding='utf-8')

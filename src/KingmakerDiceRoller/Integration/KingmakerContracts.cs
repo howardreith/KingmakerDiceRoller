@@ -27,6 +27,7 @@ namespace KingmakerDiceRoller.Integration
             object[] abilityStatKeys,
             MemberInfo gameInstanceMember,
             MemberInfo gameLevelUpControllerMember,
+            MemberInfo levelUpControllerStateMember,
             FieldInfo previewRecalculateField,
             MethodInfo previewUpdateMethod,
             IReadOnlyList<string> evidence)
@@ -51,6 +52,7 @@ namespace KingmakerDiceRoller.Integration
             AbilityStatKeys = abilityStatKeys;
             GameInstanceMember = gameInstanceMember;
             GameLevelUpControllerMember = gameLevelUpControllerMember;
+            LevelUpControllerStateMember = levelUpControllerStateMember;
             PreviewRecalculateField = previewRecalculateField;
             PreviewUpdateMethod = previewUpdateMethod;
             Evidence = evidence;
@@ -76,9 +78,30 @@ namespace KingmakerDiceRoller.Integration
         public object[] AbilityStatKeys { get; }
         public MemberInfo GameInstanceMember { get; }
         public MemberInfo GameLevelUpControllerMember { get; }
+        public MemberInfo LevelUpControllerStateMember { get; }
         public FieldInfo PreviewRecalculateField { get; }
         public MethodInfo PreviewUpdateMethod { get; }
         public IReadOnlyList<string> Evidence { get; }
+
+        public bool TryGetCurrentLevelUpState(out object state)
+        {
+            state = null;
+            try
+            {
+                object game = ReflectionAccess.Read(GameInstanceMember, null);
+                if (game == null) return true;
+                object controller = ReflectionAccess.Read(GameLevelUpControllerMember, game);
+                if (controller == null) return true;
+                object candidate = ReflectionAccess.Read(LevelUpControllerStateMember, controller);
+                if (candidate != null && !LevelUpStateType.IsInstanceOfType(candidate)) return false;
+                state = candidate;
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
 
         public string AssemblyIdentity => GameAssembly.FullName;
         public Guid AssemblyMvid => GameAssembly.ManifestModule.ModuleVersionId;

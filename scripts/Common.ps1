@@ -15,20 +15,18 @@ function Assert-FileExists([string] $Path, [string] $Label) {
 
 function Resolve-PythonCommand {
     $python = Get-Command python -ErrorAction SilentlyContinue
-    if ($python) { return @($python.Source) }
+    if ($python) { return [pscustomobject]@{ Executable = $python.Source; Prefix = @() } }
     $python3 = Get-Command python3 -ErrorAction SilentlyContinue
-    if ($python3) { return @($python3.Source) }
+    if ($python3) { return [pscustomobject]@{ Executable = $python3.Source; Prefix = @() } }
     $py = Get-Command py -ErrorAction SilentlyContinue
-    if ($py) { return @($py.Source, '-3') }
+    if ($py) { return [pscustomobject]@{ Executable = $py.Source; Prefix = @('-3') } }
     throw 'Python 3 is required for deterministic repository tooling.'
 }
 
 function Invoke-RepositoryPython([string[]] $Arguments) {
     $command = Resolve-PythonCommand
-    $exe = $command[0]
-    $prefix = @()
-    if ($command.Count -gt 1) { $prefix = $command[1..($command.Count - 1)] }
-    & $exe @prefix @Arguments
+    $prefix = @($command.Prefix)
+    & $command.Executable @prefix @Arguments
     if ($LASTEXITCODE -ne 0) { throw "Python command failed with exit code $LASTEXITCODE." }
 }
 

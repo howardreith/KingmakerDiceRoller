@@ -60,7 +60,7 @@ namespace KingmakerDiceRoller.Domain
             int highCost = 17;
             for (int value = 19; value <= score; value++)
             {
-                int increment = ((value - 11) / 2) + 1;
+                int increment = (value - 10) / 2;
                 highCost += increment;
             }
 

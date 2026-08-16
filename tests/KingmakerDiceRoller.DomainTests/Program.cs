@@ -64,6 +64,11 @@ namespace KingmakerDiceRoller.DomainTests
                 new TestCase("session lifecycle happy path", SessionLifecycleHappyPath),
                 new TestCase("session lifecycle rejects invalid transition", SessionLifecycleRejectsInvalidTransition),
                 new TestCase("session lifecycle can abort point-buy restore", SessionLifecycleCanAbortPointBuyRestore),
+                new TestCase("liveness ignores failed observations", LivenessIgnoresFailedObservations),
+                new TestCase("liveness protects unconfirmed session", LivenessProtectsUnconfirmedSession),
+                new TestCase("liveness releases confirmed mismatch", LivenessReleasesConfirmedMismatch),
+                new TestCase("liveness match resets mismatch", LivenessMatchResetsMismatch),
+                new TestCase("liveness rejects invalid delta", LivenessRejectsInvalidDelta),
                 new TestCase("session ownership uses identity", SessionOwnershipUsesIdentity),
                 new TestCase("session ownership transfers explicitly", SessionOwnershipTransfersExplicitly)
             };
@@ -102,7 +107,7 @@ namespace KingmakerDiceRoller.DomainTests
         private static void RerollOnes() => AssertEx.Equal(12, Parse("4d[6]r[1]kh3").Evaluate(new SequenceRandomSource(1, 4, 2, 3, 5)));
         private static void CustomMinimumMaximum() => AssertEx.Equal(15, Parse("3d[2,8]").Evaluate(new SequenceRandomSource(2, 5, 8)));
         private static void NestedDiceCount() => AssertEx.Equal(8, Parse("(1d[4]+1)d[8]").Evaluate(new SequenceRandomSource(1, 3, 5)));
-        private static void NestedKeepCount() => AssertEx.Equal(9, Parse("4d[6]kh(1d[2]+1)").Evaluate(new SequenceRandomSource(6, 5, 4, 1, 1)));
+        private static void NestedKeepCount() => AssertEx.Equal(11, Parse("4d[6]kh(1d[2]+1)").Evaluate(new SequenceRandomSource(6, 5, 4, 1, 1)));
         private static void ArithmeticPrecedence() => AssertEx.Equal(14, Parse("2+3*4").Evaluate(new SequenceRandomSource()));
         private static void ParenthesizedArithmetic() => AssertEx.Equal(20, Parse("(2+3)*4").Evaluate(new SequenceRandomSource()));
         private static void InvalidExpression() => AssertEx.Throws<DiceExpressionException>(() => Parse("garbage"));
@@ -252,6 +257,46 @@ namespace KingmakerDiceRoller.DomainTests
             lifecycle.AbortPointBuyRestore();
             AssertEx.Equal(RollSessionState.Applied, lifecycle.State);
         }
+        private static void LivenessIgnoresFailedObservations()
+        {
+            var tracker = new SessionLivenessTracker();
+            for (int index = 0; index < 20; index++)
+            {
+                AssertEx.True(!tracker.Observe(false, false, 1f));
+            }
+            AssertEx.Equal(0f, tracker.MismatchSeconds);
+        }
+        private static void LivenessProtectsUnconfirmedSession()
+        {
+            var tracker = new SessionLivenessTracker();
+            AssertEx.True(!tracker.Observe(true, false, SessionLivenessTracker.UnconfirmedGraceSeconds - 0.01f));
+            AssertEx.True(tracker.Observe(true, false, 0.01f));
+        }
+        private static void LivenessReleasesConfirmedMismatch()
+        {
+            var tracker = new SessionLivenessTracker();
+            AssertEx.True(!tracker.Observe(true, true, 0f));
+            AssertEx.True(tracker.IsConfirmed);
+            AssertEx.True(!tracker.Observe(true, false, SessionLivenessTracker.ConfirmedGraceSeconds - 0.01f));
+            AssertEx.True(tracker.Observe(true, false, 0.01f));
+        }
+        private static void LivenessMatchResetsMismatch()
+        {
+            var tracker = new SessionLivenessTracker();
+            tracker.Observe(true, true, 0f);
+            tracker.Observe(true, false, 0.5f);
+            tracker.Observe(true, true, 0.1f);
+            AssertEx.Equal(0f, tracker.MismatchSeconds);
+            AssertEx.True(!tracker.Observe(true, false, 0.5f));
+        }
+        private static void LivenessRejectsInvalidDelta()
+        {
+            var tracker = new SessionLivenessTracker();
+            AssertEx.Throws<ArgumentOutOfRangeException>(() => tracker.Observe(true, false, -0.1f));
+            AssertEx.Throws<ArgumentOutOfRangeException>(() => tracker.Observe(true, false, float.NaN));
+            AssertEx.Throws<ArgumentOutOfRangeException>(() => tracker.Observe(true, false, float.PositiveInfinity));
+        }
+
         private static void SessionOwnershipUsesIdentity()
         {
             var ownership = new RollSessionOwnership();

@@ -23,6 +23,7 @@ Kingmaker.EntitySystem.Stats.StatTypeHelper.Attributes
   Strength, Dexterity, Constitution, Intelligence, Wisdom, Charisma
 
 Kingmaker.Game.Instance.LevelUpController
+  State : LevelUpState
   m_RecalculatePreview : Boolean
   UpdatePreview() : Void
 ```

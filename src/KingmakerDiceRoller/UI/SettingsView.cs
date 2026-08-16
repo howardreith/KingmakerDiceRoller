@@ -37,7 +37,7 @@ namespace KingmakerDiceRoller.UI
             settings.VerboseDiagnostics = GUILayout.Toggle(settings.VerboseDiagnostics, "Verbose diagnostic logging");
             GUILayout.Space(6f);
             GUILayout.Label("Status: " + diagnostics.Status);
-            GUILayout.Label("Accepted contexts: " + diagnostics.AcceptedContexts + "; rejected: " + diagnostics.RejectedContexts + "; applications: " + diagnostics.ArraysApplied);
+            GUILayout.Label("Accepted contexts: " + diagnostics.AcceptedContexts + "; rejected: " + diagnostics.RejectedContexts + "; applications: " + diagnostics.ArraysApplied + "; released: " + diagnostics.SessionsReleased);
             GUILayout.Label(contracts.Current == null
                 ? "Kingmaker contracts: unavailable"
                 : "Kingmaker contracts: resolved; MVID " + contracts.Current.AssemblyMvid.ToString("D"));

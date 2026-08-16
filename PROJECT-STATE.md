@@ -2,13 +2,14 @@
 
 ## Current phase
 
-Phase 2 — fixed-array Kingmaker vertical slice, source implementation.
+Phase 2 — fixed-array Kingmaker vertical slice, source-qualified implementation.
 
 ## Branch and commit
 
 Branch: `pro/kingmaker-dice-roller-mvp`
 
-The exact commit is written by `scripts/Build-Local.ps1` into build provenance.
+The exact source-qualified HEAD is pinned in the generated handoff manifest and
+Git bundle. Windows build provenance is written by `scripts/Build-Local.ps1`.
 
 ## Implemented behavior
 
@@ -22,13 +23,17 @@ The exact commit is written by `scripts/Build-Local.ps1` into build provenance.
 - Three narrow Harmony postfix surfaces: state construction, distribution
   start, and completion.
 - UMM diagnostics and point-buy restoration control.
+- Grace-period cleanup when the live `LevelUpController.State` leaves the owned
+  session, covering cancel/back-out and subsequent character creation.
+- Exact package allowlist validation and transactional live installation with
+  rollback.
 
 ## Qualification
 
 | Level | Status |
 |---|---|
 | Implemented | Yes — source candidate |
-| Source-qualified | Pending final repository validator in this workspace |
+| Source-qualified | Yes — fresh validator PASS: 54 C# files, 48 C# behavior cases, 25 executed Python oracle cases |
 | Build-qualified | No — requires Windows/.NET Framework/Kingmaker assemblies |
 | Runtime-qualified | No |
 | Compatibility-qualified | No |
@@ -39,14 +44,15 @@ The exact commit is written by `scripts/Build-Local.ps1` into build provenance.
   authenticated GitHub CLI/write transport.
 - This container has no .NET compiler, MSBuild, PowerShell, or Kingmaker
   assemblies.
-- Exact game-member resolution must pass on Howie's Kingmaker 2.1.7b install.
+- Exact game-member resolution must pass on Howie's Kingmaker 2.1.7b install,
+  including `LevelUpController.State` and preview-refresh members.
 - Native ability-score UI is intentionally deferred until the fixed-array gate.
 
 ## Required next live test
 
 Build and package on Howie's Windows Kingmaker machine, install only the alpha
 candidate, then execute `docs/SMOKE-TEST.md` beginning with vanilla new-character
-creation and point-buy restoration.
+creation, cancellation/re-entry, and point-buy restoration.
 
 ## Important decisions
 
@@ -54,4 +60,5 @@ creation and point-buy restoration.
 - Uses position-based assignment so duplicate scores are never ambiguous.
 - Does not replace vanilla plus/minus semantics.
 - Does not hard-code a point-buy budget.
+- Requires exact runtime contracts before installing any Harmony patch.
 - Does not claim Bag of Tricks compatibility before live qualification.

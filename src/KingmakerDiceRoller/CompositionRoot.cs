@@ -8,7 +8,7 @@ using KingmakerDiceRoller.UI;
 
 namespace KingmakerDiceRoller
 {
-    public sealed class CompositionRoot : IDisposable
+    public sealed class CompositionRoot
     {
         private readonly Settings settings;
         private readonly IModLogger logger;
@@ -56,6 +56,11 @@ namespace KingmakerDiceRoller
             return Disable();
         }
 
+        public void Update(float deltaTime)
+        {
+            if (enabled) coordinator.Update(deltaTime);
+        }
+
         public void DrawGui()
         {
             view.Draw();
@@ -66,9 +71,9 @@ namespace KingmakerDiceRoller
             settings.Save(modEntry);
         }
 
-        public void Dispose()
+        public bool TryUnload()
         {
-            Disable();
+            return Disable();
         }
 
         private bool Enable()

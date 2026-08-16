@@ -57,8 +57,10 @@ text. It never contains game assemblies or local configuration.
 .\scripts\Uninstall.ps1 -WhatIf
 ```
 
-Installation validates an exact entry allowlist, backs up only a previous
-`Mods\KingmakerDiceRoller` directory, and never touches another mod.
+Installation validates an exact, duplicate-free six-file allowlist, stages
+the replacement beside `Mods\KingmakerDiceRoller`, verifies the DLL hash, moves
+the old directory to a timestamped backup, and rolls it back if commit or
+post-commit verification fails. It never touches another mod.
 Uninstallation moves only that directory to a timestamped backup.
 
 ## Release gate

@@ -19,10 +19,14 @@ against Howie's exact game assemblies and passes `docs/SMOKE-TEST.md`.
 - Normal level-ups, companions, pets, enemies, pregens, mercenaries, and respec
   are rejected.
 - One explicit session owns one `LevelUpState` and one `StatsDistribution`.
+- UMM update observation releases canceled/completed ownership only after a
+  tested grace period; no extra Harmony lifecycle patch is added.
 - No `StatsDistribution.Add`/`Remove` or point-cost patching.
 - Return-to-point-buy calls the captured allocator budget, allowing other mods'
   point-buy patches to resume.
 - No save-owned custom content.
+- The install script validates an exact six-file package and transactionally
+  restores the previous live directory if replacement fails.
 
 ## Build
 

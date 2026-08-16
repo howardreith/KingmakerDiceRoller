@@ -13,6 +13,7 @@ namespace KingmakerDiceRoller.CharacterCreation
         public int RejectedContexts { get; private set; }
         public int ArraysApplied { get; private set; }
         public int PointBuyRestorations { get; private set; }
+        public int SessionsReleased { get; private set; }
 
         public void SetStatus(string value)
         {
@@ -56,6 +57,15 @@ namespace KingmakerDiceRoller.CharacterCreation
             {
                 PointBuyRestorations++;
                 AddRecent("RESTORE " + detail);
+            }
+        }
+
+        public void Released(string detail)
+        {
+            lock (sync)
+            {
+                SessionsReleased++;
+                AddRecent("RELEASE " + detail);
             }
         }
 

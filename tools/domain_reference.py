@@ -145,7 +145,33 @@ def score_cost(score):
         for value in range(6,score-1,-1): cost-=((7-value)//2)+2
         return cost
     cost=17
-    for value in range(19,score+1): cost+=((value-11)//2)+1
+    for value in range(19,score+1): cost+=(value-10)//2
     return cost
 
 def point_buy(values): return sum(score_cost(x) for x in values)
+
+
+class SessionLiveness:
+    UNCONFIRMED_GRACE = 5.0
+    CONFIRMED_GRACE = 0.75
+
+    def __init__(self):
+        self.confirmed = False
+        self.mismatch_seconds = 0.0
+
+    def observe(self, observation_succeeded, owns_current_state, delta_time):
+        if delta_time < 0 or delta_time != delta_time or delta_time in (float('inf'), float('-inf')):
+            raise DiceError('invalid delta')
+        if not observation_succeeded:
+            return False
+        if owns_current_state:
+            self.confirmed = True
+            self.mismatch_seconds = 0.0
+            return False
+        self.mismatch_seconds += delta_time
+        threshold = self.CONFIRMED_GRACE if self.confirmed else self.UNCONFIRMED_GRACE
+        return self.mismatch_seconds >= threshold
+
+    def reset(self):
+        self.confirmed = False
+        self.mismatch_seconds = 0.0
