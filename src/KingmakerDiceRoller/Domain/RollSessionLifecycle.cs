@@ -52,6 +52,11 @@ namespace KingmakerDiceRoller.Domain
             Transition(RollSessionState.RestoringPointBuy, RollSessionState.PointBuyRestored);
         }
 
+        public void AbortPointBuyRestore()
+        {
+            Transition(RollSessionState.RestoringPointBuy, RollSessionState.Applied);
+        }
+
         public void Complete()
         {
             if (State != RollSessionState.Applied)

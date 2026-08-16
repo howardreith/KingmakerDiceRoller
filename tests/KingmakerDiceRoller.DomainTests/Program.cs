@@ -63,6 +63,7 @@ namespace KingmakerDiceRoller.DomainTests
                 new TestCase("fixed diagnostic array", FixedDiagnosticArray),
                 new TestCase("session lifecycle happy path", SessionLifecycleHappyPath),
                 new TestCase("session lifecycle rejects invalid transition", SessionLifecycleRejectsInvalidTransition),
+                new TestCase("session lifecycle can abort point-buy restore", SessionLifecycleCanAbortPointBuyRestore),
                 new TestCase("session ownership uses identity", SessionOwnershipUsesIdentity),
                 new TestCase("session ownership transfers explicitly", SessionOwnershipTransfersExplicitly)
             };
@@ -242,6 +243,15 @@ namespace KingmakerDiceRoller.DomainTests
             AssertEx.Equal(RollSessionState.Completed, lifecycle.State);
         }
         private static void SessionLifecycleRejectsInvalidTransition() => AssertEx.Throws<InvalidOperationException>(() => new RollSessionLifecycle().MarkApplied());
+        private static void SessionLifecycleCanAbortPointBuyRestore()
+        {
+            var lifecycle = new RollSessionLifecycle();
+            lifecycle.Activate();
+            lifecycle.MarkApplied();
+            lifecycle.BeginPointBuyRestore();
+            lifecycle.AbortPointBuyRestore();
+            AssertEx.Equal(RollSessionState.Applied, lifecycle.State);
+        }
         private static void SessionOwnershipUsesIdentity()
         {
             var ownership = new RollSessionOwnership();
