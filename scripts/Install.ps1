@@ -18,7 +18,7 @@ if ($running.Count -gt 0) { throw 'Pathfinder: Kingmaker is running. Exit the ga
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $temporary = Join-Path ([IO.Path]::GetTempPath()) ('KingmakerDiceRoller-' + [Guid]::NewGuid().ToString('N'))
-New-Item -ItemType Directory -Force -Path $temporary | Out-Null
+[IO.Directory]::CreateDirectory($temporary) | Out-Null
 try {
     [IO.Compression.ZipFile]::ExtractToDirectory($PackagePath, $temporary)
     $source = Join-Path $temporary 'KingmakerDiceRoller'
@@ -75,5 +75,5 @@ try {
     if ($backup) { Write-Host "Previous installation backed up to $backup" }
 }
 finally {
-    if (Test-Path -LiteralPath $temporary) { Remove-Item -LiteralPath $temporary -Recurse -Force }
+    if ([IO.Directory]::Exists($temporary)) { [IO.Directory]::Delete($temporary, $true) }
 }

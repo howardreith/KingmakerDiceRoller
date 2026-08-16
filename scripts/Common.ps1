@@ -13,6 +13,12 @@ function Assert-FileExists([string] $Path, [string] $Label) {
     }
 }
 
+function Assert-DirectoryExists([string] $Path, [string] $Label) {
+    if (-not (Test-Path -LiteralPath $Path -PathType Container)) {
+        throw "$Label was not found: $Path"
+    }
+}
+
 function Resolve-PythonCommand {
     $python = Get-Command python -ErrorAction SilentlyContinue
     if ($python) { return [pscustomobject]@{ Executable = $python.Source; Prefix = @() } }
@@ -68,7 +74,14 @@ function Get-KingmakerConfiguration([string] $PropsPath = (Join-Path $script:Rep
 
 function Get-Sha256([string] $Path) {
     Assert-FileExists $Path 'Hash input'
-    return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+    $stream = [IO.File]::OpenRead($Path)
+    try {
+        $hasher = [Security.Cryptography.SHA256]::Create()
+        try { $bytes = $hasher.ComputeHash($stream) }
+        finally { $hasher.Dispose() }
+    }
+    finally { $stream.Dispose() }
+    return ([BitConverter]::ToString($bytes)).Replace('-', '').ToLowerInvariant()
 }
 
 function Get-GitMetadata {

@@ -217,8 +217,12 @@ def main():
 
     package_validator=(ROOT/'scripts/Validate-Package.ps1').read_text(encoding='utf-8')
     installer=(ROOT/'scripts/Install.ps1').read_text(encoding='utf-8')
+    common=(ROOT/'scripts/Common.ps1').read_text(encoding='utf-8')
     require('Duplicate package entry' in package_validator and 'exactly $($allowed.Count) files' in package_validator,'exact package allowlist validation missing')
     require('rollback was attempted' in installer and '.KingmakerDiceRoller.install.' in installer,'transactional install rollback missing')
+    require('Security.Cryptography.SHA256' in common and 'Get-FileHash' not in common,'hash helper must not inherit WhatIf behavior')
+    require('[IO.Directory]::CreateDirectory($temporary)' in installer and '[IO.Directory]::Delete($temporary, $true)' in installer,'WhatIf preflight temp lifecycle must execute outside ShouldProcess')
+    require('function Assert-DirectoryExists' in common,'shared directory assertion helper missing')
     ok('package allowlist and transactional installation guards')
 
     notices=(ROOT/'THIRD-PARTY-NOTICES.md').read_text(encoding='utf-8')
