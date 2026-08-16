@@ -13,7 +13,17 @@
   exact `LevelUpController.State` contract and UMM update callback.
 - Added exact duplicate-safe package validation and transactional install
   rollback.
-- Source-qualified 54 C# files, 48 C# behavior cases, and 25 executed Python
-  oracle cases in the handoff environment.
+- Qualified the exact Windows Kingmaker 2.1.7b and UMM/Harmony12 build
+  contracts.
+- Corrected new-character context handling after live evidence showed that
+  Kingmaker preview reconstruction can use `CharBuildMode.LevelUp` during
+  first-level main-character creation.
+- Kept `PreGen`, `Respec`, ordinary non-first-level progression, companions,
+  pets, and enemies excluded.
+- Deduplicated repeated identical context-rejection diagnostics while retaining
+  the total rejection count.
+- Source-qualified 56 C# files, 48 C# behavior cases, and 25 executed Python
+  oracle cases.
 
-No runtime or compatibility qualification is claimed for this source candidate.
+No runtime or compatibility qualification is claimed until the repaired
+new-character candidate passes the live fixed-array gate.

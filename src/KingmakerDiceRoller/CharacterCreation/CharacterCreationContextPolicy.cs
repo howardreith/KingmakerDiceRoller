@@ -19,7 +19,21 @@ namespace KingmakerDiceRoller.CharacterCreation
             if (!contracts.LevelUpStateType.IsInstanceOfType(state)) return CharacterCreationContextDecision.Reject("Unexpected LevelUpState runtime type.");
             if (!contracts.UnitDescriptorType.IsInstanceOfType(constructorUnit)) return CharacterCreationContextDecision.Reject("Unexpected UnitDescriptor runtime type.");
             if (!contracts.CharBuildModeType.IsInstanceOfType(mode)) return CharacterCreationContextDecision.Reject("Unexpected CharBuildMode runtime type.");
-            if (!string.Equals(mode.ToString(), "CharGen", StringComparison.Ordinal)) return CharacterCreationContextDecision.Reject("Mode is not CharGen.");
+
+            string modeName = mode.ToString();
+            if (string.Equals(modeName, "PreGen", StringComparison.Ordinal))
+            {
+                return CharacterCreationContextDecision.Reject("Pre-generated character creation is excluded.");
+            }
+            if (string.Equals(modeName, "Respec", StringComparison.Ordinal))
+            {
+                return CharacterCreationContextDecision.Reject("Respecialization is excluded.");
+            }
+            if (!string.Equals(modeName, "CharGen", StringComparison.Ordinal) &&
+                !string.Equals(modeName, "LevelUp", StringComparison.Ordinal))
+            {
+                return CharacterCreationContextDecision.Reject("Unsupported character-build mode " + DescribeMode(mode) + ".");
+            }
 
             object stateUnit = ReflectionAccess.Read(contracts.LevelUpStateUnitMember, state);
             if (!ReferenceEquals(stateUnit, constructorUnit)) return CharacterCreationContextDecision.Reject("Constructor unit does not match LevelUpState.Unit.");
@@ -44,6 +58,18 @@ namespace KingmakerDiceRoller.CharacterCreation
             if (isPet) return CharacterCreationContextDecision.Reject("Pets are excluded.");
             if (isEnemy) return CharacterCreationContextDecision.Reject("Enemies are excluded.");
             return CharacterCreationContextDecision.Accept(state, stateUnit, distribution);
+        }
+
+        private static string DescribeMode(object mode)
+        {
+            try
+            {
+                return "'" + mode + "' (" + Convert.ToInt32(mode) + ")";
+            }
+            catch
+            {
+                return "'" + mode + "'";
+            }
         }
     }
 }

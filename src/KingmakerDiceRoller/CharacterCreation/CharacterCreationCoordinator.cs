@@ -54,8 +54,8 @@ namespace KingmakerDiceRoller.CharacterCreation
             CharacterCreationContextDecision context = contextPolicy.Evaluate(state, unit, mode, contracts);
             if (!context.Accepted)
             {
-                diagnostics.Rejected(context.Reason);
-                if (verboseProvider()) logger.Info("Character-creation context rejected: " + context.Reason);
+                bool newlyObserved = diagnostics.Rejected(context.Reason);
+                if (newlyObserved && verboseProvider()) logger.Info("Character-creation context rejected: " + context.Reason);
                 return;
             }
 

@@ -2,14 +2,13 @@
 
 ## Current phase
 
-Phase 2 — fixed-array Kingmaker vertical slice, source-qualified implementation.
+Phase 2 — fixed-array runtime repair after the first live new-character gate.
 
-## Branch and commit
+## Branch and baseline
 
 Branch: `pro/kingmaker-dice-roller-mvp`
 
-The exact source-qualified HEAD is pinned in the generated handoff manifest and
-Git bundle. Windows build provenance is written by `scripts/Build-Local.ps1`.
+Baseline before this repair: `bd0e5aade1cd9f52ed1f61b0fbbd8089457011bb`.
 
 ## Implemented behavior
 
@@ -27,38 +26,58 @@ Git bundle. Windows build provenance is written by `scripts/Build-Local.ps1`.
   session, covering cancel/back-out and subsequent character creation.
 - Exact package allowlist validation and transactional live installation with
   rollback.
+- Exact Windows build contracts for Kingmaker 2.1.7b, UMM 0.32.x, and
+  Harmony12.
 
 ## Qualification
 
 | Level | Status |
 |---|---|
-| Implemented | Yes — source candidate |
-| Source-qualified | Yes — fresh validator PASS: 54 C# files, 48 C# behavior cases, 25 executed Python oracle cases |
-| Build-qualified | No — requires Windows/.NET Framework/Kingmaker assemblies |
-| Runtime-qualified | No |
+| Implemented | Yes — diagnostic source candidate |
+| Source-qualified | Yes — 56 C# files, 48 compiled C# behavior cases, 25 Python oracle cases |
+| Build-qualified | Yes — clean Windows build against the exact installed Kingmaker assembly |
+| Runtime-qualified | No — first live candidate rejected the valid new-character preview context |
 | Compatibility-qualified | No |
 
-## Known blockers
+## First live-gate evidence
 
-- Target GitHub repository does not yet exist and this environment has no
-  authenticated GitHub CLI/write transport.
-- This container has no .NET compiler, MSBuild, PowerShell, or Kingmaker
-  assemblies.
-- Exact game-member resolution must pass on Howie's Kingmaker 2.1.7b install,
-  including `LevelUpController.State` and preview-refresh members.
-- Native ability-score UI is intentionally deferred until the fixed-array gate.
+The installed candidate loaded successfully, resolved the expected
+`Assembly-CSharp` MVID, and detected Bag of Tricks and Call of the Wild. During
+new-main-character creation it recorded zero accepted contexts and repeated
+`Mode is not CharGen.` rejections.
+
+This established that Kingmaker can construct or rebuild the first-level
+main-character preview with `CharBuildMode.LevelUp`. The previous CharGen-only
+test was too narrow.
+
+## Current repair
+
+- Accept `CharBuildMode.LevelUp` only as a possible constructor mode.
+- Continue requiring `IsFirstLevel`, main-character identity, player faction,
+  and exclusion of pets and enemies.
+- Continue rejecting `PreGen`, `Respec`, and unknown modes.
+- Deduplicate identical rejection messages while preserving the rejection count.
+
+The enum name `LevelUp` does not grant ordinary-level-up support. Ordinary
+progression still fails the required `IsFirstLevel` guard.
 
 ## Required next live test
 
-Build and package on Howie's Windows Kingmaker machine, install only the alpha
-candidate, then execute `docs/SMOKE-TEST.md` beginning with vanilla new-character
-creation, cancellation/re-entry, and point-buy restoration.
+Build, package, and install the repaired fixed-array candidate. Confirm one
+accepted new-main-character session, exact application of
+`16, 15, 14, 12, 10, 8`, navigation stability, cancellation cleanup, and clean
+point-buy restoration.
+
+After this seam passes, replace the diagnostic array with the actual user
+workflow: Roll/Reroll, Store/Recall, total and point-buy equivalent, duplicate-
+safe reassignment, and finally the native Abilities-screen panel.
 
 ## Important decisions
 
 - Rewrote rather than ported the upstream static lifecycle.
 - Uses position-based assignment so duplicate scores are never ambiguous.
-- Does not replace vanilla plus/minus semantics.
+- Ordinary level-ups, companions, pets, enemies, and respec remain outside the
+  feature boundary.
 - Does not hard-code a point-buy budget.
 - Requires exact runtime contracts before installing any Harmony patch.
-- Does not claim Bag of Tricks compatibility before live qualification.
+- Does not claim compatibility before live qualification.
