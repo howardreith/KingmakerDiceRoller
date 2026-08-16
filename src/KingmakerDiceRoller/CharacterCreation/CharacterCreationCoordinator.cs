@@ -45,6 +45,8 @@ namespace KingmakerDiceRoller.CharacterCreation
             this.verboseProvider = verboseProvider;
         }
 
+        public bool HasActiveSession => sessions.Active != null;
+
         public void OnLevelUpStateConstructed(object state, object unit, object mode)
         {
             KingmakerContracts contracts = contractsProvider();

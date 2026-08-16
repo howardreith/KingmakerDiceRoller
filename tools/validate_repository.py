@@ -1,0 +1,187 @@
+#!/usr/bin/env python3
+"""Fail-fast source qualification for Kingmaker Dice Roller."""
+from __future__ import annotations
+import argparse
+import hashlib
+import json
+from pathlib import Path
+import re
+import sys
+import xml.etree.ElementTree as ET
+
+ROOT = Path(__file__).resolve().parents[1]
+REQUIRED = [
+    'AGENTS.md','CHANGELOG.md','Directory.Build.props','GamePath.props.example','Info.json',
+    'KingmakerDiceRoller.sln','LICENSE','PROJECT-STATE.md','README.md','THIRD-PARTY-NOTICES.md',
+    'src/KingmakerDiceRoller/KingmakerDiceRoller.csproj',
+    'tests/KingmakerDiceRoller.DomainTests/KingmakerDiceRoller.DomainTests.csproj',
+    'scripts/Common.ps1','scripts/Initialize-GamePath.ps1','scripts/Validate-Repository.ps1',
+    'scripts/Test-SourceOracle.ps1','scripts/Test-Domain.ps1','scripts/Verify-KingmakerContracts.ps1',
+    'scripts/Build-Local.ps1','scripts/Package.ps1','scripts/Install.ps1','scripts/Uninstall.ps1',
+    'scripts/Qualify.ps1','scripts/Collect-RuntimeEvidence.ps1',
+    'docs/ARCHITECTURE.md','docs/INTEGRATION-SEAMS.md','docs/COMPATIBILITY.md',
+    'docs/SMOKE-TEST.md','docs/RUNTIME-DIAGNOSTICS.md','docs/BUILD-AND-RELEASE.md',
+    'docs/SOURCE-QUALIFICATION.md','docs/UI-DESIGN.md','docs/LICENSING.md'
+]
+FORBIDDEN_BINARY_SUFFIXES = {'.dll','.exe','.pdb','.mdb','.zip','.zks','.sav','.png','.jpg','.jpeg','.dds','.asset','.bundle'}
+
+class Failure(Exception): pass
+
+def require(condition, message):
+    if not condition: raise Failure(message)
+
+def strip_csharp(text):
+    out=[]; i=0; state='normal'
+    while i < len(text):
+        c=text[i]; n=text[i+1] if i+1<len(text) else ''
+        if state=='normal':
+            if c=='/' and n=='/': state='line'; out.extend('  '); i+=2; continue
+            if c=='/' and n=='*': state='block'; out.extend('  '); i+=2; continue
+            if c=='@' and n=='"': state='verbatim'; out.extend('  '); i+=2; continue
+            if c=='"': state='string'; out.append(' '); i+=1; continue
+            if c=="'": state='char'; out.append(' '); i+=1; continue
+            out.append(c); i+=1; continue
+        if state=='line':
+            if c=='\n': state='normal'; out.append('\n')
+            else: out.append(' ')
+            i+=1; continue
+        if state=='block':
+            if c=='*' and n=='/': state='normal'; out.extend('  '); i+=2
+            else: out.append('\n' if c=='\n' else ' '); i+=1
+            continue
+        if state=='string':
+            if c=='\\': out.extend('  '); i+=2
+            elif c=='"': state='normal'; out.append(' '); i+=1
+            else: out.append('\n' if c=='\n' else ' '); i+=1
+            continue
+        if state=='char':
+            if c=='\\': out.extend('  '); i+=2
+            elif c=="'": state='normal'; out.append(' '); i+=1
+            else: out.append('\n' if c=='\n' else ' '); i+=1
+            continue
+        if state=='verbatim':
+            if c=='"' and n=='"': out.extend('  '); i+=2
+            elif c=='"': state='normal'; out.append(' '); i+=1
+            else: out.append('\n' if c=='\n' else ' '); i+=1
+    require(state in {'normal','line'}, f'unterminated C# token state: {state}')
+    return ''.join(out)
+
+def balanced(text, path):
+    pairs={')':'(',']':'[','}':'{'}; stack=[]
+    for offset,c in enumerate(text):
+        if c in '([{': stack.append((c,offset))
+        elif c in ')]}':
+            require(stack and stack[-1][0]==pairs[c], f'{path}: delimiter mismatch at offset {offset}')
+            stack.pop()
+    require(not stack, f'{path}: unclosed delimiter {stack[-1][0] if stack else ""}')
+
+def sha256(path):
+    h=hashlib.sha256()
+    with path.open('rb') as f:
+        for chunk in iter(lambda:f.read(1024*1024),b''): h.update(chunk)
+    return h.hexdigest()
+
+def main():
+    parser=argparse.ArgumentParser()
+    parser.add_argument('--report', type=Path)
+    args=parser.parse_args()
+    checks=[]
+    def ok(name): checks.append(name)
+
+    for rel in REQUIRED: require((ROOT/rel).is_file(), f'missing required file: {rel}')
+    ok(f'required files ({len(REQUIRED)})')
+
+    info=json.loads((ROOT/'Info.json').read_text(encoding='utf-8'))
+    require(info['Id']=='KingmakerDiceRoller','unexpected UMM ID')
+    require(info['AssemblyName']=='KingmakerDiceRoller.dll','unexpected assembly name')
+    require(info['EntryMethod']=='KingmakerDiceRoller.Main.Load','unexpected entry method')
+    require(info['GameVersion']=='2.1.7','unexpected target game version')
+    ok('Info.json identity')
+
+    xml_files=list(ROOT.rglob('*.csproj'))+list(ROOT.rglob('*.props'))
+    for path in xml_files: ET.parse(path)
+    ok(f'XML parse ({len(xml_files)})')
+
+    tracked_candidates=[p for p in ROOT.rglob('*') if p.is_file() and '.git' not in p.parts and 'artifacts' not in p.parts]
+    bad=[str(p.relative_to(ROOT)) for p in tracked_candidates if p.suffix.lower() in FORBIDDEN_BINARY_SUFFIXES]
+    require(not bad, 'binary/game artifacts present: '+', '.join(bad))
+    ok('no binary or game artifacts')
+
+    csharp=list(ROOT.rglob('*.cs'))
+    require(len(csharp)>=35, f'expected substantial C# source tree, found {len(csharp)} files')
+    forbidden_patterns=[
+        (r'\brecord\s+', 'records require newer C#'),
+        (r'\binit\s*;', 'init accessors require newer C#'),
+        (r'\busing\s+var\b', 'using declarations require newer C#'),
+        (r'\bnamespace\s+[A-Za-z0-9_.]+\s*;', 'file-scoped namespace requires newer C#'),
+        (r'\bnew\s*\(\s*\)', 'target-typed new requires newer C#'),
+        (r'\bis\s+not\b', 'is not pattern requires newer C#')
+    ]
+    for path in csharp:
+        raw=path.read_text(encoding='utf-8')
+        require('\r' not in raw, f'{path.relative_to(ROOT)} uses CRLF in C# source')
+        stripped=strip_csharp(raw)
+        balanced(stripped, path.relative_to(ROOT))
+        for pattern,label in forbidden_patterns:
+            require(not re.search(pattern,stripped), f'{path.relative_to(ROOT)}: {label}')
+    ok(f'C# lexical/balance/C#7.3 audit ({len(csharp)})')
+
+    domain='\n'.join(p.read_text(encoding='utf-8') for p in (ROOT/'src/KingmakerDiceRoller/Domain').glob('*.cs'))
+    for token in ['Kingmaker.','UnityEngine','UnityModManager','Harmony12']:
+        require(token not in domain, f'pure domain leaks dependency: {token}')
+    ok('pure domain dependency boundary')
+
+    src='\n'.join(p.read_text(encoding='utf-8') for p in (ROOT/'src/KingmakerDiceRoller').rglob('*.cs'))
+    require('StatsDistributionStarted' in src and 'StatsDistributionIsComplete' in src and 'LevelUpStateConstructed' in src,'expected three patch bridge surfaces')
+    for token in ['StatsDistribution.Add','StatsDistribution.Remove','StatsDistribution.CanAdd','StatsDistribution.CanRemove']:
+        require(token not in src, f'forbidden broad allocator patch reference: {token}')
+    controller=(ROOT/'src/KingmakerDiceRoller/Patches/KingmakerPatchController.cs').read_text(encoding='utf-8')
+    require(controller.count('PatchPostfix(candidate,')==3,'patch controller must install exactly three postfixes')
+    require('Priority.VeryLow' in controller,'patch priority must be explicit')
+    ok('narrow Harmony patch surface')
+
+    diagnostic=(ROOT/'src/KingmakerDiceRoller/Domain/DiagnosticArrays.cs').read_text(encoding='utf-8')
+    require(re.search(r'16\s*,\s*15\s*,\s*14\s*,\s*12\s*,\s*10\s*,\s*8',diagnostic),'fixed diagnostic array missing')
+    restore=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/PointBuyRestoreService.cs').read_text(encoding='utf-8')
+    require('session.Baseline.Budget' in restore and 'DistributionStartMethod.Invoke' in restore,'point-buy restore must use captured allocator budget')
+    require('25' not in restore,'point-buy restore may not hard-code 25 points')
+    context=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/CharacterCreationContextPolicy.cs').read_text(encoding='utf-8')
+    for token in ['CharGen','IsFirstLevel','IsMainCharacter','IsPlayerFaction','IsPet','IsPlayersEnemy']:
+        require(token in context, f'context guard missing: {token}')
+    ok('fixed-array, restoration, and context invariants')
+
+    tests=(ROOT/'tests/KingmakerDiceRoller.DomainTests/Program.cs').read_text(encoding='utf-8')
+    test_count=tests.count('new TestCase(')
+    require(test_count>=40,f'expected at least 40 C# behavior cases, found {test_count}')
+    python_tests=(ROOT/'tests/python/test_domain_reference.py').read_text(encoding='utf-8')
+    python_count=len(re.findall(r'^\s+def test_',python_tests,re.MULTILINE))
+    require(python_count>=20,f'expected at least 20 Python oracle cases, found {python_count}')
+    ok(f'test inventories (C# {test_count}, Python {python_count})')
+
+    notices=(ROOT/'THIRD-PARTY-NOTICES.md').read_text(encoding='utf-8')
+    upstream=(ROOT/'licenses/UPSTREAM-WOTR-DICE-ROLLER-MIT.txt').read_text(encoding='utf-8')
+    require('FakeFriend24/wotr-dice-roller' in notices,'upstream attribution missing')
+    require('JesusLives24' in upstream and 'Jennifer Messerly' in upstream,'upstream MIT notices incomplete')
+    ok('licensing and attribution')
+
+    state=(ROOT/'PROJECT-STATE.md').read_text(encoding='utf-8')
+    for label in ['Implemented','Source-qualified','Build-qualified','Runtime-qualified','Compatibility-qualified']:
+        require(label in state, f'qualification label missing: {label}')
+    ok('qualification disclosure')
+
+    report={
+        'status':'passed','checks':checks,'csharp_files':len(csharp),'csharp_behavior_cases':test_count,
+        'python_behavior_cases':python_count,'info_sha256':sha256(ROOT/'Info.json')
+    }
+    if args.report:
+        target=args.report if args.report.is_absolute() else ROOT/args.report
+        target.parent.mkdir(parents=True,exist_ok=True)
+        target.write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')
+    print(json.dumps(report,indent=2))
+    return 0
+
+if __name__=='__main__':
+    try: raise SystemExit(main())
+    except Failure as exc:
+        print('SOURCE QUALIFICATION FAILED: '+str(exc),file=sys.stderr)
+        raise SystemExit(1)

@@ -49,8 +49,7 @@ namespace KingmakerDiceRoller.UI
             }
 
             GUILayout.Space(6f);
-            bool hadActiveSession = diagnostics.Status.Contains("active");
-            GUI.enabled = hadActiveSession;
+            GUI.enabled = coordinator.HasActiveSession;
             if (GUILayout.Button("Return active roll session to point buy"))
             {
                 string error;
