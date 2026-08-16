@@ -7,7 +7,7 @@ namespace KingmakerDiceRoller.CharacterCreation
     {
         private readonly object sync = new object();
         private readonly Queue<string> recent = new Queue<string>();
-        private string lastRejectedDetail;
+        private readonly HashSet<string> observedRejectionDetails = new HashSet<string>(StringComparer.Ordinal);
 
         public string Status { get; private set; } = "Not enabled.";
         public int AcceptedContexts { get; private set; }
@@ -30,7 +30,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             lock (sync)
             {
                 AcceptedContexts++;
-                lastRejectedDetail = null;
+                observedRejectionDetails.Clear();
                 AddRecent("ACCEPT " + detail);
             }
         }
@@ -40,12 +40,11 @@ namespace KingmakerDiceRoller.CharacterCreation
             lock (sync)
             {
                 RejectedContexts++;
-                if (string.Equals(lastRejectedDetail, detail, StringComparison.Ordinal))
+                if (!observedRejectionDetails.Add(detail))
                 {
                     return false;
                 }
 
-                lastRejectedDetail = detail;
                 AddRecent("REJECT " + detail);
                 return true;
             }

@@ -2,13 +2,13 @@
 
 ## Current phase
 
-Phase 2 — fixed-array runtime repair after the first live new-character gate.
+Phase 2 â€” fixed-array runtime repair after two live new-character context gates.
 
 ## Branch and baseline
 
 Branch: `pro/kingmaker-dice-roller-mvp`
 
-Baseline before this repair: `bd0e5aade1cd9f52ed1f61b0fbbd8089457011bb`.
+Baseline before this repair: `7136bc4`.
 
 ## Implemented behavior
 
@@ -17,13 +17,12 @@ Baseline before this repair: `bd0e5aade1cd9f52ed1f61b0fbbd8089457011bb`.
 - Explicit low-score policies and extended point-buy equivalent.
 - Single-active-session ownership model.
 - Fixed diagnostic array `16, 15, 14, 12, 10, 8`.
-- Fail-closed context policy for new main-character creation only.
 - Captured point-buy budget and explicit restoration path.
 - Three narrow Harmony postfix surfaces: state construction, distribution
   start, and completion.
 - UMM diagnostics and point-buy restoration control.
 - Grace-period cleanup when the live `LevelUpController.State` leaves the owned
-  session, covering cancel/back-out and subsequent character creation.
+  session.
 - Exact package allowlist validation and transactional live installation with
   rollback.
 - Exact Windows build contracts for Kingmaker 2.1.7b, UMM 0.32.x, and
@@ -33,51 +32,67 @@ Baseline before this repair: `bd0e5aade1cd9f52ed1f61b0fbbd8089457011bb`.
 
 | Level | Status |
 |---|---|
-| Implemented | Yes — diagnostic source candidate |
-| Source-qualified | Yes — 56 C# files, 48 compiled C# behavior cases, 25 Python oracle cases |
-| Build-qualified | Yes — clean Windows build against the exact installed Kingmaker assembly |
-| Runtime-qualified | No — first live candidate rejected the valid new-character preview context |
+| Implemented | Yes â€” diagnostic source candidate |
+| Source-qualified | Yes â€” 56 C# files, 48 compiled C# behavior cases, 25 Python oracle cases |
+| Build-qualified | Yes â€” Windows build against the exact installed Kingmaker assembly |
+| Runtime-qualified | No â€” two live candidates rejected the valid new-game preview |
 | Compatibility-qualified | No |
 
-## First live-gate evidence
+## Live-gate evidence
 
-The installed candidate loaded successfully, resolved the expected
-`Assembly-CSharp` MVID, and detected Bag of Tricks and Call of the Wild. During
-new-main-character creation it recorded zero accepted contexts and repeated
-`Mode is not CharGen.` rejections.
+The first installed candidate rejected every constructor because it required
+`CharBuildMode.CharGen`; Kingmaker uses `CharBuildMode.LevelUp` for legitimate
+new-game preview reconstruction.
 
-This established that Kingmaker can construct or rebuild the first-level
-main-character preview with `CharBuildMode.LevelUp`. The previous CharGen-only
-test was too narrow.
+The second candidate accepted that mode but still recorded zero accepted
+contexts. Its unique rejection reasons established that:
+
+- some constructor states are not first-level states and must remain excluded;
+- the first-level preview descriptor is not yet marked `IsMainCharacter`;
+- using the finished-unit `IsMainCharacter` value during preview construction
+  is therefore too early and rejects the intended new-game character.
+
+Both runs loaded cleanly, resolved the exact expected Assembly-CSharp MVID, and
+left ordinary point buy unchanged.
 
 ## Current repair
 
-- Accept `CharBuildMode.LevelUp` only as a possible constructor mode.
-- Continue requiring `IsFirstLevel`, main-character identity, player faction,
-  and exclusion of pets and enemies.
-- Continue rejecting `PreGen`, `Respec`, and unknown modes.
-- Deduplicate identical rejection messages while preserving the rejection count.
-
-The enum name `LevelUp` does not grant ordinary-level-up support. Ordinary
-progression still fails the required `IsFirstLevel` guard.
+- Continue requiring first-level state, allowed constructor mode, valid
+  distribution, and exclusion of pets and enemies.
+- Require the candidate state or unit descriptor to be owned by the active
+  `Game.Instance.UI.CharacterBuildController.LevelUpController`.
+- Treat `LevelUpController.Unit` and `LevelUpController.Preview` as preview
+  ownership identities rather than requiring the unfinished preview descriptor
+  to report `IsMainCharacter`.
+- Require that `Game.Instance.Player.MainCharacter` has no established live
+  descriptor. This keeps mercenary creation, respec, and ordinary campaign
+  level-up contexts outside the feature boundary.
+- Fail closed if either controller ownership or the established-main-character
+  boundary cannot be resolved.
+- Display each unique rejection reason once per attempted session while
+  retaining the full rejection count.
 
 ## Required next live test
 
-Build, package, and install the repaired fixed-array candidate. Confirm one
-accepted new-main-character session, exact application of
-`16, 15, 14, 12, 10, 8`, navigation stability, cancellation cleanup, and clean
-point-buy restoration.
+Build, package, and install this controller-owned fixed-array candidate. Confirm:
+
+1. at least one accepted new-game first-level preview context;
+2. exact application of `16, 15, 14, 12, 10, 8`;
+3. no activation during an existing-character level-up;
+4. navigation stability and cancellation cleanup;
+5. clean point-buy restoration.
 
 After this seam passes, replace the diagnostic array with the actual user
-workflow: Roll/Reroll, Store/Recall, total and point-buy equivalent, duplicate-
-safe reassignment, and finally the native Abilities-screen panel.
+workflow: Roll/Reroll, Store/Recall, total and point-buy equivalent,
+duplicate-safe reassignment, and the native Abilities-screen panel.
 
 ## Important decisions
 
-- Rewrote rather than ported the upstream static lifecycle.
-- Uses position-based assignment so duplicate scores are never ambiguous.
-- Ordinary level-ups, companions, pets, enemies, and respec remain outside the
-  feature boundary.
+- New-character identity is determined by active character-builder ownership
+  and absence of an established campaign main character, not by the unfinished
+  preview descriptor's `IsMainCharacter` value.
+- Ordinary level-ups, companions, mercenaries, pets, enemies, and respec remain
+  outside the feature boundary.
 - Does not hard-code a point-buy budget.
 - Requires exact runtime contracts before installing any Harmony patch.
 - Does not claim compatibility before live qualification.

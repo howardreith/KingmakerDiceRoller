@@ -197,6 +197,8 @@ def main():
     context=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/CharacterCreationContextPolicy.cs').read_text(encoding='utf-8')
     for token in ['CharGen','IsFirstLevel','IsMainCharacter','IsPlayerFaction','IsPet','IsPlayersEnemy']:
         require(token in context, f'context guard missing: {token}')
+    require('TryIsOwnedByActiveController' in context and 'LevelUpController' in context,'active controller ownership guard missing')
+    require('TryHasEstablishedMainCharacter' in context and 'only new-game character creation is supported' in context,'new-game main-character boundary guard missing')
     liveness=(ROOT/'src/KingmakerDiceRoller/Domain/SessionLivenessTracker.cs').read_text(encoding='utf-8')
     manager=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/RollSessionManager.cs').read_text(encoding='utf-8')
     contracts=(ROOT/'src/KingmakerDiceRoller/Integration/KingmakerContractResolver.cs').read_text(encoding='utf-8')

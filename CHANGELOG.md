@@ -20,7 +20,12 @@
   first-level main-character creation.
 - Kept `PreGen`, `Respec`, ordinary non-first-level progression, companions,
   pets, and enemies excluded.
-- Deduplicated repeated identical context-rejection diagnostics while retaining
+- Replaced preview-time `IsMainCharacter` value gating with active
+  `LevelUpController` ownership because live new-game preview descriptors are
+  not yet flagged as the finished main character.
+- Added a separate established-`Player.MainCharacter` boundary so mercenary,
+  respec, and ordinary campaign character builds remain excluded.
+- Deduplicated context-rejection diagnostics by unique reason while retaining
   the total rejection count.
 - Source-qualified 56 C# files, 48 C# behavior cases, and 25 executed Python
   oracle cases.
