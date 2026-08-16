@@ -11,6 +11,9 @@
     <AssemblyName>KingmakerDiceRoller</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <LangVersion>7.3</LangVersion>
+    <!-- Installed UMM 0.32.x references its co-installed net48 Harmony2 assembly.
+         Dice Roller targets net472 and uses only the legacy Harmony12 API surface. -->
+    <ResolveAssemblyReferenceIgnoreTargetFrameworkAttributeVersionMismatch>true</ResolveAssemblyReferenceIgnoreTargetFrameworkAttributeVersionMismatch>
     <OutputPath>..\..\artifacts\bin\$(Configuration)\KingmakerDiceRoller\</OutputPath>
     <IntermediateOutputPath>..\..\artifacts\obj\$(Configuration)\KingmakerDiceRoller\</IntermediateOutputPath>
   </PropertyGroup>

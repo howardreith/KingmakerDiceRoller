@@ -61,7 +61,7 @@ namespace KingmakerDiceRoller.Patches
         {
             MethodInfo bridge = typeof(KingmakerPatchBridge).GetMethod(bridgeMethodName, BindingFlags.Public | BindingFlags.Static);
             if (bridge == null) throw new MissingMethodException(typeof(KingmakerPatchBridge).FullName, bridgeMethodName);
-            var postfix = new HarmonyMethod(bridge) { priority = Priority.VeryLow };
+            var postfix = new HarmonyMethod(bridge) { prioritiy = Priority.VeryLow };
             instance.Patch(original, null, postfix);
         }
     }

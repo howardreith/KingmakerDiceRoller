@@ -26,7 +26,9 @@ namespace KingmakerDiceRoller.Integration
             MemberInfo distributionTotalPointsMember,
             object[] abilityStatKeys,
             MemberInfo gameInstanceMember,
-            MemberInfo gameLevelUpControllerMember,
+            MemberInfo gameUiMember,
+            MemberInfo uiCharacterBuildControllerMember,
+            MemberInfo characterBuildLevelUpControllerMember,
             MemberInfo levelUpControllerStateMember,
             FieldInfo previewRecalculateField,
             MethodInfo previewUpdateMethod,
@@ -51,7 +53,9 @@ namespace KingmakerDiceRoller.Integration
             DistributionTotalPointsMember = distributionTotalPointsMember;
             AbilityStatKeys = abilityStatKeys;
             GameInstanceMember = gameInstanceMember;
-            GameLevelUpControllerMember = gameLevelUpControllerMember;
+            GameUiMember = gameUiMember;
+            UiCharacterBuildControllerMember = uiCharacterBuildControllerMember;
+            CharacterBuildLevelUpControllerMember = characterBuildLevelUpControllerMember;
             LevelUpControllerStateMember = levelUpControllerStateMember;
             PreviewRecalculateField = previewRecalculateField;
             PreviewUpdateMethod = previewUpdateMethod;
@@ -77,21 +81,42 @@ namespace KingmakerDiceRoller.Integration
         public MemberInfo DistributionTotalPointsMember { get; }
         public object[] AbilityStatKeys { get; }
         public MemberInfo GameInstanceMember { get; }
-        public MemberInfo GameLevelUpControllerMember { get; }
+        public MemberInfo GameUiMember { get; }
+        public MemberInfo UiCharacterBuildControllerMember { get; }
+        public MemberInfo CharacterBuildLevelUpControllerMember { get; }
         public MemberInfo LevelUpControllerStateMember { get; }
         public FieldInfo PreviewRecalculateField { get; }
         public MethodInfo PreviewUpdateMethod { get; }
         public IReadOnlyList<string> Evidence { get; }
 
-        public bool TryGetCurrentLevelUpState(out object state)
+        public bool TryGetLevelUpController(out object controller)
         {
-            state = null;
+            controller = null;
             try
             {
                 object game = ReflectionAccess.Read(GameInstanceMember, null);
                 if (game == null) return true;
-                object controller = ReflectionAccess.Read(GameLevelUpControllerMember, game);
-                if (controller == null) return true;
+                object ui = ReflectionAccess.Read(GameUiMember, game);
+                if (ui == null) return true;
+                object characterBuildController = ReflectionAccess.Read(UiCharacterBuildControllerMember, ui);
+                if (characterBuildController == null) return true;
+                controller = ReflectionAccess.Read(CharacterBuildLevelUpControllerMember, characterBuildController);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public bool TryGetCurrentLevelUpState(out object state)
+        {
+            state = null;
+            object controller;
+            if (!TryGetLevelUpController(out controller)) return false;
+            if (controller == null) return true;
+            try
+            {
                 object candidate = ReflectionAccess.Read(LevelUpControllerStateMember, controller);
                 if (candidate != null && !LevelUpStateType.IsInstanceOfType(candidate)) return false;
                 state = candidate;

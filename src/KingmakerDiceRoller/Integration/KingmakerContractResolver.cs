@@ -84,11 +84,22 @@ namespace KingmakerDiceRoller.Integration
 
             MemberInfo unitStats = ReflectionAccess.RequireInstanceMember(unitDescriptorType, "Stats");
             Type unitStatsType = ReflectionAccess.GetMemberType(unitStats);
-            MethodInfo getStat = unitStatsType.GetMethod("GetStat", InstanceFlags, null, new[] { statTypeType }, null);
-            if (getStat == null)
+            MethodInfo[] getStatCandidates = unitStatsType.GetMethods(InstanceFlags)
+                .Where(method => string.Equals(method.Name, "GetStat", StringComparison.Ordinal))
+                .Where(method => !method.IsGenericMethod)
+                .Where(method =>
+                {
+                    ParameterInfo[] parameters = method.GetParameters();
+                    return parameters.Length == 1 && parameters[0].ParameterType == statTypeType;
+                })
+                .ToArray();
+            if (getStatCandidates.Length != 1)
             {
-                throw new ContractResolutionException(unitStatsType.FullName + ".GetStat(StatType) was not found.");
+                throw new ContractResolutionException(
+                    "Expected exactly one non-generic " + unitStatsType.FullName +
+                    ".GetStat(StatType), found " + getStatCandidates.Length + ".");
             }
+            MethodInfo getStat = getStatCandidates[0];
             MemberInfo baseValue = ReflectionAccess.RequireInstanceMember(getStat.ReturnType, "BaseValue");
             if (ReflectionAccess.GetMemberType(baseValue) != typeof(int))
             {
@@ -127,7 +138,11 @@ namespace KingmakerDiceRoller.Integration
 
             Type gameType = RequireType(gameAssembly, "Kingmaker.Game");
             MemberInfo gameInstance = ReflectionAccess.RequireStaticMember(gameType, "Instance");
-            MemberInfo levelUpController = ReflectionAccess.RequireInstanceMember(gameType, "LevelUpController");
+            MemberInfo gameUi = ReflectionAccess.RequireInstanceMember(gameType, "UI");
+            Type uiType = ReflectionAccess.GetMemberType(gameUi);
+            MemberInfo characterBuildController = ReflectionAccess.RequireInstanceMember(uiType, "CharacterBuildController");
+            Type characterBuildControllerType = ReflectionAccess.GetMemberType(characterBuildController);
+            MemberInfo levelUpController = ReflectionAccess.RequireInstanceMember(characterBuildControllerType, "LevelUpController");
             Type controllerType = ReflectionAccess.GetMemberType(levelUpController);
             MemberInfo controllerState = ReflectionAccess.RequireInstanceMember(controllerType, "State");
             if (!levelUpStateType.IsAssignableFrom(ReflectionAccess.GetMemberType(controllerState)))
@@ -144,6 +159,7 @@ namespace KingmakerDiceRoller.Integration
             evidence.Add("Assembly=" + gameAssembly.FullName);
             evidence.Add("MVID=" + gameAssembly.ManifestModule.ModuleVersionId.ToString("D"));
             evidence.Add("Abilities=" + string.Join(",", abilityKeys.Select(value => value.ToString()).ToArray()));
+            evidence.Add("ControllerPath=Game.Instance.UI.CharacterBuildController.LevelUpController");
             evidence.Add("Lifecycle=" + controllerType.FullName + ".State");
             evidence.Add("Preview=" + controllerType.FullName + ".m_RecalculatePreview + UpdatePreview()");
 
@@ -167,6 +183,8 @@ namespace KingmakerDiceRoller.Integration
                 totalPoints,
                 abilityKeys,
                 gameInstance,
+                gameUi,
+                characterBuildController,
                 levelUpController,
                 controllerState,
                 recalculate,

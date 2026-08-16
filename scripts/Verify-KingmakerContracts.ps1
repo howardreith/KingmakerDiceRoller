@@ -77,8 +77,9 @@ try {
     if ((Member-Type $firstLevel) -ne [bool]) { throw 'IsFirstLevel is not Boolean.' }
     $unitStats = Require-Member $unit 'Stats'
     $statsType = Member-Type $unitStats
-    $getStat = $statsType.GetMethod('GetStat',$flags,$null,[Type[]]@($statType),$null)
-    if (-not $getStat) { throw 'Unit stats GetStat(StatType) was not found.' }
+    $getStatCandidates = @($statsType.GetMethods($flags) | Where-Object { $_.Name -eq 'GetStat' -and -not $_.IsGenericMethod -and $_.GetParameters().Length -eq 1 -and $_.GetParameters()[0].ParameterType -eq $statType })
+    if ($getStatCandidates.Count -ne 1) { throw "Expected exactly one non-generic CharacterStats.GetStat(StatType), found $($getStatCandidates.Count)." }
+    $getStat = $getStatCandidates[0]
     $baseValue = Require-Member $getStat.ReturnType 'BaseValue'
     if ((Member-Type $baseValue) -ne [int]) { throw 'BaseValue is not Int32.' }
     $statValues = Require-Member $distribution 'StatValues'
@@ -97,7 +98,11 @@ try {
     if (-not $mainPath -or -not $playerPath -or -not $petPath -or -not $enemyPath) { throw 'One or more fail-closed unit identity paths are unavailable.' }
     $game = Require-Type $assembly 'Kingmaker.Game'
     $gameInstance = Require-Member $game 'Instance' $true
-    $controllerMember = Require-Member $game 'LevelUpController'
+    $gameUi = Require-Member $game 'UI'
+    $ui = Member-Type $gameUi
+    $characterBuildController = Require-Member $ui 'CharacterBuildController'
+    $characterBuild = Member-Type $characterBuildController
+    $controllerMember = Require-Member $characterBuild 'LevelUpController'
     $controller = Member-Type $controllerMember
     $controllerState = Require-Member $controller 'State'
     if (-not $state.IsAssignableFrom((Member-Type $controllerState))) { throw 'LevelUpController.State is not a LevelUpState contract.' }
@@ -114,6 +119,7 @@ try {
         assembly_mvid = $assembly.ManifestModule.ModuleVersionId.ToString('D')
         signatures = @(
             $constructor.ToString(), $start.ToString(), $complete.ToString(),
+            "Game.Instance.UI.CharacterBuildController.LevelUpController -> $($controller.FullName)",
             "$($controller.FullName).State", "$($controller.FullName).m_RecalculatePreview", "$($controller.FullName).UpdatePreview()"
         )
         abilities = $abilityNames
