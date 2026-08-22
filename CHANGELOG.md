@@ -44,8 +44,30 @@
   `Unit`/`Preview` contracts during offline and runtime resolution.
 - Corrected runtime evidence collection to include Kingmaker's live LocalLow
   `output_log.txt`.
-- Source-qualified 58 C# files, 65 C# behavior cases, and 25 executed Python
-  oracle cases.
+- Recorded the fourth live gate accurately: context acceptance succeeded, but
+  a reentrant same-build preview was rejected, detached values were reported as
+  applied, and exact-state liveness released the session while character
+  creation remained open.
+- Verified from exact 2.1.7b IL that `UpdatePreview()` installs the new
+  `Preview`, constructs its replacement state synchronously, and assigns
+  `State` only after the patched constructor returns.
+- Replaced transient preview-descriptor ownership with immutable
+  controller/source ownership and generation-aware rebinding of state, preview,
+  distribution, and captured point-buy baseline.
+- Removed preview refresh from fixed-array staging, added a bounded one-restage
+  protocol after Kingmaker action replay, and require verification against the
+  controller's actual live state, preview, distribution, and base values before
+  counting an application.
+- Changed stale-session detection to follow the stable controller/source owner,
+  so replacement or temporarily null states cannot release a live character
+  build.
+- Made point-buy restoration refresh once, follow any same-owner replacement,
+  and restore the newest live generation rather than a detached preview.
+- Added concise generation/rebind/live-validation diagnostics and executable
+  preview-continuity regression coverage.
+- Source-qualified 61 C# files, 86 compiled C# behavior cases, and 25 executed
+  Python oracle cases; the exact production build completed with zero warnings
+  and zero errors.
 
 No runtime or compatibility qualification is claimed until the repaired
 new-character candidate passes the live fixed-array gate.

@@ -140,6 +140,39 @@ namespace KingmakerDiceRoller.Integration
             }
         }
 
+        public bool TryGetLevelUpControllerContext(
+            out object controller,
+            out object sourceUnit,
+            out object state,
+            out object preview)
+        {
+            controller = null;
+            sourceUnit = null;
+            state = null;
+            preview = null;
+            if (!TryGetLevelUpController(out controller)) return false;
+            if (controller == null) return true;
+
+            try
+            {
+                sourceUnit = ReflectionAccess.Read(LevelUpControllerUnitMember, controller);
+                state = ReflectionAccess.Read(LevelUpControllerStateMember, controller);
+                preview = ReflectionAccess.Read(LevelUpControllerPreviewMember, controller);
+                if (sourceUnit != null && !UnitDescriptorType.IsInstanceOfType(sourceUnit)) return false;
+                if (state != null && !LevelUpStateType.IsInstanceOfType(state)) return false;
+                if (preview != null && !UnitDescriptorType.IsInstanceOfType(preview)) return false;
+                return true;
+            }
+            catch
+            {
+                controller = null;
+                sourceUnit = null;
+                state = null;
+                preview = null;
+                return false;
+            }
+        }
+
         public string AssemblyIdentity => GameAssembly.FullName;
         public Guid AssemblyMvid => GameAssembly.ManifestModule.ModuleVersionId;
     }

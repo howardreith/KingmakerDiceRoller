@@ -13,6 +13,15 @@ whether the main descriptor matches the candidate or controller source. Raw
 object contents are not logged, and repeated rejection details remain
 deduplicated while the total rejection count continues increasing.
 
+Preview-continuity events distinguish session opening, same-owner rebinding,
+constructor-stage/deferred replacement, verified live application, and true
+stable-owner release. Live verification reports only stable Boolean facts:
+application generation, refresh-in-progress, pending replacement, same stable
+owner, rebound preview, controller state/preview identity, distribution
+identity/value match, and live unit-value match. `APPLY` is counted only after
+the controller's current generation passes all checks; matching detached objects
+are not sufficient.
+
 ## Log phrases
 
 Useful filters:
@@ -21,7 +30,9 @@ Useful filters:
 Kingmaker Dice Roller
 Contract:
 Character-creation context rejected:
-Fixed diagnostic array is active
+Fixed diagnostic array application verified against the live controller preview
+same-owner preview generation
+stable controller/source owner
 Restore point-buy allocator
 Enable failed closed
 remains enabled to preserve recovery hooks

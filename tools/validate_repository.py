@@ -16,8 +16,11 @@ REQUIRED = [
     'KingmakerDiceRoller.sln','LICENSE','PROJECT-STATE.md','README.md','THIRD-PARTY-NOTICES.md',
     'src/KingmakerDiceRoller/KingmakerDiceRoller.csproj',
     'src/KingmakerDiceRoller/CharacterCreation/MainCharacterIdentityRelation.cs',
+    'src/KingmakerDiceRoller/CharacterCreation/LivePreviewInspector.cs',
+    'src/KingmakerDiceRoller/CharacterCreation/LivePreviewObservation.cs',
     'tests/KingmakerDiceRoller.DomainTests/KingmakerDiceRoller.DomainTests.csproj',
     'tests/KingmakerDiceRoller.DomainTests/CharacterCreationContextPolicyTests.cs',
+    'tests/KingmakerDiceRoller.DomainTests/PreviewSessionContinuityTests.cs',
     'scripts/Common.ps1','scripts/Initialize-GamePath.ps1','scripts/Validate-Repository.ps1',
     'scripts/Test-SourceOracle.ps1','scripts/Test-Domain.ps1','scripts/Verify-KingmakerContracts.ps1',
     'scripts/Build-Local.ps1','scripts/Package.ps1','scripts/Validate-Package.ps1','scripts/Install.ps1','scripts/Uninstall.ps1',
@@ -194,7 +197,8 @@ def main():
     diagnostic=(ROOT/'src/KingmakerDiceRoller/Domain/DiagnosticArrays.cs').read_text(encoding='utf-8')
     require(re.search(r'16\s*,\s*15\s*,\s*14\s*,\s*12\s*,\s*10\s*,\s*8',diagnostic),'fixed diagnostic array missing')
     restore=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/PointBuyRestoreService.cs').read_text(encoding='utf-8')
-    require('session.Baseline.Budget' in restore and 'DistributionStartMethod.Invoke' in restore,'point-buy restore must use captured allocator budget')
+    require('PointBuyBaseline baseline = session.Baseline' in restore and 'new object[] { baseline.Budget }' in restore and 'DistributionStartMethod.Invoke' in restore,'point-buy restore must use the newest previews captured allocator budget')
+    require('preview.Refresh(contracts)' in restore and 'baseline.Values.Restore(session.Distribution, session.Unit' in restore,'point-buy restore must refresh once and then restore the newest session generation')
     require('25' not in restore,'point-buy restore may not hard-code 25 points')
     context=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/CharacterCreationContextPolicy.cs').read_text(encoding='utf-8')
     for token in ['CharGen','IsFirstLevel','IsMainCharacter','IsPlayerFaction','IsPet','IsPlayersEnemy']:
@@ -209,10 +213,27 @@ def main():
     require('mainCharacterResolved' in relation and 'controllerUnitResolved' in relation,'unresolved main-character identity must fail closed')
     liveness=(ROOT/'src/KingmakerDiceRoller/Domain/SessionLivenessTracker.cs').read_text(encoding='utf-8')
     manager=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/RollSessionManager.cs').read_text(encoding='utf-8')
+    session=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/RollSession.cs').read_text(encoding='utf-8')
+    decision=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/CharacterCreationContextDecision.cs').read_text(encoding='utf-8')
+    application=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/StatApplicationService.cs').read_text(encoding='utf-8')
+    live_preview=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/LivePreviewObservation.cs').read_text(encoding='utf-8')
+    preview_refresh=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/PreviewRefreshService.cs').read_text(encoding='utf-8')
+    coordinator=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/CharacterCreationCoordinator.cs').read_text(encoding='utf-8')
     contracts=(ROOT/'src/KingmakerDiceRoller/Integration/KingmakerContractResolver.cs').read_text(encoding='utf-8')
     main_source=(ROOT/'src/KingmakerDiceRoller/Main.cs').read_text(encoding='utf-8')
     require('UnconfirmedGraceSeconds' in liveness and 'ConfirmedGraceSeconds' in liveness,'session liveness grace policy missing')
-    require('ReleaseIfStale' in manager and 'Lifecycle.Abandon' in manager,'stale session release missing')
+    require('ReleaseIfStableOwnerLost' in manager and 'OwnsStableOwner(currentController, currentSourceUnit)' in manager and 'Lifecycle.Abandon' in manager,'stable-owner session release missing')
+    require('public object Controller { get; }' in session and 'public object StableOwner { get; }' in session,'immutable stable controller/source ownership missing')
+    require('public object Unit { get; private set; }' in session and 'Generation++' in session,'replaceable preview generation missing')
+    require('OwnsStableOwner(context.Controller, context.StableOwner)' in manager and 'different controller/source owner' in manager,'same-owner rebind/different-owner rejection missing')
+    require('Func<StatAssignment> assignmentFactory' in manager and manager.count('assignmentFactory()')==1,'assignment must be generated only when opening a session')
+    require('StableOwner' in decision and 'ControllerPreviewMatches' in decision,'accepted context must retain stable and transient controller identities')
+    require('TryStageCurrentGeneration' in application and '.Refresh(' not in application,'fixed-array staging must not recursively request preview refresh')
+    require('TryMarkLiveVerified' in application and 'InspectLive' in application,'application must verify the live controller generation')
+    for token in ['applicationGeneration','refreshInProgress','pendingReplacementObserved','sameStableOwner','reboundPreview','currentControllerStateMatches','currentControllerPreviewMatches','liveDistributionMatches','liveUnitValuesMatch']:
+        require(token in live_preview, f'live preview diagnostic missing: {token}')
+    require('refreshInProgress' in preview_refresh and 'nested refresh was refused' in preview_refresh and 'finally' in preview_refresh,'bounded preview refresh guard missing')
+    require('TryMarkLiveVerified' in coordinator and 'MaximumApplicationAttemptsPerGeneration' in coordinator,'bounded post-constructor live verification missing')
     require('RequireInstanceMember(controllerType, "State")' in contracts,'LevelUpController.State contract guard missing')
     require('RequireInstanceMember(controllerType, "Unit")' in contracts and 'RequireInstanceMember(controllerType, "Preview")' in contracts,'controller identity contracts missing')
     require('RequireInstanceMember(playerType, "MainCharacter")' in contracts and 'UnitReference.Value' in contracts,'Player.MainCharacter normalization contract missing')
@@ -221,7 +242,7 @@ def main():
 
     tests=(ROOT/'tests/KingmakerDiceRoller.DomainTests/Program.cs').read_text(encoding='utf-8')
     test_count=tests.count('new TestCase(')
-    require(test_count>=60,f'expected at least 60 C# behavior cases, found {test_count}')
+    require(test_count>=80,f'expected at least 80 C# behavior cases, found {test_count}')
     context_tests=(ROOT/'tests/KingmakerDiceRoller.DomainTests/CharacterCreationContextPolicyTests.cs').read_text(encoding='utf-8')
     for token in [
         'NoMainCharacterValuePermitsCandidate','DirectSameMainCharacterPermitsCandidate',
@@ -233,6 +254,21 @@ def main():
         'DiagnosticRelationDistinguishesSameAndDifferent'
     ]:
         require(token in context_tests, f'context regression behavior missing: {token}')
+    continuity_tests=(ROOT/'tests/KingmakerDiceRoller.DomainTests/PreviewSessionContinuityTests.cs').read_text(encoding='utf-8')
+    for token in [
+        'PreviewAOpensWithStableSource','PreviewBRebindsWithDifferentDescriptor',
+        'SameOwnerDoesNotReportAnotherUnit','ConstructorStageReplacementIsMarkedPending',
+        'DifferentStableOwnerIsRejected','AssignmentSurvivesThreeGenerations',
+        'RebindReplacesAllTransientObjectsAndBaseline','NestedPreviewRefreshIsRefused',
+        'ReentrantReplacementUsesOneRefresh','FinalLiveReplacementContainsFixedArray',
+        'ApplicationDoesNotRequestAnotherRefresh','CoordinatorCountsOnlyVerifiedLiveApplication',
+        'DetachedMatchingPreviewCannotVerify',
+        'SameOwnerReplacementDoesNotRelease','NullStateWithSameOwnerDoesNotRelease',
+        'MissingControllerEventuallyReleases','DifferentControllerEventuallyReleases',
+        'PointBuyRestoresNewestPreviewOnly','CompletionUsesCurrentLiveDistributionOnly',
+        'ExistingAndSpecialCreationPathsRemainExcluded','DiagnosticsDistinguishPreviewLifecycle'
+    ]:
+        require(token in continuity_tests, f'preview continuity behavior missing: {token}')
     python_tests=(ROOT/'tests/python/test_domain_reference.py').read_text(encoding='utf-8')
     python_count=len(re.findall(r'^\s+def test_',python_tests,re.MULTILINE))
     require(python_count>=25,f'expected at least 25 Python oracle cases, found {python_count}')

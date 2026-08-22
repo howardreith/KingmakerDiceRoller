@@ -13,7 +13,7 @@ namespace KingmakerDiceRoller.Domain
         public bool IsConfirmed => confirmed;
         public float MismatchSeconds => mismatchSeconds;
 
-        public bool Observe(bool observationSucceeded, bool ownsCurrentState, float deltaTime)
+        public bool Observe(bool observationSucceeded, bool ownsStableBuild, float deltaTime)
         {
             if (float.IsNaN(deltaTime) || float.IsInfinity(deltaTime) || deltaTime < 0f)
             {
@@ -25,7 +25,7 @@ namespace KingmakerDiceRoller.Domain
                 return false;
             }
 
-            if (ownsCurrentState)
+            if (ownsStableBuild)
             {
                 confirmed = true;
                 mismatchSeconds = 0f;

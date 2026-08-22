@@ -132,7 +132,7 @@ namespace KingmakerDiceRoller.DomainTests
                 sessions.TryOpenOrRebind(
                     decision,
                     CreateBaseline(),
-                    new StatAssignment(DiagnosticArrays.FixedPhaseTwoArray()),
+                    () => new StatAssignment(DiagnosticArrays.FixedPhaseTwoArray()),
                     out ignored,
                     out ignoredReason);
             }
@@ -150,7 +150,7 @@ namespace KingmakerDiceRoller.DomainTests
             AssertEx.True(sessions.TryOpenOrRebind(
                 accepted,
                 CreateBaseline(),
-                new StatAssignment(DiagnosticArrays.FixedPhaseTwoArray()),
+                () => new StatAssignment(DiagnosticArrays.FixedPhaseTwoArray()),
                 out opened,
                 out reason));
 
@@ -174,7 +174,7 @@ namespace KingmakerDiceRoller.DomainTests
             AssertEx.True(sessions.TryOpenOrRebind(
                 firstDecision,
                 CreateBaseline(),
-                fixedAssignment,
+                () => fixedAssignment,
                 out firstSession,
                 out reason));
 
@@ -186,7 +186,7 @@ namespace KingmakerDiceRoller.DomainTests
             AssertEx.True(sessions.TryOpenOrRebind(
                 rebuiltDecision,
                 CreateBaseline(),
-                replacementAssignment,
+                () => replacementAssignment,
                 out reboundSession,
                 out reason));
 

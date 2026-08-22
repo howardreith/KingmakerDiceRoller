@@ -20,6 +20,7 @@
   <ItemGroup>
     <Compile Include="AssertEx.cs" />
     <Compile Include="CharacterCreationContextPolicyTests.cs" />
+    <Compile Include="PreviewSessionContinuityTests.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="SequenceRandomSource.cs" />
     <Compile Include="..\..\src\KingmakerDiceRoller\Domain\*.cs">
@@ -28,14 +29,24 @@
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\AbilityValueSnapshot.cs"><Link>CharacterCreation\AbilityValueSnapshot.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\CharacterCreationContextDecision.cs"><Link>CharacterCreation\CharacterCreationContextDecision.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\CharacterCreationContextPolicy.cs"><Link>CharacterCreation\CharacterCreationContextPolicy.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\CharacterCreationCoordinator.cs"><Link>CharacterCreation\CharacterCreationCoordinator.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\KingmakerStatAccess.cs"><Link>CharacterCreation\KingmakerStatAccess.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\LivePreviewInspector.cs"><Link>CharacterCreation\LivePreviewInspector.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\LivePreviewObservation.cs"><Link>CharacterCreation\LivePreviewObservation.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\MainCharacterIdentityRelation.cs"><Link>CharacterCreation\MainCharacterIdentityRelation.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\PointBuyBaseline.cs"><Link>CharacterCreation\PointBuyBaseline.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\PointBudgetResolver.cs"><Link>CharacterCreation\PointBudgetResolver.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\PointBudgetTracker.cs"><Link>CharacterCreation\PointBudgetTracker.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\PointBuyRestoreService.cs"><Link>CharacterCreation\PointBuyRestoreService.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\PreviewRefreshService.cs"><Link>CharacterCreation\PreviewRefreshService.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RollSession.cs"><Link>CharacterCreation\RollSession.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RollSessionManager.cs"><Link>CharacterCreation\RollSessionManager.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RuntimeDiagnostics.cs"><Link>CharacterCreation\RuntimeDiagnostics.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\StatApplicationService.cs"><Link>CharacterCreation\StatApplicationService.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\Integration\ContractResolutionException.cs"><Link>Integration\ContractResolutionException.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\Integration\KingmakerContracts.cs"><Link>Integration\KingmakerContracts.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\Integration\ReflectionAccess.cs"><Link>Integration\ReflectionAccess.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\Logging\IModLogger.cs"><Link>Logging\IModLogger.cs</Link></Compile>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

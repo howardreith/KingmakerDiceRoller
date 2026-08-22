@@ -27,12 +27,20 @@ or ambiguous contract disables the mod rather than applying a partial patch.
 
 ### Character-creation coordinator
 
-The coordinator owns all stateful behavior. A `RollSession` binds one unit, one
-current `LevelUpState`, one current `StatsDistribution`, the original point-buy
-budget, the baseline values, and one immutable assignment. Preview rebuilds for
-the same unit rebind the same assignment; a second unit is rejected. UMM
-updates observe the exact live controller state and release stale ownership only
-after the domain-tested grace policy.
+The coordinator owns all stateful behavior. A `RollSession` binds immutable
+stable ownership (one `LevelUpController` instance and its source
+`UnitDescriptor`) separately from a replaceable preview generation (the current
+`LevelUpState`, preview descriptor, `StatsDistribution`, and point-buy
+baseline). Same-owner preview clones rebind the same immutable assignment; a
+different controller/source owner is rejected.
+
+The constructor postfix stages the array without requesting a second preview
+refresh. On a later UMM update, after Kingmaker has assigned the replacement
+state and replayed its actions, the coordinator verifies the actual controller
+state, preview, distribution values, and preview base values. A generation may
+receive only its constructor-stage write and one bounded live restage. UMM
+updates release ownership only after the stable controller/source relation has
+left the domain-tested grace period; exact state replacement is not an exit.
 
 ### Harmony boundary
 
@@ -48,11 +56,15 @@ level-up commit, respec, or save serialization.
 
 ### Point-buy restoration
 
-The original budget is captured from the actual `Start(int)` argument. Returning
-to point buy marks the session as restoring and invokes normal `Start(original)`;
-other mods' patches therefore execute. The returned distribution values are
-then synchronized to the preview unit. A failed restore rolls back to the owned
-array and keeps recovery hooks installed.
+Each preview generation captures its original budget from the actual
+`Start(int)` argument and its untouched baseline before the fixed array is
+staged. Returning to point buy marks the session as restoring and performs one
+guarded `UpdatePreview()`. A replacement constructed inside that call rebinds
+without fixed-array application. Normal `Start(original)` then runs against the
+newest distribution so other mods' patches execute, and the newest baseline is
+restored to the newest preview. A failed restore rolls the owned array back onto
+the newest live generation and keeps recovery hooks installed (or refuses to
+disable if that cannot be proven).
 
 ## Phase boundary
 

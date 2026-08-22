@@ -8,6 +8,7 @@ namespace KingmakerDiceRoller.CharacterCreation
         private readonly object sync = new object();
         private readonly Queue<string> recent = new Queue<string>();
         private readonly HashSet<string> observedRejectionDetails = new HashSet<string>(StringComparer.Ordinal);
+        private readonly HashSet<string> observedEventDetails = new HashSet<string>(StringComparer.Ordinal);
 
         public string Status { get; private set; } = "Not enabled.";
         public int AcceptedContexts { get; private set; }
@@ -56,6 +57,16 @@ namespace KingmakerDiceRoller.CharacterCreation
             {
                 ArraysApplied++;
                 AddRecent("APPLY " + detail);
+            }
+        }
+
+        public bool Event(string detail)
+        {
+            lock (sync)
+            {
+                if (!observedEventDetails.Add(detail)) return false;
+                AddRecent("EVENT " + detail);
+                return true;
             }
         }
 

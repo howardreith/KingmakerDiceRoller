@@ -18,6 +18,26 @@
 6. Preserve a copy of relevant UMM settings. Start with Bag of Tricks disabled
    for the first gate.
 
+## Focused preview-continuity gate
+
+Before repeating the full vanilla matrix, start a genuinely new custom main
+character from a fresh process with only Dice Roller enabled:
+
+1. Reach ability scores and confirm the live values are exactly `16, 15, 14,
+   12, 10, 8`.
+2. In UMM, confirm at least one accepted context and application, zero releases,
+   active fixed-session status, and a diagnostic saying the live controller
+   state/preview was verified.
+3. Confirm no same-owner preview reports `Another unit already owns`.
+4. Remain on the screen for ten seconds; confirm values and session remain.
+5. Navigate backward and forward once; confirm the same immutable array is
+   rebound to the replacement preview.
+6. Cancel to the main menu; confirm release increments only after the character
+   build ends.
+
+Stop and collect runtime evidence if any step fails. Do not advance to Gates
+A-E until this focused gate passes.
+
 ## Gate A — context isolation
 
 1. Launch the game and open an existing save.

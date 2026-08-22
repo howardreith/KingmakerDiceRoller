@@ -30,9 +30,10 @@ namespace KingmakerDiceRoller
             var budgetTracker = new PointBudgetTracker();
             var statAccess = new KingmakerStatAccess();
             var preview = new PreviewRefreshService();
+            var livePreview = new LivePreviewInspector(statAccess);
             var sessions = new RollSessionManager();
-            var application = new StatApplicationService(statAccess, preview, logger);
-            var restore = new PointBuyRestoreService(statAccess, preview, logger);
+            var application = new StatApplicationService(statAccess, livePreview, preview, logger);
+            var restore = new PointBuyRestoreService(statAccess, livePreview, preview, logger);
             coordinator = new CharacterCreationCoordinator(
                 new CharacterCreationContextPolicy(),
                 budgetTracker,

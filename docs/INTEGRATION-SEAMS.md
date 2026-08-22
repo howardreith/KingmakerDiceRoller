@@ -46,6 +46,20 @@ either direct descriptor identity or main-character identity with the
 controller source when the candidate is owned by that controller. A different
 main descriptor is rejected, and unresolved identity fails closed.
 
+`LevelUpController.UpdatePreview()` is synchronous but its object identity is
+not stable. It replaces `Preview`, invokes `new LevelUpState(Preview, mode)`,
+assigns the returned state only after that constructor (and its Harmony postfix)
+returns, then replays level-up actions. Preview descriptors are deserialized
+clones and differ by reference. `LevelUpController.Unit` remains the stable
+source descriptor across these generations.
+
+Accordingly, a session owns the exact controller/source pair and rebinds its
+state, preview, distribution, and baseline when another accepted constructor
+belongs to that pair. Fixed-array staging does not invoke `UpdatePreview()`.
+The actual controller state/preview and both value stores must agree before an
+application is recorded. Explicit refresh is reserved for point-buy restoration
+and has a nested-call guard.
+
 ## Why reflection is used
 
 Harmony still targets exact `MethodBase` objects, but the production code does
@@ -60,6 +74,11 @@ All three postfixes use `Priority.VeryLow`. In particular, the `Start(int)`
 postfix observes the final allocator call and records the actual budget. During
 point-buy restoration, normal modded allocator patches run before this mod's
 postfix suppresses fixed-array reapplication.
+
+The character-build controller sets `LevelUpController` to null from its hide
+and dispose lifecycle. Session liveness therefore follows controller/source
+identity and tolerates transient null or replaced `State`/`Preview` values while
+that stable pair remains active.
 
 ## Not patched
 

@@ -92,6 +92,13 @@ namespace KingmakerDiceRoller.CharacterCreation
                     BuildFacts(modeName, isFirstLevel, isMain, isPlayer, ownership, false, false, null, null));
             }
 
+            if (ownership.Controller == null || !ownership.UnitResolved || ownership.UnitDescriptor == null)
+            {
+                return CharacterCreationContextDecision.Reject(
+                    "The active character-build controller source identity is unavailable; stable ownership fails closed. " +
+                    BuildFacts(modeName, isFirstLevel, isMain, isPlayer, ownership, false, false, null, null));
+            }
+
             object mainDescriptor;
             string mainCharacterDetail;
             bool mainCharacterResolved = TryGetMainCharacterDescriptor(
@@ -146,10 +153,15 @@ namespace KingmakerDiceRoller.CharacterCreation
             }
 
             return CharacterCreationContextDecision.Accept(
+                ownership.Controller,
+                ownership.UnitDescriptor,
                 state,
                 stateUnit,
                 distribution,
                 acceptance + " " + facts,
+                ownership.StateMatches,
+                ownership.UnitMatches,
+                ownership.PreviewMatches,
                 relation);
         }
 
@@ -170,6 +182,7 @@ namespace KingmakerDiceRoller.CharacterCreation
                 observation.Detail = "LevelUpController is null.";
                 return observation;
             }
+            observation.Controller = controller;
 
             object currentState;
             observation.StateResolved = contracts.TryGetCurrentLevelUpState(out currentState);
@@ -363,6 +376,7 @@ namespace KingmakerDiceRoller.CharacterCreation
 
         private sealed class ControllerOwnershipObservation
         {
+            internal object Controller;
             internal bool StateResolved;
             internal bool StateMatches;
             internal bool UnitResolved;

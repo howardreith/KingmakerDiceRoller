@@ -5,19 +5,38 @@ namespace KingmakerDiceRoller.CharacterCreation
 {
     public sealed class PreviewRefreshService
     {
+        private bool refreshInProgress;
+
+        public bool IsRefreshInProgress => refreshInProgress;
+        public int RefreshCount { get; private set; }
+
         public void Refresh(KingmakerContracts contracts)
         {
-            object controller;
-            if (!contracts.TryGetLevelUpController(out controller))
+            if (refreshInProgress)
             {
-                throw new InvalidOperationException("Game.Instance.UI.CharacterBuildController.LevelUpController lookup failed.");
+                throw new InvalidOperationException("A preview refresh is already in progress; nested refresh was refused.");
             }
-            if (controller == null)
+
+            refreshInProgress = true;
+            try
             {
-                throw new InvalidOperationException("Game.Instance.UI.CharacterBuildController.LevelUpController is unavailable.");
+                object controller;
+                if (!contracts.TryGetLevelUpController(out controller))
+                {
+                    throw new InvalidOperationException("Game.Instance.UI.CharacterBuildController.LevelUpController lookup failed.");
+                }
+                if (controller == null)
+                {
+                    throw new InvalidOperationException("Game.Instance.UI.CharacterBuildController.LevelUpController is unavailable.");
+                }
+                contracts.PreviewRecalculateField.SetValue(controller, true);
+                contracts.PreviewUpdateMethod.Invoke(controller, null);
+                RefreshCount++;
             }
-            contracts.PreviewRecalculateField.SetValue(controller, true);
-            contracts.PreviewUpdateMethod.Invoke(controller, null);
+            finally
+            {
+                refreshInProgress = false;
+            }
         }
     }
 }

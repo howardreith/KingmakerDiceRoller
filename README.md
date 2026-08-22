@@ -18,12 +18,15 @@ against Howie's exact game assemblies and passes `docs/SMOKE-TEST.md`.
 - New main-character creation only.
 - Normal level-ups, companions, pets, enemies, pregens, mercenaries, and respec
   are rejected.
-- One explicit session owns one `LevelUpState` and one `StatsDistribution`.
-- UMM update observation releases canceled/completed ownership only after a
+- One explicit session owns a stable character-build controller/source pair and
+  rebinds its immutable assignment to each transient preview state and
+  distribution from that same owner.
+- UMM update observation verifies the actual live controller preview and
+  releases canceled/completed ownership only after the stable owner leaves a
   tested grace period; no extra Harmony lifecycle patch is added.
 - No `StatsDistribution.Add`/`Remove` or point-cost patching.
-- Return-to-point-buy calls the captured allocator budget, allowing other mods'
-  point-buy patches to resume.
+- Return-to-point-buy follows the newest preview and calls its captured
+  allocator budget, allowing other mods' point-buy patches to resume.
 - No save-owned custom content.
 - The install script validates an exact six-file package and transactionally
   restores the previous live directory if replacement fails.
