@@ -77,8 +77,10 @@ never use direct screen-coordinate drawing as the primary interface.
    passed at implementation commit `d6977dc484fcf951714cde6d446a050e4e1bd65a`.
    The exact six-file package was installed transactionally, the previous Dice
    Roller installation was backed up, no staging directory remained, and every
-   non-target mod fingerprint remained identical. This final evidence record
-   is followed by one clean provenance rerun before handoff.
+   non-target mod fingerprint remained identical. The clean provenance rerun
+   also passed at final evidence checkpoint
+   `695ba5fe17f0a23501ab9da4343c8228d3c66ac2`; its package and DLL were
+   byte-identical to the installed candidate.
 
 ## Commands and gates
 
@@ -118,6 +120,8 @@ other-mod fingerprints, and a clean-commit qualification rerun.
 
 - Current pushed implementation commit:
   `d6977dc484fcf951714cde6d446a050e4e1bd65a`.
-- Current phase: final evidence checkpoint and clean provenance rerun. No
-  product implementation phase remains; the next external gate is Howie's
-  consolidated human acceptance test.
+- Final pushed evidence checkpoint before this closeout record:
+  `695ba5fe17f0a23501ab9da4343c8228d3c66ac2`.
+- Current phase: overnight engineering complete. No product implementation
+  phase remains; the next external gate is Howie's consolidated human
+  acceptance test.
