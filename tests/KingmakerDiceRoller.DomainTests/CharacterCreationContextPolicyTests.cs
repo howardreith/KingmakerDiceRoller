@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using KingmakerDiceRoller.CharacterCreation;
 using KingmakerDiceRoller.Domain;
@@ -131,7 +132,8 @@ namespace KingmakerDiceRoller.DomainTests
                 string ignoredReason;
                 sessions.TryOpenOrRebind(
                     decision,
-                    CreateBaseline(),
+                    generation => CreatePristine(generation),
+                    generation => CreateRollback(generation),
                     () => new StatAssignment(DiagnosticArrays.FixedPhaseTwoArray()),
                     out ignored,
                     out ignoredReason);
@@ -149,7 +151,8 @@ namespace KingmakerDiceRoller.DomainTests
             string reason;
             AssertEx.True(sessions.TryOpenOrRebind(
                 accepted,
-                CreateBaseline(),
+                generation => CreatePristine(generation),
+                generation => CreateRollback(generation),
                 () => new StatAssignment(DiagnosticArrays.FixedPhaseTwoArray()),
                 out opened,
                 out reason));
@@ -173,7 +176,8 @@ namespace KingmakerDiceRoller.DomainTests
             string reason;
             AssertEx.True(sessions.TryOpenOrRebind(
                 firstDecision,
-                CreateBaseline(),
+                generation => CreatePristine(generation),
+                generation => CreateRollback(generation),
                 () => fixedAssignment,
                 out firstSession,
                 out reason));
@@ -185,7 +189,8 @@ namespace KingmakerDiceRoller.DomainTests
             var replacementAssignment = new StatAssignment(new RolledStatArray(new[] { 8, 10, 12, 14, 15, 16 }));
             AssertEx.True(sessions.TryOpenOrRebind(
                 rebuiltDecision,
-                CreateBaseline(),
+                generation => CreatePristine(generation),
+                generation => CreateRollback(generation),
                 () => replacementAssignment,
                 out reboundSession,
                 out reason));
@@ -280,14 +285,41 @@ namespace KingmakerDiceRoller.DomainTests
             };
         }
 
-        private static PointBuyBaseline CreateBaseline()
+        private static PristinePointBuyState CreatePristine(int generation)
         {
-            ConstructorInfo constructor = typeof(PointBuyBaseline).GetConstructor(
+            ConstructorInfo constructor = typeof(PristinePointBuyState).GetConstructor(
                 BindingFlags.Instance | BindingFlags.NonPublic,
                 null,
-                new[] { typeof(int), typeof(string), typeof(AbilityValueSnapshot) },
+                new[]
+                {
+                    typeof(int), typeof(string), typeof(int), typeof(AbilityValueSnapshot),
+                    typeof(bool), typeof(int), typeof(int)
+                },
                 null);
-            return (PointBuyBaseline)constructor.Invoke(new object[] { 25, "test budget", null });
+            return (PristinePointBuyState)constructor.Invoke(
+                new object[] { 25, "test budget", generation, CreateAbilitySnapshot(), true, 25, 25 });
+        }
+
+        private static GenerationRollbackSnapshot CreateRollback(int generation)
+        {
+            ConstructorInfo constructor = typeof(GenerationRollbackSnapshot).GetConstructor(
+                BindingFlags.Instance | BindingFlags.NonPublic,
+                null,
+                new[] { typeof(int), typeof(AbilityValueSnapshot), typeof(bool), typeof(int), typeof(int) },
+                null);
+            return (GenerationRollbackSnapshot)constructor.Invoke(
+                new object[] { generation, CreateAbilitySnapshot(), true, 25, 25 });
+        }
+
+        private static AbilityValueSnapshot CreateAbilitySnapshot()
+        {
+            ConstructorInfo constructor = typeof(AbilityValueSnapshot).GetConstructor(
+                BindingFlags.Instance | BindingFlags.NonPublic,
+                null,
+                new[] { typeof(int[]), typeof(int[]) },
+                null);
+            return (AbilityValueSnapshot)constructor.Invoke(
+                new object[] { Enumerable.Repeat(10, 6).ToArray(), Enumerable.Repeat(10, 6).ToArray() });
         }
 
         private static KingmakerContracts CreateContracts()
@@ -307,6 +339,8 @@ namespace KingmakerDiceRoller.DomainTests
                 typeof(FakeState).GetProperty("Unit", instance),
                 typeof(FakeState).GetProperty("StatsDistribution", instance),
                 typeof(FakeState).GetProperty("IsFirstLevel", instance),
+                null,
+                null,
                 null,
                 null,
                 null,

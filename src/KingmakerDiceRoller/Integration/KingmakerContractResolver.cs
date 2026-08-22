@@ -112,11 +112,18 @@ namespace KingmakerDiceRoller.Integration
                 throw new ContractResolutionException("StatsDistribution.StatValues is not an IDictionary-compatible contract.");
             }
 
-            MemberInfo totalPoints = ReflectionAccess.FindInstanceMember(statsDistributionType, "TotalPoints")
-                ?? ReflectionAccess.FindInstanceMember(statsDistributionType, "Points");
-            if (totalPoints != null && ReflectionAccess.GetMemberType(totalPoints) != typeof(int))
+            MemberInfo available = ReflectionAccess.RequireInstanceMember(statsDistributionType, "Available");
+            MemberInfo points = ReflectionAccess.RequireInstanceMember(statsDistributionType, "Points");
+            MemberInfo totalPoints = ReflectionAccess.RequireInstanceMember(statsDistributionType, "TotalPoints");
+            if (ReflectionAccess.GetMemberType(available) != typeof(bool) ||
+                ReflectionAccess.GetMemberType(points) != typeof(int) ||
+                ReflectionAccess.GetMemberType(totalPoints) != typeof(int) ||
+                !ReflectionAccess.CanWrite(available) ||
+                !ReflectionAccess.CanWrite(points) ||
+                !ReflectionAccess.CanWrite(totalPoints))
             {
-                totalPoints = null;
+                throw new ContractResolutionException(
+                    "StatsDistribution allocator state members must have exact writable Boolean/Int32 contracts.");
             }
 
             MemberInfo attributes = ReflectionAccess.RequireStaticMember(statTypeHelperType, "Attributes");
@@ -194,6 +201,7 @@ namespace KingmakerDiceRoller.Integration
             evidence.Add("MainCharacterPath=Game.Instance.Player.MainCharacter.Value.Descriptor");
             evidence.Add("ControllerIdentity=" + controllerType.FullName + ".Unit + Preview");
             evidence.Add("Preview=" + controllerType.FullName + ".m_RecalculatePreview + UpdatePreview()");
+            evidence.Add("AllocatorState=" + statsDistributionType.FullName + ".Available + Points + TotalPoints (writable)");
 
             return new KingmakerContracts(
                 gameAssembly,
@@ -212,6 +220,8 @@ namespace KingmakerDiceRoller.Integration
                 getStat,
                 baseValue,
                 statValues,
+                available,
+                points,
                 totalPoints,
                 abilityKeys,
                 gameInstance,

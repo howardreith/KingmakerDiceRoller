@@ -19,8 +19,16 @@ stable-owner release. Live verification reports only stable Boolean facts:
 application generation, refresh-in-progress, pending replacement, same stable
 owner, rebound preview, controller state/preview identity, distribution
 identity/value match, and live unit-value match. `APPLY` is counted only after
-the controller's current generation passes all checks; matching detached objects
-are not sufficient.
+the controller's current generation passes all checks, including allocator
+suppression; matching detached objects are not sufficient.
+
+Point-buy transitions report the immutable pristine capture generation, current
+preview generation, whether a replacement snapshot already contained the roll,
+session mode, observed allocator budget, live pristine distribution/unit/
+allocator matches, and stable-owner roll suppression. A successful transition
+uses `RESTORE` and states that pristine point buy was verified on the live
+preview. Rolled values plus a full available budget are a hard verification
+failure and are never reported as restored.
 
 ## Log phrases
 
@@ -34,6 +42,10 @@ Fixed diagnostic array application verified against the live controller preview
 same-owner preview generation
 stable controller/source owner
 Restore point-buy allocator
+Verified pristine point-buy state on the live preview
+pristineBaselineCaptured
+candidateBaselineContaminated
+rollSuppressedForStableOwner
 Enable failed closed
 remains enabled to preserve recovery hooks
 ```

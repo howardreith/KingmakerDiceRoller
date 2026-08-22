@@ -49,7 +49,7 @@ namespace KingmakerDiceRoller.UI
             }
 
             GUILayout.Space(6f);
-            GUI.enabled = coordinator.HasActiveSession;
+            GUI.enabled = coordinator.CanRestorePointBuy;
             if (GUILayout.Button("Return active roll session to point buy"))
             {
                 string error;

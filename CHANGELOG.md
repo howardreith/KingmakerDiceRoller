@@ -53,7 +53,7 @@
   `State` only after the patched constructor returns.
 - Replaced transient preview-descriptor ownership with immutable
   controller/source ownership and generation-aware rebinding of state, preview,
-  distribution, and captured point-buy baseline.
+  distribution, and generation-local rollback state.
 - Removed preview refresh from fixed-array staging, added a bounded one-restage
   protocol after Kingmaker action replay, and require verification against the
   controller's actual live state, preview, distribution, and base values before
@@ -68,6 +68,37 @@
 - Source-qualified 61 C# files, 86 compiled C# behavior cases, and 25 executed
   Python oracle cases; the exact production build completed with zero warnings
   and zero errors.
+- Recorded the successful fifth live gate: the exact fixed array was visible,
+  live-preview verification and ten-second stability passed, backward/forward
+  rebuilding retained one immutable assignment, and elf racial modifiers
+  remained separate from the base array.
+- Recorded successful cancellation/release and fresh-session creation, plus a
+  save/reload without Dice Roller that retained ordinary Kingmaker ability
+  values.
+- Recorded only a limited new-character entry smoke with Call of the Wild and
+  Bag of Tricks; this is not compatibility qualification.
+- Recorded the hard restoration failure in which the fixed values remained
+  while the complete point-buy budget returned, permitting an illegal
+  rolled-plus-point-buy hybrid.
+- Split the immutable first-generation `PristinePointBuyState` from the mutable
+  per-generation `GenerationRollbackSnapshot`, so a rolled replacement preview
+  cannot overwrite the user's legitimate point-buy origin.
+- Added explicit Roll, RestoringPointBuy, and durable PointBuy modes. Same-owner
+  rebuilds no longer reapply the fixed array after restoration, and the
+  completion postfix does not override point-buy mode.
+- Made roll mode disable the allocator explicitly and made restoration call the
+  observed allocator budget, restore the pristine allocation on the newest live
+  preview, and verify values plus allocator fields before succeeding.
+- Added explicit hybrid-state rejection, generation-local rollback, and
+  fail-closed disable/unload behavior when pristine restoration or rollback
+  cannot be proven.
+- Added exact allocator-field contracts and executable regressions for
+  non-default budgets/allocations, racial-modifier separation, live-generation
+  restoration, durable point-buy navigation, and recovery failure paths.
+- Source-qualified 64 C# files, 101 compiled C# behavior cases, and 25 Python
+  oracle cases; the exact repair build/package completed with zero warnings and
+  zero errors against Assembly-CSharp MVID
+  `07fa1e4d-8618-41b3-9b8d-faa17d3b26f7`.
 
-No runtime or compatibility qualification is claimed until the repaired
-new-character candidate passes the live fixed-array gate.
+No full runtime or compatibility qualification is claimed until pristine
+point-buy restoration and the remaining vanilla gates pass live testing.

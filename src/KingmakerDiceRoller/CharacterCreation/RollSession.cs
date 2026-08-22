@@ -13,7 +13,8 @@ namespace KingmakerDiceRoller.CharacterCreation
             object state,
             object unit,
             object distribution,
-            PointBuyBaseline baseline,
+            PristinePointBuyState pristinePointBuy,
+            GenerationRollbackSnapshot generationRollback,
             StatAssignment assignment,
             bool pendingReplacementObserved)
         {
@@ -22,7 +23,12 @@ namespace KingmakerDiceRoller.CharacterCreation
             State = state ?? throw new ArgumentNullException(nameof(state));
             Unit = unit ?? throw new ArgumentNullException(nameof(unit));
             Distribution = distribution ?? throw new ArgumentNullException(nameof(distribution));
-            Baseline = baseline ?? throw new ArgumentNullException(nameof(baseline));
+            PristinePointBuy = pristinePointBuy ?? throw new ArgumentNullException(nameof(pristinePointBuy));
+            GenerationRollback = generationRollback ?? throw new ArgumentNullException(nameof(generationRollback));
+            if (generationRollback.Generation != 1)
+            {
+                throw new ArgumentException("The first rollback snapshot must belong to generation 1.", nameof(generationRollback));
+            }
             Assignment = assignment ?? throw new ArgumentNullException(nameof(assignment));
             PendingReplacementObserved = pendingReplacementObserved;
             Generation = 1;
@@ -35,7 +41,8 @@ namespace KingmakerDiceRoller.CharacterCreation
         public object State { get; private set; }
         public object Unit { get; private set; }
         public object Distribution { get; private set; }
-        public PointBuyBaseline Baseline { get; private set; }
+        public PristinePointBuyState PristinePointBuy { get; }
+        public GenerationRollbackSnapshot GenerationRollback { get; private set; }
         public StatAssignment Assignment { get; }
         public RollSessionLifecycle Lifecycle { get; }
         public int Generation { get; private set; }
@@ -44,6 +51,7 @@ namespace KingmakerDiceRoller.CharacterCreation
         public int VerifiedGeneration { get; private set; }
         public int FailedGeneration { get; private set; }
         public bool PendingReplacementObserved { get; private set; }
+        public bool CandidateBaselineContaminated { get; private set; }
         public bool ReboundPreview => Generation > 1;
 
         public bool OwnsState(object state) => ReferenceEquals(State, state);
@@ -51,16 +59,30 @@ namespace KingmakerDiceRoller.CharacterCreation
         public bool OwnsUnit(object unit) => ReferenceEquals(Unit, unit);
         public bool OwnsStableOwner(object controller, object stableOwner) =>
             ReferenceEquals(Controller, controller) && ReferenceEquals(StableOwner, stableOwner);
-        public bool IsRestoringPointBuy => Lifecycle.State == RollSessionState.RestoringPointBuy;
+        public RollSessionMode Mode
+        {
+            get
+            {
+                if (Lifecycle.State == RollSessionState.RestoringPointBuy) return RollSessionMode.RestoringPointBuy;
+                if (Lifecycle.State == RollSessionState.PointBuyRestored) return RollSessionMode.PointBuy;
+                return RollSessionMode.Roll;
+            }
+        }
+
+        public bool IsRollMode => Mode == RollSessionMode.Roll;
+        public bool IsRestoringPointBuy => Mode == RollSessionMode.RestoringPointBuy;
+        public bool IsPointBuyMode => Mode == RollSessionMode.PointBuy;
+        public bool RollSuppressedForStableOwner => IsRestoringPointBuy || IsPointBuyMode;
+        public bool PristineBaselineCaptured => PristinePointBuy != null && PristinePointBuy.CapturedBeforeRollOwnership;
         public bool IsStaged => StagedGeneration == Generation;
         public bool IsApplied => Lifecycle.State == RollSessionState.Applied && VerifiedGeneration == Generation;
         public bool IsApplicationFailed => FailedGeneration == Generation;
 
         public bool TryBeginApplicationAttempt(out string error)
         {
-            if (IsRestoringPointBuy)
+            if (!IsRollMode)
             {
-                error = "The session is restoring point buy and cannot apply the fixed array.";
+                error = "The session is not in roll mode and cannot apply the fixed array.";
                 return false;
             }
             if (Lifecycle.State != RollSessionState.Active && Lifecycle.State != RollSessionState.Applied)
@@ -108,6 +130,20 @@ namespace KingmakerDiceRoller.CharacterCreation
             VerifiedGeneration = generation;
         }
 
+        public void BeginPointBuyRestore()
+        {
+            Lifecycle.BeginPointBuyRestore();
+        }
+
+        public void MarkPointBuyRestored(int generation)
+        {
+            RequireCurrentGeneration(generation);
+            Lifecycle.MarkPointBuyRestored();
+            StagedGeneration = 0;
+            VerifiedGeneration = 0;
+            FailedGeneration = 0;
+        }
+
         public void MarkApplicationFailed(int generation)
         {
             RequireCurrentGeneration(generation);
@@ -120,7 +156,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             object state,
             object unit,
             object distribution,
-            PointBuyBaseline baseline,
+            GenerationRollbackSnapshot generationRollback,
             bool pendingReplacementObserved)
         {
             if (!OwnsStableOwner(controller, stableOwner))
@@ -128,12 +164,22 @@ namespace KingmakerDiceRoller.CharacterCreation
                 throw new InvalidOperationException("A different controller/source owner cannot rebind this roll session.");
             }
 
+            int nextGeneration = Generation + 1;
+            if (generationRollback == null) throw new ArgumentNullException(nameof(generationRollback));
+            if (generationRollback.Generation != nextGeneration)
+            {
+                throw new ArgumentException(
+                    "The rollback snapshot does not belong to the replacement preview generation.",
+                    nameof(generationRollback));
+            }
+
             State = state ?? throw new ArgumentNullException(nameof(state));
             Unit = unit ?? throw new ArgumentNullException(nameof(unit));
             Distribution = distribution ?? throw new ArgumentNullException(nameof(distribution));
-            Baseline = baseline ?? throw new ArgumentNullException(nameof(baseline));
+            GenerationRollback = generationRollback;
             PendingReplacementObserved = pendingReplacementObserved;
-            Generation++;
+            Generation = nextGeneration;
+            CandidateBaselineContaminated = generationRollback.MatchesAssignment(Assignment.ToAssignedArray());
             ApplicationAttempts = 0;
             StagedGeneration = 0;
         }

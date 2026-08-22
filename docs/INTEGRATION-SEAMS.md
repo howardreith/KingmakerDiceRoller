@@ -15,6 +15,9 @@ Kingmaker.UnitLogic.Class.LevelUp.StatsDistribution
   Start(Int32) : Void
   IsComplete() : Boolean
   StatValues : IDictionary-compatible
+  Available : Boolean
+  Points : Int32
+  TotalPoints : Int32
 
 Kingmaker.UnitLogic.UnitDescriptor
   Stats.GetStat(StatType).BaseValue : Int32
@@ -54,11 +57,13 @@ clones and differ by reference. `LevelUpController.Unit` remains the stable
 source descriptor across these generations.
 
 Accordingly, a session owns the exact controller/source pair and rebinds its
-state, preview, distribution, and baseline when another accepted constructor
-belongs to that pair. Fixed-array staging does not invoke `UpdatePreview()`.
-The actual controller state/preview and both value stores must agree before an
-application is recorded. Explicit refresh is reserved for point-buy restoration
-and has a nested-call guard.
+state, preview, distribution, and generation rollback snapshot when another
+accepted constructor belongs to that pair. Its pristine first-generation
+point-buy origin and immutable assignment do not rebind. Fixed-array staging
+does not invoke `UpdatePreview()`. The actual controller state/preview, both
+value stores, and disabled allocator state must agree before an application is
+recorded. Explicit refresh is reserved for point-buy restoration and has a
+nested-call guard.
 
 ## Why reflection is used
 
@@ -71,9 +76,12 @@ rather than a partially working character creator.
 ## Ordering
 
 All three postfixes use `Priority.VeryLow`. In particular, the `Start(int)`
-postfix observes the final allocator call and records the actual budget. During
-point-buy restoration, normal modded allocator patches run before this mod's
-postfix suppresses fixed-array reapplication.
+postfix observes the final allocator call and records the actual budget. Exact
+2.1.7b IL shows that `Start(int)` sets `Available`, `Points`, and `TotalPoints`;
+it does not reset the six score values. During point-buy restoration, normal
+modded allocator patches run before this mod's postfix observes the restoring
+mode and leaves fixed-array staging suppressed. The pristine allocation is then
+restored and verified on the live preview.
 
 The character-build controller sets `LevelUpController` to null from its hide
 and dispose lifecycle. Session liveness therefore follows controller/source

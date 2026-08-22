@@ -18,13 +18,32 @@ namespace KingmakerDiceRoller.CharacterCreation
             int[] expectedValues,
             KingmakerContracts contracts)
         {
-            return Observe(session, expectedValues, expectedValues, contracts);
+            return Observe(session, expectedValues, expectedValues, false, 0, null, contracts);
         }
 
         public LivePreviewObservation Observe(
             RollSession session,
             int[] expectedDistributionValues,
             int[] expectedUnitValues,
+            KingmakerContracts contracts)
+        {
+            return Observe(
+                session,
+                expectedDistributionValues,
+                expectedUnitValues,
+                null,
+                null,
+                null,
+                contracts);
+        }
+
+        public LivePreviewObservation Observe(
+            RollSession session,
+            int[] expectedDistributionValues,
+            int[] expectedUnitValues,
+            bool? expectedAllocatorAvailable,
+            int? expectedRemainingPoints,
+            int? expectedTotalPoints,
             KingmakerContracts contracts)
         {
             if (session == null) throw new ArgumentNullException(nameof(session));
@@ -78,6 +97,32 @@ namespace KingmakerDiceRoller.CharacterCreation
                         statAccess.ReadUnitBaseValues(currentPreview, contracts));
                 }
 
+                bool allocatorStateMatches = true;
+                if (currentDistribution != null &&
+                    (expectedAllocatorAvailable.HasValue ||
+                     expectedRemainingPoints.HasValue ||
+                     expectedTotalPoints.HasValue))
+                {
+                    if (expectedAllocatorAvailable.HasValue)
+                    {
+                        allocatorStateMatches =
+                            statAccess.ReadDistributionAvailable(currentDistribution, contracts) ==
+                            expectedAllocatorAvailable.Value;
+                    }
+                    if (allocatorStateMatches && expectedRemainingPoints.HasValue)
+                    {
+                        allocatorStateMatches =
+                            statAccess.ReadDistributionPoints(currentDistribution, contracts) ==
+                            expectedRemainingPoints.Value;
+                    }
+                    if (allocatorStateMatches && expectedTotalPoints.HasValue)
+                    {
+                        allocatorStateMatches =
+                            statAccess.ReadDistributionTotalPoints(currentDistribution, contracts) ==
+                            expectedTotalPoints.Value;
+                    }
+                }
+
                 return new LivePreviewObservation(
                     true,
                     sameStableOwner,
@@ -86,6 +131,7 @@ namespace KingmakerDiceRoller.CharacterCreation
                     distributionMatches,
                     distributionValuesMatch,
                     unitValuesMatch,
+                    allocatorStateMatches,
                     null);
             }
             catch (Exception exception)
@@ -96,7 +142,7 @@ namespace KingmakerDiceRoller.CharacterCreation
 
         private static LivePreviewObservation Failed(string failure)
         {
-            return new LivePreviewObservation(false, false, false, false, false, false, false, failure);
+            return new LivePreviewObservation(false, false, false, false, false, false, false, false, failure);
         }
     }
 }

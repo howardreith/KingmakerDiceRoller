@@ -26,6 +26,41 @@ namespace KingmakerDiceRoller.CharacterCreation
             for (int index = 0; index < values.Length; index++) dictionary[contracts.AbilityStatKeys[index]] = values[index];
         }
 
+        public bool ReadDistributionAvailable(object distribution, KingmakerContracts contracts)
+        {
+            object value = ReflectionAccess.Read(contracts.DistributionAvailableMember, distribution);
+            if (!(value is bool)) throw new InvalidOperationException("StatsDistribution.Available is not Boolean.");
+            return (bool)value;
+        }
+
+        public int ReadDistributionPoints(object distribution, KingmakerContracts contracts)
+        {
+            return ReadDistributionInteger(contracts.DistributionPointsMember, distribution, "Points");
+        }
+
+        public int ReadDistributionTotalPoints(object distribution, KingmakerContracts contracts)
+        {
+            return ReadDistributionInteger(contracts.DistributionTotalPointsMember, distribution, "TotalPoints");
+        }
+
+        public void WriteDistributionAllocatorState(
+            object distribution,
+            bool available,
+            int remainingPoints,
+            int totalPoints,
+            KingmakerContracts contracts)
+        {
+            ReflectionAccess.Write(contracts.DistributionAvailableMember, distribution, available);
+            ReflectionAccess.Write(contracts.DistributionPointsMember, distribution, remainingPoints);
+            ReflectionAccess.Write(contracts.DistributionTotalPointsMember, distribution, totalPoints);
+        }
+
+        public void DisablePointBuyAllocator(object distribution, KingmakerContracts contracts)
+        {
+            ReflectionAccess.Write(contracts.DistributionAvailableMember, distribution, false);
+            ReflectionAccess.Write(contracts.DistributionPointsMember, distribution, 0);
+        }
+
         public int[] ReadUnitBaseValues(object unit, KingmakerContracts contracts)
         {
             object stats = ReflectionAccess.Read(contracts.UnitStatsMember, unit);
@@ -58,6 +93,13 @@ namespace KingmakerDiceRoller.CharacterCreation
             IDictionary dictionary = ReflectionAccess.Read(contracts.DistributionStatValuesMember, distribution) as IDictionary;
             if (dictionary == null) throw new InvalidOperationException("StatsDistribution.StatValues is unavailable.");
             return dictionary;
+        }
+
+        private static int ReadDistributionInteger(System.Reflection.MemberInfo member, object distribution, string name)
+        {
+            object value = ReflectionAccess.Read(member, distribution);
+            if (!(value is int)) throw new InvalidOperationException("StatsDistribution." + name + " is not Int32.");
+            return (int)value;
         }
 
         private static void RequireSix(int[] values)

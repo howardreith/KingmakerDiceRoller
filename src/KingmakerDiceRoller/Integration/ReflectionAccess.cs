@@ -55,6 +55,15 @@ namespace KingmakerDiceRoller.Integration
             throw new ArgumentException("Only fields and properties are supported.", nameof(member));
         }
 
+        internal static bool CanWrite(MemberInfo member)
+        {
+            PropertyInfo property = member as PropertyInfo;
+            if (property != null) return property.GetSetMethod(true) != null;
+            FieldInfo field = member as FieldInfo;
+            if (field != null) return !field.IsInitOnly && !field.IsLiteral;
+            return false;
+        }
+
         internal static object Read(MemberInfo member, object target)
         {
             PropertyInfo property = member as PropertyInfo;

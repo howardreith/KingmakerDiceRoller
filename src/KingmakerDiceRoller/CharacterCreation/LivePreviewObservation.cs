@@ -10,6 +10,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             bool currentStateDistributionMatches,
             bool liveDistributionValuesMatch,
             bool liveUnitValuesMatch,
+            bool liveAllocatorStateMatches,
             string failure)
         {
             ObservationSucceeded = observationSucceeded;
@@ -19,6 +20,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             CurrentStateDistributionMatches = currentStateDistributionMatches;
             LiveDistributionValuesMatch = liveDistributionValuesMatch;
             LiveUnitValuesMatch = liveUnitValuesMatch;
+            LiveAllocatorStateMatches = liveAllocatorStateMatches;
             Failure = failure;
         }
 
@@ -29,6 +31,7 @@ namespace KingmakerDiceRoller.CharacterCreation
         public bool CurrentStateDistributionMatches { get; }
         public bool LiveDistributionValuesMatch { get; }
         public bool LiveUnitValuesMatch { get; }
+        public bool LiveAllocatorStateMatches { get; }
         public string Failure { get; }
 
         public bool HasCurrentLiveBinding =>
@@ -41,7 +44,8 @@ namespace KingmakerDiceRoller.CharacterCreation
         public bool IsVerified =>
             HasCurrentLiveBinding &&
             LiveDistributionValuesMatch &&
-            LiveUnitValuesMatch;
+            LiveUnitValuesMatch &&
+            LiveAllocatorStateMatches;
 
         public string BuildFacts(RollSession session, bool refreshInProgress)
         {
@@ -54,7 +58,8 @@ namespace KingmakerDiceRoller.CharacterCreation
                 ", currentControllerPreviewMatches=" + BooleanText(CurrentControllerPreviewMatches) +
                 ", currentStateDistributionMatches=" + BooleanText(CurrentStateDistributionMatches) +
                 ", liveDistributionMatches=" + BooleanText(LiveDistributionValuesMatch) +
-                ", liveUnitValuesMatch=" + BooleanText(LiveUnitValuesMatch) + ".";
+                ", liveUnitValuesMatch=" + BooleanText(LiveUnitValuesMatch) +
+                ", liveAllocatorMatches=" + BooleanText(LiveAllocatorStateMatches) + ".";
         }
 
         private static string BooleanText(bool value)

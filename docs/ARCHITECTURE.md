@@ -30,9 +30,11 @@ or ambiguous contract disables the mod rather than applying a partial patch.
 The coordinator owns all stateful behavior. A `RollSession` binds immutable
 stable ownership (one `LevelUpController` instance and its source
 `UnitDescriptor`) separately from a replaceable preview generation (the current
-`LevelUpState`, preview descriptor, `StatsDistribution`, and point-buy
-baseline). Same-owner preview clones rebind the same immutable assignment; a
-different controller/source owner is rejected.
+`LevelUpState`, preview descriptor, `StatsDistribution`, and generation rollback
+snapshot). Same-owner preview clones rebind the same immutable assignment; a
+different controller/source owner is rejected. The legitimate point-buy origin
+is captured once, before the first rolled write, and is never replaced by a
+later preview generation.
 
 The constructor postfix stages the array without requesting a second preview
 refresh. On a later UMM update, after Kingmaker has assigned the replacement
@@ -56,19 +58,30 @@ level-up commit, respec, or save serialization.
 
 ### Point-buy restoration
 
-Each preview generation captures its original budget from the actual
-`Start(int)` argument and its untouched baseline before the fixed array is
-staged. Returning to point buy marks the session as restoring and performs one
-guarded `UpdatePreview()`. A replacement constructed inside that call rebinds
-without fixed-array application. Normal `Start(original)` then runs against the
-newest distribution so other mods' patches execute, and the newest baseline is
-restored to the newest preview. A failed restore rolls the owned array back onto
-the newest live generation and keeps recovery hooks installed (or refuses to
-disable if that cannot be proven).
+`PristinePointBuyState` captures the first generation's actual `Start(int)`
+budget and provenance, legitimate distribution/unit values, and allocator
+fields before roll mode writes anything. It is immutable for the stable build
+owner. `GenerationRollbackSnapshot` captures the current generation immediately
+before staging and may be replaced on each same-owner rebind; it repairs a
+failed transactional write but can never become the user-facing point-buy
+origin.
+
+Roll mode explicitly makes the allocator unavailable and owns completion.
+Returning to point buy enters `RestoringPointBuy` and performs one guarded
+`UpdatePreview()`. A replacement constructed inside that call rebinds without
+fixed-array application. Normal `Start(pristineBudget)` then runs against the
+newest distribution so other mods' patches execute, after which the pristine
+allocation and allocator fields are restored and verified against the live
+controller state/preview. Success enters durable `PointBuy` mode: later
+same-owner rebuilds do not reapply the roll and the completion postfix leaves
+ordinary allocator behavior alone. A rolled-array-plus-full-budget hybrid is an
+explicit verification failure. A failed restore returns the isolated roll to
+the newest live generation and keeps recovery hooks installed, or refuses to
+disable if that rollback cannot be proven.
 
 ## Phase boundary
 
 The current live candidate applies only the diagnostic array
 `16, 15, 14, 12, 10, 8`. Native character-generation controls, random rolling,
 assignment UI, history, persistence, and polished visuals are deliberately
-behind the fixed-array runtime gate.
+behind the pristine point-buy restoration runtime gate.

@@ -23,6 +23,8 @@ namespace KingmakerDiceRoller.Integration
             MethodInfo unitStatsGetStatMethod,
             MemberInfo statBaseValueMember,
             MemberInfo distributionStatValuesMember,
+            MemberInfo distributionAvailableMember,
+            MemberInfo distributionPointsMember,
             MemberInfo distributionTotalPointsMember,
             object[] abilityStatKeys,
             MemberInfo gameInstanceMember,
@@ -54,6 +56,8 @@ namespace KingmakerDiceRoller.Integration
             UnitStatsGetStatMethod = unitStatsGetStatMethod;
             StatBaseValueMember = statBaseValueMember;
             DistributionStatValuesMember = distributionStatValuesMember;
+            DistributionAvailableMember = distributionAvailableMember;
+            DistributionPointsMember = distributionPointsMember;
             DistributionTotalPointsMember = distributionTotalPointsMember;
             AbilityStatKeys = abilityStatKeys;
             GameInstanceMember = gameInstanceMember;
@@ -86,6 +90,8 @@ namespace KingmakerDiceRoller.Integration
         public MethodInfo UnitStatsGetStatMethod { get; }
         public MemberInfo StatBaseValueMember { get; }
         public MemberInfo DistributionStatValuesMember { get; }
+        public MemberInfo DistributionAvailableMember { get; }
+        public MemberInfo DistributionPointsMember { get; }
         public MemberInfo DistributionTotalPointsMember { get; }
         public object[] AbilityStatKeys { get; }
         public MemberInfo GameInstanceMember { get; }

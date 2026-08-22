@@ -10,8 +10,8 @@ a guarded **fixed-array** Kingmaker integration candidate using:
 16, 15, 14, 12, 10, 8
 ```
 
-It is intentionally not presented as runtime-qualified until it is built
-against Howie's exact game assemblies and passes `docs/SMOKE-TEST.md`.
+It is intentionally not presented as runtime-qualified until the repaired
+point-buy restoration and remaining vanilla gates pass `docs/SMOKE-TEST.md`.
 
 ## Safety model
 
@@ -25,8 +25,11 @@ against Howie's exact game assemblies and passes `docs/SMOKE-TEST.md`.
   releases canceled/completed ownership only after the stable owner leaves a
   tested grace period; no extra Harmony lifecycle patch is added.
 - No `StatsDistribution.Add`/`Remove` or point-cost patching.
-- Return-to-point-buy follows the newest preview and calls its captured
-  allocator budget, allowing other mods' point-buy patches to resume.
+- Roll mode disables the point-buy allocator; it never layers a live budget on
+  top of rolled values.
+- Return-to-point-buy follows the newest preview, calls the observed pristine
+  allocator budget, restores the first pre-roll allocation, and enters durable
+  point-buy mode for that build owner.
 - No save-owned custom content.
 - The install script validates an exact six-file package and transactionally
   restores the previous live directory if replacement fails.

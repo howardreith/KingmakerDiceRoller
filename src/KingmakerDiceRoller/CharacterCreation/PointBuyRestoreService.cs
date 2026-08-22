@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using KingmakerDiceRoller.Integration;
 using KingmakerDiceRoller.Logging;
 
@@ -23,27 +24,47 @@ namespace KingmakerDiceRoller.CharacterCreation
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public bool TryRestore(RollSession session, KingmakerContracts contracts, out string error)
+        public bool TryRestore(
+            RollSession session,
+            KingmakerContracts contracts,
+            out PointBuyRestoreObservation observation,
+            out string error)
         {
+            observation = null;
             if (session == null)
             {
                 error = null;
                 return true;
             }
 
+            if (session.IsPointBuyMode)
+            {
+                observation = ObserveRestoration(session, contracts);
+                error = observation.IsVerified
+                    ? null
+                    : "The durable point-buy session is no longer verified on the live preview.";
+                return observation.IsVerified;
+            }
+
+            if (!session.IsRollMode)
+            {
+                error = "The session is already restoring point buy.";
+                return false;
+            }
+
             try
             {
-                session.Lifecycle.BeginPointBuyRestore();
+                session.BeginPointBuyRestore();
 
                 // UpdatePreview may synchronously construct and bind a replacement preview. The
                 // constructor postfix rebinds this session while it remains in RestoringPointBuy.
                 preview.Refresh(contracts);
 
-                PointBuyBaseline baseline = session.Baseline;
+                PristinePointBuyState pristine = session.PristinePointBuy;
                 LivePreviewObservation binding = livePreview.Observe(
                     session,
-                    baseline.Values.DistributionValues,
-                    baseline.Values.UnitValues,
+                    pristine.Values.DistributionValues,
+                    pristine.Values.UnitValues,
                     contracts);
                 if (!binding.HasCurrentLiveBinding)
                 {
@@ -54,22 +75,34 @@ namespace KingmakerDiceRoller.CharacterCreation
 
                 contracts.DistributionStartMethod.Invoke(
                     session.Distribution,
-                    new object[] { baseline.Budget });
-                baseline.Values.Restore(session.Distribution, session.Unit, contracts, statAccess);
+                    new object[] { pristine.AllocatorBudget });
 
-                LivePreviewObservation restored = livePreview.Observe(
+                binding = livePreview.Observe(
                     session,
-                    baseline.Values.DistributionValues,
-                    baseline.Values.UnitValues,
+                    pristine.Values.DistributionValues,
+                    pristine.Values.UnitValues,
                     contracts);
-                if (!restored.IsVerified)
+                if (!binding.HasCurrentLiveBinding)
                 {
                     throw new InvalidOperationException(
-                        "The newest live preview did not retain its captured point-buy baseline. " +
-                        restored.BuildFacts(session, preview.IsRefreshInProgress));
+                        "Point buy cannot be restored because allocator restart left the session detached. " +
+                        binding.BuildFacts(session, preview.IsRefreshInProgress));
                 }
 
-                session.Lifecycle.MarkPointBuyRestored();
+                pristine.Restore(session.Distribution, session.Unit, contracts, statAccess);
+
+                observation = ObserveRestoration(session, contracts);
+                if (!observation.IsVerified)
+                {
+                    throw new InvalidOperationException(
+                        observation.HybridStateDetected
+                            ? "Restoration refused an illegal rolled-values-plus-full-budget hybrid. " +
+                                observation.BuildFacts(session, preview.IsRefreshInProgress)
+                            : "The newest live preview did not retain its pristine point-buy state. " +
+                                observation.BuildFacts(session, preview.IsRefreshInProgress));
+                }
+
+                session.MarkPointBuyRestored(session.Generation);
                 error = null;
                 return true;
             }
@@ -82,6 +115,7 @@ namespace KingmakerDiceRoller.CharacterCreation
                     int[] values = session.Assignment.ToAssignedArray();
                     statAccess.WriteDistributionValues(session.Distribution, values, contracts);
                     statAccess.WriteUnitBaseValues(session.Unit, values, contracts);
+                    statAccess.DisablePointBuyAllocator(session.Distribution, contracts);
                     LivePreviewObservation rollback = livePreview.Observe(session, values, contracts);
                     if (!rollback.IsVerified)
                     {
@@ -98,6 +132,38 @@ namespace KingmakerDiceRoller.CharacterCreation
                 error = exception.Message;
                 return false;
             }
+        }
+
+        private PointBuyRestoreObservation ObserveRestoration(
+            RollSession session,
+            KingmakerContracts contracts)
+        {
+            PristinePointBuyState pristine = session.PristinePointBuy;
+            LivePreviewObservation live = livePreview.Observe(
+                session,
+                pristine.Values.DistributionValues,
+                pristine.Values.UnitValues,
+                pristine.AllocatorAvailable,
+                pristine.RemainingPoints,
+                pristine.TotalPoints,
+                contracts);
+
+            int[] assignment = session.Assignment.ToAssignedArray();
+            bool rolledDistributionMatches = assignment.SequenceEqual(
+                statAccess.ReadDistributionValues(session.Distribution, contracts));
+            bool rolledUnitMatches = assignment.SequenceEqual(
+                statAccess.ReadUnitBaseValues(session.Unit, contracts));
+            bool available = statAccess.ReadDistributionAvailable(session.Distribution, contracts);
+            int remaining = statAccess.ReadDistributionPoints(session.Distribution, contracts);
+            int total = statAccess.ReadDistributionTotalPoints(session.Distribution, contracts);
+            // A zero-point allocator has no spendable pool to layer onto a roll.
+            // Treat only a positive, completely unspent pool as the illegal hybrid.
+            bool fullBudget = available && total > 0 && remaining == total;
+            return new PointBuyRestoreObservation(
+                live,
+                rolledDistributionMatches,
+                rolledUnitMatches,
+                fullBudget);
         }
     }
 }

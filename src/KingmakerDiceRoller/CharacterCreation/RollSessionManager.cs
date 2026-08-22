@@ -16,14 +16,16 @@ namespace KingmakerDiceRoller.CharacterCreation
 
         public bool TryOpenOrRebind(
             CharacterCreationContextDecision context,
-            PointBuyBaseline baseline,
+            Func<int, PristinePointBuyState> pristineFactory,
+            Func<int, GenerationRollbackSnapshot> rollbackFactory,
             Func<StatAssignment> assignmentFactory,
             out RollSession session,
             out string reason)
         {
             if (context == null) throw new ArgumentNullException(nameof(context));
             if (!context.Accepted) throw new ArgumentException("Only an accepted context can own a roll session.", nameof(context));
-            if (baseline == null) throw new ArgumentNullException(nameof(baseline));
+            if (pristineFactory == null) throw new ArgumentNullException(nameof(pristineFactory));
+            if (rollbackFactory == null) throw new ArgumentNullException(nameof(rollbackFactory));
             if (assignmentFactory == null) throw new ArgumentNullException(nameof(assignmentFactory));
 
             lock (sync)
@@ -31,6 +33,10 @@ namespace KingmakerDiceRoller.CharacterCreation
                 bool pendingReplacement = !context.ControllerStateMatches && context.ControllerPreviewMatches;
                 if (active == null)
                 {
+                    PristinePointBuyState pristine = pristineFactory(1);
+                    if (pristine == null) throw new InvalidOperationException("The pristine point-buy factory returned null.");
+                    GenerationRollbackSnapshot rollback = rollbackFactory(1);
+                    if (rollback == null) throw new InvalidOperationException("The rollback snapshot factory returned null.");
                     StatAssignment assignment = assignmentFactory();
                     if (assignment == null) throw new InvalidOperationException("The assignment factory returned null.");
                     active = new RollSession(
@@ -39,7 +45,8 @@ namespace KingmakerDiceRoller.CharacterCreation
                         context.State,
                         context.Unit,
                         context.Distribution,
-                        baseline,
+                        pristine,
+                        rollback,
                         assignment,
                         pendingReplacement);
                     liveness.Reset();
@@ -59,13 +66,16 @@ namespace KingmakerDiceRoller.CharacterCreation
                     !active.OwnsUnit(context.Unit) ||
                     !active.OwnsDistribution(context.Distribution))
                 {
+                    int replacementGeneration = active.Generation + 1;
+                    GenerationRollbackSnapshot rollback = rollbackFactory(replacementGeneration);
+                    if (rollback == null) throw new InvalidOperationException("The rollback snapshot factory returned null.");
                     active.Rebind(
                         context.Controller,
                         context.StableOwner,
                         context.State,
                         context.Unit,
                         context.Distribution,
-                        baseline,
+                        rollback,
                         pendingReplacement);
                     reason = "Rebound the existing array to same-owner preview generation " + active.Generation + ".";
                 }

@@ -69,7 +69,7 @@ namespace KingmakerDiceRoller.Domain
 
         public void Abandon()
         {
-            if (State == RollSessionState.Completed || State == RollSessionState.PointBuyRestored)
+            if (State == RollSessionState.Completed || State == RollSessionState.Abandoned)
             {
                 return;
             }

@@ -34,13 +34,17 @@ namespace KingmakerDiceRoller.CharacterCreation
             int generation = session.Generation;
             object distribution = session.Distribution;
             object unit = session.Unit;
-            AbilityValueSnapshot before = null;
+            GenerationRollbackSnapshot rollback = session.GenerationRollback;
             try
             {
-                before = AbilityValueSnapshot.Capture(distribution, unit, contracts, statAccess);
+                if (rollback == null || rollback.Generation != generation)
+                {
+                    throw new InvalidOperationException("The current preview generation has no rollback snapshot.");
+                }
                 int[] values = session.Assignment.ToAssignedArray();
                 statAccess.WriteDistributionValues(distribution, values, contracts);
                 statAccess.WriteUnitBaseValues(unit, values, contracts);
+                statAccess.DisablePointBuyAllocator(distribution, contracts);
                 if (generation != session.Generation ||
                     !ReferenceEquals(distribution, session.Distribution) ||
                     !ReferenceEquals(unit, session.Unit))
@@ -49,9 +53,12 @@ namespace KingmakerDiceRoller.CharacterCreation
                 }
 
                 if (!values.SequenceEqual(statAccess.ReadDistributionValues(distribution, contracts)) ||
-                    !values.SequenceEqual(statAccess.ReadUnitBaseValues(unit, contracts)))
+                    !values.SequenceEqual(statAccess.ReadUnitBaseValues(unit, contracts)) ||
+                    statAccess.ReadDistributionAvailable(distribution, contracts) ||
+                    statAccess.ReadDistributionPoints(distribution, contracts) != 0)
                 {
-                    throw new InvalidOperationException("The staged preview objects did not retain the fixed assignment.");
+                    throw new InvalidOperationException(
+                        "The staged preview objects did not retain the fixed assignment with point buy disabled.");
                 }
 
                 session.MarkApplicationStaged(generation);
@@ -63,7 +70,7 @@ namespace KingmakerDiceRoller.CharacterCreation
                 logger.Exception("Stage rolled ability array for preview generation " + generation, exception);
                 try
                 {
-                    before?.Restore(distribution, unit, contracts, statAccess);
+                    rollback?.Restore(distribution, unit, contracts, statAccess);
                 }
                 catch (Exception rollbackException)
                 {
@@ -114,6 +121,15 @@ namespace KingmakerDiceRoller.CharacterCreation
             if (session == null || !session.IsApplied || !session.OwnsDistribution(distribution)) return false;
             LivePreviewObservation observation = InspectLive(session, contracts);
             return observation.IsVerified;
+        }
+
+        public void SuppressPointBuyAllocator(
+            RollSession session,
+            object distribution,
+            KingmakerContracts contracts)
+        {
+            if (session == null || !session.IsRollMode || !session.OwnsDistribution(distribution)) return;
+            statAccess.DisablePointBuyAllocator(distribution, contracts);
         }
 
         public bool RefreshInProgress => previewRefresh.IsRefreshInProgress;

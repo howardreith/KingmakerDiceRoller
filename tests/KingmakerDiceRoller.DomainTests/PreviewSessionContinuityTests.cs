@@ -70,7 +70,8 @@ namespace KingmakerDiceRoller.DomainTests
             string reason;
             AssertEx.True(environment.Sessions.TryOpenOrRebind(
                 decision,
-                environment.CaptureBaseline(previewB, 25, "replacement budget"),
+                generation => environment.CapturePristine(previewB, 25, "unexpected replacement pristine", generation),
+                generation => environment.CaptureRollback(previewB, generation),
                 () => environment.Assignment,
                 out session,
                 out reason), reason);
@@ -105,7 +106,8 @@ namespace KingmakerDiceRoller.DomainTests
             string reason;
             bool opened = environment.Sessions.TryOpenOrRebind(
                 decision,
-                environment.CaptureBaseline(differentState, 25, "different owner"),
+                generation => environment.CapturePristine(differentState, 25, "different owner", generation),
+                generation => environment.CaptureRollback(differentState, generation),
                 () => environment.Assignment,
                 out ignored,
                 out reason);
@@ -146,23 +148,123 @@ namespace KingmakerDiceRoller.DomainTests
             AssertEx.Equal(3, session.Generation);
         }
 
-        internal static void RebindReplacesAllTransientObjectsAndBaseline()
+        internal static void RebindReplacesTransientObjectsAndRollbackButPreservesPristine()
         {
             TestEnvironment environment = TestEnvironment.Create();
             FakeState previewA = environment.NewState(9);
             RollSession session = environment.Open(previewA);
-            PointBuyBaseline firstBaseline = session.Baseline;
+            PristinePointBuyState pristine = session.PristinePointBuy;
+            GenerationRollbackSnapshot firstRollback = session.GenerationRollback;
             FakeState previewB = environment.NewReplacementState(previewA, 11);
-            PointBuyBaseline secondBaseline = environment.CaptureBaseline(previewB, 20, "replacement budget");
-            session = environment.Rebind(previewB, secondBaseline, () => environment.Assignment);
+            environment.StatAccess.WriteDistributionValues(previewB.StatsDistribution, FixedValues, environment.Contracts);
+            environment.StatAccess.WriteUnitBaseValues(previewB.Unit, FixedValues, environment.Contracts);
+            session = environment.Rebind(previewB, () => environment.Assignment);
 
             AssertEx.True(ReferenceEquals(previewB, session.State));
             AssertEx.True(ReferenceEquals(previewB.Unit, session.Unit));
             AssertEx.True(ReferenceEquals(previewB.StatsDistribution, session.Distribution));
-            AssertEx.True(!ReferenceEquals(firstBaseline, session.Baseline));
-            AssertEx.True(ReferenceEquals(secondBaseline, session.Baseline));
-            AssertEx.Equal(20, session.Baseline.Budget);
-            AssertEx.SequenceEqual(Enumerable.Repeat(11, 6), session.Baseline.Values.UnitValues);
+            AssertEx.True(ReferenceEquals(pristine, session.PristinePointBuy));
+            AssertEx.True(!ReferenceEquals(firstRollback, session.GenerationRollback));
+            AssertEx.Equal(2, session.GenerationRollback.Generation);
+            AssertEx.SequenceEqual(FixedValues, session.GenerationRollback.Values.UnitValues);
+            AssertEx.Equal(25, session.PristinePointBuy.AllocatorBudget);
+            AssertEx.SequenceEqual(Enumerable.Repeat(9, 6), session.PristinePointBuy.Values.UnitValues);
+            AssertEx.True(session.CandidateBaselineContaminated);
+        }
+
+        internal static void FirstPreviewCapturesPristinePointBuyOrigin()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            FakeState preview = environment.NewState(10);
+            int[] allocation = { 12, 11, 10, 9, 8, 7 };
+            environment.StatAccess.WriteDistributionValues(preview.StatsDistribution, allocation, environment.Contracts);
+            environment.StatAccess.WriteUnitBaseValues(preview.Unit, allocation, environment.Contracts);
+            preview.StatsDistribution.SetAllocatorState(true, 13, 31);
+
+            RollSession session = environment.Open(preview, 31, "captured non-default budget");
+
+            AssertEx.True(session.PristineBaselineCaptured);
+            AssertEx.Equal(1, session.PristinePointBuy.CapturedGeneration);
+            AssertEx.Equal(31, session.PristinePointBuy.AllocatorBudget);
+            AssertEx.Equal("captured non-default budget", session.PristinePointBuy.BudgetSource);
+            AssertEx.SequenceEqual(allocation, session.PristinePointBuy.Values.DistributionValues);
+            AssertEx.SequenceEqual(allocation, session.PristinePointBuy.Values.UnitValues);
+            AssertEx.True(session.PristinePointBuy.AllocatorAvailable);
+            AssertEx.Equal(13, session.PristinePointBuy.RemainingPoints);
+            AssertEx.Equal(31, session.PristinePointBuy.TotalPoints);
+        }
+
+        internal static void FixedStagingDoesNotMutatePristineOrigin()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            FakeState preview = environment.NewState(10);
+            RollSession session = environment.Open(preview);
+            string error;
+
+            AssertEx.True(environment.Application.TryStageCurrentGeneration(
+                session,
+                environment.Contracts,
+                out error), error);
+
+            AssertEx.SequenceEqual(Enumerable.Repeat(10, 6), session.PristinePointBuy.Values.DistributionValues);
+            AssertEx.SequenceEqual(Enumerable.Repeat(10, 6), session.PristinePointBuy.Values.UnitValues);
+            AssertEx.SequenceEqual(FixedValues, environment.ReadDistribution(preview));
+            AssertEx.SequenceEqual(FixedValues, environment.ReadUnit(preview.Unit));
+            AssertEx.True(!preview.StatsDistribution.Available);
+            AssertEx.Equal(0, preview.StatsDistribution.Points);
+        }
+
+        internal static void SameOwnerRebindNeverRecapturesPristineOrigin()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            FakeState previewA = environment.NewState(10);
+            RollSession session = environment.Open(previewA);
+            PristinePointBuyState pristine = session.PristinePointBuy;
+            FakeState previewB = environment.NewReplacementState(previewA, 10);
+            environment.StatAccess.WriteDistributionValues(previewB.StatsDistribution, FixedValues, environment.Contracts);
+            environment.StatAccess.WriteUnitBaseValues(previewB.Unit, FixedValues, environment.Contracts);
+            int pristineFactoryCalls = 0;
+            CharacterCreationContextDecision decision = environment.Evaluate(previewB, FakeMode.CharGen);
+            string reason;
+
+            AssertEx.True(environment.Sessions.TryOpenOrRebind(
+                decision,
+                generation =>
+                {
+                    pristineFactoryCalls++;
+                    return environment.CapturePristine(previewB, 99, "contaminated replacement", generation);
+                },
+                generation => environment.CaptureRollback(previewB, generation),
+                () => new StatAssignment(new RolledStatArray(Enumerable.Repeat(8, 6))),
+                out session,
+                out reason), reason);
+
+            AssertEx.Equal(0, pristineFactoryCalls);
+            AssertEx.True(ReferenceEquals(pristine, session.PristinePointBuy));
+            AssertEx.SequenceEqual(Enumerable.Repeat(10, 6), session.PristinePointBuy.Values.UnitValues);
+            AssertEx.SequenceEqual(FixedValues, session.GenerationRollback.Values.UnitValues);
+            AssertEx.True(session.CandidateBaselineContaminated);
+        }
+
+        internal static void GenerationRollbackChangesIndependentlyFromPristineOrigin()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            FakeState previewA = environment.NewState(10);
+            RollSession session = environment.Open(previewA);
+            PristinePointBuyState pristine = session.PristinePointBuy;
+            GenerationRollbackSnapshot rollbackA = session.GenerationRollback;
+            FakeState previewB = environment.NewReplacementState(previewA, 11);
+            previewB.StatsDistribution.SetAllocatorState(true, 7, 29);
+
+            session = environment.Rebind(previewB);
+
+            AssertEx.True(ReferenceEquals(pristine, session.PristinePointBuy));
+            AssertEx.True(!ReferenceEquals(rollbackA, session.GenerationRollback));
+            AssertEx.Equal(2, session.GenerationRollback.Generation);
+            AssertEx.SequenceEqual(Enumerable.Repeat(11, 6), session.GenerationRollback.Values.DistributionValues);
+            AssertEx.Equal(7, session.GenerationRollback.RemainingPoints);
+            AssertEx.Equal(29, session.GenerationRollback.TotalPoints);
+            AssertEx.SequenceEqual(Enumerable.Repeat(10, 6), pristine.Values.DistributionValues);
         }
 
         internal static void NestedPreviewRefreshIsRefused()
@@ -360,7 +462,12 @@ namespace KingmakerDiceRoller.DomainTests
                 environment.Controller.State = previewB;
             };
 
-            AssertEx.True(environment.Restore.TryRestore(session, environment.Contracts, out error), error);
+            PointBuyRestoreObservation restoration;
+            AssertEx.True(environment.Restore.TryRestore(
+                session,
+                environment.Contracts,
+                out restoration,
+                out error), error);
             AssertEx.True(previewB != null);
             AssertEx.SequenceEqual(FixedValues, environment.ReadUnit(previewA.Unit));
             AssertEx.SequenceEqual(Enumerable.Repeat(10, 6), environment.ReadUnit(previewB.Unit));
@@ -368,7 +475,307 @@ namespace KingmakerDiceRoller.DomainTests
             AssertEx.Equal(25, previewB.StatsDistribution.LastStartBudget);
             AssertEx.Equal(0, previewA.StatsDistribution.StartCalls);
             AssertEx.Equal(RollSessionState.PointBuyRestored, session.Lifecycle.State);
+            AssertEx.True(restoration.IsVerified);
             AssertEx.Equal(1, environment.PreviewRefresh.RefreshCount);
+        }
+
+        internal static void PointBuyRestoresNonDefaultBudgetAndAllocation()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            FakeState previewA = environment.NewState(10);
+            int[] pristineValues = { 12, 11, 10, 9, 8, 7 };
+            environment.StatAccess.WriteDistributionValues(previewA.StatsDistribution, pristineValues, environment.Contracts);
+            environment.StatAccess.WriteUnitBaseValues(previewA.Unit, pristineValues, environment.Contracts);
+            previewA.StatsDistribution.SetAllocatorState(true, 13, 31);
+            RollSession session = environment.Open(previewA, 31, "captured custom allocator");
+            StageAndVerify(environment, session);
+
+            FakeState previewB = null;
+            environment.Controller.OnUpdatePreview = () =>
+            {
+                previewB = environment.NewReplacementState(previewA, 10);
+                session = environment.Rebind(previewB);
+                environment.Controller.State = previewB;
+            };
+
+            PointBuyRestoreObservation observation;
+            string error;
+            AssertEx.True(environment.Restore.TryRestore(
+                session,
+                environment.Contracts,
+                out observation,
+                out error), error);
+
+            AssertEx.SequenceEqual(pristineValues, environment.ReadDistribution(previewB));
+            AssertEx.SequenceEqual(pristineValues, environment.ReadUnit(previewB.Unit));
+            AssertEx.Equal(31, previewB.StatsDistribution.LastStartBudget);
+            AssertEx.True(previewB.StatsDistribution.Available);
+            AssertEx.Equal(13, previewB.StatsDistribution.Points);
+            AssertEx.Equal(31, previewB.StatsDistribution.TotalPoints);
+            AssertEx.True(observation.IsVerified);
+            AssertEx.True(!observation.RolledAssignmentStillPresent);
+            AssertEx.Equal(RollSessionMode.PointBuy, session.Mode);
+        }
+
+        internal static void HybridRolledValuesAndFullBudgetCannotVerify()
+        {
+            var live = new LivePreviewObservation(
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true,
+                null);
+            var observation = new PointBuyRestoreObservation(live, true, true, true);
+
+            AssertEx.True(observation.HybridStateDetected);
+            AssertEx.True(!observation.IsVerified);
+        }
+
+        internal static void ZeroBudgetPristineAssignmentIsNotMisclassifiedAsHybrid()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            FakeState preview = environment.NewState(10);
+            environment.StatAccess.WriteDistributionValues(preview.StatsDistribution, FixedValues, environment.Contracts);
+            environment.StatAccess.WriteUnitBaseValues(preview.Unit, FixedValues, environment.Contracts);
+            preview.StatsDistribution.SetAllocatorState(true, 0, 0);
+            RollSession session = environment.Open(preview, 0, "captured zero-point allocator");
+            StageAndVerify(environment, session);
+            PointBuyRestoreObservation observation;
+            string error;
+
+            AssertEx.True(environment.Restore.TryRestore(
+                session,
+                environment.Contracts,
+                out observation,
+                out error), error);
+
+            AssertEx.True(observation.RolledAssignmentStillPresent);
+            AssertEx.True(!observation.FullAllocatorBudgetAvailable);
+            AssertEx.True(!observation.HybridStateDetected);
+            AssertEx.True(observation.IsVerified);
+            AssertEx.Equal(RollSessionMode.PointBuy, session.Mode);
+        }
+
+        internal static void RacialModifiersRemainSeparateFromRestoredBaseValues()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            FakeState preview = environment.NewState(10);
+            RollSession session = environment.Open(preview);
+            StageAndVerify(environment, session);
+            preview.Unit.Stats.SetModifiers(new[] { 0, 2, -2, 2, 0, 0 });
+
+            PointBuyRestoreObservation observation;
+            string error;
+            AssertEx.True(environment.Restore.TryRestore(
+                session,
+                environment.Contracts,
+                out observation,
+                out error), error);
+
+            AssertEx.SequenceEqual(Enumerable.Repeat(10, 6), environment.ReadUnit(preview.Unit));
+            AssertEx.SequenceEqual(new[] { 10, 12, 8, 12, 10, 10 }, preview.Unit.Stats.ReadDisplayedValues());
+            AssertEx.SequenceEqual(Enumerable.Repeat(10, 6), session.PristinePointBuy.Values.UnitValues);
+            AssertEx.SequenceEqual(FixedValues, session.Assignment.ToAssignedArray());
+        }
+
+        internal static void PointBuyModeSurvivesSameOwnerRebuildWithoutRestaging()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            FakeState previewA = environment.NewState(10);
+            var tracker = new PointBudgetTracker();
+            tracker.Record(previewA.StatsDistribution, 25);
+            var diagnostics = new RuntimeDiagnostics();
+            CharacterCreationCoordinator coordinator = environment.CreateCoordinator(tracker, diagnostics);
+            coordinator.OnLevelUpStateConstructed(previewA, previewA.Unit, FakeMode.CharGen);
+            coordinator.Update(0.1f);
+
+            FakeState previewB = null;
+            environment.Controller.OnUpdatePreview = () =>
+            {
+                previewB = environment.NewReplacementState(previewA, 10);
+                tracker.Record(previewB.StatsDistribution, 25);
+                coordinator.OnLevelUpStateConstructed(previewB, previewB.Unit, FakeMode.CharGen);
+                environment.Controller.State = previewB;
+            };
+            string error;
+            AssertEx.True(coordinator.TryRestorePointBuy(out error), error);
+            AssertEx.Equal(RollSessionMode.PointBuy, environment.Sessions.Active.Mode);
+
+            environment.Controller.OnUpdatePreview = null;
+            FakeState previewC = environment.NewReplacementState(previewB, 10);
+            tracker.Record(previewC.StatsDistribution, 25);
+            coordinator.OnLevelUpStateConstructed(previewC, previewC.Unit, FakeMode.CharGen);
+            environment.Controller.State = previewC;
+            coordinator.Update(0.1f);
+
+            AssertEx.Equal(3, environment.Sessions.Active.Generation);
+            AssertEx.Equal(RollSessionMode.PointBuy, environment.Sessions.Active.Mode);
+            AssertEx.True(environment.Sessions.Active.RollSuppressedForStableOwner);
+            AssertEx.SequenceEqual(Enumerable.Repeat(10, 6), environment.ReadDistribution(previewC));
+            AssertEx.SequenceEqual(Enumerable.Repeat(10, 6), environment.ReadUnit(previewC.Unit));
+            AssertEx.True(previewC.StatsDistribution.Available);
+            AssertEx.Equal(25, previewC.StatsDistribution.Points);
+        }
+
+        internal static void PointBuyModeDoesNotForceCompletionOrAllocatorRestart()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            FakeState preview = environment.NewState(10);
+            RollSession session = environment.Open(preview);
+            StageAndVerify(environment, session);
+            PointBuyRestoreObservation observation;
+            string error;
+            AssertEx.True(environment.Restore.TryRestore(
+                session,
+                environment.Contracts,
+                out observation,
+                out error), error);
+            CharacterCreationCoordinator coordinator = environment.CreateCoordinator();
+
+            bool isComplete = false;
+            coordinator.OnDistributionIsComplete(preview.StatsDistribution, ref isComplete);
+            preview.StatsDistribution.Start(37);
+            coordinator.OnDistributionStarted(preview.StatsDistribution, 37);
+            preview.StatsDistribution.StatValues[0] = 12;
+            preview.Unit.Stats.GetStat(0).BaseValue = 12;
+            coordinator.Update(0.1f);
+
+            AssertEx.True(!isComplete);
+            AssertEx.True(preview.StatsDistribution.Available);
+            AssertEx.Equal(37, preview.StatsDistribution.Points);
+            AssertEx.Equal(12, environment.ReadDistribution(preview)[0]);
+            AssertEx.Equal(12, environment.ReadUnit(preview.Unit)[0]);
+            AssertEx.Equal(RollSessionMode.PointBuy, session.Mode);
+        }
+
+        internal static void DisableDuringRollRestoresBeforeClearingOwnership()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            FakeState preview = environment.NewState(10);
+            RollSession session = environment.Open(preview);
+            StageAndVerify(environment, session);
+            CharacterCreationCoordinator coordinator = environment.CreateCoordinator();
+            string error;
+
+            AssertEx.True(coordinator.TryPrepareDisable(out error), error);
+
+            AssertEx.Equal(null, environment.Sessions.Active);
+            AssertEx.SequenceEqual(Enumerable.Repeat(10, 6), environment.ReadDistribution(preview));
+            AssertEx.SequenceEqual(Enumerable.Repeat(10, 6), environment.ReadUnit(preview.Unit));
+            AssertEx.True(preview.StatsDistribution.Available);
+            AssertEx.Equal(25, preview.StatsDistribution.Points);
+            AssertEx.Equal(RollSessionState.PointBuyRestored, session.Lifecycle.State);
+        }
+
+        internal static void FailedRestorationRollsBackToIsolatedRollMode()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            FakeState preview = environment.NewState(10);
+            RollSession session = environment.Open(preview);
+            StageAndVerify(environment, session);
+            preview.StatsDistribution.ThrowAfterStart = true;
+            PointBuyRestoreObservation observation;
+            string error;
+
+            AssertEx.True(!environment.Restore.TryRestore(
+                session,
+                environment.Contracts,
+                out observation,
+                out error));
+
+            AssertEx.True(error != null);
+            AssertEx.Equal(RollSessionMode.Roll, session.Mode);
+            AssertEx.SequenceEqual(FixedValues, environment.ReadDistribution(preview));
+            AssertEx.SequenceEqual(FixedValues, environment.ReadUnit(preview.Unit));
+            AssertEx.True(!preview.StatsDistribution.Available);
+            AssertEx.Equal(0, preview.StatsDistribution.Points);
+        }
+
+        internal static void FailedRollbackRefusesUnsafeDisable()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            FakeState preview = environment.NewState(10);
+            RollSession session = environment.Open(preview);
+            StageAndVerify(environment, session);
+            preview.StatsDistribution.OnStart = budget =>
+            {
+                environment.Controller.Preview = FakeUnitDescriptor.Create(10, false);
+                throw new InvalidOperationException("simulated allocator failure after detachment");
+            };
+            CharacterCreationCoordinator coordinator = environment.CreateCoordinator();
+            string error;
+
+            AssertEx.True(!coordinator.TryPrepareDisable(out error));
+
+            AssertEx.True(error != null);
+            AssertEx.True(ReferenceEquals(session, environment.Sessions.Active));
+            AssertEx.Equal(RollSessionMode.RestoringPointBuy, session.Mode);
+            AssertEx.True(environment.Logger.Messages.Any(message => message.Contains("Rollback failed point-buy restoration")));
+        }
+
+        internal static void PointBuyModeCancellationReleasesAndNewOwnerCanOpen()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            FakeState preview = environment.NewState(10);
+            RollSession first = environment.Open(preview);
+            StageAndVerify(environment, first);
+            PointBuyRestoreObservation observation;
+            string error;
+            AssertEx.True(environment.Restore.TryRestore(
+                first,
+                environment.Contracts,
+                out observation,
+                out error), error);
+            RollSession released;
+            AssertEx.True(!environment.Sessions.ReleaseIfStableOwnerLost(
+                environment.Controller,
+                environment.Source,
+                true,
+                0.1f,
+                out released));
+            AssertEx.True(environment.Sessions.ReleaseIfStableOwnerLost(
+                null,
+                null,
+                true,
+                SessionLivenessTracker.ConfirmedGraceSeconds,
+                out released));
+            AssertEx.Equal(RollSessionState.Abandoned, first.Lifecycle.State);
+
+            environment.ReplaceStableOwner();
+            FakeState nextPreview = environment.NewState(10);
+            RollSession second = environment.Open(nextPreview);
+
+            AssertEx.True(!ReferenceEquals(first, second));
+            AssertEx.Equal(RollSessionMode.Roll, second.Mode);
+            AssertEx.SequenceEqual(FixedValues, second.Assignment.ToAssignedArray());
+        }
+
+        internal static void RestorationDiagnosticsExposePristineTransition()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            FakeState preview = environment.NewState(10);
+            var tracker = new PointBudgetTracker();
+            tracker.Record(preview.StatsDistribution, 25);
+            var diagnostics = new RuntimeDiagnostics();
+            CharacterCreationCoordinator coordinator = environment.CreateCoordinator(tracker, diagnostics);
+            coordinator.OnLevelUpStateConstructed(preview, preview.Unit, FakeMode.CharGen);
+            coordinator.Update(0.1f);
+            string error;
+
+            AssertEx.True(coordinator.TryRestorePointBuy(out error), error);
+
+            string text = string.Join("\n", diagnostics.SnapshotRecent());
+            AssertEx.True(text.Contains("RESTORE Verified pristine point-buy state on the live preview"));
+            AssertEx.True(text.Contains("pristineBaselineCaptured=true"));
+            AssertEx.True(text.Contains("pristineBaselineGeneration=1"));
+            AssertEx.True(text.Contains("mode=PointBuy"));
+            AssertEx.True(text.Contains("liveDistributionMatchesPristine=true"));
+            AssertEx.True(text.Contains("liveUnitMatchesPristine=true"));
+            AssertEx.True(text.Contains("rollSuppressedForStableOwner=true"));
         }
 
         internal static void CompletionUsesCurrentLiveDistributionOnly()
@@ -439,6 +846,21 @@ namespace KingmakerDiceRoller.DomainTests
             AssertEx.Equal(1, diagnostics.AcceptedContexts);
             AssertEx.Equal(1, diagnostics.ArraysApplied);
             AssertEx.Equal(1, diagnostics.SessionsReleased);
+        }
+
+        private static void StageAndVerify(TestEnvironment environment, RollSession session)
+        {
+            string error;
+            AssertEx.True(environment.Application.TryStageCurrentGeneration(
+                session,
+                environment.Contracts,
+                out error), error);
+            LivePreviewObservation observation;
+            AssertEx.True(environment.Application.TryMarkLiveVerified(
+                session,
+                environment.Contracts,
+                out observation,
+                out error), error);
         }
 
         private static ReentrantResult RunReentrantReplacement()
@@ -561,7 +983,21 @@ namespace KingmakerDiceRoller.DomainTests
                 return Open(state, () => Assignment);
             }
 
+            internal RollSession Open(FakeState state, int budget, string budgetSource)
+            {
+                return Open(state, budget, budgetSource, () => Assignment);
+            }
+
             internal RollSession Open(FakeState state, Func<StatAssignment> factory)
+            {
+                return Open(state, 25, "test budget", factory);
+            }
+
+            internal RollSession Open(
+                FakeState state,
+                int budget,
+                string budgetSource,
+                Func<StatAssignment> factory)
             {
                 Controller.State = state;
                 Controller.Preview = state.Unit;
@@ -571,11 +1007,24 @@ namespace KingmakerDiceRoller.DomainTests
                 string reason;
                 AssertEx.True(Sessions.TryOpenOrRebind(
                     decision,
-                    CaptureBaseline(state, 25, "test budget"),
+                    generation => CapturePristine(state, budget, budgetSource, generation),
+                    generation => CaptureRollback(state, generation),
                     factory,
                     out session,
                     out reason), reason);
                 return session;
+            }
+
+            internal void ReplaceStableOwner()
+            {
+                Source = FakeUnitDescriptor.Create(10, true);
+                Controller = new FakeLevelUpController
+                {
+                    Unit = Source,
+                    m_RecalculatePreview = false
+                };
+                CharacterBuild.LevelUpController = Controller;
+                Player.MainCharacter = Source;
             }
 
             internal RollSession Rebind(FakeState state)
@@ -585,27 +1034,17 @@ namespace KingmakerDiceRoller.DomainTests
 
             internal RollSession Rebind(FakeState state, out string reason)
             {
-                return Rebind(state, CaptureBaseline(state, 25, "replacement budget"), () => Assignment, out reason);
+                return Rebind(state, () => Assignment, out reason);
             }
 
             internal RollSession Rebind(FakeState state, Func<StatAssignment> factory)
             {
                 string reason;
-                return Rebind(state, CaptureBaseline(state, 25, "replacement budget"), factory, out reason);
-            }
-
-            internal RollSession Rebind(
-                FakeState state,
-                PointBuyBaseline baseline,
-                Func<StatAssignment> factory)
-            {
-                string reason;
-                return Rebind(state, baseline, factory, out reason);
+                return Rebind(state, factory, out reason);
             }
 
             private RollSession Rebind(
                 FakeState state,
-                PointBuyBaseline baseline,
                 Func<StatAssignment> factory,
                 out string reason)
             {
@@ -614,20 +1053,36 @@ namespace KingmakerDiceRoller.DomainTests
                 RollSession session;
                 AssertEx.True(Sessions.TryOpenOrRebind(
                     decision,
-                    baseline,
+                    generation => CapturePristine(state, 25, "unexpected replacement pristine", generation),
+                    generation => CaptureRollback(state, generation),
                     factory,
                     out session,
                     out reason), reason);
                 return session;
             }
 
-            internal PointBuyBaseline CaptureBaseline(FakeState state, int budget, string source)
+            internal PristinePointBuyState CapturePristine(
+                FakeState state,
+                int budget,
+                string source,
+                int generation)
             {
-                return PointBuyBaseline.Capture(
+                return PristinePointBuyState.Capture(
                     state.StatsDistribution,
                     state.Unit,
                     budget,
                     source,
+                    generation,
+                    Contracts,
+                    StatAccess);
+            }
+
+            internal GenerationRollbackSnapshot CaptureRollback(FakeState state, int generation)
+            {
+                return GenerationRollbackSnapshot.Capture(
+                    generation,
+                    state.StatsDistribution,
+                    state.Unit,
                     Contracts,
                     StatAccess);
             }
@@ -687,6 +1142,8 @@ namespace KingmakerDiceRoller.DomainTests
                     typeof(FakeStats).GetMethod("GetStat", instance),
                     typeof(FakeStat).GetProperty("BaseValue", instance),
                     typeof(FakeDistribution).GetProperty("StatValues", instance),
+                    typeof(FakeDistribution).GetProperty("Available", instance),
+                    typeof(FakeDistribution).GetProperty("Points", instance),
                     typeof(FakeDistribution).GetProperty("TotalPoints", instance),
                     new object[] { 0, 1, 2, 3, 4, 5 },
                     typeof(FakeGame).GetProperty("Instance", staticFlags),
@@ -718,20 +1175,38 @@ namespace KingmakerDiceRoller.DomainTests
             {
                 StatValues = new Hashtable();
                 for (int index = 0; index < 6; index++) StatValues[index] = value;
+                Available = true;
+                Points = 25;
                 TotalPoints = 25;
                 LastStartBudget = -1;
             }
 
             public IDictionary StatValues { get; }
+            public bool Available { get; private set; }
+            public int Points { get; private set; }
             public int TotalPoints { get; private set; }
             internal int StartCalls { get; private set; }
             internal int LastStartBudget { get; private set; }
+            internal bool ThrowAfterStart { get; set; }
+            internal Action<int> OnStart { get; set; }
 
             public void Start(int budget)
             {
                 StartCalls++;
                 LastStartBudget = budget;
+                Available = true;
+                Points = budget;
                 TotalPoints = budget;
+                Action<int> action = OnStart;
+                action?.Invoke(budget);
+                if (ThrowAfterStart) throw new InvalidOperationException("simulated allocator start failure");
+            }
+
+            internal void SetAllocatorState(bool available, int points, int totalPoints)
+            {
+                Available = available;
+                Points = points;
+                TotalPoints = totalPoints;
             }
 
             public bool IsComplete()
@@ -774,11 +1249,28 @@ namespace KingmakerDiceRoller.DomainTests
             {
                 return values[key];
             }
+
+            internal void SetModifiers(int[] modifiers)
+            {
+                if (modifiers == null || modifiers.Length != 6)
+                {
+                    throw new ArgumentException("Exactly six modifiers are required.", nameof(modifiers));
+                }
+                for (int index = 0; index < modifiers.Length; index++) values[index].Modifier = modifiers[index];
+            }
+
+            internal int[] ReadDisplayedValues()
+            {
+                return Enumerable.Range(0, 6)
+                    .Select(index => values[index].BaseValue + values[index].Modifier)
+                    .ToArray();
+            }
         }
 
         private sealed class FakeStat
         {
             public int BaseValue { get; set; }
+            internal int Modifier { get; set; }
         }
 
         private sealed class FakeState

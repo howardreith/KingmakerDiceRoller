@@ -18,25 +18,30 @@
 6. Preserve a copy of relevant UMM settings. Start with Bag of Tricks disabled
    for the first gate.
 
-## Focused preview-continuity gate
+## Focused pristine-restoration gate
 
-Before repeating the full vanilla matrix, start a genuinely new custom main
-character from a fresh process with only Dice Roller enabled:
+The fixed-array entry/preview-continuity seam passed live at `907f1bc1...`.
+Before repeating the full vanilla matrix, use a fresh process with Call of the
+Wild and Bag of Tricks disabled:
 
-1. Reach ability scores and confirm the live values are exactly `16, 15, 14,
-   12, 10, 8`.
-2. In UMM, confirm at least one accepted context and application, zero releases,
-   active fixed-session status, and a diagnostic saying the live controller
-   state/preview was verified.
-3. Confirm no same-owner preview reports `Another unit already owns`.
-4. Remain on the screen for ten seconds; confirm values and session remain.
-5. Navigate backward and forward once; confirm the same immutable array is
-   rebound to the replacement preview.
-6. Cancel to the main menu; confirm release increments only after the character
-   build ends.
+1. Start a new human and confirm `16, 15, 14, 12, 10, 8` appears.
+2. Press **Return active roll session to point buy**.
+3. Confirm all rolled values disappear and ordinary vanilla allocation with 25
+   points returns.
+4. Spend and refund points with the normal plus/minus controls.
+5. Navigate backward and forward; confirm point buy remains active and the
+   fixed array does not reappear.
+6. Repeat with an elf. Confirm the restored base allocation is ordinary point
+   buy while racial modifiers remain separate.
+7. Restart the test, leave roll mode active, and disable Dice Roller. It must
+   restore clean point buy before disabling or refuse to disable safely.
+8. Complete a separate fresh character entirely in roll mode, save, quit,
+   disable Dice Roller, and reload. Confirm its legitimate rolled values remain.
+9. Test one existing-character or companion level-up and confirm the fixed
+   array never activates.
 
 Stop and collect runtime evidence if any step fails. Do not advance to Gates
-A-E until this focused gate passes.
+A-E or compatibility testing until this focused gate passes.
 
 ## Gate A — context isolation
 
@@ -58,8 +63,8 @@ Any non-new-character activation is a hard failure.
    STR 16, DEX 15, CON 14, INT 12, WIS 10, CHA 8
    ```
 
-4. Confirm creation may continue even though normal point-buy points are not
-   exhausted.
+4. Confirm creation may continue while roll mode owns completion and no live
+   point-buy budget is layered onto the array.
 5. Check the UMM panel: one accepted context, an active fixed-array status, and
    a resolved Assembly-CSharp MVID.
 
@@ -83,12 +88,18 @@ A mismatch between displayed values and preview/base values is a hard failure.
 
 1. Before completing creation, press **Return active roll session to point buy**
    in the UMM panel.
-2. Confirm normal point-buy values and the actual configured budget return.
+2. Confirm the rolled values disappear while normal point-buy values and the
+   actual configured budget return. Rolled values plus a full budget are a hard
+   failure.
 3. Use plus/minus controls and confirm cost behavior is normal.
-4. Disable the mod while still in character creation; confirm disable succeeds
-   without changing another mod directory.
-5. Repeat with the mod enabled and disable it directly while the fixed array is
-   active. It must restore point buy before unpatching or refuse to disable.
+4. Navigate backward and forward and confirm point-buy mode remains active.
+5. Repeat with a race that has ability modifiers and confirm modifiers remain
+   separate from the restored base allocation.
+6. Disable the mod while point-buy mode is active; confirm it does not
+   reintroduce rolled values.
+7. Repeat with the mod enabled and disable it directly while the fixed array is
+   active. It must restore verified point buy before unpatching or refuse to
+   disable while retaining recovery hooks.
 
 ## Gate E — completion and persistence
 

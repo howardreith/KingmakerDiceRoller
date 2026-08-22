@@ -46,6 +46,7 @@ namespace KingmakerDiceRoller.CharacterCreation
         }
 
         public bool HasActiveSession => sessions.Active != null;
+        public bool CanRestorePointBuy => sessions.Active != null && sessions.Active.IsRollMode;
 
         public void OnLevelUpStateConstructed(object state, object unit, object mode)
         {
@@ -59,49 +60,55 @@ namespace KingmakerDiceRoller.CharacterCreation
                 return;
             }
 
-            int budget;
-            string budgetSource;
-            if (!budgetResolver.TryResolve(context.Distribution, contracts, out budget, out budgetSource))
-            {
-                diagnostics.Rejected("Point-buy budget was not captured; refusing to create a non-restorable session.");
-                logger.Warning("Dice Roller refused character creation because the original point-buy budget is unavailable.");
-                return;
-            }
-
-            PointBuyBaseline baseline;
+            RollSession session;
+            string sessionReason;
             try
             {
-                baseline = PointBuyBaseline.Capture(context.Distribution, context.Unit, budget, budgetSource, contracts, statAccess);
+                if (!sessions.TryOpenOrRebind(
+                    context,
+                    generation => CapturePristinePointBuy(context, generation, contracts),
+                    generation => GenerationRollbackSnapshot.Capture(
+                        generation,
+                        context.Distribution,
+                        context.Unit,
+                        contracts,
+                        statAccess),
+                    () => new StatAssignment(DiagnosticArrays.FixedPhaseTwoArray()),
+                    out session,
+                    out sessionReason))
+                {
+                    diagnostics.Rejected(sessionReason);
+                    logger.Warning(sessionReason);
+                    return;
+                }
             }
             catch (Exception exception)
             {
-                diagnostics.Rejected("Point-buy baseline capture failed.");
-                logger.Exception("Capture point-buy baseline", exception);
+                diagnostics.Rejected("Pristine point-buy or generation rollback capture failed.");
+                logger.Exception("Capture point-buy ownership state", exception);
                 return;
             }
 
-            RollSession session;
-            string sessionReason;
-            if (!sessions.TryOpenOrRebind(
-                context,
-                baseline,
-                () => new StatAssignment(DiagnosticArrays.FixedPhaseTwoArray()),
-                out session,
-                out sessionReason))
-            {
-                diagnostics.Rejected(sessionReason);
-                logger.Warning(sessionReason);
-                return;
-            }
-
-            diagnostics.Accepted(context.Reason + " " + sessionReason + " Budget=" + budget + " via " + budgetSource + ".");
-            RecordEvent(sessionReason + " applicationGeneration=" + session.Generation + ".");
+            diagnostics.Accepted(
+                context.Reason + " " + sessionReason +
+                " Budget=" + session.PristinePointBuy.AllocatorBudget +
+                " via " + session.PristinePointBuy.BudgetSource + ".");
+            RecordEvent(sessionReason + " " + BuildSessionFacts(session));
 
             if (session.IsRestoringPointBuy)
             {
                 RecordEvent(
                     "Observed a same-owner replacement during the bounded point-buy refresh; fixed-array staging is deferred. " +
                     BuildSessionFacts(session));
+                return;
+            }
+
+            if (session.IsPointBuyMode)
+            {
+                RecordEvent(
+                    "Observed a same-owner preview while durable point-buy mode is active; fixed-array staging remains suppressed. " +
+                    BuildSessionFacts(session));
+                diagnostics.SetStatus("Point-buy mode is active for the current character-build owner; roll staging is suppressed.");
                 return;
             }
 
@@ -126,9 +133,14 @@ namespace KingmakerDiceRoller.CharacterCreation
             budgetTracker.Record(distribution, pointBudget);
             RollSession session;
             if (!sessions.TryGetByDistribution(distribution, out session)) return;
-            if (session.IsRestoringPointBuy || session.IsApplied || session.IsStaged) return;
             KingmakerContracts contracts = contractsProvider();
             if (contracts == null) return;
+            if (!session.IsRollMode) return;
+            if (session.IsApplied || session.IsStaged)
+            {
+                application.SuppressPointBuyAllocator(session, distribution, contracts);
+                return;
+            }
             string error;
             if (!application.TryStageCurrentGeneration(session, contracts, out error))
             {
@@ -140,6 +152,7 @@ namespace KingmakerDiceRoller.CharacterCreation
         {
             RollSession session;
             if (!sessions.TryGetByDistribution(distribution, out session)) return;
+            if (!session.IsRollMode) return;
             KingmakerContracts contracts = contractsProvider();
             if (contracts != null && application.IsCurrentLiveDistribution(session, distribution, contracts))
             {
@@ -179,7 +192,7 @@ namespace KingmakerDiceRoller.CharacterCreation
 
             session = sessions.Active;
             if (session == null ||
-                session.IsRestoringPointBuy ||
+                !session.IsRollMode ||
                 session.IsApplied ||
                 session.IsApplicationFailed ||
                 !session.IsStaged) return;
@@ -233,12 +246,57 @@ namespace KingmakerDiceRoller.CharacterCreation
                 error = "Kingmaker contracts are unavailable.";
                 return false;
             }
-            if (!pointBuyRestore.TryRestore(session, contracts, out error)) return false;
-            int budget = session.Baseline.Budget;
-            string budgetSource = session.Baseline.BudgetSource;
-            sessions.Clear(session);
-            diagnostics.Restored("Newest live preview restored. Budget=" + budget + " via " + budgetSource + ".");
-            diagnostics.SetStatus("Vanilla/modded point-buy allocator restored for the active live preview.");
+            if (session.IsPointBuyMode)
+            {
+                error = null;
+                diagnostics.SetStatus("Verified point-buy mode remains active for the current character-build owner.");
+                return true;
+            }
+
+            PointBuyRestoreObservation restored;
+            if (!pointBuyRestore.TryRestore(session, contracts, out restored, out error))
+            {
+                string detail = "Point-buy restoration failed closed: " + error + " " + BuildSessionFacts(session);
+                diagnostics.SetStatus(detail);
+                RecordEvent(detail);
+                return false;
+            }
+
+            string facts = restored.BuildFacts(session, application.RefreshInProgress);
+            diagnostics.Restored(
+                "Verified pristine point-buy state on the live preview; rolled assignment is no longer present and allocator budget is active. " +
+                facts);
+            diagnostics.SetStatus("Pristine point-buy mode is active; fixed-array staging is suppressed for this character build.");
+            logger.Info("Verified pristine point-buy restoration on the live controller preview. " + facts);
+            return true;
+        }
+
+        public bool TryPrepareDisable(out string error)
+        {
+            RollSession session = sessions.Active;
+            if (session == null)
+            {
+                error = null;
+                return true;
+            }
+
+            if (session.IsRestoringPointBuy)
+            {
+                error = "The active session is already restoring point buy and cannot be safely disabled.";
+                return false;
+            }
+
+            if (session.IsRollMode && !TryRestorePointBuy(out error)) return false;
+
+            session = sessions.Active;
+            if (session != null && !session.IsPointBuyMode)
+            {
+                error = "Point-buy mode was not durably established before disable.";
+                return false;
+            }
+
+            if (session != null) sessions.Clear(session);
+            error = null;
             return true;
         }
 
@@ -265,10 +323,40 @@ namespace KingmakerDiceRoller.CharacterCreation
 
         private static string BuildSessionFacts(RollSession session)
         {
-            return "Facts: applicationGeneration=" + session.Generation +
+            return "Facts: pristineBaselineCaptured=" + BooleanText(session.PristineBaselineCaptured) +
+                ", pristineBaselineGeneration=" + session.PristinePointBuy.CapturedGeneration +
+                ", currentGeneration=" + session.Generation +
+                ", applicationGeneration=" + session.Generation +
+                ", candidateBaselineContaminated=" + BooleanText(session.CandidateBaselineContaminated) +
+                ", mode=" + session.Mode +
+                ", allocatorBudget=" + session.PristinePointBuy.AllocatorBudget +
                 ", pendingReplacementObserved=" + BooleanText(session.PendingReplacementObserved) +
                 ", reboundPreview=" + BooleanText(session.ReboundPreview) +
-                ", sameStableOwner=true.";
+                ", sameStableOwner=true" +
+                ", rollSuppressedForStableOwner=" + BooleanText(session.RollSuppressedForStableOwner) + ".";
+        }
+
+        private PristinePointBuyState CapturePristinePointBuy(
+            CharacterCreationContextDecision context,
+            int generation,
+            KingmakerContracts contracts)
+        {
+            int budget;
+            string budgetSource;
+            if (!budgetResolver.TryResolve(context.Distribution, contracts, out budget, out budgetSource))
+            {
+                throw new InvalidOperationException(
+                    "Point-buy budget was not captured; refusing to create a non-restorable session.");
+            }
+
+            return PristinePointBuyState.Capture(
+                context.Distribution,
+                context.Unit,
+                budget,
+                budgetSource,
+                generation,
+                contracts,
+                statAccess);
         }
 
         private static string BooleanText(bool value)

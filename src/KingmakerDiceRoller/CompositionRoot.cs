@@ -114,7 +114,7 @@ namespace KingmakerDiceRoller
             }
 
             string error;
-            if (!coordinator.TryRestorePointBuy(out error))
+            if (!coordinator.TryPrepareDisable(out error))
             {
                 diagnostics.SetStatus("Disable refused because point-buy restoration failed: " + error);
                 logger.Error("Kingmaker Dice Roller remains enabled to preserve recovery hooks: " + error);

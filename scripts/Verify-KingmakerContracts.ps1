@@ -32,6 +32,11 @@ function Member-Type([Reflection.MemberInfo] $Member) {
     if ($Member -is [Reflection.FieldInfo]) { return $Member.FieldType }
     throw "Unsupported member type: $($Member.MemberType)"
 }
+function Member-IsWritable([Reflection.MemberInfo] $Member) {
+    if ($Member -is [Reflection.PropertyInfo]) { return $null -ne $Member.GetSetMethod($true) }
+    if ($Member -is [Reflection.FieldInfo]) { return -not $Member.IsInitOnly -and -not $Member.IsLiteral }
+    return $false
+}
 function Test-BooleanPath([Type] $Type, [string[]] $Paths) {
     foreach ($path in $Paths) {
         $current = $Type
@@ -88,6 +93,17 @@ try {
     $statValues = Require-Member $distribution 'StatValues'
     $dictionaryType = [System.Collections.IDictionary]
     if (-not $dictionaryType.IsAssignableFrom((Member-Type $statValues))) { throw 'StatValues is not IDictionary-compatible.' }
+    $available = Require-Member $distribution 'Available'
+    $points = Require-Member $distribution 'Points'
+    $totalPoints = Require-Member $distribution 'TotalPoints'
+    if ((Member-Type $available) -ne [bool] -or
+        (Member-Type $points) -ne [int] -or
+        (Member-Type $totalPoints) -ne [int] -or
+        -not (Member-IsWritable $available) -or
+        -not (Member-IsWritable $points) -or
+        -not (Member-IsWritable $totalPoints)) {
+        throw 'StatsDistribution allocator state members must have exact writable Boolean/Int32 contracts.'
+    }
     $attributes = Require-Member $statHelper 'Attributes' $true
     $attributeValues = if ($attributes -is [Reflection.PropertyInfo]) { $attributes.GetValue($null,$null) } else { $attributes.GetValue($null) }
     if (-not $attributeValues -or $attributeValues.Length -ne 6) { throw 'StatTypeHelper.Attributes does not contain six values.' }
@@ -139,7 +155,8 @@ try {
             "Game.Instance.UI.CharacterBuildController.LevelUpController -> $($controller.FullName)",
             "$($controller.FullName).State", "$($controller.FullName).Unit", "$($controller.FullName).Preview",
             'Game.Instance.Player.MainCharacter.Value.Descriptor',
-            "$($controller.FullName).m_RecalculatePreview", "$($controller.FullName).UpdatePreview()"
+            "$($controller.FullName).m_RecalculatePreview", "$($controller.FullName).UpdatePreview()",
+            "$($distribution.FullName).Available", "$($distribution.FullName).Points", "$($distribution.FullName).TotalPoints"
         )
         abilities = $abilityNames
         context_paths = [ordered]@{ main_character=$mainPath; player_faction=$playerPath; pet=$petPath; enemy=$enemyPath }
@@ -148,6 +165,7 @@ try {
             controller_unit = 'Game.Instance.UI.CharacterBuildController.LevelUpController.Unit'
             controller_preview = 'Game.Instance.UI.CharacterBuildController.LevelUpController.Preview'
         }
+        allocator_state_writable = $true
     }
     $target = if ([IO.Path]::IsPathRooted($OutputPath)) { $OutputPath } else { Join-Path $root $OutputPath }
     New-Item -ItemType Directory -Force -Path (Split-Path -Parent $target) | Out-Null

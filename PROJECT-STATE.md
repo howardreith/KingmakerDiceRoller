@@ -2,130 +2,134 @@
 
 ## Current phase
 
-Phase 2 - fixed-array preview-continuity repair after the fourth live
-new-character gate.
+Phase 2 - pristine point-buy restoration repair after the first successful
+live fixed-array preview gate.
 
 ## Branch and baseline
 
 Branch: `pro/kingmaker-dice-roller-mvp`
 
-Baseline before this repair: `4c1bf277580b32f265be36cb4c4ae7c3e6a51c9f`.
+Baseline before this repair: `907f1bc1b3afa6a48fe5c849200e5f6867c13062`.
 
 ## Implemented behavior
 
-- Pure roll engine and presets.
-- Immutable six-score arrays and duplicate-safe swaps.
-- Explicit low-score policies and extended point-buy equivalent.
-- Single-active-session ownership keyed by the stable character-build
-  controller and its source `UnitDescriptor`.
-- Replaceable preview generations for the current `LevelUpState`, preview
-  descriptor, `StatsDistribution`, and captured point-buy baseline.
-- Fixed diagnostic array `16, 15, 14, 12, 10, 8`.
-- Captured point-buy budget and explicit restoration path for the newest live
-  preview.
-- Three narrow Harmony postfix surfaces: state construction, distribution
-  start, and completion.
-- Bounded constructor-stage application followed by validation against the
-  controller's actual live state, preview, distribution, and unit base values.
-- Grace-period cleanup only when the stable controller/source owner leaves the
-  character build; transient state/preview replacement does not release it.
-- UMM diagnostics and point-buy restoration control.
-- Exact package allowlist validation and transactional live installation with
-  rollback.
-- Exact Windows build contracts for Kingmaker 2.1.7b, UMM 0.32.x, and
-  Harmony12.
+- Pure roll engine, presets, immutable six-score arrays, duplicate-safe swaps,
+  explicit low-score policies, and extended point-buy equivalents.
+- Fixed diagnostic array `16, 15, 14, 12, 10, 8` for one exact new-main-
+  character build owner.
+- Immutable session ownership keyed by the active `LevelUpController` and its
+  source `UnitDescriptor`, with replaceable state, preview descriptor,
+  distribution, and generation rollback snapshot.
+- One immutable pristine point-buy origin captured before the first rolled
+  write. Same-owner preview rebuilds cannot replace it with rolled values.
+- Explicit `Roll`, `RestoringPointBuy`, and durable `PointBuy` modes. Roll mode
+  disables the allocator; point-buy mode suppresses later fixed-array staging
+  and completion overrides for the same build owner.
+- Bounded preview refresh, same-owner rebind, and validation against the
+  controller's actual live state, preview, distribution, base values, and
+  allocator fields.
+- Point-buy restoration on the newest live preview using the observed
+  allocator `Start(int)` budget and the pristine allocation. An illegal rolled
+  array plus full budget cannot pass verification.
+- Generation-local rollback after a failed write or restore. Disable/unload
+  restores verified point buy before unpatching, or refuses to disable while
+  retaining recovery hooks.
+- Stable-owner liveness with eventual cleanup after actual cancellation or
+  completion.
+- Three narrow Harmony postfixes only: state construction, distribution start,
+  and distribution completion.
+- Exact six-file package validation and transactional live installation.
 
 ## Qualification
 
 | Level | Status |
 |---|---|
-| Implemented | Yes - stable-owner/generation-aware diagnostic candidate |
-| Source-qualified | Yes - 61 C# files, 86 compiled C# behavior cases, 25 Python oracle cases |
-| Build-qualified | Yes - zero-warning exact build/package against Assembly-CSharp MVID `07fa1e4d-8618-41b3-9b8d-faa17d3b26f7` |
-| Runtime-qualified | No - the fourth candidate accepted the context but lost the live replacement preview |
-| Compatibility-qualified | No |
+| Implemented | Yes - pristine point-buy and durable mode repair implemented |
+| Source-qualified | Yes - 64 C# files, 101 compiled behavior cases, and 25 Python oracle cases |
+| Build-qualified | Yes - zero-warning exact build/package against MVID `07fa1e4d-8618-41b3-9b8d-faa17d3b26f7` |
+| Runtime-qualified | No - fixed-array entry/continuity passed, but repaired restoration awaits live evidence |
+| Compatibility-qualified | No - only a limited entry smoke has been observed |
 
 ## Live-gate evidence
 
-The first installed candidate rejected every constructor because it required
-`CharBuildMode.CharGen`; Kingmaker uses `CharBuildMode.LevelUp` for legitimate
-new-game preview reconstruction.
+Earlier candidates established that Kingmaker may use preview-time `LevelUp`
+mode, that the unfinished descriptor is not yet marked `IsMainCharacter`, and
+that `Player.MainCharacter` may identify the controller source rather than the
+deserialized preview. The fourth candidate accepted the genuine context but
+lost its array across preview replacement. Commit `907f1bc1...` repaired that
+stable-owner/generation boundary.
 
-The second candidate accepted that mode but still recorded zero accepted
-contexts. Its unique rejection reasons established that the first-level preview
-descriptor is not yet marked `IsMainCharacter`; using that finished-unit value
-during preview construction was too early.
+The fifth live gate at `907f1bc1...` passed the fixed-array entry and continuity
+seam:
 
-The third controller-owned candidate loaded cleanly and resolved MVID
-`07fa1e4d-8618-41b3-9b8d-faa17d3b26f7`, but the new-character screen remained
-ordinary 25-point buy. A first-level candidate passed every earlier guard and
-failed only because `Player.MainCharacter` was populated. Exact 2.1.7b IL then
-showed that new-game setup stores the controller source in
-`Player.MainCharacter` before a separate preview descriptor is deserialized.
-The fail-closed relation was repaired to recognize that exact source/preview
-identity while retaining the different-established-main boundary.
+- A new custom human visibly received base values `16, 15, 14, 12, 10, 8`.
+- Diagnostics verified the controller's live state, preview, distribution, and
+  unit values.
+- The session remained active for more than ten seconds.
+- Backward/forward navigation rebuilt the preview without changing or
+  regenerating the immutable array.
+- Switching to elf displayed `16, 17, 12, 14, 10, 8`, proving Kingmaker applied
+  racial modifiers separately from the stored base array.
+- Canceling released the session, and a later character build opened a fresh
+  session without an ownership conflict.
+- A roll-mode character was saved, the game exited, Dice Roller was disabled,
+  and the save reloaded with its scores intact. This is live evidence that the
+  result uses ordinary Kingmaker ability values rather than mod-owned save
+  content.
+- New-character entry also worked with Call of the Wild and Bag of Tricks
+  installed. This was only a limited entry smoke, not compatibility
+  qualification.
 
-The fourth candidate proved that context repair: it accepted one genuine
-controller-owned `CharGen` preview and staged the fixed array. The live ability
-screen nevertheless remained ordinary 25-point buy with all six scores at 10.
-Chronological diagnostics then showed a second same-build preview rejected as
-`Another unit already owns the active roll session`, an `APPLY` reported
-against the first descriptor, and a stale-session `RELEASE` while character
-creation was still open.
+The same gate exposed a hard restoration failure. **Return active roll session
+to point buy** restored the full 25-point pool while leaving the rolled base
+array in place. The user could spend the pool on top of the roll, creating an
+illegal hybrid character. Runtime qualification remains blocked.
 
-Exact 2.1.7b IL and the complete runtime log explain that order.
-`LevelUpController.UpdatePreview()` assigns a newly deserialized descriptor to
-`Preview`, constructs its replacement state synchronously, and assigns that
-state only after its constructor returns. The constructor postfix therefore
-observes the new preview inside the outer refresh while `controller.State`
-still names the old generation. The previous implementation rejected the new
-descriptor by preview identity, validated detached objects, and later released
-the session by exact-state identity.
+## Root cause and current repair
 
-## Current repair
+Exact Kingmaker 2.1.7b IL shows that `StatsDistribution.Start(int)` sets only
+allocator availability and point fields; it does not reset the six score
+values. The old session captured a new point-buy baseline on every accepted
+preview generation and replaced `RollSession.Baseline` during rebind. A rebuilt
+generation already carrying the fixed array could therefore become the
+purported baseline. Restoration then called `Start(fullBudget)` and restored
+those contaminated rolled values.
 
-- Preserve every context-policy guard from the successful fourth candidate.
-- Keep the active `LevelUpController` instance and its source `Unit` descriptor
-  as immutable session ownership; treat preview descriptors as transient.
-- Rebind same-owner replacement states, preview units, distributions, and
-  baselines while retaining the exact same immutable assignment.
-- Stage values in the constructor postfix without requesting another preview
-  refresh. After Kingmaker's constructor stack and action replay finish, verify
-  the controller's actual state/preview and both live value stores on UMM
-  update. One live restage is permitted if action replay overwrites
-  constructor-stage values.
-- Guard explicit preview refreshes against nesting. Point-buy restoration uses
-  one guarded refresh, accepts its same-owner replacement while restoration is
-  active, and restores the newest generation with its captured budget and
-  baseline.
-- Base liveness on the stable controller/source owner. A replaced or temporarily
-  null `State` is not evidence that character creation ended.
-- Report generation, pending replacement, stable-owner, controller-state,
-  controller-preview, distribution-value, and unit-value relations without raw
-  object dumps or repeated event spam.
+The repair separates two lifetimes:
+
+- `PristinePointBuyState` is captured only for generation 1, before roll
+  ownership writes. It records the real allocator budget and provenance,
+  legitimate distribution/unit values, and allocator fields.
+- `GenerationRollbackSnapshot` is replaced on each preview generation and is
+  used only for transactional rollback of that generation.
+
+Restoration enters `RestoringPointBuy`, performs one guarded refresh, follows a
+same-owner replacement, calls the allocator with the pristine observed budget,
+restores the pristine values and allocator fields on the newest live preview,
+and verifies all live relations. Success enters durable `PointBuy` mode for the
+stable owner. Failure restores the isolated fixed array with point buy disabled;
+if that rollback cannot be verified, disable/unload is refused.
 
 ## Required next live test
 
-Build, package, and install the stable-owner fixed-array candidate. From a fresh
-process with only Dice Roller enabled, confirm the live ability screen shows
-`16, 15, 14, 12, 10, 8`, the live controller state/preview is verified, and no
-same-owner replacement reports `Another unit`. Remain on the screen for ten
-seconds, navigate backward/forward once, confirm the same assignment is rebound,
-then cancel and confirm release occurs only after the build ends.
-
-Do not advance to the full vanilla Gates A-E or the real Roll/Reroll UI until
-this focused entry/rebuild gate passes.
+From a fresh vanilla process, verify that the fixed array appears, then use
+**Return active roll session to point buy**. The rolled values must disappear,
+ordinary values and the real budget must return, plus/minus controls must work,
+and backward/forward navigation must remain in point-buy mode. Repeat with an
+elf, then test disabling while roll mode is active. Do not advance to the final
+Roll/Reroll UI or compatibility qualification until this restoration gate
+passes.
 
 ## Important decisions
 
-- New-character identity is determined by active character-builder ownership
-  plus the relation between `Player.MainCharacter`, the controller source, and
-  the owned preview. The unfinished preview descriptor's `IsMainCharacter`
-  value is not used as a finished-character gate.
-- Ordinary level-ups, companions, mercenaries, pets, enemies, pregens, and
+- The successful context identity and stable preview-continuity repairs are
+  preserved unchanged.
+- Ordinary progression, companions, mercenaries, pets, enemies, pregens, and
   respec remain outside the feature boundary.
-- Session continuity uses the stable controller/source relation; reference
-  identity of a deserialized preview is generation-local.
-- Does not hard-code a point-buy budget.
-- Requires exact runtime contracts before installing any Harmony patch.
-- Does not claim runtime or compatibility qualification before live evidence.
+- Roll mode and point-buy mode are mutually exclusive; no rolled-plus-budget
+  hybrid is permitted.
+- The point-buy budget and initial allocation are observed, not hard-coded.
+- Racial modifiers remain Kingmaker-owned and separate from stored base values.
+- No allocator increment/decrement/cost method or save serialization is
+  patched.
+- Runtime and compatibility qualification require new live evidence.
