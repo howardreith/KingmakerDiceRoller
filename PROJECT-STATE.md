@@ -120,11 +120,15 @@ For the alpha.2 candidate:
 
 - Implemented: **Yes** - the player-facing alpha feature set is complete.
 - Product implementation: complete alpha candidate.
-- Source-qualified: **Pending final clean qualification** - focused validation
-  currently passes 212/212 compiled C# behavior cases and 30/30 Python oracle
+- Source-qualified: **Yes** - the clean aggregate gate passed with 88 C#
+  source files, 212/212 compiled C# behavior cases, and 30/30 Python oracle
   cases.
-- Build-qualified: **Pending final clean qualification**.
-- Installed: **Pending alpha.2 transactional installation**.
+- Build-qualified: **Yes** - the exact Kingmaker build completed with zero
+  warnings and zero errors from clean commit `d32cca0d5807f304baa6364a0d2321a3ff141546`.
+- Installed: **Yes** - the validated six-file alpha.2 package was installed
+  transactionally; the prior Dice Roller installation was backed up, no install
+  staging directory remained, and every non-target mod fingerprint was
+  identical before and after.
 - Runtime-qualified: **No** - the new native player workflow awaits human
   acceptance.
 - Compatibility-qualified: **No** - the named live matrix awaits human testing.
@@ -133,8 +137,11 @@ For the alpha.2 candidate:
 The qualified exact game contract is Assembly-CSharp MVID
 `07fa1e4d-8618-41b3-9b8d-faa17d3b26f7` and SHA-256
 `3b6450ffec440e296e586f71c711b195aed144b28d53e1cbb29406d18fef5afb`.
-Final alpha.2 DLL and package hashes are recorded after the clean committed
-qualification gate.
+The candidate DLL SHA-256 is
+`7481ae6d5223dc17f059dca691637838a2813ae5e36676b9a5cfafe7b584afe1`.
+The deterministic package is
+`artifacts/packages/KingmakerDiceRoller-0.1.0-alpha.2.zip`, SHA-256
+`309fc88146535f128b6939ab74123998903e25ec12816aca06d8d20de0c95c51`.
 
 ## Immediate next gate
 

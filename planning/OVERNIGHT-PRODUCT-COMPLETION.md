@@ -82,7 +82,7 @@ never use direct screen-coordinate drawing as the primary interface.
    also passed at final evidence checkpoint
    `695ba5fe17f0a23501ab9da4343c8228d3c66ac2`; its package and DLL were
    byte-identical to the installed candidate.
-6. **In progress - alpha.2 native-panel usability repair:** continued from
+6. **Complete - alpha.2 native-panel usability repair:** continued from
    `938e21d703518d8461191fe6f0c2834b08891935` with a clean `0 0` baseline.
    Live alpha.1 behavior proved the workflow but failed at 1600 by 900 because
    the allocator's oval frame, inherited pale text, all-at-once controls, and
@@ -90,9 +90,12 @@ never use direct screen-coordinate drawing as the primary interface.
    non-graphic owned root, mutually exclusive rectangular expanded surface and
    compact access tab, exact Racial Bonus anchoring with bounded fallback,
    explicit high-contrast typography, masked scrolling, progressive
-   disclosure, and stable-owner-scoped view state. Focused behavior is green at
-   212 compiled C# cases and 30 Python oracle cases; final clean qualification,
-   package, install, commit, and push remain the unfinished phase.
+   disclosure, and stable-owner-scoped view state. The clean qualification at
+   `d32cca0d5807f304baa6364a0d2321a3ff141546` passed 212 compiled C# cases and
+   30 Python oracle cases with zero warnings/errors. The deterministic six-file
+   alpha.2 package was installed transactionally, the previous target was
+   backed up, no install staging remained, and every non-target mod fingerprint
+   remained identical.
 
 ## Commands and gates
 
@@ -144,6 +147,12 @@ other-mod fingerprints, and a clean-commit qualification rerun.
 
 - Usability-repair starting commit:
   `938e21d703518d8461191fe6f0c2834b08891935`.
-- Current unfinished phase: complete alpha.2 documentation/versioning, run the
-  dirty and clean full gates, install transactionally, push coherent history,
-  and hand off the focused visual/click-routing gate.
+- Pushed alpha.2 implementation commit:
+  `d32cca0d5807f304baa6364a0d2321a3ff141546`.
+- Qualified DLL SHA-256:
+  `7481ae6d5223dc17f059dca691637838a2813ae5e36676b9a5cfafe7b584afe1`.
+- Qualified package SHA-256:
+  `309fc88146535f128b6939ab74123998903e25ec12816aca06d8d20de0c95c51`.
+- Current phase: alpha.2 source/build/package/install work is complete. The next
+  external gate is Howie's focused 1600 by 900 visual and click-routing test;
+  runtime and compatibility qualification remain deliberately unclaimed.
