@@ -30,6 +30,13 @@ uses `RESTORE` and states that pristine point buy was verified on the live
 preview. Rolled values plus a full available budget are a hard verification
 failure and are never reported as restored.
 
+Presentation transitions separately report whether semantic point buy was
+already verified, whether the exact native refresh was requested, the refresh
+method/count, whether the Skills ability phase was active, whether its state,
+distribution, source, and preview bindings match the session, the pre/post
+generation, and post-refresh live-model verification. A presentation failure
+does not undo safe PointBuy mode or revive the rolled completion override.
+
 ## Log phrases
 
 Useful filters:
@@ -46,6 +53,15 @@ Verified pristine point-buy state on the live preview
 pristineBaselineCaptured
 candidateBaselineContaminated
 rollSuppressedForStableOwner
+semanticPointBuyVerified
+presentationRefreshRequested
+presentationRefreshMethod
+presentationRefreshCount
+activeAbilityPhaseFound
+abilityPhaseStateMatchesSession
+abilityPhaseDistributionMatchesSession
+abilityPhaseViewModelMatchesSession
+postRefreshLiveModelVerified
 Enable failed closed
 remains enabled to preserve recovery hooks
 ```

@@ -18,7 +18,11 @@ references.
 - **Bag of Tricks:** explicitly unqualified. Bag of Tricks is known to alter
   character-creation point-buy behavior, so fixed-array entry, return to point
   buy, and subsequent plus/minus behavior must be tested with its actual
-  settings.
+  settings. One live smoke with Bag of Tricks enabled proved that semantic
+  pristine restoration eventually produced ordinary values, separate racial
+  modifiers, 25 points, and native controls after phase re-entry. The open page
+  remained stale until navigation, and alternative configured budgets were not
+  tested, so this is not compatibility qualification.
 - **Respec mods:** respec contexts are excluded. This mod is not a respec stat
   editor and should fail closed there.
 

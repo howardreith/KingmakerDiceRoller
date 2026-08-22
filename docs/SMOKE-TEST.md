@@ -18,21 +18,24 @@
 6. Preserve a copy of relevant UMM settings. Start with Bag of Tricks disabled
    for the first gate.
 
-## Focused pristine-restoration gate
+## Focused immediate-presentation gate
 
-The fixed-array entry/preview-continuity seam passed live at `907f1bc1...`.
-Before repeating the full vanilla matrix, use a fresh process with Call of the
-Wild and Bag of Tricks disabled:
+The fixed-array entry/preview-continuity seam passed live at `907f1bc1...`, and
+the pristine semantic restoration at `c5ea92b2...` produced ordinary point buy
+after phase re-entry. Before repeating the full vanilla matrix, use a fresh
+process with Call of the Wild and Bag of Tricks disabled:
 
 1. Start a new human and confirm `16, 15, 14, 12, 10, 8` appears.
 2. Press **Return active roll session to point buy**.
-3. Confirm all rolled values disappear and ordinary vanilla allocation with 25
-   points returns.
-4. Spend and refund points with the normal plus/minus controls.
+3. Without navigating away, close UMM and confirm the same ability page
+   immediately shows six base tens and 25 points.
+4. Spend and refund points immediately with the normal plus/minus controls.
 5. Navigate backward and forward; confirm point buy remains active and the
    fixed array does not reappear.
-6. Repeat with an elf. Confirm the restored base allocation is ordinary point
-   buy while racial modifiers remain separate.
+6. Repeat with the tested tiefling heritage. Without navigating away, confirm
+   ordinary point-buy base values immediately appear while `+2 STR`, `+2 WIS`,
+   and `-2 CHA` remain separate (displayed totals `12, 10, 10, 10, 12, 8` for
+   the observed default allocation).
 7. Restart the test, leave roll mode active, and disable Dice Roller. It must
    restore clean point buy before disabling or refuse to disable safely.
 8. Complete a separate fresh character entirely in roll mode, save, quit,
@@ -41,7 +44,8 @@ Wild and Bag of Tricks disabled:
    array never activates.
 
 Stop and collect runtime evidence if any step fails. Do not advance to Gates
-A-E or compatibility testing until this focused gate passes.
+A-E or compatibility testing until this focused immediate-presentation gate
+passes.
 
 ## Gate A — context isolation
 
@@ -88,9 +92,10 @@ A mismatch between displayed values and preview/base values is a hard failure.
 
 1. Before completing creation, press **Return active roll session to point buy**
    in the UMM panel.
-2. Confirm the rolled values disappear while normal point-buy values and the
-   actual configured budget return. Rolled values plus a full budget are a hard
-   failure.
+2. Without leaving the ability page, confirm the rolled values immediately
+   disappear while normal point-buy values and the actual configured budget
+   return. Rolled values plus a full budget, or correct model values that remain
+   visually stale until navigation, are hard failures.
 3. Use plus/minus controls and confirm cost behavior is normal.
 4. Navigate backward and forward and confirm point-buy mode remains active.
 5. Repeat with a race that has ability modifiers and confirm modifiers remain

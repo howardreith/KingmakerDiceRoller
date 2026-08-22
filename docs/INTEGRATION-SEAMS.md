@@ -36,6 +36,24 @@ Kingmaker.Game.Instance.Player.MainCharacter
   MainCharacter : UnitReference
   Value : UnitEntityData
   Descriptor : UnitDescriptor
+
+Kingmaker.Game.Instance.UI.CharacterBuildController
+  CurrentPhase : Nullable<CharBPhase.Type>
+  Skills : CharBPhaseSkills
+
+Kingmaker.UI.LevelUp.Phase.CharBPhase.Type
+  Skills
+
+Kingmaker.UI.LevelUp.Phase.CharBPhaseSkills
+  AbilityScoresAllocator : CharBAbilityScoresAllocator
+
+Kingmaker.UI.LevelUp.CharBAbilityScoresAllocator
+  FillData() : Void
+  m_Unit : UnitEntityData
+  m_PreviewUnit : UnitEntityData
+
+Kingmaker.UnitLogic.UnitDescriptor
+  Unit : UnitEntityData
 ```
 
 The context policy additionally requires readable Boolean identity paths for
@@ -82,6 +100,16 @@ it does not reset the six score values. During point-buy restoration, normal
 modded allocator patches run before this mod's postfix observes the restoring
 mode and leaves fixed-array staging suppressed. The pristine allocation is then
 restored and verified on the live preview.
+
+The open ability page is refreshed only after semantic restoration has entered
+durable PointBuy mode. Exact 2.1.7b `CharBAbilityScoresAllocator.FillData()` IL
+rereads `LevelUpController.State`, its `StatsDistribution`, the source and
+preview units, racial modifiers, point totals/costs, and add/remove
+availability. Calling that exact native method is narrower than another
+`UpdatePreview()` and preserves Owlcat's presentation lifecycle. The call is
+limited to one attempt per session generation, rejects nested invocation, and
+is followed by reference checks of the current state/distribution and the
+allocator's `m_Unit`/`m_PreviewUnit` bindings.
 
 The character-build controller sets `LevelUpController` to null from its hide
 and dispose lifecycle. Session liveness therefore follows controller/source

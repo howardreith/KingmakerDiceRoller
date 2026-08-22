@@ -34,6 +34,7 @@ namespace KingmakerDiceRoller
             var sessions = new RollSessionManager();
             var application = new StatApplicationService(statAccess, livePreview, preview, logger);
             var restore = new PointBuyRestoreService(statAccess, livePreview, preview, logger);
+            var presentation = new AbilityPhasePresentationService(livePreview, logger);
             coordinator = new CharacterCreationCoordinator(
                 new CharacterCreationContextPolicy(),
                 budgetTracker,
@@ -42,6 +43,7 @@ namespace KingmakerDiceRoller
                 sessions,
                 application,
                 restore,
+                presentation,
                 diagnostics,
                 logger,
                 () => contracts.Current,

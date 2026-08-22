@@ -142,6 +142,29 @@ try {
     $recalculate = $controller.GetField('m_RecalculatePreview',$flags)
     $update = $controller.GetMethod('UpdatePreview',$flags,$null,[Type[]]@(),$null)
     if (-not $recalculate -or $recalculate.FieldType -ne [bool] -or -not $update -or $update.ReturnType -ne [void]) { throw 'Exact preview refresh contract is unavailable.' }
+    $phaseKind = Require-Type $assembly 'Kingmaker.UI.LevelUp.Phase.CharBPhase+Type'
+    $skillsPhase = Require-Type $assembly 'Kingmaker.UI.LevelUp.Phase.CharBPhaseSkills'
+    $abilityAllocator = Require-Type $assembly 'Kingmaker.UI.LevelUp.CharBAbilityScoresAllocator'
+    $currentPhase = Require-Member $characterBuild 'CurrentPhase'
+    if ([Nullable]::GetUnderlyingType((Member-Type $currentPhase)) -ne $phaseKind) {
+        throw 'CharacterBuildController.CurrentPhase is not Nullable<CharBPhase.Type>.'
+    }
+    $skillsValue = [Enum]::Parse($phaseKind, 'Skills', $false)
+    if ($skillsValue.ToString() -ne 'Skills') { throw 'CharBPhase.Type.Skills was not found.' }
+    $skillsMember = Require-Member $characterBuild 'Skills'
+    if ((Member-Type $skillsMember) -ne $skillsPhase) { throw 'CharacterBuildController.Skills has an unexpected type.' }
+    $abilityAllocatorMember = Require-Member $skillsPhase 'AbilityScoresAllocator'
+    if ((Member-Type $abilityAllocatorMember) -ne $abilityAllocator) { throw 'CharBPhaseSkills.AbilityScoresAllocator has an unexpected type.' }
+    $fillAbilityData = $abilityAllocator.GetMethod('FillData',$flags,$null,[Type[]]@(),$null)
+    if (-not $fillAbilityData -or $fillAbilityData.ReturnType -ne [void]) { throw 'Exact CharBAbilityScoresAllocator.FillData() was not found.' }
+    $unitEntityMember = Require-Member $unit 'Unit'
+    if (-not $unitEntity.IsAssignableFrom((Member-Type $unitEntityMember))) { throw 'UnitDescriptor.Unit is not a UnitEntityData contract.' }
+    $allocatorSource = $abilityAllocator.GetField('m_Unit',$flags)
+    $allocatorPreview = $abilityAllocator.GetField('m_PreviewUnit',$flags)
+    if (-not $allocatorSource -or $allocatorSource.FieldType -ne $unitEntity -or
+        -not $allocatorPreview -or $allocatorPreview.FieldType -ne $unitEntity) {
+        throw 'Exact CharBAbilityScoresAllocator source/preview binding fields were not found.'
+    }
 
     $report = [ordered]@{
         status = 'passed'
@@ -156,7 +179,11 @@ try {
             "$($controller.FullName).State", "$($controller.FullName).Unit", "$($controller.FullName).Preview",
             'Game.Instance.Player.MainCharacter.Value.Descriptor',
             "$($controller.FullName).m_RecalculatePreview", "$($controller.FullName).UpdatePreview()",
-            "$($distribution.FullName).Available", "$($distribution.FullName).Points", "$($distribution.FullName).TotalPoints"
+            "$($distribution.FullName).Available", "$($distribution.FullName).Points", "$($distribution.FullName).TotalPoints",
+            "$($characterBuild.FullName).CurrentPhase == $($phaseKind.FullName).Skills",
+            "$($characterBuild.FullName).Skills -> $($skillsPhase.FullName).AbilityScoresAllocator",
+            "$($abilityAllocator.FullName).FillData()",
+            "$($abilityAllocator.FullName).m_Unit", "$($abilityAllocator.FullName).m_PreviewUnit"
         )
         abilities = $abilityNames
         context_paths = [ordered]@{ main_character=$mainPath; player_faction=$playerPath; pet=$petPath; enemy=$enemyPath }
@@ -166,6 +193,13 @@ try {
             controller_preview = 'Game.Instance.UI.CharacterBuildController.LevelUpController.Preview'
         }
         allocator_state_writable = $true
+        ability_presentation = [ordered]@{
+            active_phase = 'Game.Instance.UI.CharacterBuildController.CurrentPhase == Skills'
+            phase = 'Game.Instance.UI.CharacterBuildController.Skills'
+            allocator = 'CharBPhaseSkills.AbilityScoresAllocator'
+            refresh = 'Kingmaker.UI.LevelUp.CharBAbilityScoresAllocator.FillData()'
+            bindings = @('m_Unit','m_PreviewUnit')
+        }
     }
     $target = if ([IO.Path]::IsPathRooted($OutputPath)) { $OutputPath } else { Join-Path $root $OutputPath }
     New-Item -ItemType Directory -Force -Path (Split-Path -Parent $target) | Out-Null

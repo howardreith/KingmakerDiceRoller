@@ -38,6 +38,14 @@ namespace KingmakerDiceRoller.Integration
             MemberInfo levelUpControllerPreviewMember,
             FieldInfo previewRecalculateField,
             MethodInfo previewUpdateMethod,
+            MemberInfo characterBuildCurrentPhaseMember,
+            object skillsPhaseValue,
+            MemberInfo characterBuildSkillsPhaseMember,
+            MemberInfo abilityPhaseAllocatorMember,
+            MethodInfo abilityAllocatorFillDataMethod,
+            MemberInfo unitDescriptorEntityMember,
+            FieldInfo abilityAllocatorSourceEntityField,
+            FieldInfo abilityAllocatorPreviewEntityField,
             IReadOnlyList<string> evidence)
         {
             GameAssembly = gameAssembly;
@@ -71,6 +79,14 @@ namespace KingmakerDiceRoller.Integration
             LevelUpControllerPreviewMember = levelUpControllerPreviewMember;
             PreviewRecalculateField = previewRecalculateField;
             PreviewUpdateMethod = previewUpdateMethod;
+            CharacterBuildCurrentPhaseMember = characterBuildCurrentPhaseMember;
+            SkillsPhaseValue = skillsPhaseValue;
+            CharacterBuildSkillsPhaseMember = characterBuildSkillsPhaseMember;
+            AbilityPhaseAllocatorMember = abilityPhaseAllocatorMember;
+            AbilityAllocatorFillDataMethod = abilityAllocatorFillDataMethod;
+            UnitDescriptorEntityMember = unitDescriptorEntityMember;
+            AbilityAllocatorSourceEntityField = abilityAllocatorSourceEntityField;
+            AbilityAllocatorPreviewEntityField = abilityAllocatorPreviewEntityField;
             Evidence = evidence;
         }
 
@@ -105,6 +121,14 @@ namespace KingmakerDiceRoller.Integration
         public MemberInfo LevelUpControllerPreviewMember { get; }
         public FieldInfo PreviewRecalculateField { get; }
         public MethodInfo PreviewUpdateMethod { get; }
+        public MemberInfo CharacterBuildCurrentPhaseMember { get; }
+        public object SkillsPhaseValue { get; }
+        public MemberInfo CharacterBuildSkillsPhaseMember { get; }
+        public MemberInfo AbilityPhaseAllocatorMember { get; }
+        public MethodInfo AbilityAllocatorFillDataMethod { get; }
+        public MemberInfo UnitDescriptorEntityMember { get; }
+        public FieldInfo AbilityAllocatorSourceEntityField { get; }
+        public FieldInfo AbilityAllocatorPreviewEntityField { get; }
         public IReadOnlyList<string> Evidence { get; }
 
         public bool TryGetLevelUpController(out object controller)
@@ -175,6 +199,71 @@ namespace KingmakerDiceRoller.Integration
                 sourceUnit = null;
                 state = null;
                 preview = null;
+                return false;
+            }
+        }
+
+        public bool TryGetAbilityPhasePresentationContext(
+            out object characterBuildController,
+            out bool abilityPhaseActive,
+            out object abilityPhase,
+            out object allocator)
+        {
+            characterBuildController = null;
+            abilityPhaseActive = false;
+            abilityPhase = null;
+            allocator = null;
+            try
+            {
+                object game = ReflectionAccess.Read(GameInstanceMember, null);
+                if (game == null) return true;
+                object ui = ReflectionAccess.Read(GameUiMember, game);
+                if (ui == null) return true;
+                characterBuildController = ReflectionAccess.Read(UiCharacterBuildControllerMember, ui);
+                if (characterBuildController == null) return true;
+
+                object currentPhase = ReflectionAccess.Read(
+                    CharacterBuildCurrentPhaseMember,
+                    characterBuildController);
+                abilityPhaseActive = currentPhase != null && Equals(currentPhase, SkillsPhaseValue);
+                abilityPhase = ReflectionAccess.Read(
+                    CharacterBuildSkillsPhaseMember,
+                    characterBuildController);
+                if (abilityPhase == null) return true;
+                allocator = ReflectionAccess.Read(AbilityPhaseAllocatorMember, abilityPhase);
+                if (allocator != null &&
+                    !AbilityAllocatorFillDataMethod.DeclaringType.IsInstanceOfType(allocator))
+                {
+                    characterBuildController = null;
+                    abilityPhaseActive = false;
+                    abilityPhase = null;
+                    allocator = null;
+                    return false;
+                }
+                return true;
+            }
+            catch
+            {
+                characterBuildController = null;
+                abilityPhaseActive = false;
+                abilityPhase = null;
+                allocator = null;
+                return false;
+            }
+        }
+
+        public bool TryGetDescriptorEntity(object descriptor, out object entity)
+        {
+            entity = null;
+            if (descriptor == null || !UnitDescriptorType.IsInstanceOfType(descriptor)) return false;
+            try
+            {
+                entity = ReflectionAccess.Read(UnitDescriptorEntityMember, descriptor);
+                return entity != null;
+            }
+            catch
+            {
+                entity = null;
                 return false;
             }
         }

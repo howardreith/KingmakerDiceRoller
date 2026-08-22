@@ -99,6 +99,35 @@
   oracle cases; the exact repair build/package completed with zero warnings and
   zero errors against Assembly-CSharp MVID
   `07fa1e4d-8618-41b3-9b8d-faa17d3b26f7`.
+- Recorded the sixth live gate: pristine restoration removed the illegal
+  rolled-plus-point-buy hybrid, ordinary base tens and 25 points appeared after
+  ability-page re-entry, the tested tiefling's racial modifiers remained
+  separate, durable PointBuy mode survived navigation, and an ordinary
+  existing-character level-up remained isolated.
+- Recorded the limited Bag of Tricks restoration smoke without claiming its
+  alternative budgets/settings or full compatibility matrix qualified.
+- Identified the remaining defect as stale presentation on the currently open
+  ability page: the verified live model was correct, but score rows, racial
+  modifiers, allocator points, and controls did not update until navigation.
+- Added exact 2.1.7b contracts for the active Skills phase and
+  `CharBAbilityScoresAllocator.FillData()`, including its current source and
+  preview binding fields.
+- Added one bounded, PointBuy-only post-restoration native presentation refresh
+  and verified that the allocator binds the current session state,
+  distribution, source entity, and preview entity without rebuilding the
+  preview or re-entering Roll mode.
+- Separated semantic restoration success from presentation synchronization
+  success. A native presentation failure now retains safe durable PointBuy mode
+  and reports exact binding facts instead of rolling back to fixed values.
+- Added executable regressions for stale presentation detection, exact native
+  refresh ordering and bounds, immediate human/racial/non-default-budget
+  presentation, safe failure and disable behavior, and absence of refresh
+  recursion or fixed-array restaging.
+- Source-qualified 66 C# files, 123 compiled C# behavior cases, and 25 Python
+  oracle cases; the exact presentation repair build/package completed with zero
+  warnings and zero errors against Assembly-CSharp MVID
+  `07fa1e4d-8618-41b3-9b8d-faa17d3b26f7`.
 
-No full runtime or compatibility qualification is claimed until pristine
-point-buy restoration and the remaining vanilla gates pass live testing.
+No full runtime or compatibility qualification is claimed until immediate
+same-page point-buy presentation and the remaining vanilla gates pass live
+testing.

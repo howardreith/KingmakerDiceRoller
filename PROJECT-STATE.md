@@ -2,14 +2,14 @@
 
 ## Current phase
 
-Phase 2 - pristine point-buy restoration repair after the first successful
-live fixed-array preview gate.
+Phase 2 - immediate native ability-page synchronization after verified
+pristine point-buy restoration.
 
 ## Branch and baseline
 
 Branch: `pro/kingmaker-dice-roller-mvp`
 
-Baseline before this repair: `907f1bc1b3afa6a48fe5c849200e5f6867c13062`.
+Baseline before this repair: `c5ea92b21bdb3392691bd9d79523df5152e0fc67`.
 
 ## Implemented behavior
 
@@ -31,6 +31,14 @@ Baseline before this repair: `907f1bc1b3afa6a48fe5c849200e5f6867c13062`.
 - Point-buy restoration on the newest live preview using the observed
   allocator `Start(int)` budget and the pristine allocation. An illegal rolled
   array plus full budget cannot pass verification.
+- One bounded native `CharBAbilityScoresAllocator.FillData()` call after
+  semantic restoration. It rebinds the currently active Skills ability page to
+  the live controller state/distribution and refreshes score rows, racial
+  modifiers, allocator points, and native controls without rebuilding the
+  preview.
+- Separate semantic-restoration and presentation observations. Presentation
+  failure preserves verified, durable PointBuy mode instead of rolling back to
+  the diagnostic array.
 - Generation-local rollback after a failed write or restore. Disable/unload
   restores verified point buy before unpatching, or refuses to disable while
   retaining recovery hooks.
@@ -44,11 +52,11 @@ Baseline before this repair: `907f1bc1b3afa6a48fe5c849200e5f6867c13062`.
 
 | Level | Status |
 |---|---|
-| Implemented | Yes - pristine point-buy and durable mode repair implemented |
-| Source-qualified | Yes - 64 C# files, 101 compiled behavior cases, and 25 Python oracle cases |
+| Implemented | Yes - bounded native ability-page presentation synchronization implemented |
+| Source-qualified | Yes - 66 C# files, 123 compiled behavior cases, and 25 Python oracle cases |
 | Build-qualified | Yes - zero-warning exact build/package against MVID `07fa1e4d-8618-41b3-9b8d-faa17d3b26f7` |
-| Runtime-qualified | No - fixed-array entry/continuity passed, but repaired restoration awaits live evidence |
-| Compatibility-qualified | No - only a limited entry smoke has been observed |
+| Runtime-qualified | No - semantic restoration passed, but immediate same-page presentation awaits live evidence |
+| Compatibility-qualified | No - only limited entry/restoration smokes have been observed |
 
 ## Live-gate evidence
 
@@ -83,7 +91,31 @@ seam:
 The same gate exposed a hard restoration failure. **Return active roll session
 to point buy** restored the full 25-point pool while leaving the rolled base
 array in place. The user could spend the pool on top of the roll, creating an
-illegal hybrid character. Runtime qualification remains blocked.
+illegal hybrid character. Commit `c5ea92b2...` repaired that semantic model
+failure.
+
+The sixth live gate at `c5ea92b2...`, performed with Bag of Tricks enabled,
+proved the pristine model and durable-mode repair but exposed a presentation
+defect:
+
+- A human began with the visible fixed array and a disabled zero-point
+  allocator. Restoration left that old presentation visible on the open page,
+  but leaving and re-entering immediately showed ordinary base tens, 25 points,
+  and working native plus/minus controls.
+- The tested tiefling heritage likewise retained the old rolled presentation
+  until navigation. Re-entry showed ordinary point-buy base values with its
+  `+2 STR`, `+2 WIS`, and `-2 CHA` modifiers still separate.
+- Backward/forward navigation did not reapply the fixed array, confirming that
+  durable PointBuy mode remained active.
+- An ordinary existing-character level-up did not activate the array.
+- Bag of Tricks did not prevent semantic restoration in this limited smoke;
+  alternative budgets/settings and the full compatibility matrix remain
+  unqualified.
+
+The live controller model was therefore safe, while the currently open native
+ability page remained bound to stale presentation data until its normal phase
+re-entry refresh. Runtime qualification remains blocked on immediate
+same-page synchronization.
 
 ## Root cause and current repair
 
@@ -103,22 +135,33 @@ The repair separates two lifetimes:
 - `GenerationRollbackSnapshot` is replaced on each preview generation and is
   used only for transactional rollback of that generation.
 
-Restoration enters `RestoringPointBuy`, performs one guarded refresh, follows a
-same-owner replacement, calls the allocator with the pristine observed budget,
-restores the pristine values and allocator fields on the newest live preview,
-and verifies all live relations. Success enters durable `PointBuy` mode for the
-stable owner. Failure restores the isolated fixed array with point buy disabled;
-if that rollback cannot be verified, disable/unload is refused.
+Restoration enters `RestoringPointBuy`, performs one guarded preview refresh,
+follows a same-owner replacement, calls the allocator with the pristine
+observed budget, restores the pristine values and allocator fields on the
+newest live preview, and verifies all live relations. Success enters durable
+`PointBuy` mode for the stable owner. Failure restores the isolated fixed array
+with point buy disabled; if that rollback cannot be verified, disable/unload is
+refused.
+
+Exact Kingmaker 2.1.7b IL shows that the active Skills phase owns a
+`CharBAbilityScoresAllocator`. Its `FillData()` method rereads the current
+controller state, source and preview units, `StatsDistribution`, racial
+modifiers, remaining points, costs, and control availability. The current
+repair calls that exact method once after semantic restoration and verifies its
+private source/preview bindings against the session's live generation. It does
+not call `UpdatePreview()`, mutate labels directly, or re-enter Roll mode.
+Presentation failure leaves the already-verified PointBuy model safe and
+reports the failed binding instead of restoring rolled values.
 
 ## Required next live test
 
 From a fresh vanilla process, verify that the fixed array appears, then use
-**Return active roll session to point buy**. The rolled values must disappear,
-ordinary values and the real budget must return, plus/minus controls must work,
-and backward/forward navigation must remain in point-buy mode. Repeat with an
-elf, then test disabling while roll mode is active. Do not advance to the final
-Roll/Reroll UI or compatibility qualification until this restoration gate
-passes.
+**Return active roll session to point buy without leaving the ability page**.
+The same page must immediately show ordinary values and the real budget, and
+plus/minus controls must work. Repeat with the tested tiefling heritage, then
+test disabling while roll mode is active. Do not advance to the final
+Roll/Reroll UI or compatibility qualification until this immediate
+presentation gate passes.
 
 ## Important decisions
 

@@ -193,6 +193,58 @@ namespace KingmakerDiceRoller.Integration
                 throw new ContractResolutionException("Exact LevelUpController preview refresh contract was not found.");
             }
 
+            Type phaseKindType = RequireType(gameAssembly, "Kingmaker.UI.LevelUp.Phase.CharBPhase+Type");
+            Type skillsPhaseType = RequireType(gameAssembly, "Kingmaker.UI.LevelUp.Phase.CharBPhaseSkills");
+            Type abilityAllocatorType = RequireType(gameAssembly, "Kingmaker.UI.LevelUp.CharBAbilityScoresAllocator");
+            MemberInfo currentPhase = ReflectionAccess.RequireInstanceMember(characterBuildControllerType, "CurrentPhase");
+            Type currentPhaseType = ReflectionAccess.GetMemberType(currentPhase);
+            if (Nullable.GetUnderlyingType(currentPhaseType) != phaseKindType)
+            {
+                throw new ContractResolutionException("CharacterBuildController.CurrentPhase is not Nullable<CharBPhase.Type>.");
+            }
+            object skillsPhaseValue;
+            try
+            {
+                skillsPhaseValue = Enum.Parse(phaseKindType, "Skills", false);
+            }
+            catch (Exception exception)
+            {
+                throw new ContractResolutionException("CharBPhase.Type.Skills was not found: " + exception.Message);
+            }
+            MemberInfo skillsPhase = ReflectionAccess.RequireInstanceMember(characterBuildControllerType, "Skills");
+            if (ReflectionAccess.GetMemberType(skillsPhase) != skillsPhaseType)
+            {
+                throw new ContractResolutionException("CharacterBuildController.Skills has an unexpected type.");
+            }
+            MemberInfo abilityAllocator = ReflectionAccess.RequireInstanceMember(skillsPhaseType, "AbilityScoresAllocator");
+            if (ReflectionAccess.GetMemberType(abilityAllocator) != abilityAllocatorType)
+            {
+                throw new ContractResolutionException("CharBPhaseSkills.AbilityScoresAllocator has an unexpected type.");
+            }
+            MethodInfo fillAbilityData = abilityAllocatorType.GetMethod(
+                "FillData",
+                InstanceFlags,
+                null,
+                Type.EmptyTypes,
+                null);
+            if (fillAbilityData == null || fillAbilityData.ReturnType != typeof(void))
+            {
+                throw new ContractResolutionException("Exact CharBAbilityScoresAllocator.FillData() method was not found.");
+            }
+            MemberInfo unitEntity = ReflectionAccess.RequireInstanceMember(unitDescriptorType, "Unit");
+            if (!unitEntityDataType.IsAssignableFrom(ReflectionAccess.GetMemberType(unitEntity)))
+            {
+                throw new ContractResolutionException("UnitDescriptor.Unit is not a UnitEntityData contract.");
+            }
+            FieldInfo allocatorSourceEntity = abilityAllocatorType.GetField("m_Unit", InstanceFlags);
+            FieldInfo allocatorPreviewEntity = abilityAllocatorType.GetField("m_PreviewUnit", InstanceFlags);
+            if (allocatorSourceEntity == null || allocatorSourceEntity.FieldType != unitEntityDataType ||
+                allocatorPreviewEntity == null || allocatorPreviewEntity.FieldType != unitEntityDataType)
+            {
+                throw new ContractResolutionException(
+                    "Exact CharBAbilityScoresAllocator source/preview binding fields were not found.");
+            }
+
             evidence.Add("Assembly=" + gameAssembly.FullName);
             evidence.Add("MVID=" + gameAssembly.ManifestModule.ModuleVersionId.ToString("D"));
             evidence.Add("Abilities=" + string.Join(",", abilityKeys.Select(value => value.ToString()).ToArray()));
@@ -202,6 +254,12 @@ namespace KingmakerDiceRoller.Integration
             evidence.Add("ControllerIdentity=" + controllerType.FullName + ".Unit + Preview");
             evidence.Add("Preview=" + controllerType.FullName + ".m_RecalculatePreview + UpdatePreview()");
             evidence.Add("AllocatorState=" + statsDistributionType.FullName + ".Available + Points + TotalPoints (writable)");
+            evidence.Add(
+                "AbilityPresentation=Game.Instance.UI.CharacterBuildController.CurrentPhase(Skills) -> " +
+                skillsPhaseType.FullName + ".AbilityScoresAllocator -> " +
+                abilityAllocatorType.FullName + ".FillData()");
+            evidence.Add(
+                "AbilityPresentationBinding=" + abilityAllocatorType.FullName + ".m_Unit + m_PreviewUnit");
 
             return new KingmakerContracts(
                 gameAssembly,
@@ -235,6 +293,14 @@ namespace KingmakerDiceRoller.Integration
                 controllerPreview,
                 recalculate,
                 updatePreview,
+                currentPhase,
+                skillsPhaseValue,
+                skillsPhase,
+                abilityAllocator,
+                fillAbilityData,
+                unitEntity,
+                allocatorSourceEntity,
+                allocatorPreviewEntity,
                 evidence);
         }
 

@@ -769,13 +769,478 @@ namespace KingmakerDiceRoller.DomainTests
             AssertEx.True(coordinator.TryRestorePointBuy(out error), error);
 
             string text = string.Join("\n", diagnostics.SnapshotRecent());
-            AssertEx.True(text.Contains("RESTORE Verified pristine point-buy state on the live preview"));
+            AssertEx.True(text.Contains("RESTORE Pristine point-buy model and active ability-page presentation verified"));
             AssertEx.True(text.Contains("pristineBaselineCaptured=true"));
             AssertEx.True(text.Contains("pristineBaselineGeneration=1"));
             AssertEx.True(text.Contains("mode=PointBuy"));
             AssertEx.True(text.Contains("liveDistributionMatchesPristine=true"));
             AssertEx.True(text.Contains("liveUnitMatchesPristine=true"));
             AssertEx.True(text.Contains("rollSuppressedForStableOwner=true"));
+            AssertEx.True(text.Contains("semanticPointBuyVerified=true"));
+            AssertEx.True(text.Contains("presentationRefreshCount=1"));
+        }
+
+        internal static void SemanticRestoreWithoutPresentationIsNotSynchronized()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            RollSession session = RestoreSemantically(environment, environment.NewState(10));
+            environment.CharacterBuild.CurrentPhase = FakePhaseType.Race;
+
+            PointBuyPresentationObservation observation;
+            string error;
+            AssertEx.True(!environment.Presentation.TrySynchronize(
+                session,
+                environment.Contracts,
+                out observation,
+                out error));
+
+            AssertEx.True(observation.SemanticPointBuyVerified);
+            AssertEx.True(!observation.ActiveAbilityPhaseFound);
+            AssertEx.True(!observation.IsSynchronized);
+            AssertEx.Equal(0, observation.PresentationRefreshCount);
+        }
+
+        internal static void NativeAbilityRefreshRunsAfterPristineWrites()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            RollSession session = RestoreSemantically(environment, environment.NewState(10));
+            bool observedPristine = false;
+            environment.Allocator.OnFill = () =>
+            {
+                observedPristine = environment.ReadDistribution(session.State as FakeState)
+                    .SequenceEqual(Enumerable.Repeat(10, 6)) &&
+                    environment.ReadUnit(session.Unit as FakeUnitDescriptor)
+                    .SequenceEqual(Enumerable.Repeat(10, 6)) &&
+                    ((FakeDistribution)session.Distribution).Points == 25;
+            };
+
+            PointBuyPresentationObservation observation;
+            string error;
+            AssertEx.True(environment.Presentation.TrySynchronize(
+                session,
+                environment.Contracts,
+                out observation,
+                out error), error);
+
+            AssertEx.True(observedPristine);
+            AssertEx.True(observation.PresentationRefreshRequested);
+            AssertEx.Equal(AbilityPhasePresentationService.NativeRefreshMethod, observation.PresentationRefreshMethod);
+        }
+
+        internal static void PresentationRefreshIsBoundedPerGeneration()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            RollSession session = RestoreSemantically(environment, environment.NewState(10));
+            PointBuyPresentationObservation first;
+            PointBuyPresentationObservation second;
+            string error;
+
+            AssertEx.True(environment.Presentation.TrySynchronize(
+                session,
+                environment.Contracts,
+                out first,
+                out error), error);
+            AssertEx.True(environment.Presentation.TrySynchronize(
+                session,
+                environment.Contracts,
+                out second,
+                out error), error);
+
+            AssertEx.Equal(1, environment.Allocator.FillDataCalls);
+            AssertEx.Equal(1, environment.Presentation.TotalRefreshCount);
+            AssertEx.Equal(1, second.PresentationRefreshCount);
+        }
+
+        internal static void PresentationRefreshCannotReenterRollMode()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            RollSession session = RestoreSemantically(environment, environment.NewState(10));
+            RollSessionMode observedMode = RollSessionMode.Roll;
+            environment.Allocator.OnFill = () => observedMode = session.Mode;
+
+            PointBuyPresentationObservation observation;
+            string error;
+            AssertEx.True(environment.Presentation.TrySynchronize(
+                session,
+                environment.Contracts,
+                out observation,
+                out error), error);
+
+            AssertEx.Equal(RollSessionMode.PointBuy, observedMode);
+            AssertEx.Equal(RollSessionMode.PointBuy, session.Mode);
+        }
+
+        internal static void SameOwnerReplacementDuringPresentationStaysSuppressed()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            FakeState previewA = environment.NewState(10);
+            RollSession session = RestoreSemantically(environment, previewA);
+            FakeState previewB = null;
+            environment.Allocator.OnFill = () =>
+            {
+                previewB = environment.NewReplacementState(previewA, 10);
+                session = environment.Rebind(previewB);
+                environment.Controller.State = previewB;
+            };
+
+            PointBuyPresentationObservation observation;
+            string error;
+            AssertEx.True(!environment.Presentation.TrySynchronize(
+                session,
+                environment.Contracts,
+                out observation,
+                out error));
+
+            AssertEx.Equal(RollSessionMode.PointBuy, session.Mode);
+            AssertEx.True(session.RollSuppressedForStableOwner);
+            AssertEx.SequenceEqual(Enumerable.Repeat(10, 6), environment.ReadDistribution(previewB));
+            AssertEx.True(!environment.ReadDistribution(previewB).SequenceEqual(FixedValues));
+        }
+
+        internal static void FixedAssignmentIsNotRestagedByPresentation()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            FakeState preview = environment.NewState(10);
+            RollSession session = RestoreSemantically(environment, preview);
+            PointBuyPresentationObservation observation;
+            string error;
+
+            AssertEx.True(environment.Presentation.TrySynchronize(
+                session,
+                environment.Contracts,
+                out observation,
+                out error), error);
+
+            AssertEx.SequenceEqual(Enumerable.Repeat(10, 6), environment.ReadDistribution(preview));
+            AssertEx.SequenceEqual(Enumerable.Repeat(10, 6), environment.ReadUnit(preview.Unit));
+            AssertEx.True(!environment.ReadDistribution(preview).SequenceEqual(session.Assignment.ToAssignedArray()));
+        }
+
+        internal static void PostRefreshLiveStateRemainsPristine()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            FakeState preview = environment.NewState(10);
+            RollSession session = RestoreSemantically(environment, preview);
+            PointBuyPresentationObservation observation;
+            string error;
+
+            AssertEx.True(environment.Presentation.TrySynchronize(
+                session,
+                environment.Contracts,
+                out observation,
+                out error), error);
+
+            AssertEx.True(observation.PostRefreshLiveModelVerified);
+            AssertEx.Equal(session.Generation, observation.PostRefreshGeneration);
+            AssertEx.SequenceEqual(session.PristinePointBuy.Values.DistributionValues, environment.ReadDistribution(preview));
+            AssertEx.SequenceEqual(session.PristinePointBuy.Values.UnitValues, environment.ReadUnit(preview.Unit));
+        }
+
+        internal static void PostRefreshAllocatorKeepsObservedBudget()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            FakeState preview = environment.NewState(10);
+            preview.StatsDistribution.SetAllocatorState(true, 17, 37);
+            RollSession session = environment.Open(preview, 37, "observed custom budget");
+            StageAndVerify(environment, session);
+            PointBuyRestoreObservation semantic;
+            PointBuyPresentationObservation presentation;
+            string error;
+            AssertEx.True(environment.Restore.TryRestore(session, environment.Contracts, out semantic, out error), error);
+            AssertEx.True(environment.Presentation.TrySynchronize(
+                session,
+                environment.Contracts,
+                out presentation,
+                out error), error);
+
+            AssertEx.Equal(17, environment.Allocator.DisplayedPoints);
+            AssertEx.Equal(37, preview.StatsDistribution.TotalPoints);
+            AssertEx.Equal(37, preview.StatsDistribution.LastStartBudget);
+            AssertEx.Equal(37, session.PristinePointBuy.AllocatorBudget);
+        }
+
+        internal static void PresentationBindsCurrentStateAndDistribution()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            FakeState preview = environment.NewState(10);
+            RollSession session = RestoreSemantically(environment, preview);
+            PointBuyPresentationObservation observation;
+            string error;
+
+            AssertEx.True(environment.Presentation.TrySynchronize(
+                session,
+                environment.Contracts,
+                out observation,
+                out error), error);
+
+            AssertEx.True(ReferenceEquals(session.State, environment.Allocator.BoundState));
+            AssertEx.True(ReferenceEquals(session.Distribution, environment.Allocator.BoundDistribution));
+            AssertEx.True(observation.AbilityPhaseStateMatchesSession);
+            AssertEx.True(observation.AbilityPhaseDistributionMatchesSession);
+            AssertEx.True(observation.AbilityPhaseViewModelMatchesSession);
+        }
+
+        internal static void HumanPresentationImmediatelyShowsPristinePointBuy()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            RollSession session = RestoreSemantically(environment, environment.NewState(10));
+            PointBuyPresentationObservation observation;
+            string error;
+            AssertEx.True(environment.Presentation.TrySynchronize(
+                session,
+                environment.Contracts,
+                out observation,
+                out error), error);
+
+            AssertEx.SequenceEqual(Enumerable.Repeat(10, 6), environment.Allocator.DisplayedValues);
+            AssertEx.Equal(25, environment.Allocator.DisplayedPoints);
+            AssertEx.True(environment.Allocator.NativeControlsAvailable);
+        }
+
+        internal static void RaceModifiersRemainSeparateInImmediatePresentation()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            FakeState preview = environment.NewState(10);
+            RollSession session = RestoreSemantically(environment, preview);
+            preview.Unit.Stats.SetModifiers(new[] { 2, 0, 0, 0, 2, -2 });
+            PointBuyPresentationObservation observation;
+            string error;
+            AssertEx.True(environment.Presentation.TrySynchronize(
+                session,
+                environment.Contracts,
+                out observation,
+                out error), error);
+
+            AssertEx.SequenceEqual(Enumerable.Repeat(10, 6), environment.ReadUnit(preview.Unit));
+            AssertEx.SequenceEqual(new[] { 12, 10, 10, 10, 12, 8 }, environment.Allocator.DisplayedValues);
+        }
+
+        internal static void NonDefaultBudgetReachesImmediatePresentation()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            FakeState preview = environment.NewState(10);
+            preview.StatsDistribution.SetAllocatorState(true, 31, 31);
+            RollSession session = environment.Open(preview, 31, "Bag of Tricks test budget");
+            StageAndVerify(environment, session);
+            PointBuyRestoreObservation semantic;
+            PointBuyPresentationObservation presentation;
+            string error;
+            AssertEx.True(environment.Restore.TryRestore(session, environment.Contracts, out semantic, out error), error);
+            AssertEx.True(environment.Presentation.TrySynchronize(
+                session,
+                environment.Contracts,
+                out presentation,
+                out error), error);
+
+            AssertEx.Equal(31, environment.Allocator.DisplayedPoints);
+            AssertEx.Equal(31, preview.StatsDistribution.LastStartBudget);
+        }
+
+        internal static void NavigationAfterPresentationStaysInPointBuy()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            FakeState previewA = environment.NewState(10);
+            RollSession session = RestoreSemantically(environment, previewA);
+            PointBuyPresentationObservation observation;
+            string error;
+            AssertEx.True(environment.Presentation.TrySynchronize(
+                session,
+                environment.Contracts,
+                out observation,
+                out error), error);
+
+            FakeState previewB = environment.NewReplacementState(previewA, 10);
+            session = environment.Rebind(previewB);
+            environment.Controller.State = previewB;
+
+            AssertEx.Equal(RollSessionMode.PointBuy, session.Mode);
+            AssertEx.True(session.RollSuppressedForStableOwner);
+            AssertEx.SequenceEqual(Enumerable.Repeat(10, 6), environment.ReadDistribution(previewB));
+        }
+
+        internal static void PresentationFailurePreservesSafePointBuy()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            FakeState preview = environment.NewState(10);
+            RollSession session = RestoreSemantically(environment, preview);
+            environment.Allocator.ThrowOnFill = true;
+            PointBuyPresentationObservation observation;
+            string error;
+
+            AssertEx.True(!environment.Presentation.TrySynchronize(
+                session,
+                environment.Contracts,
+                out observation,
+                out error));
+
+            AssertEx.Equal(RollSessionMode.PointBuy, session.Mode);
+            AssertEx.True(session.RollSuppressedForStableOwner);
+            AssertEx.True(observation.SemanticPointBuyVerified);
+            AssertEx.SequenceEqual(Enumerable.Repeat(10, 6), environment.ReadDistribution(preview));
+        }
+
+        internal static void PresentationFailureNeverRollsBackToFixedArray()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            FakeState preview = environment.NewState(10);
+            RollSession session = RestoreSemantically(environment, preview);
+            environment.Allocator.ThrowOnFill = true;
+            PointBuyPresentationObservation observation;
+            string error;
+
+            environment.Presentation.TrySynchronize(
+                session,
+                environment.Contracts,
+                out observation,
+                out error);
+
+            AssertEx.True(!environment.ReadDistribution(preview).SequenceEqual(FixedValues));
+            AssertEx.True(!environment.ReadUnit(preview.Unit).SequenceEqual(FixedValues));
+            AssertEx.True(preview.StatsDistribution.Available);
+            AssertEx.Equal(25, preview.StatsDistribution.Points);
+        }
+
+        internal static void DisableAfterSemanticRestorationRemainsSafe()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            FakeState preview = environment.NewState(10);
+            RollSession session = RestoreSemantically(environment, preview);
+            environment.Allocator.ThrowOnFill = true;
+            PointBuyPresentationObservation observation;
+            string ignored;
+            environment.Presentation.TrySynchronize(
+                session,
+                environment.Contracts,
+                out observation,
+                out ignored);
+            CharacterCreationCoordinator coordinator = environment.CreateCoordinator();
+
+            AssertEx.True(coordinator.TryPrepareDisable(out ignored), ignored);
+            AssertEx.Equal(null, environment.Sessions.Active);
+            AssertEx.SequenceEqual(Enumerable.Repeat(10, 6), environment.ReadDistribution(preview));
+        }
+
+        internal static void DisableDuringRollSynchronizesBeforeClear()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            FakeState preview = environment.NewState(10);
+            RollSession session = environment.Open(preview);
+            StageAndVerify(environment, session);
+            bool observedPointBuyBeforeClear = false;
+            environment.Allocator.OnFill = () =>
+                observedPointBuyBeforeClear = environment.Sessions.Active != null &&
+                    environment.Sessions.Active.IsPointBuyMode;
+            CharacterCreationCoordinator coordinator = environment.CreateCoordinator();
+            string error;
+
+            AssertEx.True(coordinator.TryPrepareDisable(out error), error);
+
+            AssertEx.True(observedPointBuyBeforeClear);
+            AssertEx.Equal(1, environment.Allocator.FillDataCalls);
+            AssertEx.Equal(null, environment.Sessions.Active);
+        }
+
+        internal static void PresentationRefreshDoesNotRebuildPreview()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            RollSession session = RestoreSemantically(environment, environment.NewState(10));
+            int semanticRefreshCount = environment.PreviewRefresh.RefreshCount;
+            int generation = session.Generation;
+            PointBuyPresentationObservation observation;
+            string error;
+            AssertEx.True(environment.Presentation.TrySynchronize(
+                session,
+                environment.Contracts,
+                out observation,
+                out error), error);
+
+            AssertEx.Equal(semanticRefreshCount, environment.PreviewRefresh.RefreshCount);
+            AssertEx.Equal(generation, session.Generation);
+            AssertEx.Equal(1, observation.PresentationRefreshCount);
+        }
+
+        internal static void InactiveAbilityPhaseCannotClaimSynchronization()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            RollSession session = RestoreSemantically(environment, environment.NewState(10));
+            environment.CharacterBuild.CurrentPhase = FakePhaseType.Portrait;
+            PointBuyPresentationObservation observation;
+            string error;
+
+            AssertEx.True(!environment.Presentation.TrySynchronize(
+                session,
+                environment.Contracts,
+                out observation,
+                out error));
+
+            AssertEx.True(!observation.ActiveAbilityPhaseFound);
+            AssertEx.True(!observation.PresentationRefreshRequested);
+            AssertEx.Equal(0, environment.Allocator.FillDataCalls);
+        }
+
+        internal static void DiagnosticsSeparateSemanticAndPresentationFailure()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            FakeState preview = environment.NewState(10);
+            var tracker = new PointBudgetTracker();
+            tracker.Record(preview.StatsDistribution, 25);
+            var diagnostics = new RuntimeDiagnostics();
+            CharacterCreationCoordinator coordinator = environment.CreateCoordinator(tracker, diagnostics);
+            coordinator.OnLevelUpStateConstructed(preview, preview.Unit, FakeMode.CharGen);
+            coordinator.Update(0.1f);
+            environment.Allocator.ThrowOnFill = true;
+            string error;
+
+            AssertEx.True(coordinator.TryRestorePointBuy(out error), error);
+
+            string text = string.Join("\n", diagnostics.SnapshotRecent());
+            AssertEx.True(text.Contains("Pristine point-buy model is verified and durable"));
+            AssertEx.True(text.Contains("presentation synchronization failed"));
+            AssertEx.True(text.Contains("semanticPointBuyVerified=true"));
+            AssertEx.Equal(RollSessionMode.PointBuy, environment.Sessions.Active.Mode);
+        }
+
+        internal static void DiagnosticsReportNativePresentationVerification()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            FakeState preview = environment.NewState(10);
+            var tracker = new PointBudgetTracker();
+            tracker.Record(preview.StatsDistribution, 25);
+            var diagnostics = new RuntimeDiagnostics();
+            CharacterCreationCoordinator coordinator = environment.CreateCoordinator(tracker, diagnostics);
+            coordinator.OnLevelUpStateConstructed(preview, preview.Unit, FakeMode.CharGen);
+            coordinator.Update(0.1f);
+            string error;
+
+            AssertEx.True(coordinator.TryRestorePointBuy(out error), error);
+
+            string text = string.Join("\n", diagnostics.SnapshotRecent());
+            AssertEx.True(text.Contains("RESTORE Pristine point-buy model and active ability-page presentation verified"));
+            AssertEx.True(text.Contains("presentationRefreshRequested=true"));
+            AssertEx.True(text.Contains("presentationRefreshCount=1"));
+            AssertEx.True(text.Contains("abilityPhaseViewModelMatchesSession=true"));
+            AssertEx.True(text.Contains("postRefreshLiveModelVerified=true"));
+        }
+
+        internal static void ViewBindingMismatchCannotClaimSynchronization()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            RollSession session = RestoreSemantically(environment, environment.NewState(10));
+            environment.Allocator.OnFill = () =>
+                environment.Allocator.m_PreviewUnit = FakeUnitDescriptor.Create(10, false).Unit;
+            PointBuyPresentationObservation observation;
+            string error;
+
+            AssertEx.True(!environment.Presentation.TrySynchronize(
+                session,
+                environment.Contracts,
+                out observation,
+                out error));
+
+            AssertEx.True(observation.SemanticPointBuyVerified);
+            AssertEx.True(!observation.AbilityPhasePreviewMatchesSession);
+            AssertEx.True(!observation.AbilityPhaseViewModelMatchesSession);
+            AssertEx.True(!observation.IsSynchronized);
         }
 
         internal static void CompletionUsesCurrentLiveDistributionOnly()
@@ -863,6 +1328,22 @@ namespace KingmakerDiceRoller.DomainTests
                 out error), error);
         }
 
+        private static RollSession RestoreSemantically(TestEnvironment environment, FakeState preview)
+        {
+            RollSession session = environment.Open(preview);
+            StageAndVerify(environment, session);
+            PointBuyRestoreObservation observation;
+            string error;
+            AssertEx.True(environment.Restore.TryRestore(
+                session,
+                environment.Contracts,
+                out observation,
+                out error), error);
+            AssertEx.True(observation.IsVerified);
+            AssertEx.Equal(RollSessionMode.PointBuy, session.Mode);
+            return session;
+        }
+
         private static ReentrantResult RunReentrantReplacement()
         {
             TestEnvironment environment = TestEnvironment.Create();
@@ -910,6 +1391,7 @@ namespace KingmakerDiceRoller.DomainTests
                 Logger = new FakeLogger();
                 Application = new StatApplicationService(StatAccess, LivePreview, PreviewRefresh, Logger);
                 Restore = new PointBuyRestoreService(StatAccess, LivePreview, PreviewRefresh, Logger);
+                Presentation = new AbilityPhasePresentationService(LivePreview, Logger);
                 Assignment = new StatAssignment(DiagnosticArrays.FixedPhaseTwoArray());
             }
 
@@ -922,11 +1404,13 @@ namespace KingmakerDiceRoller.DomainTests
             internal FakeLogger Logger { get; }
             internal StatApplicationService Application { get; }
             internal PointBuyRestoreService Restore { get; }
+            internal AbilityPhasePresentationService Presentation { get; }
             internal StatAssignment Assignment { get; }
             internal FakeUnitDescriptor Source { get; private set; }
             internal FakeLevelUpController Controller { get; private set; }
             internal FakeCharacterBuildController CharacterBuild { get; private set; }
             internal FakePlayer Player { get; private set; }
+            internal FakeAbilityScoresAllocator Allocator => CharacterBuild.Skills.AbilityScoresAllocator;
 
             internal static TestEnvironment Create()
             {
@@ -939,7 +1423,12 @@ namespace KingmakerDiceRoller.DomainTests
                 };
                 environment.CharacterBuild = new FakeCharacterBuildController
                 {
-                    LevelUpController = environment.Controller
+                    LevelUpController = environment.Controller,
+                    CurrentPhase = FakePhaseType.Skills,
+                    Skills = new FakeAbilityPhase
+                    {
+                        AbilityScoresAllocator = new FakeAbilityScoresAllocator()
+                    }
                 };
                 environment.Player = new FakePlayer { MainCharacter = environment.Source };
                 FakeGame.Instance = new FakeGame
@@ -1115,6 +1604,7 @@ namespace KingmakerDiceRoller.DomainTests
                     Sessions,
                     Application,
                     Restore,
+                    Presentation,
                     diagnostics,
                     Logger,
                     () => Contracts,
@@ -1157,6 +1647,14 @@ namespace KingmakerDiceRoller.DomainTests
                     typeof(FakeLevelUpController).GetProperty("Preview", instance),
                     typeof(FakeLevelUpController).GetField("m_RecalculatePreview", instance),
                     typeof(FakeLevelUpController).GetMethod("UpdatePreview", instance),
+                    typeof(FakeCharacterBuildController).GetProperty("CurrentPhase", instance),
+                    FakePhaseType.Skills,
+                    typeof(FakeCharacterBuildController).GetProperty("Skills", instance),
+                    typeof(FakeAbilityPhase).GetProperty("AbilityScoresAllocator", instance),
+                    typeof(FakeAbilityScoresAllocator).GetMethod("FillData", instance),
+                    typeof(FakeUnitDescriptor).GetProperty("Unit", instance),
+                    typeof(FakeAbilityScoresAllocator).GetField("m_Unit", instance),
+                    typeof(FakeAbilityScoresAllocator).GetField("m_PreviewUnit", instance),
                     new List<string>());
             }
         }
@@ -1167,6 +1665,20 @@ namespace KingmakerDiceRoller.DomainTests
             CharGen = 1,
             PreGen = 2,
             Respec = 3
+        }
+
+        private enum FakePhaseType
+        {
+            Portrait,
+            Race,
+            Class,
+            ClassInChargen,
+            Determinator,
+            Skills,
+            Abilities,
+            Spells,
+            Character,
+            Total
         }
 
         private sealed class FakeDistribution
@@ -1222,6 +1734,7 @@ namespace KingmakerDiceRoller.DomainTests
                 IsMainCharacter = isMainCharacter;
                 IsPlayerFaction = true;
                 Stats = new FakeStats(value);
+                Unit = new FakeUnitEntityData(this);
             }
 
             public bool IsMainCharacter { get; set; }
@@ -1229,11 +1742,22 @@ namespace KingmakerDiceRoller.DomainTests
             public bool IsPet { get; set; }
             public bool IsPlayersEnemy { get; set; }
             public FakeStats Stats { get; }
+            public FakeUnitEntityData Unit { get; }
 
             internal static FakeUnitDescriptor Create(int value, bool isMainCharacter)
             {
                 return new FakeUnitDescriptor(value, isMainCharacter);
             }
+        }
+
+        private sealed class FakeUnitEntityData
+        {
+            internal FakeUnitEntityData(FakeUnitDescriptor descriptor)
+            {
+                Descriptor = descriptor;
+            }
+
+            public FakeUnitDescriptor Descriptor { get; }
         }
 
         private sealed class FakeStats
@@ -1307,6 +1831,43 @@ namespace KingmakerDiceRoller.DomainTests
         private sealed class FakeCharacterBuildController
         {
             public FakeLevelUpController LevelUpController { get; set; }
+            public FakePhaseType? CurrentPhase { get; set; }
+            public FakeAbilityPhase Skills { get; set; }
+        }
+
+        private sealed class FakeAbilityPhase
+        {
+            public FakeAbilityScoresAllocator AbilityScoresAllocator { get; set; }
+        }
+
+        private sealed class FakeAbilityScoresAllocator
+        {
+            public FakeUnitEntityData m_Unit;
+            public FakeUnitEntityData m_PreviewUnit;
+            internal FakeState BoundState { get; private set; }
+            internal FakeDistribution BoundDistribution { get; private set; }
+            internal int[] DisplayedValues { get; private set; }
+            internal int DisplayedPoints { get; private set; }
+            internal bool NativeControlsAvailable { get; private set; }
+            internal int FillDataCalls { get; private set; }
+            internal bool ThrowOnFill { get; set; }
+            internal Action OnFill { get; set; }
+
+            public void FillData()
+            {
+                FillDataCalls++;
+                FakeLevelUpController controller = FakeGame.Instance.UI.CharacterBuildController.LevelUpController;
+                m_Unit = controller.Unit.Unit;
+                m_PreviewUnit = controller.Preview.Unit;
+                BoundState = controller.State;
+                BoundDistribution = controller.State.StatsDistribution;
+                DisplayedValues = controller.Preview.Stats.ReadDisplayedValues();
+                DisplayedPoints = controller.State.StatsDistribution.Points;
+                NativeControlsAvailable = controller.State.StatsDistribution.Available;
+                Action action = OnFill;
+                action?.Invoke();
+                if (ThrowOnFill) throw new InvalidOperationException("simulated native presentation failure");
+            }
         }
 
         private sealed class FakeUi

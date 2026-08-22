@@ -40,6 +40,8 @@
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\PointBudgetTracker.cs"><Link>CharacterCreation\PointBudgetTracker.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\PointBuyRestoreObservation.cs"><Link>CharacterCreation\PointBuyRestoreObservation.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\PointBuyRestoreService.cs"><Link>CharacterCreation\PointBuyRestoreService.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\PointBuyPresentationObservation.cs"><Link>CharacterCreation\PointBuyPresentationObservation.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\AbilityPhasePresentationService.cs"><Link>CharacterCreation\AbilityPhasePresentationService.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\PreviewRefreshService.cs"><Link>CharacterCreation\PreviewRefreshService.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RollSession.cs"><Link>CharacterCreation\RollSession.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RollSessionMode.cs"><Link>CharacterCreation\RollSessionMode.cs</Link></Compile>

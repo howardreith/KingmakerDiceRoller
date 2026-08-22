@@ -358,6 +358,14 @@ namespace KingmakerDiceRoller.DomainTests
                 typeof(FakeLevelUpController).GetProperty("Preview", instance),
                 typeof(FakeLevelUpController).GetField("m_RecalculatePreview", instance),
                 typeof(FakeLevelUpController).GetMethod("UpdatePreview", instance),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
                 new List<string>());
         }
 

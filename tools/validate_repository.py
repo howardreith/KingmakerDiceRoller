@@ -20,6 +20,8 @@ REQUIRED = [
     'src/KingmakerDiceRoller/CharacterCreation/LivePreviewInspector.cs',
     'src/KingmakerDiceRoller/CharacterCreation/LivePreviewObservation.cs',
     'src/KingmakerDiceRoller/CharacterCreation/PointBuyRestoreObservation.cs',
+    'src/KingmakerDiceRoller/CharacterCreation/PointBuyPresentationObservation.cs',
+    'src/KingmakerDiceRoller/CharacterCreation/AbilityPhasePresentationService.cs',
     'src/KingmakerDiceRoller/CharacterCreation/PristinePointBuyState.cs',
     'src/KingmakerDiceRoller/CharacterCreation/RollSessionMode.cs',
     'tests/KingmakerDiceRoller.DomainTests/KingmakerDiceRoller.DomainTests.csproj',
@@ -207,6 +209,8 @@ def main():
     pristine=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/PristinePointBuyState.cs').read_text(encoding='utf-8')
     rollback=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/GenerationRollbackSnapshot.cs').read_text(encoding='utf-8')
     restore_observation=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/PointBuyRestoreObservation.cs').read_text(encoding='utf-8')
+    presentation=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/AbilityPhasePresentationService.cs').read_text(encoding='utf-8')
+    presentation_observation=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/PointBuyPresentationObservation.cs').read_text(encoding='utf-8')
     stat_access=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/KingmakerStatAccess.cs').read_text(encoding='utf-8')
     require('PristinePointBuyState pristine = session.PristinePointBuy' in restore and 'new object[] { pristine.AllocatorBudget }' in restore and 'DistributionStartMethod.Invoke' in restore,'point-buy restore must use the immutable pristine allocator budget')
     require('preview.Refresh(contracts)' in restore and 'pristine.Restore(session.Distribution, session.Unit' in restore,'point-buy restore must refresh once and restore pristine state on the newest session generation')
@@ -218,6 +222,18 @@ def main():
     require('GenerationRollbackSnapshot' in rollback and 'public int Generation' in rollback and 'MatchesAssignment' in rollback,'generation-local rollback state missing')
     require('RolledAssignmentStillPresent' in restore_observation and 'FullAllocatorBudgetAvailable' in restore_observation and 'HybridStateDetected' in restore_observation,'hybrid restoration verification missing')
     require('DisablePointBuyAllocator' in stat_access and 'DistributionAvailableMember' in stat_access and 'DistributionPointsMember' in stat_access,'roll mode must explicitly suppress the point-buy allocator')
+    require('AbilityAllocatorFillDataMethod.Invoke(allocator, null)' in presentation,'point-buy presentation must invoke the exact native ability allocator refresh')
+    require('refreshCountForGeneration == 0' in presentation and 'refreshInProgress' in presentation and 'nested refresh was refused' in presentation,'native presentation refresh must be bounded and reject reentrancy')
+    require('session.IsPointBuyMode' in presentation and 'session.IsRollMode' not in presentation,'presentation refresh must run only after durable point-buy mode is established')
+    require('PreviewUpdateMethod' not in presentation and 'PreviewRefreshService' not in presentation,'presentation synchronization must not rebuild the semantic preview')
+    for token in [
+        'semanticPointBuyVerified','presentationRefreshRequested','presentationRefreshMethod',
+        'presentationRefreshCount','activeAbilityPhaseFound','abilityPhaseStateMatchesSession',
+        'abilityPhaseDistributionMatchesSession','abilityPhaseViewModelMatchesSession',
+        'postRefreshGeneration','postRefreshLiveModelVerified','mode=',
+        'rollSuppressedForStableOwner'
+    ]:
+        require(token in presentation_observation, f'point-buy presentation diagnostic missing: {token}')
     context=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/CharacterCreationContextPolicy.cs').read_text(encoding='utf-8')
     for token in ['CharGen','IsFirstLevel','IsMainCharacter','IsPlayerFaction','IsPet','IsPlayersEnemy']:
         require(token in context, f'context guard missing: {token}')
@@ -262,16 +278,28 @@ def main():
     require('TryMarkLiveVerified' in coordinator and 'MaximumApplicationAttemptsPerGeneration' in coordinator,'bounded post-constructor live verification missing')
     require('if (!session.IsRollMode) return;' in coordinator and 'fixed-array staging remains suppressed' in coordinator,'durable point-buy mode must suppress same-owner roll staging and completion behavior')
     require('TryPrepareDisable' in coordinator and 'TryPrepareDisable' in composition,'disable must restore point buy before removing recovery hooks')
+    require('pointBuyPresentation.TrySynchronize' in coordinator and 'Pristine point-buy model is verified and durable' in coordinator,'coordinator must distinguish safe semantic restoration from presentation failure')
+    require('error = null;' in coordinator[coordinator.find('bool presentationSynchronized'):coordinator.find('public bool TryPrepareDisable')],'presentation failure must preserve successful semantic point-buy restoration')
     require('RequireInstanceMember(controllerType, "State")' in contracts,'LevelUpController.State contract guard missing')
     require('ReflectionAccess.CanWrite(available)' in contracts and 'ReflectionAccess.CanWrite(points)' in contracts and 'ReflectionAccess.CanWrite(totalPoints)' in contracts,'allocator state contracts must be proven writable before patching')
     require('RequireInstanceMember(controllerType, "Unit")' in contracts and 'RequireInstanceMember(controllerType, "Preview")' in contracts,'controller identity contracts missing')
     require('RequireInstanceMember(playerType, "MainCharacter")' in contracts and 'UnitReference.Value' in contracts,'Player.MainCharacter normalization contract missing')
+    for token in [
+        'Kingmaker.UI.LevelUp.Phase.CharBPhase+Type',
+        'Kingmaker.UI.LevelUp.Phase.CharBPhaseSkills',
+        'Kingmaker.UI.LevelUp.CharBAbilityScoresAllocator',
+        'RequireInstanceMember(characterBuildControllerType, "CurrentPhase")',
+        'RequireInstanceMember(characterBuildControllerType, "Skills")',
+        'RequireInstanceMember(skillsPhaseType, "AbilityScoresAllocator")',
+        'GetMethod(', '"FillData"', 'GetField("m_Unit"', 'GetField("m_PreviewUnit"'
+    ]:
+        require(token in contracts, f'exact native ability presentation contract missing: {token}')
     require('modEntry.OnUpdate = OnUpdate' in main_source,'UMM update lifecycle hook missing')
     ok('fixed-array, restoration, context, and stale-session invariants')
 
     tests=(ROOT/'tests/KingmakerDiceRoller.DomainTests/Program.cs').read_text(encoding='utf-8')
     test_count=tests.count('new TestCase(')
-    require(test_count>=101,f'expected at least 101 C# behavior cases, found {test_count}')
+    require(test_count>=123,f'expected at least 123 C# behavior cases, found {test_count}')
     context_tests=(ROOT/'tests/KingmakerDiceRoller.DomainTests/CharacterCreationContextPolicyTests.cs').read_text(encoding='utf-8')
     for token in [
         'NoMainCharacterValuePermitsCandidate','DirectSameMainCharacterPermitsCandidate',
@@ -307,7 +335,19 @@ def main():
         'FailedRestorationRollsBackToIsolatedRollMode','FailedRollbackRefusesUnsafeDisable',
         'PointBuyModeCancellationReleasesAndNewOwnerCanOpen','RestorationDiagnosticsExposePristineTransition',
         'CompletionUsesCurrentLiveDistributionOnly',
-        'ExistingAndSpecialCreationPathsRemainExcluded','DiagnosticsDistinguishPreviewLifecycle'
+        'ExistingAndSpecialCreationPathsRemainExcluded','DiagnosticsDistinguishPreviewLifecycle',
+        'SemanticRestoreWithoutPresentationIsNotSynchronized',
+        'NativeAbilityRefreshRunsAfterPristineWrites','PresentationRefreshIsBoundedPerGeneration',
+        'PresentationRefreshCannotReenterRollMode','SameOwnerReplacementDuringPresentationStaysSuppressed',
+        'FixedAssignmentIsNotRestagedByPresentation','PostRefreshLiveStateRemainsPristine',
+        'PostRefreshAllocatorKeepsObservedBudget','PresentationBindsCurrentStateAndDistribution',
+        'HumanPresentationImmediatelyShowsPristinePointBuy','RaceModifiersRemainSeparateInImmediatePresentation',
+        'NonDefaultBudgetReachesImmediatePresentation','NavigationAfterPresentationStaysInPointBuy',
+        'PresentationFailurePreservesSafePointBuy','PresentationFailureNeverRollsBackToFixedArray',
+        'DisableAfterSemanticRestorationRemainsSafe','DisableDuringRollSynchronizesBeforeClear',
+        'PresentationRefreshDoesNotRebuildPreview','InactiveAbilityPhaseCannotClaimSynchronization',
+        'DiagnosticsSeparateSemanticAndPresentationFailure','DiagnosticsReportNativePresentationVerification',
+        'ViewBindingMismatchCannotClaimSynchronization'
     ]:
         require(token in continuity_tests, f'preview continuity behavior missing: {token}')
     python_tests=(ROOT/'tests/python/test_domain_reference.py').read_text(encoding='utf-8')

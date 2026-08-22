@@ -14,6 +14,7 @@ namespace KingmakerDiceRoller.CharacterCreation
         private readonly RollSessionManager sessions;
         private readonly StatApplicationService application;
         private readonly PointBuyRestoreService pointBuyRestore;
+        private readonly AbilityPhasePresentationService pointBuyPresentation;
         private readonly RuntimeDiagnostics diagnostics;
         private readonly IModLogger logger;
         private readonly Func<KingmakerContracts> contractsProvider;
@@ -27,6 +28,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             RollSessionManager sessions,
             StatApplicationService application,
             PointBuyRestoreService pointBuyRestore,
+            AbilityPhasePresentationService pointBuyPresentation,
             RuntimeDiagnostics diagnostics,
             IModLogger logger,
             Func<KingmakerContracts> contractsProvider,
@@ -39,6 +41,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             this.sessions = sessions;
             this.application = application;
             this.pointBuyRestore = pointBuyRestore;
+            this.pointBuyPresentation = pointBuyPresentation;
             this.diagnostics = diagnostics;
             this.logger = logger;
             this.contractsProvider = contractsProvider;
@@ -246,13 +249,6 @@ namespace KingmakerDiceRoller.CharacterCreation
                 error = "Kingmaker contracts are unavailable.";
                 return false;
             }
-            if (session.IsPointBuyMode)
-            {
-                error = null;
-                diagnostics.SetStatus("Verified point-buy mode remains active for the current character-build owner.");
-                return true;
-            }
-
             PointBuyRestoreObservation restored;
             if (!pointBuyRestore.TryRestore(session, contracts, out restored, out error))
             {
@@ -262,12 +258,34 @@ namespace KingmakerDiceRoller.CharacterCreation
                 return false;
             }
 
-            string facts = restored.BuildFacts(session, application.RefreshInProgress);
-            diagnostics.Restored(
-                "Verified pristine point-buy state on the live preview; rolled assignment is no longer present and allocator budget is active. " +
-                facts);
-            diagnostics.SetStatus("Pristine point-buy mode is active; fixed-array staging is suppressed for this character build.");
-            logger.Info("Verified pristine point-buy restoration on the live controller preview. " + facts);
+            PointBuyPresentationObservation presentation;
+            string presentationError;
+            bool presentationSynchronized = pointBuyPresentation.TrySynchronize(
+                session,
+                contracts,
+                out presentation,
+                out presentationError);
+            string facts = restored.BuildFacts(session, application.RefreshInProgress) + " " +
+                presentation.BuildFacts(session);
+            if (presentationSynchronized)
+            {
+                diagnostics.Restored(
+                    "Pristine point-buy model and active ability-page presentation verified; native score rows, " +
+                    "racial modifiers, allocator points, and controls now reflect the current live preview. " + facts);
+                diagnostics.SetStatus(
+                    "Pristine point-buy model and the active native ability page are synchronized; fixed-array staging is suppressed.");
+                logger.Info("Verified pristine point-buy model and native ability-page presentation. " + facts);
+            }
+            else
+            {
+                string detail =
+                    "Pristine point-buy model is verified and durable, but active ability-page presentation synchronization failed: " +
+                    presentationError + " " + facts;
+                diagnostics.Restored(detail);
+                diagnostics.SetStatus(detail);
+                logger.Warning(detail);
+            }
+            error = null;
             return true;
         }
 
