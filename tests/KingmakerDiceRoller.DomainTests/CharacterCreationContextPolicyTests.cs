@@ -132,9 +132,7 @@ namespace KingmakerDiceRoller.DomainTests
                 string ignoredReason;
                 sessions.TryOpenOrRebind(
                     decision,
-                    generation => CreatePristine(generation),
                     generation => CreateRollback(generation),
-                    () => new StatAssignment(DiagnosticArrays.FixedPhaseTwoArray()),
                     out ignored,
                     out ignoredReason);
             }
@@ -151,9 +149,7 @@ namespace KingmakerDiceRoller.DomainTests
             string reason;
             AssertEx.True(sessions.TryOpenOrRebind(
                 accepted,
-                generation => CreatePristine(generation),
                 generation => CreateRollback(generation),
-                () => new StatAssignment(DiagnosticArrays.FixedPhaseTwoArray()),
                 out opened,
                 out reason));
 
@@ -176,11 +172,11 @@ namespace KingmakerDiceRoller.DomainTests
             string reason;
             AssertEx.True(sessions.TryOpenOrRebind(
                 firstDecision,
-                generation => CreatePristine(generation),
                 generation => CreateRollback(generation),
-                () => fixedAssignment,
                 out firstSession,
                 out reason));
+            firstSession.BeginRollMode(CreateOrigin(1), fixedAssignment);
+            firstSession.CommitRecallOrAssignment(fixedAssignment);
 
             harness.State = NewState(harness.Candidate);
             harness.Controller.State = harness.State;
@@ -189,9 +185,7 @@ namespace KingmakerDiceRoller.DomainTests
             var replacementAssignment = new StatAssignment(new RolledStatArray(new[] { 8, 10, 12, 14, 15, 16 }));
             AssertEx.True(sessions.TryOpenOrRebind(
                 rebuiltDecision,
-                generation => CreatePristine(generation),
                 generation => CreateRollback(generation),
-                () => replacementAssignment,
                 out reboundSession,
                 out reason));
 
@@ -285,9 +279,9 @@ namespace KingmakerDiceRoller.DomainTests
             };
         }
 
-        private static PristinePointBuyState CreatePristine(int generation)
+        private static PointBuyOrigin CreateOrigin(int generation)
         {
-            ConstructorInfo constructor = typeof(PristinePointBuyState).GetConstructor(
+            ConstructorInfo constructor = typeof(PointBuyOrigin).GetConstructor(
                 BindingFlags.Instance | BindingFlags.NonPublic,
                 null,
                 new[]
@@ -296,7 +290,7 @@ namespace KingmakerDiceRoller.DomainTests
                     typeof(bool), typeof(int), typeof(int)
                 },
                 null);
-            return (PristinePointBuyState)constructor.Invoke(
+            return (PointBuyOrigin)constructor.Invoke(
                 new object[] { 25, "test budget", generation, CreateAbilitySnapshot(), true, 25, 25 });
         }
 
@@ -358,6 +352,12 @@ namespace KingmakerDiceRoller.DomainTests
                 typeof(FakeLevelUpController).GetProperty("Preview", instance),
                 typeof(FakeLevelUpController).GetField("m_RecalculatePreview", instance),
                 typeof(FakeLevelUpController).GetMethod("UpdatePreview", instance),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
                 null,
                 null,
                 null,

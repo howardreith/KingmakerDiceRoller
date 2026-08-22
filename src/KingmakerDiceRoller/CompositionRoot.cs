@@ -1,6 +1,7 @@
 using System;
 using KingmakerDiceRoller.CharacterCreation;
 using KingmakerDiceRoller.Compatibility;
+using KingmakerDiceRoller.Domain;
 using KingmakerDiceRoller.Integration;
 using KingmakerDiceRoller.Logging;
 using KingmakerDiceRoller.Patches;
@@ -32,9 +33,17 @@ namespace KingmakerDiceRoller
             var preview = new PreviewRefreshService();
             var livePreview = new LivePreviewInspector(statAccess);
             var sessions = new RollSessionManager();
+            var nativeControls = new NativeAbilityControlService(logger);
             var application = new StatApplicationService(statAccess, livePreview, preview, logger);
             var restore = new PointBuyRestoreService(statAccess, livePreview, preview, logger);
-            var presentation = new AbilityPhasePresentationService(livePreview, logger);
+            var presentation = new AbilityPhasePresentationService(livePreview, logger, nativeControls);
+            var workflow = new CharacterRollWorkflow(
+                new DiceRollEngine(new DiceExpressionParser(), new SystemRandomSource()),
+                new PointBuyEquivalentCalculator(),
+                settings.CreateRollConfiguration(),
+                settings.SavedArrays,
+                () => DateTime.UtcNow.ToString("o"),
+                settings.ApplyProductState);
             coordinator = new CharacterCreationCoordinator(
                 new CharacterCreationContextPolicy(),
                 budgetTracker,
@@ -47,7 +56,8 @@ namespace KingmakerDiceRoller
                 diagnostics,
                 logger,
                 () => contracts.Current,
-                () => settings.VerboseDiagnostics);
+                () => settings.VerboseDiagnostics,
+                workflow);
             patches = new KingmakerPatchController(logger);
             view = new SettingsView(settings, coordinator, diagnostics, contracts);
         }

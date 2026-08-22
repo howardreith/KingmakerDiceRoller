@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using KingmakerDiceRoller.Domain;
 using KingmakerDiceRoller.Integration;
 using KingmakerDiceRoller.Logging;
@@ -19,6 +20,7 @@ namespace KingmakerDiceRoller.CharacterCreation
         private readonly IModLogger logger;
         private readonly Func<KingmakerContracts> contractsProvider;
         private readonly Func<bool> verboseProvider;
+        private readonly CharacterRollWorkflow workflow;
 
         public CharacterCreationCoordinator(
             CharacterCreationContextPolicy contextPolicy,
@@ -33,6 +35,43 @@ namespace KingmakerDiceRoller.CharacterCreation
             IModLogger logger,
             Func<KingmakerContracts> contractsProvider,
             Func<bool> verboseProvider)
+            : this(
+                contextPolicy,
+                budgetTracker,
+                budgetResolver,
+                statAccess,
+                sessions,
+                application,
+                pointBuyRestore,
+                pointBuyPresentation,
+                diagnostics,
+                logger,
+                contractsProvider,
+                verboseProvider,
+                new CharacterRollWorkflow(
+                    new DiceRollEngine(new DiceExpressionParser(), new SystemRandomSource()),
+                    new PointBuyEquivalentCalculator(),
+                    RollConfiguration.Default(),
+                    null,
+                    () => DateTime.UtcNow.ToString("o"),
+                    null))
+        {
+        }
+
+        public CharacterCreationCoordinator(
+            CharacterCreationContextPolicy contextPolicy,
+            PointBudgetTracker budgetTracker,
+            PointBudgetResolver budgetResolver,
+            KingmakerStatAccess statAccess,
+            RollSessionManager sessions,
+            StatApplicationService application,
+            PointBuyRestoreService pointBuyRestore,
+            AbilityPhasePresentationService pointBuyPresentation,
+            RuntimeDiagnostics diagnostics,
+            IModLogger logger,
+            Func<KingmakerContracts> contractsProvider,
+            Func<bool> verboseProvider,
+            CharacterRollWorkflow workflow)
         {
             this.contextPolicy = contextPolicy;
             this.budgetTracker = budgetTracker;
@@ -46,10 +85,13 @@ namespace KingmakerDiceRoller.CharacterCreation
             this.logger = logger;
             this.contractsProvider = contractsProvider;
             this.verboseProvider = verboseProvider;
+            this.workflow = workflow ?? throw new ArgumentNullException(nameof(workflow));
         }
 
         public bool HasActiveSession => sessions.Active != null;
         public bool CanRestorePointBuy => sessions.Active != null && sessions.Active.IsRollMode;
+        public RollSession ActiveSession => sessions.Active;
+        public RollUiSnapshot UiSnapshot => workflow.Snapshot(sessions.Active);
 
         public void OnLevelUpStateConstructed(object state, object unit, object mode)
         {
@@ -69,14 +111,12 @@ namespace KingmakerDiceRoller.CharacterCreation
             {
                 if (!sessions.TryOpenOrRebind(
                     context,
-                    generation => CapturePristinePointBuy(context, generation, contracts),
                     generation => GenerationRollbackSnapshot.Capture(
                         generation,
                         context.Distribution,
                         context.Unit,
                         contracts,
                         statAccess),
-                    () => new StatAssignment(DiagnosticArrays.FixedPhaseTwoArray()),
                     out session,
                     out sessionReason))
                 {
@@ -87,21 +127,18 @@ namespace KingmakerDiceRoller.CharacterCreation
             }
             catch (Exception exception)
             {
-                diagnostics.Rejected("Pristine point-buy or generation rollback capture failed.");
-                logger.Exception("Capture point-buy ownership state", exception);
+                diagnostics.Rejected("Generation rollback capture failed.");
+                logger.Exception("Capture current preview generation", exception);
                 return;
             }
 
-            diagnostics.Accepted(
-                context.Reason + " " + sessionReason +
-                " Budget=" + session.PristinePointBuy.AllocatorBudget +
-                " via " + session.PristinePointBuy.BudgetSource + ".");
+            diagnostics.Accepted(context.Reason + " " + sessionReason);
             RecordEvent(sessionReason + " " + BuildSessionFacts(session));
 
             if (session.IsRestoringPointBuy)
             {
                 RecordEvent(
-                    "Observed a same-owner replacement during the bounded point-buy refresh; fixed-array staging is deferred. " +
+                    "Observed a same-owner replacement during bounded point-buy restoration; roll staging is suppressed. " +
                     BuildSessionFacts(session));
                 return;
             }
@@ -109,9 +146,9 @@ namespace KingmakerDiceRoller.CharacterCreation
             if (session.IsPointBuyMode)
             {
                 RecordEvent(
-                    "Observed a same-owner preview while durable point-buy mode is active; fixed-array staging remains suppressed. " +
+                    "Observed a same-owner preview while PointBuy mode is active; no array was generated or staged. " +
                     BuildSessionFacts(session));
-                diagnostics.SetStatus("Point-buy mode is active for the current character-build owner; roll staging is suppressed.");
+                diagnostics.SetStatus("Point Buy is active; use the native Dice Roller panel to roll explicitly.");
                 return;
             }
 
@@ -121,13 +158,13 @@ namespace KingmakerDiceRoller.CharacterCreation
             if (application.TryStageCurrentGeneration(session, contracts, out error))
             {
                 RecordEvent(
-                    "Staged the immutable fixed array on the accepted preview; awaiting live controller verification. " +
+                    "Staged the explicit rolled assignment on the accepted preview; awaiting live controller verification. " +
                     BuildSessionFacts(session));
-                diagnostics.SetStatus("Fixed diagnostic array is staged; awaiting live controller state/preview verification.");
+                diagnostics.SetStatus("Rolled assignment is staged; awaiting live controller verification.");
             }
             else
             {
-                FailApplication(session, "Fixed-array staging failed closed: " + error);
+                FailApplication(session, "Rolled-array staging failed closed: " + error);
             }
         }
 
@@ -138,7 +175,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             if (!sessions.TryGetByDistribution(distribution, out session)) return;
             KingmakerContracts contracts = contractsProvider();
             if (contracts == null) return;
-            if (!session.IsRollMode) return;
+            if (!session.IsRollMode && !session.IsEnteringRollMode) return;
             if (session.IsApplied || session.IsStaged)
             {
                 application.SuppressPointBuyAllocator(session, distribution, contracts);
@@ -195,7 +232,7 @@ namespace KingmakerDiceRoller.CharacterCreation
 
             session = sessions.Active;
             if (session == null ||
-                !session.IsRollMode ||
+                (!session.IsRollMode && !session.IsEnteringRollMode) ||
                 session.IsApplied ||
                 session.IsApplicationFailed ||
                 !session.IsStaged) return;
@@ -231,8 +268,182 @@ namespace KingmakerDiceRoller.CharacterCreation
                 }
             }
 
-            FailApplication(session, "Live fixed-array verification failed closed: " + error + " " +
+            FailApplication(session, "Live rolled-array verification failed closed: " + error + " " +
                 live.BuildFacts(session, application.RefreshInProgress));
+        }
+
+        public bool TryRoll(out string error)
+        {
+            RollSession session = sessions.Active;
+            if (session == null || !session.IsPointBuyMode)
+            {
+                error = "Roll is available only for an active new-character Point Buy session.";
+                workflow.SetFailure(error);
+                return false;
+            }
+            RollCandidate candidate;
+            if (!workflow.TryGenerate(out candidate, out error)) return false;
+            return TryApplyUserAssignment(
+                session,
+                candidate.Assignment,
+                true,
+                () => workflow.CommitGenerated(session, candidate, false),
+                "Roll",
+                out error);
+        }
+
+        public bool TryReroll(out string error)
+        {
+            RollSession session = sessions.Active;
+            if (session == null || !session.IsRollMode)
+            {
+                error = "Reroll is available only while Roll Mode is active.";
+                workflow.SetFailure(error);
+                return false;
+            }
+            RollCandidate candidate;
+            if (!workflow.TryGenerate(out candidate, out error)) return false;
+            return TryApplyUserAssignment(
+                session,
+                candidate.Assignment,
+                false,
+                () => workflow.CommitGenerated(session, candidate, true),
+                "Reroll",
+                out error);
+        }
+
+        public bool TryMoveAssignment(AbilityScore ability, bool moveUp, out string error)
+        {
+            RollSession session = sessions.Active;
+            if (session == null || !session.IsRollMode || session.Assignment == null)
+            {
+                error = "Assignment controls require an active verified Roll Mode array.";
+                workflow.SetFailure(error);
+                return false;
+            }
+            StatAssignment next = moveUp
+                ? session.Assignment.MoveUp(ability)
+                : session.Assignment.MoveDown(ability);
+            if (ReferenceEquals(next, session.Assignment))
+            {
+                error = null;
+                return true;
+            }
+            return TryApplyUserAssignment(
+                session,
+                next,
+                false,
+                () => workflow.CommitAssignment(session, next, "Assignment order verified on the live preview."),
+                "Reassign",
+                out error);
+        }
+
+        public void SelectPreviousHistory()
+        {
+            workflow.PreviousHistory(sessions.Active);
+        }
+
+        public void SelectNextHistory()
+        {
+            workflow.NextHistory(sessions.Active);
+        }
+
+        public bool TryUseSelectedHistory(out string error)
+        {
+            RollSession session = sessions.Active;
+            RollHistoryEntry entry = session == null ? null : session.History.Selected;
+            if (session == null || entry == null ||
+                (!session.IsPointBuyMode && !session.IsRollMode))
+            {
+                error = "No usable history entry is selected.";
+                workflow.SetFailure(error);
+                return false;
+            }
+            StatAssignment next = entry.Assignment;
+            return TryApplyUserAssignment(
+                session,
+                next,
+                session.IsPointBuyMode,
+                () => workflow.CommitAssignment(session, next, "History entry verified on the live preview."),
+                "Use history",
+                out error);
+        }
+
+        public bool TryStoreCurrent(out string error)
+        {
+            try
+            {
+                workflow.StoreCurrent(sessions.Active);
+                error = null;
+                return true;
+            }
+            catch (Exception exception)
+            {
+                error = exception.Message;
+                workflow.SetFailure(error);
+                return false;
+            }
+        }
+
+        public void SelectPreviousSaved()
+        {
+            workflow.PreviousSaved();
+        }
+
+        public void SelectNextSaved()
+        {
+            workflow.NextSaved();
+        }
+
+        public bool TryRecallSelectedSaved(out string error)
+        {
+            RollSession session = sessions.Active;
+            SavedRollArrayRecord record = workflow.Saved.Selected;
+            if (session == null || record == null ||
+                (!session.IsPointBuyMode && !session.IsRollMode))
+            {
+                error = "No saved array can be recalled in the current session.";
+                workflow.SetFailure(error);
+                return false;
+            }
+            StatAssignment assignment;
+            if (!record.TryCreateAssignment(out assignment, out error))
+            {
+                workflow.SetFailure("Saved array is invalid: " + error);
+                return false;
+            }
+            return TryApplyUserAssignment(
+                session,
+                assignment,
+                session.IsPointBuyMode,
+                () => workflow.CommitAssignment(session, assignment, "Saved array verified on the live preview."),
+                "Recall",
+                out error);
+        }
+
+        public bool DeleteSelectedSaved()
+        {
+            return workflow.DeleteSelectedSaved();
+        }
+
+        public void SetPreset(DiceRollPreset preset)
+        {
+            workflow.SetPreset(preset);
+        }
+
+        public void SetLowScorePolicy(LowScorePolicy policy)
+        {
+            workflow.SetLowScorePolicy(policy);
+        }
+
+        public void SetMinimumScore(int minimum)
+        {
+            workflow.SetMinimumScore(minimum);
+        }
+
+        public void SetCustomExpression(string expression)
+        {
+            workflow.SetCustomExpression(expression);
         }
 
         public bool TryRestorePointBuy(out string error)
@@ -275,6 +486,7 @@ namespace KingmakerDiceRoller.CharacterCreation
                 diagnostics.SetStatus(
                     "Pristine point-buy model and the active native ability page are synchronized; fixed-array staging is suppressed.");
                 logger.Info("Verified pristine point-buy model and native ability-page presentation. " + facts);
+                workflow.SetPointBuyStatus();
             }
             else
             {
@@ -320,11 +532,12 @@ namespace KingmakerDiceRoller.CharacterCreation
 
         private void CompleteApplication(RollSession session, LivePreviewObservation live)
         {
-            string detail = "Live controller state/preview verified for fixed array " + session.Assignment.RolledArray + ". " +
+            StatAssignment assignment = session.AssignmentForApplication;
+            string detail = "Live controller state/preview verified for rolled array " + assignment.RolledArray + ". " +
                 live.BuildFacts(session, application.RefreshInProgress);
             diagnostics.Applied(detail);
-            diagnostics.SetStatus("Fixed diagnostic array is active on the verified live new-character preview.");
-            logger.Info("Fixed diagnostic array application verified against the live controller preview. " + detail);
+            diagnostics.SetStatus("Roll Mode is active on the verified live new-character preview.");
+            logger.Info("Rolled-array application verified against the live controller preview. " + detail);
         }
 
         private void FailApplication(RollSession session, string detail)
@@ -339,40 +552,178 @@ namespace KingmakerDiceRoller.CharacterCreation
             if (diagnostics.Event(detail)) logger.Info(detail);
         }
 
+        private bool TryApplyUserAssignment(
+            RollSession session,
+            StatAssignment next,
+            bool enteringFromPointBuy,
+            Action commit,
+            string commandName,
+            out string error)
+        {
+            KingmakerContracts contracts = contractsProvider();
+            if (contracts == null)
+            {
+                error = "Kingmaker contracts are unavailable.";
+                workflow.SetFailure(error);
+                return false;
+            }
+            if (!HasCurrentLiveBinding(session, contracts))
+            {
+                error = "The current controller preview is not safely bound to this character-roll session.";
+                workflow.SetFailure(error);
+                return false;
+            }
+
+            GenerationRollbackSnapshot rollback;
+            try
+            {
+                rollback = GenerationRollbackSnapshot.Capture(
+                    session.Generation,
+                    session.Distribution,
+                    session.Unit,
+                    contracts,
+                    statAccess);
+                session.ReplaceGenerationRollback(rollback);
+                if (enteringFromPointBuy)
+                {
+                    session.BeginRollMode(CapturePointBuyOrigin(session, contracts), next);
+                }
+                else
+                {
+                    session.BeginRollReplacement(next);
+                }
+            }
+            catch (Exception exception)
+            {
+                error = exception.Message;
+                workflow.SetFailure(error);
+                logger.Exception(commandName + " preparation", exception);
+                return false;
+            }
+
+            LivePreviewObservation live = null;
+            RollPresentationObservation presentation = null;
+            try
+            {
+                if (!application.TryStageCurrentGeneration(session, contracts, out error))
+                {
+                    throw new InvalidOperationException(error);
+                }
+                if (!application.TryMarkLiveVerified(session, contracts, out live, out error))
+                {
+                    throw new InvalidOperationException(error);
+                }
+                if (!pointBuyPresentation.TrySynchronizeRoll(
+                    session,
+                    contracts,
+                    out presentation,
+                    out error))
+                {
+                    throw new InvalidOperationException(error);
+                }
+
+                commit();
+                string facts = live.BuildFacts(session, application.RefreshInProgress) + " " +
+                    presentation.BuildFacts();
+                diagnostics.Applied(commandName + " committed after live model, allocator, controls, and presentation verification. " + facts);
+                diagnostics.SetStatus("Roll Mode is active; the rolled array owns the verified live ability preview.");
+                logger.Info(commandName + " committed transactionally. " + facts);
+                error = null;
+                return true;
+            }
+            catch (Exception exception)
+            {
+                string primary = exception.Message;
+                bool rollbackVerified = false;
+                try
+                {
+                    rollback.Restore(session.Distribution, session.Unit, contracts, statAccess);
+                    rollbackVerified = rollback.Values.DistributionValues.SequenceEqual(
+                            statAccess.ReadDistributionValues(session.Distribution, contracts)) &&
+                        rollback.Values.UnitValues.SequenceEqual(
+                            statAccess.ReadUnitBaseValues(session.Unit, contracts)) &&
+                        statAccess.ReadDistributionAvailable(session.Distribution, contracts) == rollback.AllocatorAvailable &&
+                        statAccess.ReadDistributionPoints(session.Distribution, contracts) == rollback.RemainingPoints &&
+                        statAccess.ReadDistributionTotalPoints(session.Distribution, contracts) == rollback.TotalPoints;
+                    if (!rollbackVerified)
+                    {
+                        throw new InvalidOperationException("The command rollback did not verify on the current live preview.");
+                    }
+                    session.AbortPendingRoll();
+                    string ignored;
+                    pointBuyPresentation.TryRefreshCurrentAbilityPhase(contracts, out ignored);
+                }
+                catch (Exception rollbackException)
+                {
+                    logger.Exception(commandName + " rollback", rollbackException);
+                    primary += " Recovery also failed: " + rollbackException.Message;
+                }
+                error = commandName + " failed without committing: " + primary;
+                workflow.SetFailure(error);
+                diagnostics.SetStatus(error);
+                RecordEvent("FAIL " + error + " rollbackVerified=" + BooleanText(rollbackVerified) + ".");
+                return false;
+            }
+        }
+
+        private static bool HasCurrentLiveBinding(RollSession session, KingmakerContracts contracts)
+        {
+            object controller;
+            object source;
+            object state;
+            object preview;
+            if (!contracts.TryGetLevelUpControllerContext(out controller, out source, out state, out preview))
+            {
+                return false;
+            }
+            if (!session.OwnsStableOwner(controller, source) ||
+                !session.OwnsState(state) ||
+                !session.OwnsUnit(preview))
+            {
+                return false;
+            }
+            object distribution = ReflectionAccess.Read(contracts.LevelUpStateDistributionMember, state);
+            return session.OwnsDistribution(distribution);
+        }
+
         private static string BuildSessionFacts(RollSession session)
         {
-            return "Facts: pristineBaselineCaptured=" + BooleanText(session.PristineBaselineCaptured) +
-                ", pristineBaselineGeneration=" + session.PristinePointBuy.CapturedGeneration +
+            PointBuyOrigin origin = session.PointBuyOrigin;
+            return "Facts: pointBuyOriginCaptured=" + BooleanText(session.PointBuyOriginCaptured) +
+                ", pointBuyOriginGeneration=" + (origin == null ? 0 : origin.CapturedGeneration) +
                 ", currentGeneration=" + session.Generation +
                 ", applicationGeneration=" + session.Generation +
                 ", candidateBaselineContaminated=" + BooleanText(session.CandidateBaselineContaminated) +
                 ", mode=" + session.Mode +
-                ", allocatorBudget=" + session.PristinePointBuy.AllocatorBudget +
+                ", allocatorBudget=" + (origin == null ? -1 : origin.AllocatorBudget) +
                 ", pendingReplacementObserved=" + BooleanText(session.PendingReplacementObserved) +
                 ", reboundPreview=" + BooleanText(session.ReboundPreview) +
                 ", sameStableOwner=true" +
                 ", rollSuppressedForStableOwner=" + BooleanText(session.RollSuppressedForStableOwner) + ".";
         }
 
-        private PristinePointBuyState CapturePristinePointBuy(
-            CharacterCreationContextDecision context,
-            int generation,
+        private PointBuyOrigin CapturePointBuyOrigin(
+            RollSession session,
             KingmakerContracts contracts)
         {
             int budget;
             string budgetSource;
-            if (!budgetResolver.TryResolve(context.Distribution, contracts, out budget, out budgetSource))
+            if (!statAccess.ReadDistributionAvailable(session.Distribution, contracts))
+            {
+                throw new InvalidOperationException("Point Buy is not active; refusing to capture a roll origin.");
+            }
+            if (!budgetResolver.TryResolve(session.Distribution, contracts, out budget, out budgetSource))
             {
                 throw new InvalidOperationException(
-                    "Point-buy budget was not captured; refusing to create a non-restorable session.");
+                    "Point-buy budget was not observed; refusing to enter non-restorable Roll mode.");
             }
 
-            return PristinePointBuyState.Capture(
-                context.Distribution,
-                context.Unit,
+            return PointBuyOrigin.Capture(
+                session.Distribution,
+                session.Unit,
                 budget,
                 budgetSource,
-                generation,
+                session.Generation,
                 contracts,
                 statAccess);
         }

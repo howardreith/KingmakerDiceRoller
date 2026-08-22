@@ -70,9 +70,7 @@ namespace KingmakerDiceRoller.DomainTests
             string reason;
             AssertEx.True(environment.Sessions.TryOpenOrRebind(
                 decision,
-                generation => environment.CapturePristine(previewB, 25, "unexpected replacement pristine", generation),
                 generation => environment.CaptureRollback(previewB, generation),
-                () => environment.Assignment,
                 out session,
                 out reason), reason);
             AssertEx.True(session.PendingReplacementObserved);
@@ -106,9 +104,7 @@ namespace KingmakerDiceRoller.DomainTests
             string reason;
             bool opened = environment.Sessions.TryOpenOrRebind(
                 decision,
-                generation => environment.CapturePristine(differentState, 25, "different owner", generation),
                 generation => environment.CaptureRollback(differentState, generation),
-                () => environment.Assignment,
                 out ignored,
                 out reason);
 
@@ -153,7 +149,7 @@ namespace KingmakerDiceRoller.DomainTests
             TestEnvironment environment = TestEnvironment.Create();
             FakeState previewA = environment.NewState(9);
             RollSession session = environment.Open(previewA);
-            PristinePointBuyState pristine = session.PristinePointBuy;
+            PointBuyOrigin pristine = session.PointBuyOrigin;
             GenerationRollbackSnapshot firstRollback = session.GenerationRollback;
             FakeState previewB = environment.NewReplacementState(previewA, 11);
             environment.StatAccess.WriteDistributionValues(previewB.StatsDistribution, FixedValues, environment.Contracts);
@@ -219,27 +215,19 @@ namespace KingmakerDiceRoller.DomainTests
             TestEnvironment environment = TestEnvironment.Create();
             FakeState previewA = environment.NewState(10);
             RollSession session = environment.Open(previewA);
-            PristinePointBuyState pristine = session.PristinePointBuy;
+            PointBuyOrigin pristine = session.PointBuyOrigin;
             FakeState previewB = environment.NewReplacementState(previewA, 10);
             environment.StatAccess.WriteDistributionValues(previewB.StatsDistribution, FixedValues, environment.Contracts);
             environment.StatAccess.WriteUnitBaseValues(previewB.Unit, FixedValues, environment.Contracts);
-            int pristineFactoryCalls = 0;
             CharacterCreationContextDecision decision = environment.Evaluate(previewB, FakeMode.CharGen);
             string reason;
 
             AssertEx.True(environment.Sessions.TryOpenOrRebind(
                 decision,
-                generation =>
-                {
-                    pristineFactoryCalls++;
-                    return environment.CapturePristine(previewB, 99, "contaminated replacement", generation);
-                },
                 generation => environment.CaptureRollback(previewB, generation),
-                () => new StatAssignment(new RolledStatArray(Enumerable.Repeat(8, 6))),
                 out session,
                 out reason), reason);
 
-            AssertEx.Equal(0, pristineFactoryCalls);
             AssertEx.True(ReferenceEquals(pristine, session.PristinePointBuy));
             AssertEx.SequenceEqual(Enumerable.Repeat(10, 6), session.PristinePointBuy.Values.UnitValues);
             AssertEx.SequenceEqual(FixedValues, session.GenerationRollback.Values.UnitValues);
@@ -251,7 +239,7 @@ namespace KingmakerDiceRoller.DomainTests
             TestEnvironment environment = TestEnvironment.Create();
             FakeState previewA = environment.NewState(10);
             RollSession session = environment.Open(previewA);
-            PristinePointBuyState pristine = session.PristinePointBuy;
+            PointBuyOrigin pristine = session.PointBuyOrigin;
             GenerationRollbackSnapshot rollbackA = session.GenerationRollback;
             FakeState previewB = environment.NewReplacementState(previewA, 11);
             previewB.StatsDistribution.SetAllocatorState(true, 7, 29);
@@ -332,9 +320,13 @@ namespace KingmakerDiceRoller.DomainTests
             AssertEx.Equal(0, environment.PreviewRefresh.RefreshCount);
 
             coordinator.Update(0.1f);
+            AssertEx.Equal(0, diagnostics.ArraysApplied);
+            AssertEx.Equal(RollSessionMode.PointBuy, environment.Sessions.Active.Mode);
+            string error;
+            AssertEx.True(coordinator.TryRoll(out error), error);
             AssertEx.Equal(1, diagnostics.ArraysApplied);
             AssertEx.True(environment.Sessions.Active.IsApplied);
-            AssertEx.True(diagnostics.Status.Contains("verified live"));
+            AssertEx.True(diagnostics.Status.Contains("Roll Mode is active"));
         }
 
         internal static void DetachedMatchingPreviewCannotVerify()
@@ -592,6 +584,8 @@ namespace KingmakerDiceRoller.DomainTests
             CharacterCreationCoordinator coordinator = environment.CreateCoordinator(tracker, diagnostics);
             coordinator.OnLevelUpStateConstructed(previewA, previewA.Unit, FakeMode.CharGen);
             coordinator.Update(0.1f);
+            string error;
+            AssertEx.True(coordinator.TryRoll(out error), error);
 
             FakeState previewB = null;
             environment.Controller.OnUpdatePreview = () =>
@@ -601,7 +595,6 @@ namespace KingmakerDiceRoller.DomainTests
                 coordinator.OnLevelUpStateConstructed(previewB, previewB.Unit, FakeMode.CharGen);
                 environment.Controller.State = previewB;
             };
-            string error;
             AssertEx.True(coordinator.TryRestorePointBuy(out error), error);
             AssertEx.Equal(RollSessionMode.PointBuy, environment.Sessions.Active.Mode);
 
@@ -765,12 +758,13 @@ namespace KingmakerDiceRoller.DomainTests
             coordinator.OnLevelUpStateConstructed(preview, preview.Unit, FakeMode.CharGen);
             coordinator.Update(0.1f);
             string error;
+            AssertEx.True(coordinator.TryRoll(out error), error);
 
             AssertEx.True(coordinator.TryRestorePointBuy(out error), error);
 
             string text = string.Join("\n", diagnostics.SnapshotRecent());
             AssertEx.True(text.Contains("RESTORE Pristine point-buy model and active ability-page presentation verified"));
-            AssertEx.True(text.Contains("pristineBaselineCaptured=true"));
+            AssertEx.True(text.Contains("pointBuyOriginCaptured=true"));
             AssertEx.True(text.Contains("pristineBaselineGeneration=1"));
             AssertEx.True(text.Contains("mode=PointBuy"));
             AssertEx.True(text.Contains("liveDistributionMatchesPristine=true"));
@@ -1188,8 +1182,9 @@ namespace KingmakerDiceRoller.DomainTests
             CharacterCreationCoordinator coordinator = environment.CreateCoordinator(tracker, diagnostics);
             coordinator.OnLevelUpStateConstructed(preview, preview.Unit, FakeMode.CharGen);
             coordinator.Update(0.1f);
-            environment.Allocator.ThrowOnFill = true;
             string error;
+            AssertEx.True(coordinator.TryRoll(out error), error);
+            environment.Allocator.ThrowOnFill = true;
 
             AssertEx.True(coordinator.TryRestorePointBuy(out error), error);
 
@@ -1211,6 +1206,7 @@ namespace KingmakerDiceRoller.DomainTests
             coordinator.OnLevelUpStateConstructed(preview, preview.Unit, FakeMode.CharGen);
             coordinator.Update(0.1f);
             string error;
+            AssertEx.True(coordinator.TryRoll(out error), error);
 
             AssertEx.True(coordinator.TryRestorePointBuy(out error), error);
 
@@ -1389,9 +1385,10 @@ namespace KingmakerDiceRoller.DomainTests
                 PreviewRefresh = new PreviewRefreshService();
                 LivePreview = new LivePreviewInspector(StatAccess);
                 Logger = new FakeLogger();
+                NativeControls = new NativeAbilityControlService(Logger);
                 Application = new StatApplicationService(StatAccess, LivePreview, PreviewRefresh, Logger);
                 Restore = new PointBuyRestoreService(StatAccess, LivePreview, PreviewRefresh, Logger);
-                Presentation = new AbilityPhasePresentationService(LivePreview, Logger);
+                Presentation = new AbilityPhasePresentationService(LivePreview, Logger, NativeControls);
                 Assignment = new StatAssignment(DiagnosticArrays.FixedPhaseTwoArray());
             }
 
@@ -1402,6 +1399,7 @@ namespace KingmakerDiceRoller.DomainTests
             internal PreviewRefreshService PreviewRefresh { get; }
             internal LivePreviewInspector LivePreview { get; }
             internal FakeLogger Logger { get; }
+            internal NativeAbilityControlService NativeControls { get; }
             internal StatApplicationService Application { get; }
             internal PointBuyRestoreService Restore { get; }
             internal AbilityPhasePresentationService Presentation { get; }
@@ -1496,11 +1494,15 @@ namespace KingmakerDiceRoller.DomainTests
                 string reason;
                 AssertEx.True(Sessions.TryOpenOrRebind(
                     decision,
-                    generation => CapturePristine(state, budget, budgetSource, generation),
                     generation => CaptureRollback(state, generation),
-                    factory,
                     out session,
                     out reason), reason);
+                if (session.IsPointBuyMode && session.Assignment == null)
+                {
+                    StatAssignment assignment = factory();
+                    session.BeginRollMode(CaptureOrigin(state, budget, budgetSource, 1), assignment);
+                    session.CommitRecallOrAssignment(assignment);
+                }
                 return session;
             }
 
@@ -1542,21 +1544,19 @@ namespace KingmakerDiceRoller.DomainTests
                 RollSession session;
                 AssertEx.True(Sessions.TryOpenOrRebind(
                     decision,
-                    generation => CapturePristine(state, 25, "unexpected replacement pristine", generation),
                     generation => CaptureRollback(state, generation),
-                    factory,
                     out session,
                     out reason), reason);
                 return session;
             }
 
-            internal PristinePointBuyState CapturePristine(
+            internal PointBuyOrigin CaptureOrigin(
                 FakeState state,
                 int budget,
                 string source,
                 int generation)
             {
-                return PristinePointBuyState.Capture(
+                return PointBuyOrigin.Capture(
                     state.StatsDistribution,
                     state.Unit,
                     budget,
@@ -1655,6 +1655,12 @@ namespace KingmakerDiceRoller.DomainTests
                     typeof(FakeUnitDescriptor).GetProperty("Unit", instance),
                     typeof(FakeAbilityScoresAllocator).GetField("m_Unit", instance),
                     typeof(FakeAbilityScoresAllocator).GetField("m_PreviewUnit", instance),
+                    typeof(FakeAbilityScoresAllocator).GetField("m_StatEntries", instance),
+                    typeof(FakeScoreEntry).GetField("UpButton", instance),
+                    typeof(FakeScoreEntry).GetField("DownButton", instance),
+                    typeof(FakeButton).GetProperty("interactable", instance),
+                    typeof(FakeAbilityScoresAllocator).GetField("m_MainLabel", instance),
+                    typeof(FakeAbilityScoresAllocator).GetField("m_Frame", instance),
                     new List<string>());
             }
         }
@@ -1844,6 +1850,11 @@ namespace KingmakerDiceRoller.DomainTests
         {
             public FakeUnitEntityData m_Unit;
             public FakeUnitEntityData m_PreviewUnit;
+            public readonly List<FakeScoreEntry> m_StatEntries = Enumerable.Range(0, 6)
+                .Select(_ => new FakeScoreEntry())
+                .ToList();
+            public object m_MainLabel = new object();
+            public object m_Frame = new object();
             internal FakeState BoundState { get; private set; }
             internal FakeDistribution BoundDistribution { get; private set; }
             internal int[] DisplayedValues { get; private set; }
@@ -1864,10 +1875,26 @@ namespace KingmakerDiceRoller.DomainTests
                 DisplayedValues = controller.Preview.Stats.ReadDisplayedValues();
                 DisplayedPoints = controller.State.StatsDistribution.Points;
                 NativeControlsAvailable = controller.State.StatsDistribution.Available;
+                foreach (FakeScoreEntry entry in m_StatEntries)
+                {
+                    entry.UpButton.interactable = NativeControlsAvailable;
+                    entry.DownButton.interactable = NativeControlsAvailable;
+                }
                 Action action = OnFill;
                 action?.Invoke();
                 if (ThrowOnFill) throw new InvalidOperationException("simulated native presentation failure");
             }
+        }
+
+        private sealed class FakeScoreEntry
+        {
+            public readonly FakeButton UpButton = new FakeButton();
+            public readonly FakeButton DownButton = new FakeButton();
+        }
+
+        private sealed class FakeButton
+        {
+            public bool interactable { get; set; }
         }
 
         private sealed class FakeUi

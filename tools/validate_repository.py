@@ -22,7 +22,10 @@ REQUIRED = [
     'src/KingmakerDiceRoller/CharacterCreation/PointBuyRestoreObservation.cs',
     'src/KingmakerDiceRoller/CharacterCreation/PointBuyPresentationObservation.cs',
     'src/KingmakerDiceRoller/CharacterCreation/AbilityPhasePresentationService.cs',
-    'src/KingmakerDiceRoller/CharacterCreation/PristinePointBuyState.cs',
+    'src/KingmakerDiceRoller/CharacterCreation/PointBuyOrigin.cs',
+    'src/KingmakerDiceRoller/CharacterCreation/CharacterRollWorkflow.cs',
+    'src/KingmakerDiceRoller/CharacterCreation/RollUiSnapshot.cs',
+    'src/KingmakerDiceRoller/CharacterCreation/NativeAbilityControlService.cs',
     'src/KingmakerDiceRoller/CharacterCreation/RollSessionMode.cs',
     'tests/KingmakerDiceRoller.DomainTests/KingmakerDiceRoller.DomainTests.csproj',
     'tests/KingmakerDiceRoller.DomainTests/CharacterCreationContextPolicyTests.cs',
@@ -206,25 +209,25 @@ def main():
     diagnostic=(ROOT/'src/KingmakerDiceRoller/Domain/DiagnosticArrays.cs').read_text(encoding='utf-8')
     require(re.search(r'16\s*,\s*15\s*,\s*14\s*,\s*12\s*,\s*10\s*,\s*8',diagnostic),'fixed diagnostic array missing')
     restore=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/PointBuyRestoreService.cs').read_text(encoding='utf-8')
-    pristine=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/PristinePointBuyState.cs').read_text(encoding='utf-8')
+    point_buy_origin=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/PointBuyOrigin.cs').read_text(encoding='utf-8')
     rollback=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/GenerationRollbackSnapshot.cs').read_text(encoding='utf-8')
     restore_observation=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/PointBuyRestoreObservation.cs').read_text(encoding='utf-8')
     presentation=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/AbilityPhasePresentationService.cs').read_text(encoding='utf-8')
     presentation_observation=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/PointBuyPresentationObservation.cs').read_text(encoding='utf-8')
     stat_access=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/KingmakerStatAccess.cs').read_text(encoding='utf-8')
-    require('PristinePointBuyState pristine = session.PristinePointBuy' in restore and 'new object[] { pristine.AllocatorBudget }' in restore and 'DistributionStartMethod.Invoke' in restore,'point-buy restore must use the immutable pristine allocator budget')
+    require('PointBuyOrigin pristine = session.PointBuyOrigin' in restore and 'new object[] { pristine.AllocatorBudget }' in restore and 'DistributionStartMethod.Invoke' in restore,'point-buy restore must use the exact pre-roll point-buy origin budget')
     require('preview.Refresh(contracts)' in restore and 'pristine.Restore(session.Distribution, session.Unit' in restore,'point-buy restore must refresh once and restore pristine state on the newest session generation')
     require('HybridStateDetected' in restore and 'rolled-values-plus-full-budget hybrid' in restore,'point-buy restore must reject the observed hybrid state')
     require('25' not in restore,'point-buy restore may not hard-code 25 points')
-    require('capturedGeneration != 1' in pristine and 'CapturedBeforeRollOwnership' in pristine,'pristine point-buy state must be first-generation only')
+    require('capturedGeneration <= 0' in point_buy_origin and 'CapturedBeforeRollOwnership' in point_buy_origin,'point-buy origin must carry positive-generation pre-roll provenance')
     for token in ['AllocatorBudget','BudgetSource','AllocatorAvailable','RemainingPoints','TotalPoints']:
-        require(token in pristine, f'pristine point-buy state missing: {token}')
+        require(token in point_buy_origin, f'point-buy origin missing: {token}')
     require('GenerationRollbackSnapshot' in rollback and 'public int Generation' in rollback and 'MatchesAssignment' in rollback,'generation-local rollback state missing')
     require('RolledAssignmentStillPresent' in restore_observation and 'FullAllocatorBudgetAvailable' in restore_observation and 'HybridStateDetected' in restore_observation,'hybrid restoration verification missing')
     require('DisablePointBuyAllocator' in stat_access and 'DistributionAvailableMember' in stat_access and 'DistributionPointsMember' in stat_access,'roll mode must explicitly suppress the point-buy allocator')
     require('AbilityAllocatorFillDataMethod.Invoke(allocator, null)' in presentation,'point-buy presentation must invoke the exact native ability allocator refresh')
     require('refreshCountForGeneration == 0' in presentation and 'refreshInProgress' in presentation and 'nested refresh was refused' in presentation,'native presentation refresh must be bounded and reject reentrancy')
-    require('session.IsPointBuyMode' in presentation and 'session.IsRollMode' not in presentation,'presentation refresh must run only after durable point-buy mode is established')
+    require('session.IsPointBuyMode' in presentation and 'TrySynchronizeRoll' in presentation,'presentation service must separately synchronize PointBuy and Roll modes')
     require('PreviewUpdateMethod' not in presentation and 'PreviewRefreshService' not in presentation,'presentation synchronization must not rebuild the semantic preview')
     for token in [
         'semanticPointBuyVerified','presentationRefreshRequested','presentationRefreshMethod',
@@ -260,23 +263,25 @@ def main():
     require('ReleaseIfStableOwnerLost' in manager and 'OwnsStableOwner(currentController, currentSourceUnit)' in manager and 'Lifecycle.Abandon' in manager,'stable-owner session release missing')
     require('public object Controller { get; }' in session and 'public object StableOwner { get; }' in session,'immutable stable controller/source ownership missing')
     require('public object Unit { get; private set; }' in session and 'int nextGeneration = Generation + 1' in session and 'Generation = nextGeneration' in session,'replaceable preview generation missing')
-    require('public PristinePointBuyState PristinePointBuy { get; }' in session and 'public GenerationRollbackSnapshot GenerationRollback { get; private set; }' in session,'pristine origin and generation rollback must have distinct lifetimes')
-    require('GenerationRollback = generationRollback' in session and 'PristinePointBuy =' not in session[session.find('public void Rebind('):],'same-owner rebind must replace rollback state without replacing pristine point buy')
-    require('RollSessionMode.RestoringPointBuy' in session and 'RollSessionMode.PointBuy' in session and 'RollSuppressedForStableOwner' in session,'explicit roll/restoring/point-buy mode state is missing')
+    require('public PointBuyOrigin PointBuyOrigin { get; private set; }' in session and 'public GenerationRollbackSnapshot GenerationRollback { get; private set; }' in session,'point-buy origin and generation rollback must have distinct lifetimes')
+    rebind=session[session.find('public void Rebind('):]
+    require('GenerationRollback = generationRollback' in rebind and 'PointBuyOrigin =' not in rebind,'same-owner rebind must replace rollback state without replacing the pre-roll point-buy origin')
+    require('RollSessionMode.EnteringRollMode' in session and 'RollSessionMode.RestoringPointBuy' in session and 'RollSessionMode.PointBuy' in session and 'RollSuppressedForStableOwner' in session,'explicit product workflow modes are missing')
     require('OwnsStableOwner(context.Controller, context.StableOwner)' in manager and 'different controller/source owner' in manager,'same-owner rebind/different-owner rejection missing')
-    require('Func<StatAssignment> assignmentFactory' in manager and manager.count('assignmentFactory()')==1,'assignment must be generated only when opening a session')
-    require(manager.count('pristineFactory(')==1 and 'rollbackFactory(replacementGeneration)' in manager,'pristine origin must be captured once while rollback state follows preview generations')
+    require('Opened a PointBuy-first session' in manager and 'no roll was generated' in manager,'new sessions must open in PointBuy without automatic random generation')
+    require('rollbackFactory(replacementGeneration)' in manager,'generation rollback state must follow preview generations')
     require('StableOwner' in decision and 'ControllerPreviewMatches' in decision,'accepted context must retain stable and transient controller identities')
     require('TryStageCurrentGeneration' in application and '.Refresh(' not in application,'fixed-array staging must not recursively request preview refresh')
     require('TryMarkLiveVerified' in application and 'InspectLive' in application,'application must verify the live controller generation')
     require('DisablePointBuyAllocator' in application and 'ReadDistributionPoints' in application,'roll staging must disable and verify the point-buy allocator')
     for token in ['applicationGeneration','refreshInProgress','pendingReplacementObserved','sameStableOwner','reboundPreview','currentControllerStateMatches','currentControllerPreviewMatches','liveDistributionMatches','liveUnitValuesMatch','liveAllocatorMatches']:
         require(token in live_preview, f'live preview diagnostic missing: {token}')
-    for token in ['pristineBaselineCaptured','pristineBaselineGeneration','currentGeneration','candidateBaselineContaminated','mode=','allocatorBudget','liveDistributionMatchesPristine','liveUnitMatchesPristine','rollSuppressedForStableOwner']:
+    for token in ['pointBuyOriginCaptured','pristineBaselineGeneration','currentGeneration','candidateBaselineContaminated','mode=','allocatorBudget','liveDistributionMatchesPristine','liveUnitMatchesPristine','rollSuppressedForStableOwner']:
         require(token in restore_observation or token in coordinator, f'point-buy diagnostic missing: {token}')
     require('refreshInProgress' in preview_refresh and 'nested refresh was refused' in preview_refresh and 'finally' in preview_refresh,'bounded preview refresh guard missing')
     require('TryMarkLiveVerified' in coordinator and 'MaximumApplicationAttemptsPerGeneration' in coordinator,'bounded post-constructor live verification missing')
-    require('if (!session.IsRollMode) return;' in coordinator and 'fixed-array staging remains suppressed' in coordinator,'durable point-buy mode must suppress same-owner roll staging and completion behavior')
+    require('if (!session.IsRollMode) return;' in coordinator and 'no array was generated or staged' in coordinator,'PointBuy mode must suppress roll staging and completion behavior')
+    require('TryRoll(out string error)' in coordinator and 'TryReroll(out string error)' in coordinator and 'TryApplyUserAssignment' in coordinator,'explicit transactional roll command surface missing')
     require('TryPrepareDisable' in coordinator and 'TryPrepareDisable' in composition,'disable must restore point buy before removing recovery hooks')
     require('pointBuyPresentation.TrySynchronize' in coordinator and 'Pristine point-buy model is verified and durable' in coordinator,'coordinator must distinguish safe semantic restoration from presentation failure')
     require('error = null;' in coordinator[coordinator.find('bool presentationSynchronized'):coordinator.find('public bool TryPrepareDisable')],'presentation failure must preserve successful semantic point-buy restoration')

@@ -17,8 +17,10 @@ namespace KingmakerDiceRoller.Domain
             if (string.IsNullOrWhiteSpace(id)) throw new ArgumentException("Rule ID is required.", nameof(id));
             if (string.IsNullOrWhiteSpace(displayName)) throw new ArgumentException("Display name is required.", nameof(displayName));
             if (string.IsNullOrWhiteSpace(expression)) throw new ArgumentException("Expression is required.", nameof(expression));
-            if (minimumScore < 1 || minimumScore > 20) throw new ArgumentOutOfRangeException(nameof(minimumScore));
-            if (maximumScore < minimumScore || maximumScore > 20) throw new ArgumentOutOfRangeException(nameof(maximumScore));
+            if (minimumScore < RolledStatArray.MinimumScore || minimumScore > RolledStatArray.MaximumScore)
+                throw new ArgumentOutOfRangeException(nameof(minimumScore));
+            if (maximumScore < minimumScore || maximumScore > RolledStatArray.MaximumScore)
+                throw new ArgumentOutOfRangeException(nameof(maximumScore));
             if (maximumScoreAttempts < 1 || maximumScoreAttempts > 10000) throw new ArgumentOutOfRangeException(nameof(maximumScoreAttempts));
             if (maximumArrayAttempts < 1 || maximumArrayAttempts > 10000) throw new ArgumentOutOfRangeException(nameof(maximumArrayAttempts));
 

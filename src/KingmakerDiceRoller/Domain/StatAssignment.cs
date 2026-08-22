@@ -22,6 +22,14 @@ namespace KingmakerDiceRoller.Domain
 
         public RolledStatArray RolledArray { get; }
 
+        public static StatAssignment FromSourcePositions(
+            RolledStatArray rolledArray,
+            IEnumerable<int> sourcePositions)
+        {
+            if (sourcePositions == null) throw new ArgumentNullException(nameof(sourcePositions));
+            return new StatAssignment(rolledArray, sourcePositions.ToArray());
+        }
+
         public int GetValue(AbilityScore ability)
         {
             int index = RequireAbilityIndex(ability);
@@ -65,6 +73,11 @@ namespace KingmakerDiceRoller.Domain
             }
 
             return result;
+        }
+
+        public int[] ToSourcePositions()
+        {
+            return (int[])sourceIndexByAbility.Clone();
         }
 
         public bool Equals(StatAssignment other)

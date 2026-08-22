@@ -24,8 +24,8 @@ namespace KingmakerDiceRoller.CharacterCreation
 
         public string BuildFacts(RollSession session, bool refreshInProgress)
         {
-            PristinePointBuyState pristine = session.PristinePointBuy;
-            return "Facts: pristineBaselineCaptured=" + BooleanText(session.PristineBaselineCaptured) +
+            PointBuyOrigin pristine = session.PointBuyOrigin;
+            return "Facts: pointBuyOriginCaptured=" + BooleanText(session.PointBuyOriginCaptured) +
                 ", pristineBaselineGeneration=" + pristine.CapturedGeneration +
                 ", currentGeneration=" + session.Generation +
                 ", candidateBaselineContaminated=" + BooleanText(session.CandidateBaselineContaminated) +

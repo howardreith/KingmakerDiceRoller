@@ -16,49 +16,39 @@ namespace KingmakerDiceRoller.CharacterCreation
 
         public bool TryOpenOrRebind(
             CharacterCreationContextDecision context,
-            Func<int, PristinePointBuyState> pristineFactory,
             Func<int, GenerationRollbackSnapshot> rollbackFactory,
-            Func<StatAssignment> assignmentFactory,
             out RollSession session,
             out string reason)
         {
             if (context == null) throw new ArgumentNullException(nameof(context));
             if (!context.Accepted) throw new ArgumentException("Only an accepted context can own a roll session.", nameof(context));
-            if (pristineFactory == null) throw new ArgumentNullException(nameof(pristineFactory));
             if (rollbackFactory == null) throw new ArgumentNullException(nameof(rollbackFactory));
-            if (assignmentFactory == null) throw new ArgumentNullException(nameof(assignmentFactory));
 
             lock (sync)
             {
                 bool pendingReplacement = !context.ControllerStateMatches && context.ControllerPreviewMatches;
                 if (active == null)
                 {
-                    PristinePointBuyState pristine = pristineFactory(1);
-                    if (pristine == null) throw new InvalidOperationException("The pristine point-buy factory returned null.");
                     GenerationRollbackSnapshot rollback = rollbackFactory(1);
                     if (rollback == null) throw new InvalidOperationException("The rollback snapshot factory returned null.");
-                    StatAssignment assignment = assignmentFactory();
-                    if (assignment == null) throw new InvalidOperationException("The assignment factory returned null.");
                     active = new RollSession(
                         context.Controller,
                         context.StableOwner,
                         context.State,
                         context.Unit,
                         context.Distribution,
-                        pristine,
                         rollback,
-                        assignment,
                         pendingReplacement);
                     liveness.Reset();
                     session = active;
-                    reason = "Opened a new roll session for the stable controller/source owner.";
+                    reason = "Opened a PointBuy-first session for the stable controller/source owner; no roll was generated.";
                     return true;
                 }
 
                 if (!active.OwnsStableOwner(context.Controller, context.StableOwner))
                 {
                     session = null;
-                    reason = "A different controller/source owner already owns the active roll session.";
+                    reason = "A different controller/source owner already owns the active character-roll session.";
                     return false;
                 }
 
@@ -77,11 +67,12 @@ namespace KingmakerDiceRoller.CharacterCreation
                         context.Distribution,
                         rollback,
                         pendingReplacement);
-                    reason = "Rebound the existing array to same-owner preview generation " + active.Generation + ".";
+                    reason = "Rebound the same-owner preview generation " + active.Generation +
+                        " for the stable controller/source owner.";
                 }
                 else
                 {
-                    reason = "Reused the existing roll session and current preview generation.";
+                    reason = "Reused the current same-owner preview generation.";
                 }
 
                 session = active;
@@ -113,13 +104,11 @@ namespace KingmakerDiceRoller.CharacterCreation
                     liveness.Reset();
                     return false;
                 }
-
                 bool shouldRelease = liveness.Observe(
                     observationSucceeded,
                     active.OwnsStableOwner(currentController, currentSourceUnit),
                     deltaTime);
                 if (!shouldRelease) return false;
-
                 released = active;
                 released.Lifecycle.Abandon();
                 active = null;

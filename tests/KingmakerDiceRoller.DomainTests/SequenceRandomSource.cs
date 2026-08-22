@@ -15,6 +15,7 @@ namespace KingmakerDiceRoller.DomainTests
 
         public int NextInclusive(int minimum, int maximum)
         {
+            Calls++;
             if (values.Count == 0) throw new InvalidOperationException("Test random sequence was exhausted.");
             int value = values.Dequeue();
             if (value < minimum || value > maximum)
@@ -24,5 +25,8 @@ namespace KingmakerDiceRoller.DomainTests
 
             return value;
         }
+
+        internal int Calls { get; private set; }
+        internal int Remaining => values.Count;
     }
 }

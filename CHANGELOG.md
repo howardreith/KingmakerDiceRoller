@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.1.0-alpha.1 — in development
+
+- Recorded the successful focused live gate at `8f78d824...`: pristine point
+  buy and its native ability-page presentation updated immediately without
+  navigation.
+- Replaced automatic diagnostic-array session startup with an explicit
+  PointBuy-first lifecycle. Opening, rebinding, or rendering a valid session
+  no longer generates or stages a roll.
+- Added explicit PointBuy, EnteringRollMode, Roll, and RestoringPointBuy
+  transitions plus transactional Roll/Reroll/reassignment/recall command
+  boundaries.
+- Replaced the first-generation-only baseline with a point-buy origin captured
+  at each explicit PointBuy-to-Roll transition, preserving the user's current
+  legitimate allocation and observed allocator budget.
+- Added product roll configuration, position-safe assignment serialization,
+  bounded 20-entry history, bounded 10-slot saved catalog, schema-v1 migration,
+  UI snapshots, and exact native allocator-control contracts.
+- Preserved the explicit 1–120 generated-score boundary with fail-closed,
+  no-clamping validation and extended point-buy-equivalent reporting.
+
 ## 0.0.1-alpha.1 — source candidate
 
 - Initialized a standalone Kingmaker 2.1.7b UMM project.

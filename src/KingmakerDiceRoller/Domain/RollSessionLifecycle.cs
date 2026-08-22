@@ -5,10 +5,12 @@ namespace KingmakerDiceRoller.Domain
     public enum RollSessionState
     {
         Created,
-        Active,
-        Applied,
+        PointBuy,
+        PointBuyRestored = PointBuy,
+        EnteringRollMode,
+        Roll,
+        Applied = Roll,
         RestoringPointBuy,
-        PointBuyRestored,
         Completed,
         Abandoned
     }
@@ -22,58 +24,68 @@ namespace KingmakerDiceRoller.Domain
 
         public RollSessionState State { get; private set; }
 
+        public void ActivatePointBuy()
+        {
+            Transition(RollSessionState.Created, RollSessionState.PointBuy);
+        }
+
         public void Activate()
         {
-            Transition(RollSessionState.Created, RollSessionState.Active);
+            ActivatePointBuy();
+            BeginRollMode();
+        }
+
+        public void BeginRollMode()
+        {
+            Transition(RollSessionState.PointBuy, RollSessionState.EnteringRollMode);
+        }
+
+        public void CommitRollMode()
+        {
+            if (State != RollSessionState.EnteringRollMode && State != RollSessionState.Roll)
+            {
+                throw new InvalidOperationException("A roll can be committed only while entering or already in Roll mode.");
+            }
+            State = RollSessionState.Roll;
         }
 
         public void MarkApplied()
         {
-            if (State != RollSessionState.Active && State != RollSessionState.Applied)
-            {
-                throw new InvalidOperationException("Only an active session can be marked applied.");
-            }
+            CommitRollMode();
+        }
 
-            State = RollSessionState.Applied;
+        public void AbortRollModeEntry()
+        {
+            Transition(RollSessionState.EnteringRollMode, RollSessionState.PointBuy);
         }
 
         public void BeginPointBuyRestore()
         {
-            if (State != RollSessionState.Active && State != RollSessionState.Applied)
-            {
-                throw new InvalidOperationException("Point buy can be restored only from an active roll session.");
-            }
-
-            State = RollSessionState.RestoringPointBuy;
+            Transition(RollSessionState.Roll, RollSessionState.RestoringPointBuy);
         }
 
         public void MarkPointBuyRestored()
         {
-            Transition(RollSessionState.RestoringPointBuy, RollSessionState.PointBuyRestored);
+            Transition(RollSessionState.RestoringPointBuy, RollSessionState.PointBuy);
         }
 
         public void AbortPointBuyRestore()
         {
-            Transition(RollSessionState.RestoringPointBuy, RollSessionState.Applied);
+            Transition(RollSessionState.RestoringPointBuy, RollSessionState.Roll);
         }
 
         public void Complete()
         {
-            if (State != RollSessionState.Applied)
+            if (State != RollSessionState.Roll && State != RollSessionState.PointBuy)
             {
-                throw new InvalidOperationException("Only an applied roll session can complete.");
+                throw new InvalidOperationException("Only a stable Roll or PointBuy session can complete.");
             }
-
             State = RollSessionState.Completed;
         }
 
         public void Abandon()
         {
-            if (State == RollSessionState.Completed || State == RollSessionState.Abandoned)
-            {
-                return;
-            }
-
+            if (State == RollSessionState.Completed || State == RollSessionState.Abandoned) return;
             State = RollSessionState.Abandoned;
         }
 
@@ -81,9 +93,9 @@ namespace KingmakerDiceRoller.Domain
         {
             if (State != expected)
             {
-                throw new InvalidOperationException("Expected session state " + expected + " but observed " + State + ".");
+                throw new InvalidOperationException(
+                    "Expected session state " + expected + " but observed " + State + ".");
             }
-
             State = next;
         }
     }

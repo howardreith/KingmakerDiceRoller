@@ -46,6 +46,12 @@ namespace KingmakerDiceRoller.Integration
             MemberInfo unitDescriptorEntityMember,
             FieldInfo abilityAllocatorSourceEntityField,
             FieldInfo abilityAllocatorPreviewEntityField,
+            FieldInfo abilityAllocatorStatEntriesField,
+            FieldInfo scoreEntryUpButtonField,
+            FieldInfo scoreEntryDownButtonField,
+            PropertyInfo selectableInteractableProperty,
+            FieldInfo abilityAllocatorMainLabelField,
+            FieldInfo abilityAllocatorFrameField,
             IReadOnlyList<string> evidence)
         {
             GameAssembly = gameAssembly;
@@ -87,6 +93,12 @@ namespace KingmakerDiceRoller.Integration
             UnitDescriptorEntityMember = unitDescriptorEntityMember;
             AbilityAllocatorSourceEntityField = abilityAllocatorSourceEntityField;
             AbilityAllocatorPreviewEntityField = abilityAllocatorPreviewEntityField;
+            AbilityAllocatorStatEntriesField = abilityAllocatorStatEntriesField;
+            ScoreEntryUpButtonField = scoreEntryUpButtonField;
+            ScoreEntryDownButtonField = scoreEntryDownButtonField;
+            SelectableInteractableProperty = selectableInteractableProperty;
+            AbilityAllocatorMainLabelField = abilityAllocatorMainLabelField;
+            AbilityAllocatorFrameField = abilityAllocatorFrameField;
             Evidence = evidence;
         }
 
@@ -129,6 +141,12 @@ namespace KingmakerDiceRoller.Integration
         public MemberInfo UnitDescriptorEntityMember { get; }
         public FieldInfo AbilityAllocatorSourceEntityField { get; }
         public FieldInfo AbilityAllocatorPreviewEntityField { get; }
+        public FieldInfo AbilityAllocatorStatEntriesField { get; }
+        public FieldInfo ScoreEntryUpButtonField { get; }
+        public FieldInfo ScoreEntryDownButtonField { get; }
+        public PropertyInfo SelectableInteractableProperty { get; }
+        public FieldInfo AbilityAllocatorMainLabelField { get; }
+        public FieldInfo AbilityAllocatorFrameField { get; }
         public IReadOnlyList<string> Evidence { get; }
 
         public bool TryGetLevelUpController(out object controller)

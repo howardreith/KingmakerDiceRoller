@@ -2,14 +2,24 @@
 
 ## Current phase
 
-Phase 2 - immediate native ability-page synchronization after verified
-pristine point-buy restoration.
+Player-facing `0.1.0-alpha.1` implementation. The fixed-array vertical slice
+has passed its focused live integration gate; explicit PointBuy-first product
+workflow implementation is in progress.
 
 ## Branch and baseline
 
 Branch: `pro/kingmaker-dice-roller-mvp`
 
-Baseline before this repair: `c5ea92b21bdb3392691bd9d79523df5152e0fc67`.
+Authoritative overnight baseline: `8f78d8243ed27ed2cbb3fadafd890aba172975aa`.
+
+## Latest focused live gate
+
+At commit `8f78d824...`, a fresh live test proved that **Return active roll
+session to point buy** immediately refreshed the already-open native ability
+page. Ordinary base tens, the real 25-point allocator, and native controls
+appeared without navigation. Together with the earlier preview-continuity and
+save-independence evidence, this closes the diagnostic fixed-array vertical
+slice. It does not qualify the unfinished player-facing workflow.
 
 ## Implemented behavior
 

@@ -12,6 +12,7 @@ namespace KingmakerDiceRoller.CharacterCreation
 
         private readonly LivePreviewInspector livePreview;
         private readonly IModLogger logger;
+        private readonly NativeAbilityControlService nativeControls;
         private bool refreshInProgress;
         private RollSession lastSession;
         private int lastGeneration;
@@ -20,9 +21,18 @@ namespace KingmakerDiceRoller.CharacterCreation
         public AbilityPhasePresentationService(
             LivePreviewInspector livePreview,
             IModLogger logger)
+            : this(livePreview, logger, null)
+        {
+        }
+
+        public AbilityPhasePresentationService(
+            LivePreviewInspector livePreview,
+            IModLogger logger,
+            NativeAbilityControlService nativeControls)
         {
             this.livePreview = livePreview ?? throw new ArgumentNullException(nameof(livePreview));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            this.nativeControls = nativeControls;
         }
 
         public bool IsRefreshInProgress => refreshInProgress;
@@ -129,8 +139,220 @@ namespace KingmakerDiceRoller.CharacterCreation
                 return false;
             }
 
+            nativeControls?.ReleaseAfterNativePointBuyRefresh();
             error = null;
             return true;
+        }
+
+        public bool TrySynchronizeRoll(
+            RollSession session,
+            KingmakerContracts contracts,
+            out RollPresentationObservation observation,
+            out string error)
+        {
+            if (session == null) throw new ArgumentNullException(nameof(session));
+            if (contracts == null) throw new ArgumentNullException(nameof(contracts));
+            if (!session.IsRollMode && !session.IsEnteringRollMode)
+            {
+                observation = FailedRoll(session, false, 0, false,
+                    "Roll presentation synchronization requires EnteringRollMode or Roll mode.");
+                error = observation.Failure;
+                return false;
+            }
+            if (nativeControls == null)
+            {
+                observation = FailedRoll(session, false, 0, false,
+                    "Native point-buy control suppression is unavailable.");
+                error = observation.Failure;
+                return false;
+            }
+            if (refreshInProgress)
+            {
+                observation = FailedRoll(session, false, 0, false,
+                    "A native ability presentation refresh is already in progress; nested refresh was refused.");
+                error = observation.Failure;
+                return false;
+            }
+
+            object characterBuild;
+            bool active;
+            object phase;
+            object allocator;
+            if (!contracts.TryGetAbilityPhasePresentationContext(
+                out characterBuild,
+                out active,
+                out phase,
+                out allocator) ||
+                characterBuild == null || !active || phase == null || allocator == null)
+            {
+                observation = FailedRoll(session, false, 0, false,
+                    "The native Skills ability-score phase is not active.");
+                error = observation.Failure;
+                return false;
+            }
+
+            int generation = session.Generation;
+            refreshInProgress = true;
+            TotalRefreshCount++;
+            try
+            {
+                contracts.AbilityAllocatorFillDataMethod.Invoke(allocator, null);
+            }
+            catch (Exception exception)
+            {
+                Exception actual = exception is TargetInvocationException && exception.InnerException != null
+                    ? exception.InnerException
+                    : exception;
+                logger.Exception("Refresh native ability-score phase for Roll mode", actual);
+                observation = FailedRoll(session, true, 1, false,
+                    "Native ability-score refresh failed with " + actual.GetType().Name + ".");
+                error = observation.Failure;
+                return false;
+            }
+            finally
+            {
+                refreshInProgress = false;
+            }
+
+            string controlsError;
+            bool controlsSuppressed = nativeControls.TrySuppressForRoll(session, contracts, out controlsError);
+            observation = ObserveRoll(session, contracts, allocator, generation, controlsSuppressed,
+                controlsSuppressed ? null : controlsError);
+            if (!observation.IsSynchronized)
+            {
+                error = observation.Failure ?? "The native ability page did not bind the verified rolled assignment.";
+                return false;
+            }
+            error = null;
+            return true;
+        }
+
+        public bool TryRefreshCurrentAbilityPhase(KingmakerContracts contracts, out string error)
+        {
+            if (contracts == null) throw new ArgumentNullException(nameof(contracts));
+            if (refreshInProgress)
+            {
+                error = "A native ability presentation refresh is already in progress.";
+                return false;
+            }
+            object characterBuild;
+            bool active;
+            object phase;
+            object allocator;
+            if (!contracts.TryGetAbilityPhasePresentationContext(
+                out characterBuild,
+                out active,
+                out phase,
+                out allocator) ||
+                characterBuild == null || !active || phase == null || allocator == null)
+            {
+                error = "The native Skills ability-score phase is not active.";
+                return false;
+            }
+            refreshInProgress = true;
+            TotalRefreshCount++;
+            try
+            {
+                contracts.AbilityAllocatorFillDataMethod.Invoke(allocator, null);
+                error = null;
+                return true;
+            }
+            catch (Exception exception)
+            {
+                Exception actual = exception is TargetInvocationException && exception.InnerException != null
+                    ? exception.InnerException
+                    : exception;
+                logger.Exception("Refresh current native ability-score phase", actual);
+                error = actual.Message;
+                return false;
+            }
+            finally
+            {
+                refreshInProgress = false;
+            }
+        }
+
+        private RollPresentationObservation ObserveRoll(
+            RollSession session,
+            KingmakerContracts contracts,
+            object allocator,
+            int requestedGeneration,
+            bool controlsSuppressed,
+            string failure)
+        {
+            try
+            {
+                int[] values = session.AssignmentForApplication.ToAssignedArray();
+                LivePreviewObservation semantic = livePreview.Observe(
+                    session,
+                    values,
+                    values,
+                    false,
+                    0,
+                    null,
+                    contracts);
+                object controller;
+                object source;
+                object state;
+                object preview;
+                bool observed = contracts.TryGetLevelUpControllerContext(
+                    out controller,
+                    out source,
+                    out state,
+                    out preview);
+                bool stateMatches = observed && ReferenceEquals(state, session.State);
+                bool distributionMatches = stateMatches && ReferenceEquals(
+                    ReflectionAccess.Read(contracts.LevelUpStateDistributionMember, state),
+                    session.Distribution);
+                object expectedSourceEntity;
+                object expectedPreviewEntity;
+                bool sourceResolved = contracts.TryGetDescriptorEntity(session.StableOwner, out expectedSourceEntity);
+                bool previewResolved = contracts.TryGetDescriptorEntity(session.Unit, out expectedPreviewEntity);
+                bool sourceMatches = sourceResolved && ReferenceEquals(
+                    contracts.AbilityAllocatorSourceEntityField.GetValue(allocator), expectedSourceEntity);
+                bool previewMatches = previewResolved && ReferenceEquals(
+                    contracts.AbilityAllocatorPreviewEntityField.GetValue(allocator), expectedPreviewEntity);
+                return new RollPresentationObservation(
+                    semantic.IsVerified,
+                    true,
+                    1,
+                    true,
+                    stateMatches,
+                    distributionMatches,
+                    sourceMatches,
+                    previewMatches,
+                    controlsSuppressed,
+                    requestedGeneration,
+                    session.Generation,
+                    failure);
+            }
+            catch (Exception exception)
+            {
+                return FailedRoll(session, true, 1, controlsSuppressed,
+                    failure ?? "Roll presentation observation failed with " + exception.GetType().Name + ".");
+            }
+        }
+
+        private static RollPresentationObservation FailedRoll(
+            RollSession session,
+            bool refreshRequested,
+            int refreshCount,
+            bool controlsSuppressed,
+            string failure)
+        {
+            return new RollPresentationObservation(
+                false,
+                refreshRequested,
+                refreshCount,
+                false,
+                false,
+                false,
+                false,
+                false,
+                controlsSuppressed,
+                session.Generation,
+                session.Generation,
+                failure);
         }
 
         private PointBuyPresentationObservation Observe(
@@ -143,7 +365,7 @@ namespace KingmakerDiceRoller.CharacterCreation
         {
             try
             {
-                PristinePointBuyState pristine = session.PristinePointBuy;
+                PointBuyOrigin pristine = session.PointBuyOrigin;
                 LivePreviewObservation semantic = livePreview.Observe(
                     session,
                     pristine.Values.DistributionValues,

@@ -244,6 +244,40 @@ namespace KingmakerDiceRoller.Integration
                 throw new ContractResolutionException(
                     "Exact CharBAbilityScoresAllocator source/preview binding fields were not found.");
             }
+            FieldInfo allocatorStatEntries = abilityAllocatorType.GetField("m_StatEntries", InstanceFlags);
+            if (allocatorStatEntries == null || !allocatorStatEntries.FieldType.IsGenericType ||
+                allocatorStatEntries.FieldType.GetGenericTypeDefinition() != typeof(List<>))
+            {
+                throw new ContractResolutionException("Exact CharBAbilityScoresAllocator.m_StatEntries list was not found.");
+            }
+            Type scoreEntryType = allocatorStatEntries.FieldType.GetGenericArguments()[0];
+            if (!string.Equals(scoreEntryType.FullName, "Kingmaker.UI.LevelUp.CharBScoresEntry", StringComparison.Ordinal))
+            {
+                throw new ContractResolutionException("Ability allocator entries are not exact CharBScoresEntry instances.");
+            }
+            FieldInfo scoreEntryUpButton = scoreEntryType.GetField("UpButton", InstanceFlags);
+            FieldInfo scoreEntryDownButton = scoreEntryType.GetField("DownButton", InstanceFlags);
+            if (scoreEntryUpButton == null || scoreEntryDownButton == null ||
+                scoreEntryUpButton.FieldType != scoreEntryDownButton.FieldType ||
+                !string.Equals(scoreEntryUpButton.FieldType.FullName, "UnityEngine.UI.Button", StringComparison.Ordinal))
+            {
+                throw new ContractResolutionException("Exact CharBScoresEntry UpButton/DownButton fields were not found.");
+            }
+            PropertyInfo interactable = scoreEntryUpButton.FieldType.GetProperty("interactable", InstanceFlags);
+            if (interactable == null || interactable.PropertyType != typeof(bool) ||
+                interactable.GetGetMethod(true) == null || interactable.GetSetMethod(true) == null)
+            {
+                throw new ContractResolutionException("Unity Selectable.interactable is not an exact writable Boolean property.");
+            }
+            FieldInfo allocatorMainLabel = abilityAllocatorType.GetField("m_MainLabel", InstanceFlags);
+            FieldInfo allocatorFrame = abilityAllocatorType.GetField("m_Frame", InstanceFlags);
+            if (allocatorMainLabel == null ||
+                !string.Equals(allocatorMainLabel.FieldType.FullName, "TMPro.TextMeshProUGUI", StringComparison.Ordinal) ||
+                allocatorFrame == null ||
+                !string.Equals(allocatorFrame.FieldType.FullName, "UnityEngine.UI.Image", StringComparison.Ordinal))
+            {
+                throw new ContractResolutionException("Native allocator label/frame style anchors were not found.");
+            }
 
             evidence.Add("Assembly=" + gameAssembly.FullName);
             evidence.Add("MVID=" + gameAssembly.ManifestModule.ModuleVersionId.ToString("D"));
@@ -260,6 +294,11 @@ namespace KingmakerDiceRoller.Integration
                 abilityAllocatorType.FullName + ".FillData()");
             evidence.Add(
                 "AbilityPresentationBinding=" + abilityAllocatorType.FullName + ".m_Unit + m_PreviewUnit");
+            evidence.Add(
+                "AbilityControls=" + abilityAllocatorType.FullName + ".m_StatEntries -> " +
+                scoreEntryType.FullName + ".UpButton + DownButton -> UnityEngine.UI.Selectable.interactable");
+            evidence.Add(
+                "AbilityPanelStyles=" + abilityAllocatorType.FullName + ".m_MainLabel + m_Frame");
 
             return new KingmakerContracts(
                 gameAssembly,
@@ -301,6 +340,12 @@ namespace KingmakerDiceRoller.Integration
                 unitEntity,
                 allocatorSourceEntity,
                 allocatorPreviewEntity,
+                allocatorStatEntries,
+                scoreEntryUpButton,
+                scoreEntryDownButton,
+                interactable,
+                allocatorMainLabel,
+                allocatorFrame,
                 evidence);
         }
 

@@ -6,6 +6,9 @@ namespace KingmakerDiceRoller.CharacterCreation
     public sealed class RollSession
     {
         public const int MaximumApplicationAttemptsPerGeneration = 2;
+        private StatAssignment committedAssignment;
+        private StatAssignment pendingAssignment;
+        private bool pendingEntryFromPointBuy;
 
         public RollSession(
             object controller,
@@ -13,9 +16,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             object state,
             object unit,
             object distribution,
-            PristinePointBuyState pristinePointBuy,
             GenerationRollbackSnapshot generationRollback,
-            StatAssignment assignment,
             bool pendingReplacementObserved)
         {
             Controller = controller ?? throw new ArgumentNullException(nameof(controller));
@@ -23,17 +24,16 @@ namespace KingmakerDiceRoller.CharacterCreation
             State = state ?? throw new ArgumentNullException(nameof(state));
             Unit = unit ?? throw new ArgumentNullException(nameof(unit));
             Distribution = distribution ?? throw new ArgumentNullException(nameof(distribution));
-            PristinePointBuy = pristinePointBuy ?? throw new ArgumentNullException(nameof(pristinePointBuy));
             GenerationRollback = generationRollback ?? throw new ArgumentNullException(nameof(generationRollback));
             if (generationRollback.Generation != 1)
             {
                 throw new ArgumentException("The first rollback snapshot must belong to generation 1.", nameof(generationRollback));
             }
-            Assignment = assignment ?? throw new ArgumentNullException(nameof(assignment));
             PendingReplacementObserved = pendingReplacementObserved;
             Generation = 1;
             Lifecycle = new RollSessionLifecycle();
-            Lifecycle.Activate();
+            Lifecycle.ActivatePointBuy();
+            History = new RollHistory();
         }
 
         public object Controller { get; }
@@ -41,10 +41,12 @@ namespace KingmakerDiceRoller.CharacterCreation
         public object State { get; private set; }
         public object Unit { get; private set; }
         public object Distribution { get; private set; }
-        public PristinePointBuyState PristinePointBuy { get; }
+        public PointBuyOrigin PointBuyOrigin { get; private set; }
         public GenerationRollbackSnapshot GenerationRollback { get; private set; }
-        public StatAssignment Assignment { get; }
+        public StatAssignment Assignment => pendingAssignment ?? committedAssignment;
+        public StatAssignment AssignmentForApplication => Assignment;
         public RollSessionLifecycle Lifecycle { get; }
+        public RollHistory History { get; }
         public int Generation { get; private set; }
         public int ApplicationAttempts { get; private set; }
         public int StagedGeneration { get; private set; }
@@ -59,35 +61,96 @@ namespace KingmakerDiceRoller.CharacterCreation
         public bool OwnsUnit(object unit) => ReferenceEquals(Unit, unit);
         public bool OwnsStableOwner(object controller, object stableOwner) =>
             ReferenceEquals(Controller, controller) && ReferenceEquals(StableOwner, stableOwner);
+
         public RollSessionMode Mode
         {
             get
             {
-                if (Lifecycle.State == RollSessionState.RestoringPointBuy) return RollSessionMode.RestoringPointBuy;
-                if (Lifecycle.State == RollSessionState.PointBuyRestored) return RollSessionMode.PointBuy;
-                return RollSessionMode.Roll;
+                switch (Lifecycle.State)
+                {
+                    case RollSessionState.EnteringRollMode: return RollSessionMode.EnteringRollMode;
+                    case RollSessionState.Roll: return RollSessionMode.Roll;
+                    case RollSessionState.RestoringPointBuy: return RollSessionMode.RestoringPointBuy;
+                    default: return RollSessionMode.PointBuy;
+                }
             }
         }
 
         public bool IsRollMode => Mode == RollSessionMode.Roll;
+        public bool IsEnteringRollMode => Mode == RollSessionMode.EnteringRollMode;
         public bool IsRestoringPointBuy => Mode == RollSessionMode.RestoringPointBuy;
         public bool IsPointBuyMode => Mode == RollSessionMode.PointBuy;
-        public bool RollSuppressedForStableOwner => IsRestoringPointBuy || IsPointBuyMode;
-        public bool PristineBaselineCaptured => PristinePointBuy != null && PristinePointBuy.CapturedBeforeRollOwnership;
+        public bool RollSuppressedForStableOwner => !IsRollMode;
+        public bool PointBuyOriginCaptured => PointBuyOrigin != null && PointBuyOrigin.CapturedBeforeRollOwnership;
+        public PointBuyOrigin PristinePointBuy => PointBuyOrigin;
+        public bool PristineBaselineCaptured => PointBuyOriginCaptured;
         public bool IsStaged => StagedGeneration == Generation;
-        public bool IsApplied => Lifecycle.State == RollSessionState.Applied && VerifiedGeneration == Generation;
+        public bool IsApplied => IsRollMode && VerifiedGeneration == Generation;
         public bool IsApplicationFailed => FailedGeneration == Generation;
+
+        public void BeginRollMode(PointBuyOrigin origin, StatAssignment assignment)
+        {
+            if (!IsPointBuyMode) throw new InvalidOperationException("Only PointBuy mode can capture a new point-buy origin.");
+            PointBuyOrigin = origin ?? throw new ArgumentNullException(nameof(origin));
+            pendingAssignment = assignment ?? throw new ArgumentNullException(nameof(assignment));
+            pendingEntryFromPointBuy = true;
+            Lifecycle.BeginRollMode();
+            ResetApplicationTracking();
+        }
+
+        public void BeginRollReplacement(StatAssignment assignment)
+        {
+            if (!IsRollMode) throw new InvalidOperationException("Only Roll mode can replace its current assignment.");
+            pendingAssignment = assignment ?? throw new ArgumentNullException(nameof(assignment));
+            pendingEntryFromPointBuy = false;
+            ResetApplicationTracking();
+        }
+
+        public void CommitRoll(RollCandidate candidate, long sequence)
+        {
+            if (candidate == null) throw new ArgumentNullException(nameof(candidate));
+            CommitRoll(candidate.Assignment);
+            History.Add(Assignment, candidate.Rule, sequence, candidate.CreatedAtUtc, candidate.Equivalent);
+        }
+
+        public void CommitRecallOrAssignment(StatAssignment assignment)
+        {
+            CommitRoll(assignment);
+            History.UpdateCurrentAssignment(Assignment);
+        }
+
+        public void AbortPendingRoll()
+        {
+            if (pendingEntryFromPointBuy)
+            {
+                Lifecycle.AbortRollModeEntry();
+                PointBuyOrigin = null;
+            }
+            pendingAssignment = null;
+            pendingEntryFromPointBuy = false;
+            ResetApplicationTracking();
+        }
+
+        public void ReplaceGenerationRollback(GenerationRollbackSnapshot snapshot)
+        {
+            if (snapshot == null) throw new ArgumentNullException(nameof(snapshot));
+            if (snapshot.Generation != Generation)
+            {
+                throw new ArgumentException("Rollback snapshot must match the current preview generation.", nameof(snapshot));
+            }
+            GenerationRollback = snapshot;
+        }
 
         public bool TryBeginApplicationAttempt(out string error)
         {
-            if (!IsRollMode)
+            if (!IsRollMode && !IsEnteringRollMode)
             {
-                error = "The session is not in roll mode and cannot apply the fixed array.";
+                error = "The session is not entering or in Roll mode.";
                 return false;
             }
-            if (Lifecycle.State != RollSessionState.Active && Lifecycle.State != RollSessionState.Applied)
+            if (AssignmentForApplication == null)
             {
-                error = "The roll session is not active.";
+                error = "No rolled assignment is available for application.";
                 return false;
             }
             if (ApplicationAttempts >= MaximumApplicationAttemptsPerGeneration)
@@ -95,7 +158,6 @@ namespace KingmakerDiceRoller.CharacterCreation
                 error = "The current preview generation exhausted its bounded application attempts.";
                 return false;
             }
-
             ApplicationAttempts++;
             error = null;
             return true;
@@ -114,34 +176,34 @@ namespace KingmakerDiceRoller.CharacterCreation
             {
                 throw new InvalidOperationException("The current preview generation has not been staged.");
             }
-            Lifecycle.MarkApplied();
             VerifiedGeneration = generation;
+        }
+
+        public void BeginPointBuyRestore()
+        {
+            if (PointBuyOrigin == null) throw new InvalidOperationException("No point-buy origin is available.");
+            Lifecycle.BeginPointBuyRestore();
         }
 
         public void MarkPointBuyRollbackVerified(int generation)
         {
             RequireCurrentGeneration(generation);
-            if (Lifecycle.State != RollSessionState.RestoringPointBuy)
+            if (!IsRestoringPointBuy)
             {
-                throw new InvalidOperationException("Only a restoring session can complete a point-buy rollback.");
+                throw new InvalidOperationException("Only a restoring session can complete a rollback to Roll mode.");
             }
             StagedGeneration = generation;
             Lifecycle.AbortPointBuyRestore();
             VerifiedGeneration = generation;
         }
 
-        public void BeginPointBuyRestore()
-        {
-            Lifecycle.BeginPointBuyRestore();
-        }
-
         public void MarkPointBuyRestored(int generation)
         {
             RequireCurrentGeneration(generation);
             Lifecycle.MarkPointBuyRestored();
-            StagedGeneration = 0;
-            VerifiedGeneration = 0;
-            FailedGeneration = 0;
+            pendingAssignment = null;
+            pendingEntryFromPointBuy = false;
+            ResetApplicationTracking();
         }
 
         public void MarkApplicationFailed(int generation)
@@ -163,25 +225,45 @@ namespace KingmakerDiceRoller.CharacterCreation
             {
                 throw new InvalidOperationException("A different controller/source owner cannot rebind this roll session.");
             }
-
             int nextGeneration = Generation + 1;
             if (generationRollback == null) throw new ArgumentNullException(nameof(generationRollback));
             if (generationRollback.Generation != nextGeneration)
             {
-                throw new ArgumentException(
-                    "The rollback snapshot does not belong to the replacement preview generation.",
-                    nameof(generationRollback));
+                throw new ArgumentException("Rollback snapshot does not belong to the replacement generation.", nameof(generationRollback));
             }
-
             State = state ?? throw new ArgumentNullException(nameof(state));
             Unit = unit ?? throw new ArgumentNullException(nameof(unit));
             Distribution = distribution ?? throw new ArgumentNullException(nameof(distribution));
             GenerationRollback = generationRollback;
             PendingReplacementObserved = pendingReplacementObserved;
             Generation = nextGeneration;
-            CandidateBaselineContaminated = generationRollback.MatchesAssignment(Assignment.ToAssignedArray());
+            StatAssignment current = AssignmentForApplication;
+            CandidateBaselineContaminated = current != null &&
+                generationRollback.MatchesAssignment(current.ToAssignedArray());
+            ResetApplicationTracking();
+        }
+
+        private void CommitRoll(StatAssignment assignment)
+        {
+            if (assignment == null) throw new ArgumentNullException(nameof(assignment));
+            if (pendingAssignment == null || !pendingAssignment.Equals(assignment))
+            {
+                throw new InvalidOperationException("The verified pending assignment does not match the requested commit.");
+            }
+            committedAssignment = pendingAssignment;
+            pendingAssignment = null;
+            pendingEntryFromPointBuy = false;
+            Lifecycle.CommitRollMode();
+            VerifiedGeneration = Generation;
+            FailedGeneration = 0;
+        }
+
+        private void ResetApplicationTracking()
+        {
             ApplicationAttempts = 0;
             StagedGeneration = 0;
+            VerifiedGeneration = 0;
+            FailedGeneration = 0;
         }
 
         private void RequireCurrentGeneration(int generation)

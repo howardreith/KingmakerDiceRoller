@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using KingmakerDiceRoller.Domain;
 using KingmakerDiceRoller.Integration;
 using KingmakerDiceRoller.Logging;
 
@@ -41,7 +42,7 @@ namespace KingmakerDiceRoller.CharacterCreation
                 {
                     throw new InvalidOperationException("The current preview generation has no rollback snapshot.");
                 }
-                int[] values = session.Assignment.ToAssignedArray();
+                int[] values = session.AssignmentForApplication.ToAssignedArray();
                 statAccess.WriteDistributionValues(distribution, values, contracts);
                 statAccess.WriteUnitBaseValues(unit, values, contracts);
                 statAccess.DisablePointBuyAllocator(distribution, contracts);
@@ -83,7 +84,9 @@ namespace KingmakerDiceRoller.CharacterCreation
 
         public LivePreviewObservation InspectLive(RollSession session, KingmakerContracts contracts)
         {
-            return livePreview.Observe(session, session.Assignment.ToAssignedArray(), contracts);
+            StatAssignment assignment = session.AssignmentForApplication;
+            if (assignment == null) throw new InvalidOperationException("No rolled assignment is available for live inspection.");
+            return livePreview.Observe(session, assignment.ToAssignedArray(), contracts);
         }
 
         public bool TryMarkLiveVerified(

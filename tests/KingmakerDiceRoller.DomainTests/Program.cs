@@ -61,6 +61,38 @@ namespace KingmakerDiceRoller.DomainTests
                 new TestCase("saved array validates", SavedArrayValidates),
                 new TestCase("saved array rejects malformed values", SavedArrayRejectsMalformedValues),
                 new TestCase("fixed diagnostic array", FixedDiagnosticArray),
+                new TestCase("default product configuration", ProductWorkflowTests.DefaultConfigurationIsTabletopFourD6),
+                new TestCase("every product preset expression", ProductWorkflowTests.EveryPresetBuildsExpectedExpression),
+                new TestCase("custom expression accepts explicit score boundary", ProductWorkflowTests.CustomExpressionUsesExplicitBoundary),
+                new TestCase("custom expression rejects above boundary without clamping", ProductWorkflowTests.CustomExpressionRejectsAboveBoundaryWithoutClamping),
+                new TestCase("invalid custom expression consumes no random", ProductWorkflowTests.InvalidCustomExpressionFailsBeforeRandomConsumption),
+                new TestCase("workflow construction and render consume no random", ProductWorkflowTests.WorkflowConstructionAndSnapshotConsumeNoRandom),
+                new TestCase("explicit generation creates six scores", ProductWorkflowTests.ExplicitGenerateProducesExactlySixScores),
+                new TestCase("invalid product preset and policy fail closed", ProductWorkflowTests.InvalidPresetAndPolicyFailClosed),
+                new TestCase("minimum outside explicit boundary fails closed", ProductWorkflowTests.MinimumOutsideBoundaryFailsClosed),
+                new TestCase("individual minimum exhaustion", ProductWorkflowTests.IndividualPolicyExhaustionPreservesFailure),
+                new TestCase("whole-array minimum exhaustion", ProductWorkflowTests.WholeArrayPolicyExhaustionPreservesFailure),
+                new TestCase("source-position duplicate round trip", ProductWorkflowTests.SourcePositionRoundTripPreservesDuplicates),
+                new TestCase("invalid assignment permutation fails closed", ProductWorkflowTests.InvalidPermutationFailsClosed),
+                new TestCase("assignment preserves roll summary", ProductWorkflowTests.AssignmentDoesNotChangeSummary),
+                new TestCase("point-buy equivalent supports score boundary", ProductWorkflowTests.PointBuyEquivalentSupportsScoreBoundary),
+                new TestCase("history adds and selects newest", ProductWorkflowTests.HistoryAddsAndSelectsNewest),
+                new TestCase("history evicts oldest at twenty", ProductWorkflowTests.HistoryEvictsOldestAtTwenty),
+                new TestCase("history navigation wraps", ProductWorkflowTests.HistoryNavigationWraps),
+                new TestCase("reassignment updates history without adding", ProductWorkflowTests.ReassignmentUpdatesSelectedHistoryWithoutAdding),
+                new TestCase("different array cannot contaminate history", ProductWorkflowTests.DifferentArrayCannotContaminateSelectedHistory),
+                new TestCase("saved schema one migrates identity", ProductWorkflowTests.SavedVersionOneMigratesIdentity),
+                new TestCase("saved schema two round trips assignment", ProductWorkflowTests.SavedVersionTwoRoundTripsAssignment),
+                new TestCase("unsupported saved schema rejected", ProductWorkflowTests.SavedUnsupportedSchemaIsRejected),
+                new TestCase("malformed saved permutation rejected", ProductWorkflowTests.SavedMalformedPermutationIsRejected),
+                new TestCase("saved catalog isolates corrupt entries", ProductWorkflowTests.SavedCatalogIsolatesCorruptEntries),
+                new TestCase("saved catalog evicts at ten", ProductWorkflowTests.SavedCatalogEvictsAtTen),
+                new TestCase("saved catalog delete and navigation", ProductWorkflowTests.SavedDeleteAndNavigationAreBounded),
+                new TestCase("new session snapshot starts point buy", ProductWorkflowTests.NewSessionSnapshotStartsPointBuyWithoutArray),
+                new TestCase("generated commit adds one history entry", ProductWorkflowTests.GeneratedCommitAddsOneHistoryEntry),
+                new TestCase("reroll preserves point-buy origin", ProductWorkflowTests.RerollPreservesPointBuyOrigin),
+                new TestCase("preview rebind adds no history", ProductWorkflowTests.PreviewRebindAddsNoHistoryAndKeepsAssignment),
+                new TestCase("aborted entry returns to point buy", ProductWorkflowTests.AbortedEntryReturnsToPointBuyWithoutOrigin),
                 new TestCase("context permits absent main character", CharacterCreationContextPolicyTests.NoMainCharacterValuePermitsCandidate),
                 new TestCase("context permits direct same main character", CharacterCreationContextPolicyTests.DirectSameMainCharacterPermitsCandidate),
                 new TestCase("context resolves Value wrapper", CharacterCreationContextPolicyTests.ValueWrapperSameMainCharacterPermitsCandidate),
@@ -299,7 +331,11 @@ namespace KingmakerDiceRoller.DomainTests
         }
         private static void SavedArrayValidates()
         {
-            var record = new SavedRollArrayRecord { Values = new[] { 16,15,14,12,10,8 } };
+            var record = new SavedRollArrayRecord
+            {
+                SchemaVersion = 1,
+                Values = new[] { 16,15,14,12,10,8 }
+            };
             RolledStatArray array;
             string error;
             AssertEx.True(record.TryCreateArray(out array, out error));

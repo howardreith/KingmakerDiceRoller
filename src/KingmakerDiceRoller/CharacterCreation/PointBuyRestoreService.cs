@@ -60,7 +60,7 @@ namespace KingmakerDiceRoller.CharacterCreation
                 // constructor postfix rebinds this session while it remains in RestoringPointBuy.
                 preview.Refresh(contracts);
 
-                PristinePointBuyState pristine = session.PristinePointBuy;
+                PointBuyOrigin pristine = session.PointBuyOrigin;
                 LivePreviewObservation binding = livePreview.Observe(
                     session,
                     pristine.Values.DistributionValues,
@@ -138,7 +138,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             RollSession session,
             KingmakerContracts contracts)
         {
-            PristinePointBuyState pristine = session.PristinePointBuy;
+            PointBuyOrigin pristine = session.PointBuyOrigin;
             LivePreviewObservation live = livePreview.Observe(
                 session,
                 pristine.Values.DistributionValues,

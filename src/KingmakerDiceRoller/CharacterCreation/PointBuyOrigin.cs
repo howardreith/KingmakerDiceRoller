@@ -3,9 +3,9 @@ using KingmakerDiceRoller.Integration;
 
 namespace KingmakerDiceRoller.CharacterCreation
 {
-    public sealed class PristinePointBuyState
+    public sealed class PointBuyOrigin
     {
-        private PristinePointBuyState(
+        private PointBuyOrigin(
             int allocatorBudget,
             string budgetSource,
             int capturedGeneration,
@@ -15,13 +15,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             int totalPoints)
         {
             if (allocatorBudget < 0) throw new ArgumentOutOfRangeException(nameof(allocatorBudget));
-            if (capturedGeneration != 1)
-            {
-                throw new ArgumentOutOfRangeException(
-                    nameof(capturedGeneration),
-                    "The pristine point-buy state must be captured before roll ownership in generation 1.");
-            }
-
+            if (capturedGeneration <= 0) throw new ArgumentOutOfRangeException(nameof(capturedGeneration));
             AllocatorBudget = allocatorBudget;
             BudgetSource = budgetSource ?? throw new ArgumentNullException(nameof(budgetSource));
             CapturedGeneration = capturedGeneration;
@@ -38,9 +32,9 @@ namespace KingmakerDiceRoller.CharacterCreation
         public bool AllocatorAvailable { get; }
         public int RemainingPoints { get; }
         public int TotalPoints { get; }
-        public bool CapturedBeforeRollOwnership => CapturedGeneration == 1;
+        public bool CapturedBeforeRollOwnership { get; private set; }
 
-        public static PristinePointBuyState Capture(
+        public static PointBuyOrigin Capture(
             object distribution,
             object unit,
             int allocatorBudget,
@@ -50,14 +44,17 @@ namespace KingmakerDiceRoller.CharacterCreation
             KingmakerStatAccess access)
         {
             if (access == null) throw new ArgumentNullException(nameof(access));
-            return new PristinePointBuyState(
+            return new PointBuyOrigin(
                 allocatorBudget,
                 budgetSource,
                 capturedGeneration,
                 AbilityValueSnapshot.Capture(distribution, unit, contracts, access),
                 access.ReadDistributionAvailable(distribution, contracts),
                 access.ReadDistributionPoints(distribution, contracts),
-                access.ReadDistributionTotalPoints(distribution, contracts));
+                access.ReadDistributionTotalPoints(distribution, contracts))
+            {
+                CapturedBeforeRollOwnership = true
+            };
         }
 
         public void Restore(

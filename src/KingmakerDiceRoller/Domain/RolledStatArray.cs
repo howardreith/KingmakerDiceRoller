@@ -8,6 +8,8 @@ namespace KingmakerDiceRoller.Domain
     public sealed class RolledStatArray : IReadOnlyList<int>, IEquatable<RolledStatArray>
     {
         public const int ScoreCount = 6;
+        public const int MinimumScore = 1;
+        public const int MaximumScore = 120;
         private readonly int[] values;
 
         public RolledStatArray(IEnumerable<int> values)
@@ -22,9 +24,11 @@ namespace KingmakerDiceRoller.Domain
             for (int index = 0; index < this.values.Length; index++)
             {
                 int score = this.values[index];
-                if (score < 1 || score > 20)
+                if (score < MinimumScore || score > MaximumScore)
                 {
-                    throw new RollValidationException("Score at position " + index + " must be between 1 and 20.");
+                    throw new RollValidationException(
+                        "Score at position " + index + " must be between " + MinimumScore +
+                        " and " + MaximumScore + ".");
                 }
             }
         }

@@ -40,9 +40,12 @@ namespace KingmakerDiceRoller.Domain
 
         private static int CalculateExtendedCost(int score)
         {
-            if (score < 1 || score > 20)
+            if (score < RolledStatArray.MinimumScore || score > RolledStatArray.MaximumScore)
             {
-                throw new ArgumentOutOfRangeException(nameof(score), "Score must be between 1 and 20.");
+                throw new ArgumentOutOfRangeException(
+                    nameof(score),
+                    "Score must be between " + RolledStatArray.MinimumScore +
+                    " and " + RolledStatArray.MaximumScore + ".");
             }
 
             if (score < 7)
