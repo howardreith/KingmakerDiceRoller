@@ -36,94 +36,179 @@ namespace KingmakerDiceRoller.CharacterCreation
                 return CharacterCreationContextDecision.Reject("Unsupported character-build mode " + DescribeMode(mode) + ".");
             }
 
-            object stateUnit = ReflectionAccess.Read(contracts.LevelUpStateUnitMember, state);
-            if (!ReferenceEquals(stateUnit, constructorUnit)) return CharacterCreationContextDecision.Reject("Constructor unit does not match LevelUpState.Unit.");
-            object distribution = ReflectionAccess.Read(contracts.LevelUpStateDistributionMember, state);
-            if (distribution == null || !contracts.StatsDistributionType.IsInstanceOfType(distribution)) return CharacterCreationContextDecision.Reject("StatsDistribution is unavailable.");
+            object stateUnit;
+            object distribution;
+            bool isFirstLevel;
+            try
+            {
+                stateUnit = ReflectionAccess.Read(contracts.LevelUpStateUnitMember, state);
+                if (!ReferenceEquals(stateUnit, constructorUnit)) return CharacterCreationContextDecision.Reject("Constructor unit does not match LevelUpState.Unit.");
+                distribution = ReflectionAccess.Read(contracts.LevelUpStateDistributionMember, state);
+                if (distribution == null || !contracts.StatsDistributionType.IsInstanceOfType(distribution)) return CharacterCreationContextDecision.Reject("StatsDistribution is unavailable.");
 
-            object firstLevelValue = ReflectionAccess.Read(contracts.LevelUpStateIsFirstLevelMember, state);
-            if (!(firstLevelValue is bool) || !(bool)firstLevelValue) return CharacterCreationContextDecision.Reject("LevelUpState is not first-level character creation.");
+                object firstLevelValue = ReflectionAccess.Read(contracts.LevelUpStateIsFirstLevelMember, state);
+                isFirstLevel = firstLevelValue is bool && (bool)firstLevelValue;
+            }
+            catch (Exception exception)
+            {
+                return CharacterCreationContextDecision.Reject(
+                    "LevelUpState context observation failed with " + exception.GetType().Name + ".");
+            }
+
+            if (!isFirstLevel)
+            {
+                return CharacterCreationContextDecision.Reject(
+                    "LevelUpState is not first-level character creation. Facts: mode=" + modeName + ", isFirstLevel=false.");
+            }
 
             bool isMain;
             bool isPlayer;
             bool isPet;
             bool isEnemy;
             string matched;
-            if (!ReflectionAccess.TryReadBoolean(stateUnit, MainCharacterPaths, out isMain, out matched)) return CharacterCreationContextDecision.Reject("Main-character identity contract is unavailable.");
-            if (!ReflectionAccess.TryReadBoolean(stateUnit, PlayerFactionPaths, out isPlayer, out matched)) return CharacterCreationContextDecision.Reject("Player-faction identity contract is unavailable.");
-            if (!ReflectionAccess.TryReadBoolean(stateUnit, PetPaths, out isPet, out matched)) return CharacterCreationContextDecision.Reject("Pet identity contract is unavailable.");
-            if (!ReflectionAccess.TryReadBoolean(stateUnit, EnemyPaths, out isEnemy, out matched)) return CharacterCreationContextDecision.Reject("Enemy identity contract is unavailable.");
+            try
+            {
+                if (!ReflectionAccess.TryReadBoolean(stateUnit, MainCharacterPaths, out isMain, out matched)) return CharacterCreationContextDecision.Reject("Main-character identity contract is unavailable.");
+                if (!ReflectionAccess.TryReadBoolean(stateUnit, PlayerFactionPaths, out isPlayer, out matched)) return CharacterCreationContextDecision.Reject("Player-faction identity contract is unavailable.");
+                if (!ReflectionAccess.TryReadBoolean(stateUnit, PetPaths, out isPet, out matched)) return CharacterCreationContextDecision.Reject("Pet identity contract is unavailable.");
+                if (!ReflectionAccess.TryReadBoolean(stateUnit, EnemyPaths, out isEnemy, out matched)) return CharacterCreationContextDecision.Reject("Enemy identity contract is unavailable.");
+            }
+            catch (Exception exception)
+            {
+                return CharacterCreationContextDecision.Reject(
+                    "Candidate identity observation failed with " + exception.GetType().Name + ".");
+            }
 
-            if (isPet) return CharacterCreationContextDecision.Reject("Pets are excluded.");
-            if (isEnemy) return CharacterCreationContextDecision.Reject("Enemies are excluded.");
+            string candidateFacts = BuildCandidateFacts(modeName, isFirstLevel, isMain, isPlayer);
+            if (isPet) return CharacterCreationContextDecision.Reject("Pets are excluded. " + candidateFacts);
+            if (isEnemy) return CharacterCreationContextDecision.Reject("Enemies are excluded. " + candidateFacts);
 
-            string ownershipDetail;
-            if (!TryIsOwnedByActiveController(state, stateUnit, contracts, out ownershipDetail))
+            ControllerOwnershipObservation ownership = ObserveActiveController(state, stateUnit, contracts);
+            if (!ownership.IsOwned)
             {
                 return CharacterCreationContextDecision.Reject(
                     "Candidate is not owned by the active character-build controller. " +
-                    ownershipDetail + " Flags: main=" + isMain + ", player=" + isPlayer + ".");
+                    ownership.Detail + " " +
+                    BuildFacts(modeName, isFirstLevel, isMain, isPlayer, ownership, false, false, null, null));
             }
 
-            bool hasEstablishedMainCharacter;
+            object mainDescriptor;
             string mainCharacterDetail;
-            if (!TryHasEstablishedMainCharacter(contracts, out hasEstablishedMainCharacter, out mainCharacterDetail))
+            bool mainCharacterResolved = TryGetMainCharacterDescriptor(
+                contracts,
+                out mainDescriptor,
+                out mainCharacterDetail);
+            MainCharacterIdentityRelation relation = MainCharacterIdentityClassifier.Classify(
+                mainCharacterResolved,
+                mainDescriptor,
+                stateUnit,
+                ownership.UnitResolved,
+                ownership.UnitDescriptor);
+            string facts = BuildFacts(
+                modeName,
+                isFirstLevel,
+                isMain,
+                isPlayer,
+                ownership,
+                true,
+                mainCharacterResolved,
+                mainDescriptor,
+                relation);
+
+            if (relation == MainCharacterIdentityRelation.Unresolved)
             {
                 return CharacterCreationContextDecision.Reject(
-                    "Main-character boundary could not be resolved. " + mainCharacterDetail);
-            }
-            if (hasEstablishedMainCharacter)
-            {
-                return CharacterCreationContextDecision.Reject(
-                    "An established main character already exists; only new-game character creation is supported. " +
-                    mainCharacterDetail);
+                    "Main-character identity could not be resolved; the candidate fails closed. " +
+                    mainCharacterDetail + " " + facts,
+                    relation);
             }
 
-            return CharacterCreationContextDecision.Accept(state, stateUnit, distribution);
+            if (relation == MainCharacterIdentityRelation.DifferentFromCandidate)
+            {
+                return CharacterCreationContextDecision.Reject(
+                    "Rejected controller-owned first-level candidate because Player.MainCharacter resolves to a different UnitDescriptor. " +
+                    mainCharacterDetail + " " + facts,
+                    relation);
+            }
+
+            string acceptance;
+            if (relation == MainCharacterIdentityRelation.Absent)
+            {
+                acceptance = "Accepted controller-owned first-level new-game preview; Player.MainCharacter has no live descriptor.";
+            }
+            else if (relation == MainCharacterIdentityRelation.SameAsCandidate)
+            {
+                acceptance = "Accepted controller-owned first-level new-game preview; Player.MainCharacter matches the candidate descriptor.";
+            }
+            else
+            {
+                acceptance = "Accepted controller-owned first-level new-game preview; Player.MainCharacter matches the controller source for the owned preview descriptor.";
+            }
+
+            return CharacterCreationContextDecision.Accept(
+                state,
+                stateUnit,
+                distribution,
+                acceptance + " " + facts,
+                relation);
         }
 
-        private static bool TryIsOwnedByActiveController(
+        private static ControllerOwnershipObservation ObserveActiveController(
             object state,
-            object stateUnit,
-            KingmakerContracts contracts,
-            out string detail)
-        {
-            detail = "Controller observation was unavailable.";
-            object controller;
-            if (!contracts.TryGetLevelUpController(out controller)) return false;
-            if (controller == null)
-            {
-                detail = "LevelUpController is null.";
-                return false;
-            }
-
-            bool stateOwned = false;
-            object currentState;
-            if (contracts.TryGetCurrentLevelUpState(out currentState))
-            {
-                stateOwned = ReferenceEquals(currentState, state);
-            }
-
-            bool unitOwned = TryControllerUnitMatch(controller, "Unit", stateUnit, contracts);
-            bool previewOwned = TryControllerUnitMatch(controller, "Preview", stateUnit, contracts);
-            detail = "stateOwned=" + stateOwned + ", unitOwned=" + unitOwned + ", previewOwned=" + previewOwned + ".";
-            return stateOwned || unitOwned || previewOwned;
-        }
-
-        private static bool TryControllerUnitMatch(
-            object controller,
-            string memberName,
             object stateUnit,
             KingmakerContracts contracts)
         {
+            var observation = new ControllerOwnershipObservation { CandidateDescriptor = stateUnit };
+            object controller;
+            if (!contracts.TryGetLevelUpController(out controller))
+            {
+                observation.Detail = "Controller observation failed.";
+                return observation;
+            }
+            if (controller == null)
+            {
+                observation.Detail = "LevelUpController is null.";
+                return observation;
+            }
+
+            object currentState;
+            observation.StateResolved = contracts.TryGetCurrentLevelUpState(out currentState);
+            if (observation.StateResolved)
+            {
+                observation.StateMatches = ReferenceEquals(currentState, state);
+            }
+
+            observation.UnitResolved = TryControllerUnitDescriptor(
+                controller,
+                contracts.LevelUpControllerUnitMember,
+                contracts,
+                out observation.UnitDescriptor);
+            observation.UnitMatches = observation.UnitResolved && ReferenceEquals(observation.UnitDescriptor, stateUnit);
+            observation.PreviewResolved = TryControllerUnitDescriptor(
+                controller,
+                contracts.LevelUpControllerPreviewMember,
+                contracts,
+                out observation.PreviewDescriptor);
+            observation.PreviewMatches = observation.PreviewResolved && ReferenceEquals(observation.PreviewDescriptor, stateUnit);
+            observation.Detail =
+                "stateOwned=" + observation.StateMatches +
+                ", unitOwned=" + observation.UnitMatches +
+                ", previewOwned=" + observation.PreviewMatches + ".";
+            return observation;
+        }
+
+        private static bool TryControllerUnitDescriptor(
+            object controller,
+            MemberInfo member,
+            KingmakerContracts contracts,
+            out object descriptor)
+        {
+            descriptor = null;
             try
             {
-                MemberInfo member = ReflectionAccess.FindInstanceMember(controller.GetType(), memberName);
                 if (member == null) return false;
                 object candidate = ReflectionAccess.Read(member, controller);
-                object descriptor;
-                if (!TryResolveUnitDescriptor(candidate, contracts, 0, out descriptor)) return false;
-                return ReferenceEquals(descriptor, stateUnit);
+                return TryResolveUnitDescriptor(candidate, contracts, 0, out descriptor);
             }
             catch
             {
@@ -131,13 +216,13 @@ namespace KingmakerDiceRoller.CharacterCreation
             }
         }
 
-        private static bool TryHasEstablishedMainCharacter(
+        private static bool TryGetMainCharacterDescriptor(
             KingmakerContracts contracts,
-            out bool hasEstablishedMainCharacter,
+            out object mainDescriptor,
             out string detail)
         {
-            hasEstablishedMainCharacter = false;
-            detail = "Main character is absent.";
+            mainDescriptor = null;
+            detail = "Main-character observation was unavailable.";
             try
             {
                 object game = ReflectionAccess.Read(contracts.GameInstanceMember, null);
@@ -147,38 +232,22 @@ namespace KingmakerDiceRoller.CharacterCreation
                     return false;
                 }
 
-                MemberInfo playerMember = ReflectionAccess.FindInstanceMember(game.GetType(), "Player");
-                if (playerMember == null)
-                {
-                    detail = "Game.Player member is unavailable.";
-                    return false;
-                }
-
-                object player = ReflectionAccess.Read(playerMember, game);
+                object player = ReflectionAccess.Read(contracts.GamePlayerMember, game);
                 if (player == null)
                 {
-                    detail = "Game.Player is null; no established campaign character exists.";
-                    return true;
-                }
-
-                MemberInfo mainCharacterMember = ReflectionAccess.FindInstanceMember(player.GetType(), "MainCharacter");
-                if (mainCharacterMember == null)
-                {
-                    detail = "Player.MainCharacter member is unavailable.";
+                    detail = "Game.Player is null.";
                     return false;
                 }
 
-                object mainCharacter = ReflectionAccess.Read(mainCharacterMember, player);
-                object mainDescriptor;
+                object mainCharacter = ReflectionAccess.Read(contracts.PlayerMainCharacterMember, player);
                 if (!TryResolveUnitDescriptor(mainCharacter, contracts, 0, out mainDescriptor))
                 {
                     detail = "Player.MainCharacter could not be normalized to a UnitDescriptor.";
                     return false;
                 }
 
-                hasEstablishedMainCharacter = mainDescriptor != null;
-                detail = hasEstablishedMainCharacter
-                    ? "Player.MainCharacter resolves to an existing UnitDescriptor."
+                detail = mainDescriptor != null
+                    ? "Player.MainCharacter resolves to a live UnitDescriptor."
                     : "Player.MainCharacter has no live value.";
                 return true;
             }
@@ -187,6 +256,59 @@ namespace KingmakerDiceRoller.CharacterCreation
                 detail = "Main-character observation failed with " + exception.GetType().Name + ".";
                 return false;
             }
+        }
+
+        private static string BuildCandidateFacts(
+            string modeName,
+            bool isFirstLevel,
+            bool isMain,
+            bool isPlayer)
+        {
+            return "Facts: mode=" + modeName +
+                ", isFirstLevel=" + BooleanText(isFirstLevel) +
+                ", candidateMainFlag=" + BooleanText(isMain) +
+                ", candidatePlayerFlag=" + BooleanText(isPlayer) + ".";
+        }
+
+        private static string BuildFacts(
+            string modeName,
+            bool isFirstLevel,
+            bool isMain,
+            bool isPlayer,
+            ControllerOwnershipObservation ownership,
+            bool mainObservationAttempted,
+            bool mainCharacterResolved,
+            object mainDescriptor,
+            MainCharacterIdentityRelation? relation)
+        {
+            string present = !mainObservationAttempted
+                ? "notEvaluated"
+                : mainCharacterResolved
+                    ? BooleanText(mainDescriptor != null)
+                    : "unresolved";
+            bool mainMatchesCandidate = mainCharacterResolved &&
+                mainDescriptor != null &&
+                ReferenceEquals(mainDescriptor, ownership.CandidateDescriptor);
+            bool mainMatchesControllerUnit = mainCharacterResolved &&
+                mainDescriptor != null &&
+                ownership.UnitResolved &&
+                ReferenceEquals(mainDescriptor, ownership.UnitDescriptor);
+            return "Facts: mode=" + modeName +
+                ", isFirstLevel=" + BooleanText(isFirstLevel) +
+                ", candidateMainFlag=" + BooleanText(isMain) +
+                ", candidatePlayerFlag=" + BooleanText(isPlayer) +
+                ", controllerStateMatches=" + BooleanText(ownership.StateMatches) +
+                ", controllerUnitMatches=" + BooleanText(ownership.UnitMatches) +
+                ", controllerPreviewMatches=" + BooleanText(ownership.PreviewMatches) +
+                ", mainCharacterPresent=" + present +
+                ", mainMatchesCandidate=" + BooleanText(mainMatchesCandidate) +
+                ", mainMatchesControllerUnit=" + BooleanText(mainMatchesControllerUnit) +
+                ", mainRelation=" + (relation.HasValue ? relation.Value.ToString() : "notEvaluated") + ".";
+        }
+
+        private static string BooleanText(bool value)
+        {
+            return value ? "true" : "false";
         }
 
         private static bool TryResolveUnitDescriptor(
@@ -237,6 +359,22 @@ namespace KingmakerDiceRoller.CharacterCreation
             {
                 return "'" + mode + "'";
             }
+        }
+
+        private sealed class ControllerOwnershipObservation
+        {
+            internal bool StateResolved;
+            internal bool StateMatches;
+            internal bool UnitResolved;
+            internal object UnitDescriptor;
+            internal bool UnitMatches;
+            internal bool PreviewResolved;
+            internal object PreviewDescriptor;
+            internal bool PreviewMatches;
+            internal object CandidateDescriptor;
+            internal string Detail = "Controller observation was unavailable.";
+
+            internal bool IsOwned => StateMatches || UnitMatches || PreviewMatches;
         }
     }
 }

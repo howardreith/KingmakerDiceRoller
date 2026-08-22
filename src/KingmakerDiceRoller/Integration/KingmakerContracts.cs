@@ -27,9 +27,13 @@ namespace KingmakerDiceRoller.Integration
             object[] abilityStatKeys,
             MemberInfo gameInstanceMember,
             MemberInfo gameUiMember,
+            MemberInfo gamePlayerMember,
+            MemberInfo playerMainCharacterMember,
             MemberInfo uiCharacterBuildControllerMember,
             MemberInfo characterBuildLevelUpControllerMember,
             MemberInfo levelUpControllerStateMember,
+            MemberInfo levelUpControllerUnitMember,
+            MemberInfo levelUpControllerPreviewMember,
             FieldInfo previewRecalculateField,
             MethodInfo previewUpdateMethod,
             IReadOnlyList<string> evidence)
@@ -54,9 +58,13 @@ namespace KingmakerDiceRoller.Integration
             AbilityStatKeys = abilityStatKeys;
             GameInstanceMember = gameInstanceMember;
             GameUiMember = gameUiMember;
+            GamePlayerMember = gamePlayerMember;
+            PlayerMainCharacterMember = playerMainCharacterMember;
             UiCharacterBuildControllerMember = uiCharacterBuildControllerMember;
             CharacterBuildLevelUpControllerMember = characterBuildLevelUpControllerMember;
             LevelUpControllerStateMember = levelUpControllerStateMember;
+            LevelUpControllerUnitMember = levelUpControllerUnitMember;
+            LevelUpControllerPreviewMember = levelUpControllerPreviewMember;
             PreviewRecalculateField = previewRecalculateField;
             PreviewUpdateMethod = previewUpdateMethod;
             Evidence = evidence;
@@ -82,9 +90,13 @@ namespace KingmakerDiceRoller.Integration
         public object[] AbilityStatKeys { get; }
         public MemberInfo GameInstanceMember { get; }
         public MemberInfo GameUiMember { get; }
+        public MemberInfo GamePlayerMember { get; }
+        public MemberInfo PlayerMainCharacterMember { get; }
         public MemberInfo UiCharacterBuildControllerMember { get; }
         public MemberInfo CharacterBuildLevelUpControllerMember { get; }
         public MemberInfo LevelUpControllerStateMember { get; }
+        public MemberInfo LevelUpControllerUnitMember { get; }
+        public MemberInfo LevelUpControllerPreviewMember { get; }
         public FieldInfo PreviewRecalculateField { get; }
         public MethodInfo PreviewUpdateMethod { get; }
         public IReadOnlyList<string> Evidence { get; }

@@ -9,7 +9,8 @@ $candidates = @(
     (Join-Path $config.InstallDir 'Player.log'),
     (Join-Path $config.InstallDir 'output_log.txt'),
     (Join-Path $config.InstallDir 'UnityModManager\Logs\UnityModManager.log'),
-    (Join-Path $env:USERPROFILE 'AppData\LocalLow\Owlcat Games\Pathfinder Kingmaker\Player.log')
+    (Join-Path $env:USERPROFILE 'AppData\LocalLow\Owlcat Games\Pathfinder Kingmaker\Player.log'),
+    (Join-Path $env:USERPROFILE 'AppData\LocalLow\Owlcat Games\Pathfinder Kingmaker\output_log.txt')
 )
 foreach ($candidate in $candidates) {
     if (Test-Path -LiteralPath $candidate -PathType Leaf) { Copy-Item -LiteralPath $candidate -Destination $Destination }

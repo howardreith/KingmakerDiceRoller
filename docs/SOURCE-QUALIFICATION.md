@@ -31,16 +31,19 @@ The independent C# runner must compile and pass on the Windows build host.
 ## C# runner
 
 `tests/KingmakerDiceRoller.DomainTests` links the exact production domain source
-and executes without a mocking framework or game assembly. It covers parser
+plus the reflection-only character-context policy and executes without a
+mocking framework or game assembly. It covers parser
 bounds, rerolls, keep behavior, nested expressions, all presets, low-score
 policies, no-clamp behavior, six-score validation, immutability, duplicate-safe
-assignment, point-buy equivalents, saved-array validation, lifecycle rules, and confirmed/unconfirmed stale
-session release behavior.
+assignment, point-buy equivalents, saved-array validation, lifecycle rules,
+confirmed/unconfirmed stale-session release behavior, exact fake reflection
+contracts, main-character identity relations, exclusion guards, and session
+open/rebind ownership.
 
 ## Fresh handoff result
 
-The source-qualified handoff passed with 54 production/test C# files, 48 C#
-domain-runner cases discovered, and all 25 executable Python oracle cases
+The source-qualified handoff passed with 58 production/test C# files, 65 C#
+behavior cases discovered, and all 25 executable Python oracle cases
 passing. These counts describe source qualification only.
 
 ## Limits

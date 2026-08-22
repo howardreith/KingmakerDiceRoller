@@ -137,8 +137,31 @@ namespace KingmakerDiceRoller.Integration
             }
 
             Type gameType = RequireType(gameAssembly, "Kingmaker.Game");
+            Type playerType = RequireType(gameAssembly, "Kingmaker.Player");
+            Type unitReferenceType = RequireType(gameAssembly, "Kingmaker.EntitySystem.Entities.UnitReference");
+            Type unitEntityDataType = RequireType(gameAssembly, "Kingmaker.EntitySystem.Entities.UnitEntityData");
             MemberInfo gameInstance = ReflectionAccess.RequireStaticMember(gameType, "Instance");
             MemberInfo gameUi = ReflectionAccess.RequireInstanceMember(gameType, "UI");
+            MemberInfo gamePlayer = ReflectionAccess.RequireInstanceMember(gameType, "Player");
+            if (!playerType.IsAssignableFrom(ReflectionAccess.GetMemberType(gamePlayer)))
+            {
+                throw new ContractResolutionException("Game.Player is not a Kingmaker.Player contract.");
+            }
+            MemberInfo playerMainCharacter = ReflectionAccess.RequireInstanceMember(playerType, "MainCharacter");
+            if (ReflectionAccess.GetMemberType(playerMainCharacter) != unitReferenceType)
+            {
+                throw new ContractResolutionException("Player.MainCharacter is not a UnitReference contract.");
+            }
+            MemberInfo unitReferenceValue = ReflectionAccess.RequireInstanceMember(unitReferenceType, "Value");
+            if (!unitEntityDataType.IsAssignableFrom(ReflectionAccess.GetMemberType(unitReferenceValue)))
+            {
+                throw new ContractResolutionException("UnitReference.Value is not a UnitEntityData contract.");
+            }
+            MemberInfo unitEntityDescriptor = ReflectionAccess.RequireInstanceMember(unitEntityDataType, "Descriptor");
+            if (!unitDescriptorType.IsAssignableFrom(ReflectionAccess.GetMemberType(unitEntityDescriptor)))
+            {
+                throw new ContractResolutionException("UnitEntityData.Descriptor is not a UnitDescriptor contract.");
+            }
             Type uiType = ReflectionAccess.GetMemberType(gameUi);
             MemberInfo characterBuildController = ReflectionAccess.RequireInstanceMember(uiType, "CharacterBuildController");
             Type characterBuildControllerType = ReflectionAccess.GetMemberType(characterBuildController);
@@ -148,6 +171,13 @@ namespace KingmakerDiceRoller.Integration
             if (!levelUpStateType.IsAssignableFrom(ReflectionAccess.GetMemberType(controllerState)))
             {
                 throw new ContractResolutionException("LevelUpController.State is not a LevelUpState contract.");
+            }
+            MemberInfo controllerUnit = ReflectionAccess.RequireInstanceMember(controllerType, "Unit");
+            MemberInfo controllerPreview = ReflectionAccess.RequireInstanceMember(controllerType, "Preview");
+            if (!unitDescriptorType.IsAssignableFrom(ReflectionAccess.GetMemberType(controllerUnit)) ||
+                !unitDescriptorType.IsAssignableFrom(ReflectionAccess.GetMemberType(controllerPreview)))
+            {
+                throw new ContractResolutionException("LevelUpController.Unit or Preview is not a UnitDescriptor contract.");
             }
             FieldInfo recalculate = controllerType.GetField("m_RecalculatePreview", InstanceFlags);
             MethodInfo updatePreview = controllerType.GetMethod("UpdatePreview", InstanceFlags, null, Type.EmptyTypes, null);
@@ -161,6 +191,8 @@ namespace KingmakerDiceRoller.Integration
             evidence.Add("Abilities=" + string.Join(",", abilityKeys.Select(value => value.ToString()).ToArray()));
             evidence.Add("ControllerPath=Game.Instance.UI.CharacterBuildController.LevelUpController");
             evidence.Add("Lifecycle=" + controllerType.FullName + ".State");
+            evidence.Add("MainCharacterPath=Game.Instance.Player.MainCharacter.Value.Descriptor");
+            evidence.Add("ControllerIdentity=" + controllerType.FullName + ".Unit + Preview");
             evidence.Add("Preview=" + controllerType.FullName + ".m_RecalculatePreview + UpdatePreview()");
 
             return new KingmakerContracts(
@@ -184,9 +216,13 @@ namespace KingmakerDiceRoller.Integration
                 abilityKeys,
                 gameInstance,
                 gameUi,
+                gamePlayer,
+                playerMainCharacter,
                 characterBuildController,
                 levelUpController,
                 controllerState,
+                controllerUnit,
+                controllerPreview,
                 recalculate,
                 updatePreview,
                 evidence);

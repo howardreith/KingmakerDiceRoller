@@ -15,7 +15,9 @@ REQUIRED = [
     'AGENTS.md','CHANGELOG.md','Directory.Build.props','GamePath.props.example','Info.json',
     'KingmakerDiceRoller.sln','LICENSE','PROJECT-STATE.md','README.md','THIRD-PARTY-NOTICES.md',
     'src/KingmakerDiceRoller/KingmakerDiceRoller.csproj',
+    'src/KingmakerDiceRoller/CharacterCreation/MainCharacterIdentityRelation.cs',
     'tests/KingmakerDiceRoller.DomainTests/KingmakerDiceRoller.DomainTests.csproj',
+    'tests/KingmakerDiceRoller.DomainTests/CharacterCreationContextPolicyTests.cs',
     'scripts/Common.ps1','scripts/Initialize-GamePath.ps1','scripts/Validate-Repository.ps1',
     'scripts/Test-SourceOracle.ps1','scripts/Test-Domain.ps1','scripts/Verify-KingmakerContracts.ps1',
     'scripts/Build-Local.ps1','scripts/Package.ps1','scripts/Validate-Package.ps1','scripts/Install.ps1','scripts/Uninstall.ps1',
@@ -197,8 +199,14 @@ def main():
     context=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/CharacterCreationContextPolicy.cs').read_text(encoding='utf-8')
     for token in ['CharGen','IsFirstLevel','IsMainCharacter','IsPlayerFaction','IsPet','IsPlayersEnemy']:
         require(token in context, f'context guard missing: {token}')
-    require('TryIsOwnedByActiveController' in context and 'LevelUpController' in context,'active controller ownership guard missing')
-    require('TryHasEstablishedMainCharacter' in context and 'only new-game character creation is supported' in context,'new-game main-character boundary guard missing')
+    require('ObserveActiveController' in context and 'LevelUpController' in context,'active controller ownership guard missing')
+    require('TryGetMainCharacterDescriptor' in context and 'Player.MainCharacter resolves to a different UnitDescriptor' in context,'new-game main-character boundary guard missing')
+    relation=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/MainCharacterIdentityRelation.cs').read_text(encoding='utf-8')
+    for token in ['Unresolved','Absent','SameAsCandidate','SameAsControllerUnit','DifferentFromCandidate']:
+        require(token in relation, f'main-character relation missing: {token}')
+    require('ReferenceEquals(mainDescriptor, candidateDescriptor)' in relation,'same-candidate preview identity exception missing')
+    require('ReferenceEquals(mainDescriptor, controllerUnitDescriptor)' in relation,'controller source/preview identity bridge missing')
+    require('mainCharacterResolved' in relation and 'controllerUnitResolved' in relation,'unresolved main-character identity must fail closed')
     liveness=(ROOT/'src/KingmakerDiceRoller/Domain/SessionLivenessTracker.cs').read_text(encoding='utf-8')
     manager=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/RollSessionManager.cs').read_text(encoding='utf-8')
     contracts=(ROOT/'src/KingmakerDiceRoller/Integration/KingmakerContractResolver.cs').read_text(encoding='utf-8')
@@ -206,12 +214,25 @@ def main():
     require('UnconfirmedGraceSeconds' in liveness and 'ConfirmedGraceSeconds' in liveness,'session liveness grace policy missing')
     require('ReleaseIfStale' in manager and 'Lifecycle.Abandon' in manager,'stale session release missing')
     require('RequireInstanceMember(controllerType, "State")' in contracts,'LevelUpController.State contract guard missing')
+    require('RequireInstanceMember(controllerType, "Unit")' in contracts and 'RequireInstanceMember(controllerType, "Preview")' in contracts,'controller identity contracts missing')
+    require('RequireInstanceMember(playerType, "MainCharacter")' in contracts and 'UnitReference.Value' in contracts,'Player.MainCharacter normalization contract missing')
     require('modEntry.OnUpdate = OnUpdate' in main_source,'UMM update lifecycle hook missing')
     ok('fixed-array, restoration, context, and stale-session invariants')
 
     tests=(ROOT/'tests/KingmakerDiceRoller.DomainTests/Program.cs').read_text(encoding='utf-8')
     test_count=tests.count('new TestCase(')
-    require(test_count>=45,f'expected at least 45 C# behavior cases, found {test_count}')
+    require(test_count>=60,f'expected at least 60 C# behavior cases, found {test_count}')
+    context_tests=(ROOT/'tests/KingmakerDiceRoller.DomainTests/CharacterCreationContextPolicyTests.cs').read_text(encoding='utf-8')
+    for token in [
+        'NoMainCharacterValuePermitsCandidate','DirectSameMainCharacterPermitsCandidate',
+        'ControllerSourceMainCharacterPermitsOwnedPreview','DifferentMainCharacterIsRejected',
+        'UnresolvableMainCharacterFailsClosed','RespecRemainsRejectedWhenMainMatches',
+        'NonFirstLevelRemainsRejectedWhenMainMatches','PetCandidateRemainsRejected',
+        'EnemyCandidateRemainsRejected','ControllerOwnershipRemainsMandatory',
+        'DifferentMainCharacterCannotOpenSession','RebuiltStateReusesFixedAssignment',
+        'DiagnosticRelationDistinguishesSameAndDifferent'
+    ]:
+        require(token in context_tests, f'context regression behavior missing: {token}')
     python_tests=(ROOT/'tests/python/test_domain_reference.py').read_text(encoding='utf-8')
     python_count=len(re.findall(r'^\s+def test_',python_tests,re.MULTILINE))
     require(python_count>=25,f'expected at least 25 Python oracle cases, found {python_count}')
@@ -225,6 +246,8 @@ def main():
     require('Security.Cryptography.SHA256' in common and 'Get-FileHash' not in common,'hash helper must not inherit WhatIf behavior')
     require('[IO.Directory]::CreateDirectory($temporary)' in installer and '[IO.Directory]::Delete($temporary, $true)' in installer,'WhatIf preflight temp lifecycle must execute outside ShouldProcess')
     require('function Assert-DirectoryExists' in common,'shared directory assertion helper missing')
+    collector=(ROOT/'scripts/Collect-RuntimeEvidence.ps1').read_text(encoding='utf-8')
+    require("Pathfinder Kingmaker\\output_log.txt" in collector,'runtime evidence collector must include the live LocalLow output log')
     ok('package allowlist and transactional installation guards')
 
     notices=(ROOT/'THIRD-PARTY-NOTICES.md').read_text(encoding='utf-8')

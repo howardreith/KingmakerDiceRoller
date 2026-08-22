@@ -19,11 +19,23 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssertEx.cs" />
+    <Compile Include="CharacterCreationContextPolicyTests.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="SequenceRandomSource.cs" />
     <Compile Include="..\..\src\KingmakerDiceRoller\Domain\*.cs">
       <Link>Domain\%(Filename)%(Extension)</Link>
     </Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\AbilityValueSnapshot.cs"><Link>CharacterCreation\AbilityValueSnapshot.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\CharacterCreationContextDecision.cs"><Link>CharacterCreation\CharacterCreationContextDecision.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\CharacterCreationContextPolicy.cs"><Link>CharacterCreation\CharacterCreationContextPolicy.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\KingmakerStatAccess.cs"><Link>CharacterCreation\KingmakerStatAccess.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\MainCharacterIdentityRelation.cs"><Link>CharacterCreation\MainCharacterIdentityRelation.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\PointBuyBaseline.cs"><Link>CharacterCreation\PointBuyBaseline.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RollSession.cs"><Link>CharacterCreation\RollSession.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RollSessionManager.cs"><Link>CharacterCreation\RollSessionManager.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\Integration\ContractResolutionException.cs"><Link>Integration\ContractResolutionException.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\Integration\KingmakerContracts.cs"><Link>Integration\KingmakerContracts.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\Integration\ReflectionAccess.cs"><Link>Integration\ReflectionAccess.cs</Link></Compile>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

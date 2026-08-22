@@ -60,6 +60,9 @@ try {
     $assembly = [Reflection.Assembly]::LoadFrom($assemblyPath)
     $state = Require-Type $assembly 'Kingmaker.UnitLogic.Class.LevelUp.LevelUpState'
     $unit = Require-Type $assembly 'Kingmaker.UnitLogic.UnitDescriptor'
+    $unitEntity = Require-Type $assembly 'Kingmaker.EntitySystem.Entities.UnitEntityData'
+    $unitReference = Require-Type $assembly 'Kingmaker.EntitySystem.Entities.UnitReference'
+    $playerType = Require-Type $assembly 'Kingmaker.Player'
     $distribution = Require-Type $assembly 'Kingmaker.UnitLogic.Class.LevelUp.StatsDistribution'
     $statType = Require-Type $assembly 'Kingmaker.EntitySystem.Stats.StatType'
     $statHelper = Require-Type $assembly 'Kingmaker.EntitySystem.Stats.StatTypeHelper'
@@ -99,6 +102,14 @@ try {
     $game = Require-Type $assembly 'Kingmaker.Game'
     $gameInstance = Require-Member $game 'Instance' $true
     $gameUi = Require-Member $game 'UI'
+    $gamePlayer = Require-Member $game 'Player'
+    if (-not $playerType.IsAssignableFrom((Member-Type $gamePlayer))) { throw 'Game.Player is not a Kingmaker.Player contract.' }
+    $playerMainCharacter = Require-Member $playerType 'MainCharacter'
+    if ((Member-Type $playerMainCharacter) -ne $unitReference) { throw 'Player.MainCharacter is not a UnitReference contract.' }
+    $unitReferenceValue = Require-Member $unitReference 'Value'
+    if (-not $unitEntity.IsAssignableFrom((Member-Type $unitReferenceValue))) { throw 'UnitReference.Value is not a UnitEntityData contract.' }
+    $unitEntityDescriptor = Require-Member $unitEntity 'Descriptor'
+    if (-not $unit.IsAssignableFrom((Member-Type $unitEntityDescriptor))) { throw 'UnitEntityData.Descriptor is not a UnitDescriptor contract.' }
     $ui = Member-Type $gameUi
     $characterBuildController = Require-Member $ui 'CharacterBuildController'
     $characterBuild = Member-Type $characterBuildController
@@ -106,6 +117,12 @@ try {
     $controller = Member-Type $controllerMember
     $controllerState = Require-Member $controller 'State'
     if (-not $state.IsAssignableFrom((Member-Type $controllerState))) { throw 'LevelUpController.State is not a LevelUpState contract.' }
+    $controllerUnit = Require-Member $controller 'Unit'
+    $controllerPreview = Require-Member $controller 'Preview'
+    if (-not $unit.IsAssignableFrom((Member-Type $controllerUnit)) -or
+        -not $unit.IsAssignableFrom((Member-Type $controllerPreview))) {
+        throw 'LevelUpController.Unit or Preview is not a UnitDescriptor contract.'
+    }
     $recalculate = $controller.GetField('m_RecalculatePreview',$flags)
     $update = $controller.GetMethod('UpdatePreview',$flags,$null,[Type[]]@(),$null)
     if (-not $recalculate -or $recalculate.FieldType -ne [bool] -or -not $update -or $update.ReturnType -ne [void]) { throw 'Exact preview refresh contract is unavailable.' }
@@ -120,10 +137,17 @@ try {
         signatures = @(
             $constructor.ToString(), $start.ToString(), $complete.ToString(),
             "Game.Instance.UI.CharacterBuildController.LevelUpController -> $($controller.FullName)",
-            "$($controller.FullName).State", "$($controller.FullName).m_RecalculatePreview", "$($controller.FullName).UpdatePreview()"
+            "$($controller.FullName).State", "$($controller.FullName).Unit", "$($controller.FullName).Preview",
+            'Game.Instance.Player.MainCharacter.Value.Descriptor',
+            "$($controller.FullName).m_RecalculatePreview", "$($controller.FullName).UpdatePreview()"
         )
         abilities = $abilityNames
         context_paths = [ordered]@{ main_character=$mainPath; player_faction=$playerPath; pet=$petPath; enemy=$enemyPath }
+        identity_paths = [ordered]@{
+            player_main_character = 'Game.Instance.Player.MainCharacter.Value.Descriptor'
+            controller_unit = 'Game.Instance.UI.CharacterBuildController.LevelUpController.Unit'
+            controller_preview = 'Game.Instance.UI.CharacterBuildController.LevelUpController.Preview'
+        }
     }
     $target = if ([IO.Path]::IsPathRooted($OutputPath)) { $OutputPath } else { Join-Path $root $OutputPath }
     New-Item -ItemType Directory -Force -Path (Split-Path -Parent $target) | Out-Null

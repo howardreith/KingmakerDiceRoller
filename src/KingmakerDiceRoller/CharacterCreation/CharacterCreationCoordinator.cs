@@ -90,7 +90,7 @@ namespace KingmakerDiceRoller.CharacterCreation
                 return;
             }
 
-            diagnostics.Accepted(sessionReason + " Budget=" + budget + " via " + budgetSource + ".");
+            diagnostics.Accepted(context.Reason + " " + sessionReason + " Budget=" + budget + " via " + budgetSource + ".");
             string error;
             if (application.TryApply(session, contracts, out error))
             {

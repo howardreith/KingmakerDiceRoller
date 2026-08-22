@@ -22,15 +22,29 @@ Kingmaker.UnitLogic.UnitDescriptor
 Kingmaker.EntitySystem.Stats.StatTypeHelper.Attributes
   Strength, Dexterity, Constitution, Intelligence, Wisdom, Charisma
 
-Kingmaker.Game.Instance.LevelUpController
+Kingmaker.Game.Instance.UI.CharacterBuildController.LevelUpController
   State : LevelUpState
+  Unit : UnitDescriptor
+  Preview : UnitDescriptor
   m_RecalculatePreview : Boolean
   UpdatePreview() : Void
+
+Kingmaker.Game.Instance.Player.MainCharacter
+  MainCharacter : UnitReference
+  Value : UnitEntityData
+  Descriptor : UnitDescriptor
 ```
 
 The context policy additionally requires readable Boolean identity paths for
 main-character, player-faction, pet, and enemy status. Candidate paths are
 resolved conservatively on the runtime unit object.
+
+In the exact 2.1.7b new-game lifecycle, `Player.MainCharacter` holds the
+controller's source `Unit`, while `LevelUpState.Unit` is the separately
+deserialized controller `Preview`. A valid new-game relation therefore permits
+either direct descriptor identity or main-character identity with the
+controller source when the candidate is owned by that controller. A different
+main descriptor is rejected, and unresolved identity fails closed.
 
 ## Why reflection is used
 

@@ -7,6 +7,12 @@ count, contract MVID, detected compatibility-sensitive mods, and the last twelve
 session events. It also exposes the recovery action to return an active session
 to point buy.
 
+Context decisions report stable facts for mode, first-level state, candidate
+flags, controller state/unit/preview identity, main-character presence, and
+whether the main descriptor matches the candidate or controller source. Raw
+object contents are not logged, and repeated rejection details remain
+deduplicated while the total rejection count continues increasing.
+
 ## Log phrases
 
 Useful filters:
@@ -44,3 +50,4 @@ package contents and hashes.
 `scripts/Collect-RuntimeEvidence.ps1` copies available player/UMM logs into an
 ignored timestamped directory. Add screenshots and written observations there.
 Do not commit saves, logs, screenshots, local paths, or generated reports.
+For Kingmaker 2.1.7b it also checks the live LocalLow `output_log.txt` path.
