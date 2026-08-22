@@ -1,8 +1,9 @@
 # Kingmaker Dice Roller
 
 Kingmaker Dice Roller is a standalone Unity Mod Manager mod for Pathfinder:
-Kingmaker 2.1.7b. Version `0.1.0-alpha.1` adds an explicit rolled-ability
-workflow to the native new-character ability page.
+Kingmaker 2.1.7b. Version `0.1.0-alpha.2` adds an explicit rolled-ability
+workflow to the native new-character ability page and replaces the first
+alpha's obstructive oval with a compact, readable native panel.
 
 The mod starts every supported character in ordinary Point Buy. It rolls only
 when you press **Roll**, never because a preview, race, phase, or UI object was
@@ -10,7 +11,9 @@ rebuilt.
 
 ## Player workflow
 
-The native **Rolled Ability Scores** panel provides:
+The ability page initially shows only a compact **Roll Stats** access tab. It
+does not cover the Skills page or roll automatically. Press the tab to open the
+rectangular **Rolled Ability Scores** panel. The panel provides:
 
 - Roll and Reroll;
 - `4d6, drop lowest`, `4d6, reroll ones, drop lowest`, `3d6`, `2d6 + 6`,
@@ -21,6 +24,11 @@ The native **Rolled Ability Scores** panel provides:
 - a 20-entry history for the current character build;
 - 10 persistent saved arrays with Store, Recall, and Delete;
 - immediate Return to Point Buy.
+
+The panel starts collapsed for each new character build. **Roll Options**,
+**History**, and **Saved** are disclosed only when needed. Press **Close** to
+remove the entire expanded surface and its click footprint; only the small
+access tab remains.
 
 Custom syntax examples are `4d[6]kh3`, `4d[6]r[1]kh3`, and `2d[6]+6`.
 Generated scores are validated within the explicit 1-120 product boundary and

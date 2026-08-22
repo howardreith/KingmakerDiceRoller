@@ -10,11 +10,12 @@ namespace KingmakerDiceRoller.DomainTests
         internal static void PointBuySnapshotOffersRollWithoutAssignment()
         {
             RollPanelModel model = new RollPanelPresenter().Present(Snapshot(RollSessionMode.PointBuy, null));
-            AssertEx.Equal("Mode: Point Buy", model.Mode);
+            AssertEx.Equal("Point Buy", model.Mode);
             AssertEx.True(model.CanRoll);
             AssertEx.True(!model.CanReroll);
             AssertEx.Equal(0, model.AssignmentRows.Count);
-            AssertEx.Equal("No rolled array selected.", model.Summary);
+            AssertEx.True(!model.AssignmentVisible);
+            AssertEx.True(!model.SummaryVisible);
         }
 
         internal static void RollSnapshotBuildsSixAssignmentRows()
@@ -58,23 +59,27 @@ namespace KingmakerDiceRoller.DomainTests
                 3,
                 "2d[6]+6");
             RollPanelModel model = new RollPanelPresenter().Present(
-                Snapshot(RollSessionMode.PointBuy, null, configuration));
+                Snapshot(RollSessionMode.PointBuy, null, configuration),
+                new RollPanelDisclosureState(true, false, false));
             AssertEx.True(model.CustomVisible);
             AssertEx.Equal("2d[6]+6", model.CustomExpression);
         }
 
         internal static void TabletopPolicyLeavesMinimumInactive()
         {
+            var expanded = new RollPanelDisclosureState(true, false, false);
             RollPanelModel tabletop = new RollPanelPresenter().Present(Snapshot(
                 RollSessionMode.PointBuy,
                 null,
-                new RollConfiguration(DiceRollPreset.ThreeD6, LowScorePolicy.Tabletop, 3, "3d[6]")));
+                new RollConfiguration(DiceRollPreset.ThreeD6, LowScorePolicy.Tabletop, 3, "3d[6]")), expanded);
             RollPanelModel individual = new RollPanelPresenter().Present(Snapshot(
                 RollSessionMode.PointBuy,
                 null,
-                new RollConfiguration(DiceRollPreset.ThreeD6, LowScorePolicy.RerollIndividualBelowMinimum, 9, "3d[6]")));
+                new RollConfiguration(DiceRollPreset.ThreeD6, LowScorePolicy.RerollIndividualBelowMinimum, 9, "3d[6]")), expanded);
             AssertEx.True(!tabletop.MinimumEnabled);
+            AssertEx.True(!tabletop.MinimumVisible);
             AssertEx.True(individual.MinimumEnabled);
+            AssertEx.True(individual.MinimumVisible);
         }
 
         internal static void HistorySavedAndErrorArePresented()
@@ -83,11 +88,98 @@ namespace KingmakerDiceRoller.DomainTests
                 true, RollSessionMode.Roll, RollConfiguration.Default(),
                 Enumerable.Repeat(10, 6).ToArray(), 60, 0, false, "3d[6]",
                 2, 3, "[10, 10, 10, 10, 10, 10]", 1, 2, "Saved 1", "bad input", "stable");
-            RollPanelModel model = new RollPanelPresenter().Present(snapshot);
+            RollPanelModel model = new RollPanelPresenter().Present(
+                snapshot,
+                new RollPanelDisclosureState(false, true, true));
             AssertEx.True(model.History.Contains("2/3"));
             AssertEx.True(model.Saved.Contains("1/2"));
             AssertEx.Equal("bad input", model.Error);
-            AssertEx.Equal("stable", model.Status);
+            AssertEx.Equal("Check the highlighted option.", model.Status);
+        }
+
+        internal static void PointBuyUsesProgressiveDisclosure()
+        {
+            RollPanelModel model = new RollPanelPresenter().Present(Snapshot(RollSessionMode.PointBuy, null));
+            AssertEx.True(model.RollVisible);
+            AssertEx.True(!model.RerollVisible);
+            AssertEx.True(!model.ReturnToPointBuyVisible);
+            AssertEx.True(!model.AssignmentVisible);
+            AssertEx.True(!model.HistoryDetailsVisible);
+            AssertEx.True(!model.AdvancedExpanded);
+        }
+
+        internal static void RollModeShowsOnlyRelevantPrimaryControls()
+        {
+            RollPanelModel model = new RollPanelPresenter().Present(Snapshot(
+                RollSessionMode.Roll,
+                new[] { 16, 15, 14, 12, 10, 8 }));
+            AssertEx.Equal("Roll Mode", model.Mode);
+            AssertEx.True(!model.RollVisible);
+            AssertEx.True(model.RerollVisible);
+            AssertEx.True(model.ReturnToPointBuyVisible);
+            AssertEx.True(model.AssignmentVisible);
+            AssertEx.True(model.SummaryVisible);
+            AssertEx.True(!model.AdvancedVisible);
+        }
+
+        internal static void AdvancedOptionsBeginCollapsed()
+        {
+            RollPanelModel model = new RollPanelPresenter().Present(Snapshot(RollSessionMode.PointBuy, null));
+            AssertEx.True(model.AdvancedVisible);
+            AssertEx.True(!model.AdvancedExpanded);
+            AssertEx.True(!model.MinimumVisible);
+            AssertEx.True(!model.CustomVisible);
+        }
+
+        internal static void HistoryDetailsRequireDisclosure()
+        {
+            RollUiSnapshot snapshot = Snapshot(RollSessionMode.Roll, new[] { 16, 15, 14, 12, 10, 8 });
+            RollPanelPresenter presenter = new RollPanelPresenter();
+            AssertEx.True(!presenter.Present(snapshot).HistoryDetailsVisible);
+            AssertEx.True(presenter.Present(
+                snapshot,
+                new RollPanelDisclosureState(false, true, false)).HistoryDetailsVisible);
+        }
+
+        internal static void SavedDetailsRequireDisclosure()
+        {
+            RollUiSnapshot snapshot = new RollUiSnapshot(
+                true, RollSessionMode.Roll, RollConfiguration.Default(),
+                new[] { 16, 15, 14, 12, 10, 8 }, 75, 22, false, "4d[6]kh3",
+                1, 1, "history", 1, 1, "saved", string.Empty, "ready");
+            RollPanelPresenter presenter = new RollPanelPresenter();
+            AssertEx.True(!presenter.Present(snapshot).SavedDetailsVisible);
+            AssertEx.True(presenter.Present(
+                snapshot,
+                new RollPanelDisclosureState(false, false, true)).SavedDetailsVisible);
+        }
+
+        internal static void ReadablePlayerFacingLabelsAreUsed()
+        {
+            RollPanelModel model = new RollPanelPresenter().Present(Snapshot(RollSessionMode.PointBuy, null));
+            AssertEx.Equal("Roll Stats", model.AccessTabLabel);
+            AssertEx.Equal("Roll method", model.RollMethodCaption);
+            AssertEx.Equal("Low-score rule", model.LowScoreRuleCaption);
+            AssertEx.Equal("Minimum", model.MinimumCaption);
+            AssertEx.Equal("Keep all rolls", model.Policy);
+            AssertEx.Equal("Return to Point Buy", model.ReturnToPointBuyLabel);
+        }
+
+        internal static void PolicyNamesNeverExposeEnums()
+        {
+            AssertEx.Equal("Keep all rolls", RollPanelPresenter.FormatPolicy(LowScorePolicy.Tabletop));
+            AssertEx.Equal("Reroll low scores", RollPanelPresenter.FormatPolicy(LowScorePolicy.RerollIndividualBelowMinimum));
+            AssertEx.Equal("Reroll whole array", RollPanelPresenter.FormatPolicy(LowScorePolicy.RerollEntireArrayBelowMinimum));
+        }
+
+        internal static void DisclosureRenderingHasNoCommandSideEffects()
+        {
+            var target = new FakeTarget(Snapshot(RollSessionMode.PointBuy, null));
+            var router = new RollUiCommandRouter(target);
+            new RollPanelPresenter().Present(
+                router.Snapshot,
+                new RollPanelDisclosureState(true, true, true));
+            AssertEx.Equal(0, target.CommandCalls);
         }
 
         internal static void PresenterHasNoCommandSideEffects()

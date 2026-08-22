@@ -71,7 +71,7 @@ finally {
 
 if ($null -eq $info) { throw 'Info.json could not be read from the package.' }
 if ($info.Id -ne 'KingmakerDiceRoller') { throw "Unexpected packaged UMM ID: $($info.Id)" }
-if ($info.Version -ne '0.1.0-alpha.1') { throw "Unexpected packaged version: $($info.Version)" }
+if ($info.Version -ne '0.1.0-alpha.2') { throw "Unexpected packaged version: $($info.Version)" }
 if ($info.AssemblyName -ne 'KingmakerDiceRoller.dll') { throw "Unexpected packaged assembly name: $($info.AssemblyName)" }
 if ($info.EntryMethod -ne 'KingmakerDiceRoller.Main.Load') { throw "Unexpected packaged entry method: $($info.EntryMethod)" }
 if ($dllHeader.Count -ne 2 -or $dllHeader[0] -ne 0x4D -or $dllHeader[1] -ne 0x5A) {

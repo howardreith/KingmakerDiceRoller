@@ -189,9 +189,11 @@ try {
     }
     $mainLabel = $abilityAllocator.GetField('m_MainLabel',$flags)
     $frame = $abilityAllocator.GetField('m_Frame',$flags)
+    $raceBonusContainer = $abilityAllocator.GetField('m_RaceBonusContainer',$flags)
     if (-not $mainLabel -or $mainLabel.IsStatic -or $mainLabel.FieldType.FullName -ne 'TMPro.TextMeshProUGUI' -or
-        -not $frame -or $frame.IsStatic -or $frame.FieldType.FullName -ne 'UnityEngine.UI.Image') {
-        throw 'Native ability allocator text/frame style anchors were not found.'
+        -not $frame -or $frame.IsStatic -or $frame.FieldType.FullName -ne 'UnityEngine.UI.Image' -or
+        -not $raceBonusContainer -or $raceBonusContainer.IsStatic -or $raceBonusContainer.FieldType.FullName -ne 'UnityEngine.GameObject') {
+        throw 'Native ability allocator text/frame/racial-bonus UI anchors were not found.'
     }
 
     $report = [ordered]@{
@@ -215,7 +217,8 @@ try {
             "$($abilityAllocator.FullName).m_StatEntries -> $($scoreEntry.FullName)",
             "$($scoreEntry.FullName).UpButton", "$($scoreEntry.FullName).DownButton",
             "$($upButton.FieldType.FullName).interactable",
-            "$($abilityAllocator.FullName).m_MainLabel", "$($abilityAllocator.FullName).m_Frame"
+            "$($abilityAllocator.FullName).m_MainLabel", "$($abilityAllocator.FullName).m_Frame",
+            "$($abilityAllocator.FullName).m_RaceBonusContainer"
         )
         abilities = $abilityNames
         context_paths = [ordered]@{ main_character=$mainPath; player_faction=$playerPath; pet=$petPath; enemy=$enemyPath }
@@ -234,6 +237,7 @@ try {
             score_rows = 'm_StatEntries -> CharBScoresEntry'
             controls = @('UpButton.interactable','DownButton.interactable')
             style_anchors = @('m_MainLabel: TMPro.TextMeshProUGUI','m_Frame: UnityEngine.UI.Image')
+            access_tab_anchor = 'm_RaceBonusContainer: UnityEngine.GameObject'
         }
     }
     $target = if ([IO.Path]::IsPathRooted($OutputPath)) { $OutputPath } else { Join-Path $root $OutputPath }

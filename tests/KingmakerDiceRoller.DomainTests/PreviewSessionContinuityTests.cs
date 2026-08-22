@@ -1861,6 +1861,7 @@ namespace KingmakerDiceRoller.DomainTests
                     typeof(FakeButton).GetProperty("interactable", instance),
                     typeof(FakeAbilityScoresAllocator).GetField("m_MainLabel", instance),
                     typeof(FakeAbilityScoresAllocator).GetField("m_Frame", instance),
+                    typeof(FakeAbilityScoresAllocator).GetField("m_RaceBonusContainer", instance),
                     new List<string>());
             }
         }
@@ -2055,6 +2056,7 @@ namespace KingmakerDiceRoller.DomainTests
                 .ToList();
             public object m_MainLabel = new object();
             public object m_Frame = new object();
+            public object m_RaceBonusContainer = new object();
             internal FakeState BoundState { get; private set; }
             internal FakeDistribution BoundDistribution { get; private set; }
             internal int[] DisplayedValues { get; private set; }

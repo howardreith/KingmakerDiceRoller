@@ -93,6 +93,30 @@ Malformed or unsupported saved-array records are skipped individually during
 load. Each skipped slot produces a concise warning without dumping serialized
 contents. Valid records continue to load.
 
+## Native panel presentation facts
+
+The runtime records whether the compact **Roll Stats** access tab used the
+exact active `m_RaceBonusContainer` anchor or the bounded upper-right fallback.
+Attachment and cleanup failures identify the first exact UI contract that could
+not be resolved. The native player surface intentionally does not show
+controller IDs, generation counters, or raw objects.
+
+The presentation model exposes these stable states for executable coverage:
+
+```text
+expandedSurfaceActive
+expandedBackgroundActive
+expandedContentActive
+accessTabActive
+expandedSurfaceBlocksRaycasts
+accessTabBlocksRaycasts
+ownedRootBlocksRaycasts=false
+```
+
+Collapsed mode must leave only the access tab active and raycastable. A panel
+construction or binding failure destroys all owned UI and leaves vanilla Point
+Buy untouched.
+
 ## Evidence collection
 
 After a live attempt, fully exit Kingmaker and run:

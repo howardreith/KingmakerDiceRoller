@@ -271,12 +271,15 @@ namespace KingmakerDiceRoller.Integration
             }
             FieldInfo allocatorMainLabel = abilityAllocatorType.GetField("m_MainLabel", InstanceFlags);
             FieldInfo allocatorFrame = abilityAllocatorType.GetField("m_Frame", InstanceFlags);
+            FieldInfo allocatorRaceBonusContainer = abilityAllocatorType.GetField("m_RaceBonusContainer", InstanceFlags);
             if (allocatorMainLabel == null ||
                 !string.Equals(allocatorMainLabel.FieldType.FullName, "TMPro.TextMeshProUGUI", StringComparison.Ordinal) ||
                 allocatorFrame == null ||
-                !string.Equals(allocatorFrame.FieldType.FullName, "UnityEngine.UI.Image", StringComparison.Ordinal))
+                !string.Equals(allocatorFrame.FieldType.FullName, "UnityEngine.UI.Image", StringComparison.Ordinal) ||
+                allocatorRaceBonusContainer == null ||
+                !string.Equals(allocatorRaceBonusContainer.FieldType.FullName, "UnityEngine.GameObject", StringComparison.Ordinal))
             {
-                throw new ContractResolutionException("Native allocator label/frame style anchors were not found.");
+                throw new ContractResolutionException("Native allocator label/frame/racial-bonus UI anchors were not found.");
             }
 
             evidence.Add("Assembly=" + gameAssembly.FullName);
@@ -299,6 +302,8 @@ namespace KingmakerDiceRoller.Integration
                 scoreEntryType.FullName + ".UpButton + DownButton -> UnityEngine.UI.Selectable.interactable");
             evidence.Add(
                 "AbilityPanelStyles=" + abilityAllocatorType.FullName + ".m_MainLabel + m_Frame");
+            evidence.Add(
+                "AbilityPanelAccessAnchor=" + abilityAllocatorType.FullName + ".m_RaceBonusContainer");
 
             return new KingmakerContracts(
                 gameAssembly,
@@ -346,6 +351,7 @@ namespace KingmakerDiceRoller.Integration
                 interactable,
                 allocatorMainLabel,
                 allocatorFrame,
+                allocatorRaceBonusContainer,
                 evidence);
         }
 

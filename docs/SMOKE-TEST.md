@@ -1,7 +1,33 @@
-# 0.1.0-alpha.1 human acceptance
+# 0.1.0-alpha.2 human acceptance
 
 Source/build/package qualification does not replace this live gate. Preserve
 logs and screenshots outside Git and collect evidence after testing.
+
+## 0. Native panel usability gate at 1600 by 900
+
+Complete this focused gate before the wider product sections.
+
+1. Start a fresh custom character and reach ability scores.
+2. Confirm ordinary Point Buy appears and no roll occurs.
+3. Confirm only one compact **Roll Stats** tab appears beneath Racial Bonus, or
+   at the bounded upper-right fallback, without overlapping racial controls,
+   Skills, Back, or Next.
+4. Open it. Confirm the panel is rectangular, nearly opaque, readable without
+   strain, and contains all visible text within its boundary.
+5. Confirm **Roll method** is fully readable, every selector has a caption, and
+   **Roll Options** starts collapsed.
+6. Roll. Confirm aligned base-score assignment rows plus Reroll, Return to
+   Point Buy, summary, and collapsed History/Saved disclosures remain usable.
+7. Open Roll Options and select Custom. Confirm its single-line input and
+   syntax hint are readable and reachable.
+8. Press **Close**. Confirm the complete expanded surface disappears and only
+   the compact tab receives panel clicks.
+9. Spend all skill points, then use Back and Next. Any blocked native click is
+   a hard failure.
+10. Reopen and confirm roll/workflow state was unchanged. Navigate away and
+    back; confirm only one panel/tab exists and the open/closed choice persists.
+11. Cancel. Confirm every Dice Roller-owned UI object disappears.
+12. Load an existing save and level a character. Confirm no tab or panel.
 
 ## A. Vanilla product workflow
 
@@ -11,7 +37,7 @@ Wild disabled.
 1. Start a genuinely new custom human and reach ability scores.
 2. Confirm ordinary point buy appears initially with the real configured
    budget.
-3. Confirm one native **Rolled Ability Scores** panel appears.
+3. Confirm one compact native **Roll Stats** access tab appears.
 4. Remain on the page for ten seconds. Confirm no array is generated and no
    points or values change automatically.
 5. Press **Roll** once. Confirm exactly one six-score array appears, point buy
@@ -36,7 +62,7 @@ Wild disabled.
 1. In ordinary Point Buy, spend several points and note allocation, remaining
    points, and total budget.
 2. Press Roll.
-3. Press **Point Buy** in the native panel without navigating away.
+3. Press **Return to Point Buy** in the native panel without navigating away.
 4. Confirm the exact pre-roll allocation and remaining/total budget appear on
    the same page immediately.
 5. Confirm native plus/minus controls work immediately.
@@ -119,6 +145,9 @@ final intended mod list
 For Bag of Tricks, record its actual configured point-buy budget and prove that
 the exact allocation and budget return. For Call of the Wild, exercise an added
 race/heritage and confirm all modifiers remain separate.
+
+Also repeat the focused collapse gate with Bag of Tricks active and prove the
+compact tab exposes the native Skills page at the configured budget.
 
 ## Evidence
 

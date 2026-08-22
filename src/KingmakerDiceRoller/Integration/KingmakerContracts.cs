@@ -52,6 +52,7 @@ namespace KingmakerDiceRoller.Integration
             PropertyInfo selectableInteractableProperty,
             FieldInfo abilityAllocatorMainLabelField,
             FieldInfo abilityAllocatorFrameField,
+            FieldInfo abilityAllocatorRaceBonusContainerField,
             IReadOnlyList<string> evidence)
         {
             GameAssembly = gameAssembly;
@@ -99,6 +100,7 @@ namespace KingmakerDiceRoller.Integration
             SelectableInteractableProperty = selectableInteractableProperty;
             AbilityAllocatorMainLabelField = abilityAllocatorMainLabelField;
             AbilityAllocatorFrameField = abilityAllocatorFrameField;
+            AbilityAllocatorRaceBonusContainerField = abilityAllocatorRaceBonusContainerField;
             Evidence = evidence;
         }
 
@@ -147,6 +149,7 @@ namespace KingmakerDiceRoller.Integration
         public PropertyInfo SelectableInteractableProperty { get; }
         public FieldInfo AbilityAllocatorMainLabelField { get; }
         public FieldInfo AbilityAllocatorFrameField { get; }
+        public FieldInfo AbilityAllocatorRaceBonusContainerField { get; }
         public IReadOnlyList<string> Evidence { get; }
 
         public bool TryGetLevelUpController(out object controller)

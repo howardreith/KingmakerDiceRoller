@@ -27,6 +27,8 @@ REQUIRED = [
     'src/KingmakerDiceRoller/CharacterCreation/CharacterRollWorkflow.cs',
     'src/KingmakerDiceRoller/CharacterCreation/IRollUiCommandTarget.cs',
     'src/KingmakerDiceRoller/CharacterCreation/NativePanelAttachmentLifecycle.cs',
+    'src/KingmakerDiceRoller/CharacterCreation/NativeRollPanelLayoutSpec.cs',
+    'src/KingmakerDiceRoller/CharacterCreation/NativeRollPanelState.cs',
     'src/KingmakerDiceRoller/CharacterCreation/RollPanelModel.cs',
     'src/KingmakerDiceRoller/CharacterCreation/RollUiCommandRouter.cs',
     'src/KingmakerDiceRoller/CharacterCreation/RollUiSnapshot.cs',
@@ -36,6 +38,7 @@ REQUIRED = [
     'tests/KingmakerDiceRoller.DomainTests/KingmakerDiceRoller.DomainTests.csproj',
     'tests/KingmakerDiceRoller.DomainTests/CharacterCreationContextPolicyTests.cs',
     'tests/KingmakerDiceRoller.DomainTests/PreviewSessionContinuityTests.cs',
+    'tests/KingmakerDiceRoller.DomainTests/NativePanelUsabilityTests.cs',
     'scripts/Common.ps1','scripts/Initialize-GamePath.ps1','scripts/Validate-Repository.ps1',
     'scripts/Test-SourceOracle.ps1','scripts/Test-Domain.ps1','scripts/Verify-KingmakerContracts.ps1',
     'scripts/Build-Local.ps1','scripts/Package.ps1','scripts/Validate-Package.ps1','scripts/Install.ps1','scripts/Uninstall.ps1',
@@ -150,13 +153,13 @@ def main():
     require(info['AssemblyName']=='KingmakerDiceRoller.dll','unexpected assembly name')
     require(info['EntryMethod']=='KingmakerDiceRoller.Main.Load','unexpected entry method')
     require(info['GameVersion']=='2.1.7','unexpected target game version')
-    require(info['Version']=='0.1.0-alpha.1','unexpected alpha version')
+    require(info['Version']=='0.1.0-alpha.2','unexpected alpha version')
     product_metadata=(ROOT/'src/KingmakerDiceRoller/ProductMetadata.cs').read_text(encoding='utf-8')
     assembly_info=(ROOT/'src/KingmakerDiceRoller/Properties/AssemblyInfo.cs').read_text(encoding='utf-8')
-    require('0.1.0-alpha.1' in product_metadata,'runtime product version is inconsistent')
+    require('0.1.0-alpha.2' in product_metadata,'runtime product version is inconsistent')
     require('AssemblyVersion("0.1.0.0")' in assembly_info and
             'AssemblyFileVersion("0.1.0.0")' in assembly_info and
-            'AssemblyInformationalVersion("0.1.0-alpha.1")' in assembly_info,
+            'AssemblyInformationalVersion("0.1.0-alpha.2")' in assembly_info,
             'assembly version metadata is inconsistent')
     ok('Info.json and assembly product identity')
 
@@ -317,16 +320,23 @@ def main():
         'RequireInstanceMember(skillsPhaseType, "AbilityScoresAllocator")',
         'GetMethod(', '"FillData"', 'GetField("m_Unit"', 'GetField("m_PreviewUnit"',
         'GetField("m_StatEntries"', 'GetField("UpButton"', 'GetField("DownButton"',
-        'GetProperty("interactable"', 'GetField("m_MainLabel"', 'GetField("m_Frame"'
+        'GetProperty("interactable"', 'GetField("m_MainLabel"', 'GetField("m_Frame"',
+        'GetField("m_RaceBonusContainer"'
     ]:
         require(token in contracts, f'exact native ability presentation contract missing: {token}')
     panel=(ROOT/'src/KingmakerDiceRoller/UI/NativeRollPanelHost.cs').read_text(encoding='utf-8')
     presenter=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/RollPanelModel.cs').read_text(encoding='utf-8')
     router=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/RollUiCommandRouter.cs').read_text(encoding='utf-8')
     settings=(ROOT/'src/KingmakerDiceRoller/Settings.cs').read_text(encoding='utf-8')
-    for token in ['OwnedPanelName','EnsureAttached','DetachCore','CreateAssignmentRows','CreateHistoryRows',
-                  'CreateSavedRows','TrySuppressForRoll']:
+    for token in ['OwnedPanelName','EnsureAttached','DestroyAttachedView','ExpandedSurface',
+                  'CollapsedAccessTab','CreateAssignmentRows','CreateHistorySection',
+                  'CreateSavedSection','TrySuppressForRoll','PositionAccessTab']:
         require(token in panel, f'native product panel surface missing: {token}')
+    for token in ['surfaceImage.sprite = null','RectMask2D','ScrollRect',
+                  'raycastTarget = false','panelState.Close()','panelState.Open()']:
+        require(token in panel, f'native panel usability invariant missing: {token}')
+    require('CopyImage(nativeFrame' not in panel and 'root.AddComponent<Image>()' not in panel,
+            'native panel must not reuse the allocator oval or put a raycast graphic on its owned root')
     require('DiceRollEngine' not in panel and 'WriteDistributionValues' not in panel,
             'native view must not generate rolls or write Kingmaker stats')
     require('public RollPanelModel Present(RollUiSnapshot snapshot)' in presenter and
@@ -339,7 +349,7 @@ def main():
 
     tests=(ROOT/'tests/KingmakerDiceRoller.DomainTests/Program.cs').read_text(encoding='utf-8')
     test_count=tests.count('new TestCase(')
-    require(test_count>=181,f'expected at least 181 C# behavior cases, found {test_count}')
+    require(test_count>=212,f'expected at least 212 C# behavior cases, found {test_count}')
     context_tests=(ROOT/'tests/KingmakerDiceRoller.DomainTests/CharacterCreationContextPolicyTests.cs').read_text(encoding='utf-8')
     for token in [
         'NoMainCharacterValuePermitsCandidate','DirectSameMainCharacterPermitsCandidate',
@@ -393,17 +403,27 @@ def main():
     product_tests=(ROOT/'tests/KingmakerDiceRoller.DomainTests/ProductWorkflowTests.cs').read_text(encoding='utf-8')
     presenter_tests=(ROOT/'tests/KingmakerDiceRoller.DomainTests/RollUiPresenterTests.cs').read_text(encoding='utf-8')
     lifecycle_tests=(ROOT/'tests/KingmakerDiceRoller.DomainTests/NativePanelLifecycleTests.cs').read_text(encoding='utf-8')
+    usability_tests=(ROOT/'tests/KingmakerDiceRoller.DomainTests/NativePanelUsabilityTests.cs').read_text(encoding='utf-8')
     for token in ['EveryPresetBuildsExpectedExpression','InvalidCustomExpressionFailsBeforeRandomConsumption',
                   'SourcePositionRoundTripPreservesDuplicates','HistoryEvictsOldestAtTwenty',
                   'SavedVersionOneMigratesIdentity','SavedCatalogEvictsAtTen',
                   'AbortedRerollRestoresPriorVerifiedRollState']:
         require(token in product_tests, f'product workflow behavior missing: {token}')
     for token in ['PointBuySnapshotOffersRollWithoutAssignment','RollSnapshotBuildsSixAssignmentRows',
-                  'PresenterHasNoCommandSideEffects','RouterRoutesHistoryAndSavedCommands']:
+                  'PresenterHasNoCommandSideEffects','RouterRoutesHistoryAndSavedCommands',
+                  'PointBuyUsesProgressiveDisclosure','RollModeShowsOnlyRelevantPrimaryControls',
+                  'AdvancedOptionsBeginCollapsed','HistoryDetailsRequireDisclosure',
+                  'SavedDetailsRequireDisclosure','ReadablePlayerFacingLabelsAreUsed']:
         require(token in presenter_tests, f'native presenter behavior missing: {token}')
     for token in ['EligibleAllocatorAttachesExactlyOnce','ReplacementAllocatorRebindsWithoutDuplicateOwnership',
                   'PhaseExitDetachesOnce','DisableResetPermitsFreshAttachment']:
         require(token in lifecycle_tests, f'native panel lifecycle behavior missing: {token}')
+    for token in ['NewOwnerStartsCollapsed','OnlyAccessTabRaycastsWhenCollapsed',
+                  'SameOwnerRebindPreservesExpandedChoice','NewOwnerResetsPresentationChoice',
+                  'DetachedViewHasNoRaycastFootprint','LayoutUsesCodeOwnedRectangle',
+                  'TypographyAndPaddingRemainReadable','ContentIsMaskedAndScrollable',
+                  'AccessTabPrefersRacialBonusWithSafeFallback']:
+        require(token in usability_tests, f'native panel usability behavior missing: {token}')
     python_tests=(ROOT/'tests/python/test_domain_reference.py').read_text(encoding='utf-8')
     python_count=len(re.findall(r'^\s+def test_',python_tests,re.MULTILINE))
     require(python_count>=25,f'expected at least 25 Python oracle cases, found {python_count}')

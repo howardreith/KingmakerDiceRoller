@@ -83,10 +83,19 @@ ability allocator. `RollPanelPresenter` renders a data-only snapshot and
 `RollUiCommandRouter` forwards player commands. Neither view class rolls dice or
 writes stats.
 
+`NativeRollPanelState` owns only stable-owner-scoped expand/disclosure choices;
+it has no workflow mutation surface. `NativeRollPanelLayoutSpec` makes the
+rectangular dimensions, readable typography floors, mask/scroll policy, and
+raycast boundaries executable. The host's top-level object has no Graphic. Its
+expanded rectangular surface and compact collapsed access tab are mutually
+exclusive, and all noninteractive TMP labels reject raycasts.
+
 The panel is driven by the narrow `CharBAbilityScoresAllocator.FillData()`
 postfix plus a bounded UMM-update lifecycle observer. Repeated FillData calls
 refresh one panel; allocator replacement rebinds it; invalid context detaches
-it. Only the exact root created by this host is destroyed.
+it. Same-owner allocator replacement preserves the presentation choice; a new
+stable owner resets to collapsed. Only the exact root created by this host is
+destroyed.
 
 In Roll Mode, `NativeAbilityControlService` records and suppresses the exact 12
 `CharBScoresEntry` Up/Down `interactable` states. Point-buy FillData restores

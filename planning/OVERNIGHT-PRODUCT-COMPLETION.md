@@ -6,7 +6,8 @@
 - Starting commit: `8f78d8243ed27ed2cbb3fadafd890aba172975aa`
 - Starting divergence: `0 0`
 - Starting worktree: clean
-- Target version: `0.1.0-alpha.1`
+- Original overnight target: `0.1.0-alpha.1`
+- Current usability-repair target: `0.1.0-alpha.2`
 - Game contract: Pathfinder: Kingmaker 2.1.7b, Assembly-CSharp MVID
   `07fa1e4d-8618-41b3-9b8d-faa17d3b26f7`
 - Assembly-CSharp SHA-256:
@@ -81,6 +82,17 @@ never use direct screen-coordinate drawing as the primary interface.
    also passed at final evidence checkpoint
    `695ba5fe17f0a23501ab9da4343c8228d3c66ac2`; its package and DLL were
    byte-identical to the installed candidate.
+6. **In progress - alpha.2 native-panel usability repair:** continued from
+   `938e21d703518d8461191fe6f0c2834b08891935` with a clean `0 0` baseline.
+   Live alpha.1 behavior proved the workflow but failed at 1600 by 900 because
+   the allocator's oval frame, inherited pale text, all-at-once controls, and
+   body-only collapse obstructed the Skills page. The selected repair uses a
+   non-graphic owned root, mutually exclusive rectangular expanded surface and
+   compact access tab, exact Racial Bonus anchoring with bounded fallback,
+   explicit high-contrast typography, masked scrolling, progressive
+   disclosure, and stable-owner-scoped view state. Focused behavior is green at
+   212 compiled C# cases and 30 Python oracle cases; final clean qualification,
+   package, install, commit, and push remain the unfinished phase.
 
 ## Commands and gates
 
@@ -98,14 +110,16 @@ other-mod fingerprints, and a clean-commit qualification rerun.
 
 ## Evidence and risks
 
-- Latest live evidence: ignored directory `artifacts/runtime-evidence/20260821-231158`.
-  Commit `8f78d824...` visibly passed immediate fixed-array-to-point-buy page
-  synchronization; the log independently verified native state, distribution,
-  source, and preview bindings.
-- Highest implementation risk: exact native panel layout and cleanup on Unity
-  2018 prefab instances. Mitigation: inspect exact IL and serialized field
-  contracts, create only code-owned child objects, attach once by marker, and
-  restore every captured native control state.
+- Latest inspected live evidence: ignored directory
+  `artifacts/runtime-evidence/20260822-064412`. Commit `938e21d...` showed one
+  PointBuy-first session, verified Roll/Reroll transactions, same-owner
+  generation continuity, and cleanup with Bag of Tricks active; Howie's visual
+  evidence separately established the oval/readability/collapse blockers.
+- Highest remaining risk: real 1600 by 900 layout offsets and the preferred
+  Racial Bonus anchor on Unity 2018 prefab instances. Mitigation: exact
+  `m_RaceBonusContainer` contract, bounded upper-right fallback, code-owned
+  rectangle and masks, a graphic-free root, mutually exclusive child objects,
+  and explicit raycast behavior.
 - Human visual/layout testing and the named compatibility matrix remain morning
   gates; source/build success will not be reported as runtime qualification.
 - Clean aggregate evidence: 85 C# source files, 185/185 compiled C# behavior
@@ -116,7 +130,7 @@ other-mod fingerprints, and a clean-commit qualification rerun.
 - Qualified package SHA-256:
   `64b43bdfc9bb1d4db674174557fb94b0a9b87589e3b97374f252c0168e496515`.
 
-## Resume marker
+## Historical overnight closeout
 
 - Current pushed implementation commit:
   `d6977dc484fcf951714cde6d446a050e4e1bd65a`.
@@ -125,3 +139,11 @@ other-mod fingerprints, and a clean-commit qualification rerun.
 - Current phase: overnight engineering complete. No product implementation
   phase remains; the next external gate is Howie's consolidated human
   acceptance test.
+
+## Current resume marker
+
+- Usability-repair starting commit:
+  `938e21d703518d8461191fe6f0c2834b08891935`.
+- Current unfinished phase: complete alpha.2 documentation/versioning, run the
+  dirty and clean full gates, install transactionally, push coherent history,
+  and hand off the focused visual/click-routing gate.

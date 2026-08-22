@@ -6,12 +6,19 @@ Enable Kingmaker Dice Roller in Unity Mod Manager, start a genuinely new custom
 main character, and open the ability-score page. Ordinary Point Buy appears
 first. The mod does not roll automatically.
 
-Use the native **Rolled Ability Scores** panel on that page. The UMM panel is
-for diagnostics and emergency recovery, not normal rolling.
+The page initially shows a compact **Roll Stats** tab beneath the Racial Bonus
+area when that exact anchor is active, or at a bounded upper-right fallback.
+Press it to open the rectangular **Rolled Ability Scores** panel. Opening or
+closing the panel never rolls or changes your character. Press **Close** to
+remove the full panel and expose every native Skills, Back, and Next control;
+only the compact tab remains. The UMM panel is for diagnostics and emergency
+recovery, not normal rolling.
 
 ## Presets and minimum policies
 
-Choose a preset with the arrow controls:
+Open **Roll Options** when you need the low-score or custom-expression
+settings. It begins collapsed to keep the Point Buy view simple. Choose a
+preset under **Roll method** with the arrow controls:
 
 - `4d6, drop lowest` (default);
 - `4d6, reroll ones, drop lowest`;
@@ -20,11 +27,11 @@ Choose a preset with the arrow controls:
 - `1d20`;
 - Custom expression.
 
-Choose one low-score policy:
+Choose one player-facing **Low-score rule**:
 
-- **Tabletop** keeps every generated score. The minimum setting is inactive.
-- **Reroll individual below minimum** rerolls only a score below the minimum.
-- **Reroll entire array below minimum** discards all six when any score is too
+- **Keep all rolls** keeps every generated score. The Minimum row is hidden.
+- **Reroll low scores** rerolls only a score below the minimum.
+- **Reroll whole array** discards all six when any score is too
   low.
 
 Generation attempts are bounded. If the chosen requirement cannot be met, the
@@ -32,7 +39,8 @@ panel reports an error and preserves your prior verified state.
 
 ## Custom expressions
 
-Select Custom expression and enter a bounded dice expression. Examples:
+Select Custom expression and open **Roll Options** to enter a bounded dice
+expression. The input appears only for that method. Examples:
 
 ```text
 4d[6]kh3
@@ -76,13 +84,14 @@ marked `(extended)`. Race modifiers are excluded from both numbers.
 ## History
 
 The current character-build session keeps the latest 20 generated arrays.
-Use **Previous** and **Next** to browse and **Use** to select an entry. Using an
-entry restores its array and assignment without rolling or replacing your
-point-buy origin. History is discarded when that character-build owner ends.
+Open **History (n)**, then use **Previous** and **Next** to browse and **Use**
+to select an entry. Using an entry restores its array and assignment without
+rolling or replacing your point-buy origin. History is discarded when that
+character-build owner ends.
 
 ## Saved arrays
 
-Up to ten arrays persist in UMM settings:
+Open **Saved (n)** to manage up to ten arrays persisted in UMM settings:
 
 - **Store** saves the current raw array and assignment;
 - saved Previous/Next browses slots;
@@ -95,8 +104,8 @@ slots are global mod settings, not game-save content.
 
 ## Return to Point Buy
 
-Press **Point Buy** to restore the exact allocation, remaining points, total
-budget, and allocator state captured before the current Roll Mode transition.
+Press **Return to Point Buy** to restore the exact allocation, remaining
+points, total budget, and allocator state captured before the current Roll Mode transition.
 The open page should update immediately, and native plus/minus controls should
 work at once.
 

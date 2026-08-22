@@ -84,6 +84,7 @@ CharBAbilityScoresAllocator.m_PreviewUnit : UnitEntityData
 CharBAbilityScoresAllocator.m_StatEntries : List<CharBScoresEntry>
 CharBAbilityScoresAllocator.m_MainLabel : TMPro.TextMeshProUGUI
 CharBAbilityScoresAllocator.m_Frame : UnityEngine.UI.Image
+CharBAbilityScoresAllocator.m_RaceBonusContainer : UnityEngine.GameObject
 CharBScoresEntry.UpButton : UnityEngine.UI.Button
 CharBScoresEntry.DownButton : UnityEngine.UI.Button
 UnityEngine.UI.Selectable.interactable : readable/writable Boolean
@@ -96,9 +97,17 @@ preview entities, reads the current distribution, updates base/modifier rows,
 updates points, and sets native button availability.
 
 The panel uses a postfix on that exact parameterless method. A data-only
-presenter is rendered into code-owned Unity objects styled from the local
-allocator label, frame, and button. Repeated FillData calls cannot create a
-second owned panel. Phase exit, invalid context, disable, and unload detach it.
+presenter is rendered into code-owned Unity objects using the local allocator
+font and UI materials. `m_Frame` remains a verified material/style source but
+its oval sprite is never used as the product-panel shape. The exact
+`m_RaceBonusContainer` supplies the preferred local anchor for the compact
+collapsed access tab; an upper-right local fallback is bounded and fail-safe.
+Repeated FillData calls cannot create a second owned panel. Phase exit, invalid
+context, disable, and unload detach it.
+
+The owned root has no `Graphic`. Expanded and collapsed children are mutually
+exclusive, so a collapsed view leaves no full-panel raycast target over native
+Skills, Back, or Next controls.
 
 ## Presentation synchronization
 

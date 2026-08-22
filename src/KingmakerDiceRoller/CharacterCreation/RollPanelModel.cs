@@ -29,78 +29,69 @@ namespace KingmakerDiceRoller.CharacterCreation
 
     public sealed class RollPanelModel
     {
-        internal RollPanelModel(
-            string mode,
-            string preset,
-            string policy,
-            string minimum,
-            bool minimumEnabled,
-            bool customVisible,
-            string customExpression,
-            bool canRoll,
-            bool canReroll,
-            bool canReturn,
-            IReadOnlyList<RollPanelAssignmentRow> rows,
-            string summary,
-            string history,
-            bool canUseHistory,
-            string saved,
-            bool canStore,
-            bool canRecall,
-            string error,
-            string status)
-        {
-            Mode = mode;
-            Preset = preset;
-            Policy = policy;
-            Minimum = minimum;
-            MinimumEnabled = minimumEnabled;
-            CustomVisible = customVisible;
-            CustomExpression = customExpression;
-            CanRoll = canRoll;
-            CanReroll = canReroll;
-            CanReturnToPointBuy = canReturn;
-            AssignmentRows = rows;
-            Summary = summary;
-            History = history;
-            CanUseHistory = canUseHistory;
-            Saved = saved;
-            CanStore = canStore;
-            CanRecall = canRecall;
-            Error = error;
-            Status = status;
-        }
+        internal RollPanelModel() { }
 
-        public string Mode { get; }
-        public string Preset { get; }
-        public string Policy { get; }
-        public string Minimum { get; }
-        public bool MinimumEnabled { get; }
-        public bool CustomVisible { get; }
-        public string CustomExpression { get; }
-        public bool CanRoll { get; }
-        public bool CanReroll { get; }
-        public bool CanReturnToPointBuy { get; }
-        public IReadOnlyList<RollPanelAssignmentRow> AssignmentRows { get; }
-        public string Summary { get; }
-        public string History { get; }
-        public bool CanUseHistory { get; }
-        public string Saved { get; }
-        public bool CanStore { get; }
-        public bool CanRecall { get; }
-        public string Error { get; }
-        public string Status { get; }
+        public string AccessTabLabel { get; internal set; }
+        public string CloseLabel { get; internal set; }
+        public string Mode { get; internal set; }
+        public string RollMethodCaption { get; internal set; }
+        public string Preset { get; internal set; }
+        public string AdvancedLabel { get; internal set; }
+        public string LowScoreRuleCaption { get; internal set; }
+        public string Policy { get; internal set; }
+        public string MinimumCaption { get; internal set; }
+        public string Minimum { get; internal set; }
+        public bool MinimumEnabled { get; internal set; }
+        public bool MinimumVisible { get; internal set; }
+        public bool CustomVisible { get; internal set; }
+        public string CustomExpression { get; internal set; }
+        public bool AdvancedVisible { get; internal set; }
+        public bool AdvancedExpanded { get; internal set; }
+        public bool RollVisible { get; internal set; }
+        public bool RerollVisible { get; internal set; }
+        public bool ReturnToPointBuyVisible { get; internal set; }
+        public string ReturnToPointBuyLabel { get; internal set; }
+        public bool CanRoll { get; internal set; }
+        public bool CanReroll { get; internal set; }
+        public bool CanReturnToPointBuy { get; internal set; }
+        public bool AssignmentVisible { get; internal set; }
+        public IReadOnlyList<RollPanelAssignmentRow> AssignmentRows { get; internal set; }
+        public bool SummaryVisible { get; internal set; }
+        public string Summary { get; internal set; }
+        public string HistoryDisclosureLabel { get; internal set; }
+        public bool HistoryDisclosureVisible { get; internal set; }
+        public bool HistoryDetailsVisible { get; internal set; }
+        public string History { get; internal set; }
+        public bool CanUseHistory { get; internal set; }
+        public string SavedDisclosureLabel { get; internal set; }
+        public bool SavedDisclosureVisible { get; internal set; }
+        public bool SavedDetailsVisible { get; internal set; }
+        public string Saved { get; internal set; }
+        public bool CanStore { get; internal set; }
+        public bool CanRecall { get; internal set; }
+        public bool CanDeleteSaved { get; internal set; }
+        public string Error { get; internal set; }
+        public string Status { get; internal set; }
     }
 
     public sealed class RollPanelPresenter
     {
         private static readonly string[] AbilityLabels = { "STR", "DEX", "CON", "INT", "WIS", "CHA" };
 
-        public RollPanelModel Present(RollUiSnapshot snapshot)
+        public RollPanelModel Present(RollUiSnapshot snapshot) =>
+            Present(snapshot, RollPanelDisclosureState.AllCollapsed);
+
+        public RollPanelModel Present(
+            RollUiSnapshot snapshot,
+            RollPanelDisclosureState disclosure)
         {
             if (snapshot == null) throw new ArgumentNullException(nameof(snapshot));
+            if (disclosure == null) throw new ArgumentNullException(nameof(disclosure));
+
+            bool rollMode = snapshot.Mode == RollSessionMode.Roll;
+            bool minimumPolicy = snapshot.Configuration.MinimumApplies;
             var rows = new List<RollPanelAssignmentRow>();
-            if (snapshot.AssignedValues != null)
+            if (rollMode && snapshot.AssignedValues != null)
             {
                 for (int index = 0; index < snapshot.AssignedValues.Length; index++)
                 {
@@ -114,39 +105,66 @@ namespace KingmakerDiceRoller.CharacterCreation
             }
 
             string summary = snapshot.AssignedValues == null
-                ? "No rolled array selected."
-                : "Total: " + snapshot.Total + "    Point-buy equivalent: " +
+                ? string.Empty
+                : "Total: " + snapshot.Total + "\nPoint-buy equivalent: " +
                     snapshot.PointBuyEquivalent + (snapshot.ExtendedEquivalent ? " (extended)" : string.Empty) +
-                    "    Rule: " + snapshot.RuleText;
+                    "\nRoll method: " + snapshot.RuleText;
             string history = snapshot.HistoryCount == 0
-                ? "History: empty"
-                : "History: " + snapshot.HistoryPosition + "/" + snapshot.HistoryCount +
+                ? "No rolls in this session."
+                : snapshot.HistoryPosition + "/" + snapshot.HistoryCount +
                     (string.IsNullOrWhiteSpace(snapshot.HistoryLabel) ? string.Empty : "  " + snapshot.HistoryLabel);
             string saved = snapshot.SavedCount == 0
-                ? "Saved: empty"
-                : "Saved: " + snapshot.SavedPosition + "/" + snapshot.SavedCount +
+                ? "No saved arrays."
+                : snapshot.SavedPosition + "/" + snapshot.SavedCount +
                     (string.IsNullOrWhiteSpace(snapshot.SavedLabel) ? string.Empty : "  " + snapshot.SavedLabel);
 
-            return new RollPanelModel(
-                "Mode: " + FormatMode(snapshot.Mode),
-                FormatPreset(snapshot.Configuration.Preset),
-                FormatPolicy(snapshot.Configuration.LowScorePolicy),
-                "Minimum: " + snapshot.Configuration.MinimumScore,
-                snapshot.Configuration.MinimumApplies,
-                snapshot.Configuration.Preset == DiceRollPreset.CustomExpression,
-                snapshot.Configuration.CustomExpression,
-                snapshot.CanRoll,
-                snapshot.CanReroll,
-                snapshot.CanReturnToPointBuy,
-                rows,
-                summary,
-                history,
-                snapshot.CanUseHistory,
-                saved,
-                snapshot.CanStore,
-                snapshot.CanRecall,
-                snapshot.ValidationError,
-                snapshot.Status);
+            return new RollPanelModel
+            {
+                AccessTabLabel = "Roll Stats",
+                CloseLabel = "Close",
+                Mode = FormatMode(snapshot.Mode),
+                RollMethodCaption = "Roll method",
+                Preset = FormatPreset(snapshot.Configuration.Preset),
+                AdvancedLabel = disclosure.AdvancedExpanded ? "Roll Options -" : "Roll Options +",
+                LowScoreRuleCaption = "Low-score rule",
+                Policy = FormatPolicy(snapshot.Configuration.LowScorePolicy),
+                MinimumCaption = "Minimum",
+                Minimum = snapshot.Configuration.MinimumScore.ToString(),
+                MinimumEnabled = minimumPolicy,
+                MinimumVisible = disclosure.AdvancedExpanded && minimumPolicy,
+                CustomVisible = disclosure.AdvancedExpanded &&
+                    snapshot.Configuration.Preset == DiceRollPreset.CustomExpression,
+                CustomExpression = snapshot.Configuration.CustomExpression,
+                AdvancedVisible = !rollMode,
+                AdvancedExpanded = !rollMode && disclosure.AdvancedExpanded,
+                RollVisible = !rollMode,
+                RerollVisible = rollMode,
+                ReturnToPointBuyVisible = rollMode,
+                ReturnToPointBuyLabel = "Return to Point Buy",
+                CanRoll = snapshot.CanRoll,
+                CanReroll = snapshot.CanReroll,
+                CanReturnToPointBuy = snapshot.CanReturnToPointBuy,
+                AssignmentVisible = rollMode && rows.Count > 0,
+                AssignmentRows = rows,
+                SummaryVisible = rollMode && snapshot.AssignedValues != null,
+                Summary = summary,
+                HistoryDisclosureLabel = "History (" + snapshot.HistoryCount + ") " +
+                    (disclosure.HistoryExpanded ? "-" : "+"),
+                HistoryDisclosureVisible = rollMode && snapshot.HistoryCount > 0,
+                HistoryDetailsVisible = rollMode && snapshot.HistoryCount > 0 && disclosure.HistoryExpanded,
+                History = history,
+                CanUseHistory = snapshot.CanUseHistory,
+                SavedDisclosureLabel = "Saved (" + snapshot.SavedCount + ") " +
+                    (disclosure.SavedExpanded ? "-" : "+"),
+                SavedDisclosureVisible = snapshot.SavedCount > 0 || snapshot.CanStore,
+                SavedDetailsVisible = (snapshot.SavedCount > 0 || snapshot.CanStore) && disclosure.SavedExpanded,
+                Saved = saved,
+                CanStore = snapshot.CanStore,
+                CanRecall = snapshot.CanRecall,
+                CanDeleteSaved = snapshot.SavedCount > 0,
+                Error = snapshot.ValidationError,
+                Status = FormatStatus(snapshot)
+            };
         }
 
         public static string FormatPreset(DiceRollPreset preset)
@@ -167,9 +185,9 @@ namespace KingmakerDiceRoller.CharacterCreation
         {
             switch (policy)
             {
-                case LowScorePolicy.Tabletop: return "Tabletop";
-                case LowScorePolicy.RerollIndividualBelowMinimum: return "Reroll individual below minimum";
-                case LowScorePolicy.RerollEntireArrayBelowMinimum: return "Reroll entire array below minimum";
+                case LowScorePolicy.Tabletop: return "Keep all rolls";
+                case LowScorePolicy.RerollIndividualBelowMinimum: return "Reroll low scores";
+                case LowScorePolicy.RerollEntireArrayBelowMinimum: return "Reroll whole array";
                 default: return "Unsupported policy";
             }
         }
@@ -179,9 +197,21 @@ namespace KingmakerDiceRoller.CharacterCreation
             switch (mode)
             {
                 case RollSessionMode.EnteringRollMode: return "Entering Roll Mode";
-                case RollSessionMode.Roll: return "Roll";
+                case RollSessionMode.Roll: return "Roll Mode";
                 case RollSessionMode.RestoringPointBuy: return "Restoring Point Buy";
                 default: return "Point Buy";
+            }
+        }
+
+        private static string FormatStatus(RollUiSnapshot snapshot)
+        {
+            if (!string.IsNullOrWhiteSpace(snapshot.ValidationError)) return "Check the highlighted option.";
+            switch (snapshot.Mode)
+            {
+                case RollSessionMode.Roll: return "Array applied.";
+                case RollSessionMode.RestoringPointBuy: return "Restoring Point Buy...";
+                case RollSessionMode.EnteringRollMode: return "Applying roll...";
+                default: return snapshot.AssignedValues == null ? "Roll ready." : "Point Buy restored.";
             }
         }
     }

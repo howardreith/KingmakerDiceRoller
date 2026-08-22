@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.1.0-alpha.2 - native panel usability repair
+
+- Recorded the first live player-panel gate accurately: Point Buy remained the
+  initial mode; Roll and Reroll worked; native point stacking stayed disabled;
+  existing-character progression remained isolated; and Bag of Tricks had a
+  positive limited smoke.
+- Recorded the blocking presentation defects at 1600 by 900: the allocator's
+  oval frame sprite produced an oversized translucent surface, inherited pale
+  text was unreadable, all features appeared simultaneously, body content
+  escaped the curved boundary, and the incomplete collapse continued blocking
+  Skills, Back, and Next.
+- Replaced the oval with a code-owned 400 by 570 rectangular parchment surface,
+  explicit high-contrast text, subtle outlined button text, and masked bounded
+  vertical scrolling.
+- Split the UI into a non-graphic owned root, mutually exclusive expanded
+  surface, and compact **Roll Stats** access tab. Collapsed mode now deactivates
+  the complete expanded graphic/layout/content and leaves no full-panel raycast
+  footprint.
+- Anchored the access tab beneath the exact active
+  `CharBAbilityScoresAllocator.m_RaceBonusContainer`, with a bounded local
+  upper-right fallback when that anchor is unavailable.
+- Added stable-owner-scoped expand/disclosure state: new owners begin collapsed,
+  same-owner allocator replacements preserve the choice, and cancellation,
+  completion, disable, and unload destroy all owned UI.
+- Added progressive disclosure for Roll Options, History, and Saved arrays;
+  Point Buy no longer shows assignment/history clutter, and Roll Mode shows
+  only its relevant actions and assignments.
+- Replaced internal policy names with **Keep all rolls**, **Reroll low scores**,
+  and **Reroll whole array**; selectors are captioned, single-line, and bounded.
+- Added exact contract verification for `m_RaceBonusContainer` and executable
+  layout, collapse, raycast, stable-owner, and presenter regressions.
+- Bumped UMM, runtime, informational, package, validation, and documentation
+  metadata to `0.1.0-alpha.2` without tagging or publishing a release.
+
 ## 0.1.0-alpha.1 - alpha candidate
 
 - Recorded the successful focused live gate at `8f78d824...`: pristine point

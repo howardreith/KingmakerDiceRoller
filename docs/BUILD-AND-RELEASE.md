@@ -40,10 +40,10 @@ For final provenance, run from the clean final commit. Qualification reports
 branch, commit, dirty state, test counts, exact Assembly-CSharp MVID/SHA-256,
 compiler warnings/errors, DLL SHA-256, package SHA-256, and package path.
 
-Version `0.1.0-alpha.1` packages as:
+Version `0.1.0-alpha.2` packages as:
 
 ```text
-artifacts/packages/KingmakerDiceRoller-0.1.0-alpha.1.zip
+artifacts/packages/KingmakerDiceRoller-0.1.0-alpha.2.zip
 ```
 
 The archive has one top-level `KingmakerDiceRoller` directory and exactly six
