@@ -12,8 +12,8 @@ cancellation, fresh-session ownership, and save independence were observed.
 That evidence validates the integration seam, not the new player-facing panel.
 
 The alpha now replaces automatic diagnostic behavior with an explicit native
-workflow. Final source/build/package qualification and human product acceptance
-remain separate gates.
+workflow. The complete source/build/package gate and transactional installation
+have passed. Human product acceptance remains a separate gate.
 
 ## Implemented alpha behavior
 
@@ -88,19 +88,34 @@ directories and must not be committed.
 
 ## Qualification truth
 
-At the current in-progress checkpoint:
+At the installed alpha checkpoint:
 
-- Product implementation: alpha feature set implemented.
-- Source-qualified: pending the final clean aggregate gate.
-- Build-qualified: pending the final exact clean aggregate gate.
-- Installed: pending final transactional installation.
+- Implemented: **Yes** - the player-facing alpha feature set is complete.
+- Product implementation: complete alpha candidate.
+- Source-qualified: **Yes** - the clean aggregate gate passed with 85 C#
+  source files, 185/185 compiled C# behavior cases, and 30/30 Python oracle
+  cases.
+- Build-qualified: **Yes** - the exact Kingmaker build completed with zero
+  warnings and zero errors.
+- Installed: **Yes** - the validated six-file package was installed
+  transactionally; the prior Dice Roller installation was backed up and all
+  other mod fingerprints remained identical.
 - Runtime-qualified: **No** - the new native player workflow awaits human
   acceptance.
 - Compatibility-qualified: **No** - the named live matrix awaits human testing.
 - Publicly released: **No**.
 
+The qualified exact game contract is Assembly-CSharp MVID
+`07fa1e4d-8618-41b3-9b8d-faa17d3b26f7` and SHA-256
+`3b6450ffec440e296e586f71c711b195aed144b28d53e1cbb29406d18fef5afb`.
+The candidate DLL SHA-256 is
+`9b0290df82c002f67dfa7cddd08442a3d2208d441a28f47d52c6fa335412f27d`.
+The deterministic package is
+`artifacts/packages/KingmakerDiceRoller-0.1.0-alpha.1.zip`, SHA-256
+`64b43bdfc9bb1d4db674174557fb94b0a9b87589e3b97374f252c0168e496515`.
+
 ## Immediate next gate
 
-Finish version/documentation hardening, run the complete qualification from a
-clean final commit, install the exact package transactionally, then execute the
-consolidated morning checklist in `docs/SMOKE-TEST.md`.
+Execute the consolidated morning checklist in `docs/SMOKE-TEST.md`, beginning
+with the vanilla workflow and only then proceeding to the named compatibility
+matrix. Do not promote or publicly release the alpha from build evidence alone.

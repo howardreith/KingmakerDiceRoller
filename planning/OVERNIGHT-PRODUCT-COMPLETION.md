@@ -73,8 +73,12 @@ never use direct screen-coordinate drawing as the primary interface.
    policy, diagnostics, user guide, and consistent `0.1.0-alpha.1` metadata.
    The focused gate passes 185 compiled C# behavior cases and 30 Python oracle
    cases with zero compiler warnings/errors.
-5. **In progress - final gates:** clean qualification, package, transactional
-   install, Git synchronization, morning handoff.
+5. **Complete - final gates:** clean qualification and deterministic package
+   passed at implementation commit `d6977dc484fcf951714cde6d446a050e4e1bd65a`.
+   The exact six-file package was installed transactionally, the previous Dice
+   Roller installation was backed up, no staging directory remained, and every
+   non-target mod fingerprint remained identical. This final evidence record
+   is followed by one clean provenance rerun before handoff.
 
 ## Commands and gates
 
@@ -102,10 +106,18 @@ other-mod fingerprints, and a clean-commit qualification rerun.
   restore every captured native control state.
 - Human visual/layout testing and the named compatibility matrix remain morning
   gates; source/build success will not be reported as runtime qualification.
+- Clean aggregate evidence: 85 C# source files, 185/185 compiled C# behavior
+  cases, 30/30 Python oracle cases, zero compiler warnings/errors, and all exact
+  Kingmaker contracts resolved.
+- Qualified DLL SHA-256:
+  `9b0290df82c002f67dfa7cddd08442a3d2208d441a28f47d52c6fa335412f27d`.
+- Qualified package SHA-256:
+  `64b43bdfc9bb1d4db674174557fb94b0a9b87589e3b97374f252c0168e496515`.
 
 ## Resume marker
 
-- Current pushed commit: `b342c1f78b06246abbc46cd22e22676b12e389c4`.
-- Next unfinished phase: commit/push hardening, then run the clean aggregate
-  qualification, package validation, transactional installation, other-mod
-  fingerprint audit, and final handoff checkpoint.
+- Current pushed implementation commit:
+  `d6977dc484fcf951714cde6d446a050e4e1bd65a`.
+- Current phase: final evidence checkpoint and clean provenance rerun. No
+  product implementation phase remains; the next external gate is Howie's
+  consolidated human acceptance test.
