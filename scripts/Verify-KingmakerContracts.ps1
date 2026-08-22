@@ -165,6 +165,34 @@ try {
         -not $allocatorPreview -or $allocatorPreview.FieldType -ne $unitEntity) {
         throw 'Exact CharBAbilityScoresAllocator source/preview binding fields were not found.'
     }
+    $allocatorEntries = $abilityAllocator.GetField('m_StatEntries',$flags)
+    if (-not $allocatorEntries -or -not $allocatorEntries.FieldType.IsGenericType -or
+        $allocatorEntries.FieldType.GetGenericTypeDefinition().FullName -ne 'System.Collections.Generic.List`1') {
+        throw 'Exact CharBAbilityScoresAllocator.m_StatEntries list was not found.'
+    }
+    $scoreEntry = $allocatorEntries.FieldType.GetGenericArguments()[0]
+    if ($scoreEntry.FullName -ne 'Kingmaker.UI.LevelUp.CharBScoresEntry') {
+        throw 'Ability allocator score rows are not exact CharBScoresEntry instances.'
+    }
+    $upButton = $scoreEntry.GetField('UpButton',$flags)
+    $downButton = $scoreEntry.GetField('DownButton',$flags)
+    if (-not $upButton -or -not $downButton -or
+        $upButton.IsStatic -or $downButton.IsStatic -or
+        $upButton.FieldType -ne $downButton.FieldType -or
+        $upButton.FieldType.FullName -ne 'UnityEngine.UI.Button') {
+        throw 'Exact CharBScoresEntry UpButton/DownButton instance fields were not found.'
+    }
+    $interactable = $upButton.FieldType.GetProperty('interactable',$flags)
+    if (-not $interactable -or $interactable.PropertyType -ne [bool] -or
+        -not $interactable.GetGetMethod($true) -or -not $interactable.GetSetMethod($true)) {
+        throw 'UnityEngine.UI.Selectable.interactable is not an exact writable Boolean contract.'
+    }
+    $mainLabel = $abilityAllocator.GetField('m_MainLabel',$flags)
+    $frame = $abilityAllocator.GetField('m_Frame',$flags)
+    if (-not $mainLabel -or $mainLabel.IsStatic -or $mainLabel.FieldType.FullName -ne 'TMPro.TextMeshProUGUI' -or
+        -not $frame -or $frame.IsStatic -or $frame.FieldType.FullName -ne 'UnityEngine.UI.Image') {
+        throw 'Native ability allocator text/frame style anchors were not found.'
+    }
 
     $report = [ordered]@{
         status = 'passed'
@@ -183,7 +211,11 @@ try {
             "$($characterBuild.FullName).CurrentPhase == $($phaseKind.FullName).Skills",
             "$($characterBuild.FullName).Skills -> $($skillsPhase.FullName).AbilityScoresAllocator",
             "$($abilityAllocator.FullName).FillData()",
-            "$($abilityAllocator.FullName).m_Unit", "$($abilityAllocator.FullName).m_PreviewUnit"
+            "$($abilityAllocator.FullName).m_Unit", "$($abilityAllocator.FullName).m_PreviewUnit",
+            "$($abilityAllocator.FullName).m_StatEntries -> $($scoreEntry.FullName)",
+            "$($scoreEntry.FullName).UpButton", "$($scoreEntry.FullName).DownButton",
+            "$($upButton.FieldType.FullName).interactable",
+            "$($abilityAllocator.FullName).m_MainLabel", "$($abilityAllocator.FullName).m_Frame"
         )
         abilities = $abilityNames
         context_paths = [ordered]@{ main_character=$mainPath; player_faction=$playerPath; pet=$petPath; enemy=$enemyPath }
@@ -199,6 +231,9 @@ try {
             allocator = 'CharBPhaseSkills.AbilityScoresAllocator'
             refresh = 'Kingmaker.UI.LevelUp.CharBAbilityScoresAllocator.FillData()'
             bindings = @('m_Unit','m_PreviewUnit')
+            score_rows = 'm_StatEntries -> CharBScoresEntry'
+            controls = @('UpButton.interactable','DownButton.interactable')
+            style_anchors = @('m_MainLabel: TMPro.TextMeshProUGUI','m_Frame: UnityEngine.UI.Image')
         }
     }
     $target = if ([IO.Path]::IsPathRooted($OutputPath)) { $OutputPath } else { Join-Path $root $OutputPath }

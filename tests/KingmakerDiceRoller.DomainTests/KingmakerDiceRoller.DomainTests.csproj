@@ -22,6 +22,8 @@
     <Compile Include="CharacterCreationContextPolicyTests.cs" />
     <Compile Include="PreviewSessionContinuityTests.cs" />
     <Compile Include="ProductWorkflowTests.cs" />
+    <Compile Include="NativePanelLifecycleTests.cs" />
+    <Compile Include="RollUiPresenterTests.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="SequenceRandomSource.cs" />
     <Compile Include="..\..\src\KingmakerDiceRoller\Domain\*.cs">
@@ -31,12 +33,14 @@
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\CharacterCreationContextDecision.cs"><Link>CharacterCreation\CharacterCreationContextDecision.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\CharacterCreationContextPolicy.cs"><Link>CharacterCreation\CharacterCreationContextPolicy.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\CharacterCreationCoordinator.cs"><Link>CharacterCreation\CharacterCreationCoordinator.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\IRollUiCommandTarget.cs"><Link>CharacterCreation\IRollUiCommandTarget.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\CharacterRollWorkflow.cs"><Link>CharacterCreation\CharacterRollWorkflow.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\KingmakerStatAccess.cs"><Link>CharacterCreation\KingmakerStatAccess.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\LivePreviewInspector.cs"><Link>CharacterCreation\LivePreviewInspector.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\LivePreviewObservation.cs"><Link>CharacterCreation\LivePreviewObservation.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\MainCharacterIdentityRelation.cs"><Link>CharacterCreation\MainCharacterIdentityRelation.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\NativeAbilityControlService.cs"><Link>CharacterCreation\NativeAbilityControlService.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\NativePanelAttachmentLifecycle.cs"><Link>CharacterCreation\NativePanelAttachmentLifecycle.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\GenerationRollbackSnapshot.cs"><Link>CharacterCreation\GenerationRollbackSnapshot.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\PointBuyOrigin.cs"><Link>CharacterCreation\PointBuyOrigin.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\PointBudgetResolver.cs"><Link>CharacterCreation\PointBudgetResolver.cs</Link></Compile>
@@ -48,6 +52,9 @@
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\PreviewRefreshService.cs"><Link>CharacterCreation\PreviewRefreshService.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RollSession.cs"><Link>CharacterCreation\RollSession.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RollUiSnapshot.cs"><Link>CharacterCreation\RollUiSnapshot.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RollPanelModel.cs"><Link>CharacterCreation\RollPanelModel.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RollUiCommand.cs"><Link>CharacterCreation\RollUiCommand.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RollUiCommandRouter.cs"><Link>CharacterCreation\RollUiCommandRouter.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RollSessionMode.cs"><Link>CharacterCreation\RollSessionMode.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RollPresentationObservation.cs"><Link>CharacterCreation\RollPresentationObservation.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RollSessionManager.cs"><Link>CharacterCreation\RollSessionManager.cs</Link></Compile>

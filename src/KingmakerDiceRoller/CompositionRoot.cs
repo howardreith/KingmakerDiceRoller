@@ -18,6 +18,7 @@ namespace KingmakerDiceRoller
         private readonly RuntimeDiagnostics diagnostics;
         private readonly CharacterCreationCoordinator coordinator;
         private readonly KingmakerPatchController patches;
+        private readonly NativeRollPanelHost nativePanel;
         private readonly SettingsView view;
         private bool enabled;
 
@@ -44,6 +45,10 @@ namespace KingmakerDiceRoller
                 settings.SavedArrays,
                 () => DateTime.UtcNow.ToString("o"),
                 settings.ApplyProductState);
+            for (int index = 0; index < workflow.Saved.Warnings.Count; index++)
+            {
+                logger.Warning(workflow.Saved.Warnings[index]);
+            }
             coordinator = new CharacterCreationCoordinator(
                 new CharacterCreationContextPolicy(),
                 budgetTracker,
@@ -58,6 +63,12 @@ namespace KingmakerDiceRoller
                 () => contracts.Current,
                 () => settings.VerboseDiagnostics,
                 workflow);
+            nativePanel = new NativeRollPanelHost(
+                new RollUiCommandRouter(coordinator),
+                new RollPanelPresenter(),
+                nativeControls,
+                () => contracts.Current,
+                logger);
             patches = new KingmakerPatchController(logger);
             view = new SettingsView(settings, coordinator, diagnostics, contracts);
         }
@@ -71,7 +82,11 @@ namespace KingmakerDiceRoller
 
         public void Update(float deltaTime)
         {
-            if (enabled) coordinator.Update(deltaTime);
+            if (enabled)
+            {
+                coordinator.Update(deltaTime);
+                nativePanel.Update();
+            }
         }
 
         public void DrawGui()
@@ -99,7 +114,7 @@ namespace KingmakerDiceRoller
                 KingmakerContracts resolved = new KingmakerContractResolver().Resolve();
                 contracts.Set(resolved);
                 for (int index = 0; index < resolved.Evidence.Count; index++) logger.Info("Contract: " + resolved.Evidence[index]);
-                patches.Install(resolved, coordinator);
+                patches.Install(resolved, coordinator, nativePanel);
                 enabled = true;
                 diagnostics.SetStatus("Enabled; waiting for an exact new-main-character LevelUpState.");
                 logger.Info("Kingmaker Dice Roller 0.0.1-alpha.1 enabled in fixed-array mode.");
@@ -107,6 +122,7 @@ namespace KingmakerDiceRoller
             }
             catch (Exception exception)
             {
+                nativePanel.Detach(contracts.Current);
                 patches.Uninstall();
                 contracts.Clear();
                 diagnostics.SetStatus("Enable failed closed: " + exception.Message);
@@ -120,6 +136,7 @@ namespace KingmakerDiceRoller
         {
             if (!enabled)
             {
+                nativePanel.Detach(contracts.Current);
                 patches.Uninstall();
                 contracts.Clear();
                 return true;
@@ -133,6 +150,7 @@ namespace KingmakerDiceRoller
                 return false;
             }
 
+            nativePanel.Detach(contracts.Current);
             patches.Uninstall();
             contracts.Clear();
             enabled = false;

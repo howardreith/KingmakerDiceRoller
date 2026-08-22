@@ -282,6 +282,8 @@ namespace KingmakerDiceRoller.DomainTests
             var catalog = new SavedRollCatalog(new[] { corrupt, valid });
             AssertEx.Equal(1, catalog.Count);
             AssertEx.Equal("valid", catalog.Selected.Label);
+            AssertEx.Equal(1, catalog.Warnings.Count);
+            AssertEx.True(catalog.Warnings[0].Contains("Skipped saved array 1"));
         }
 
         internal static void SavedCatalogEvictsAtTen()
@@ -380,6 +382,24 @@ namespace KingmakerDiceRoller.DomainTests
             AssertEx.Equal(RollSessionMode.PointBuy, session.Mode);
             AssertEx.Equal(null, session.PointBuyOrigin);
             AssertEx.Equal(null, session.Assignment);
+        }
+
+        internal static void AbortedRerollRestoresPriorVerifiedRollState()
+        {
+            CharacterRollWorkflow workflow = NewWorkflow(new SequenceRandomSource(), RollConfiguration.Default());
+            RollSession session = NewSession();
+            CommitCandidate(workflow, session, NewOrigin(), Candidate(12), false);
+            StatAssignment prior = session.Assignment;
+
+            session.BeginRollReplacement(Assignment(13));
+            session.MarkApplicationStaged(session.Generation);
+            session.MarkLiveApplicationVerified(session.Generation);
+            session.AbortPendingRoll();
+
+            AssertEx.Equal(RollSessionMode.Roll, session.Mode);
+            AssertEx.True(ReferenceEquals(prior, session.Assignment));
+            AssertEx.True(session.IsApplied);
+            AssertEx.True(session.IsStaged);
         }
 
         private static CharacterRollWorkflow NewWorkflow(

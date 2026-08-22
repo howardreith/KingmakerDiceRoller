@@ -6,7 +6,7 @@ using KingmakerDiceRoller.Logging;
 
 namespace KingmakerDiceRoller.CharacterCreation
 {
-    public sealed class CharacterCreationCoordinator
+    public sealed class CharacterCreationCoordinator : IRollUiCommandTarget
     {
         private readonly CharacterCreationContextPolicy contextPolicy;
         private readonly PointBudgetTracker budgetTracker;
@@ -281,12 +281,14 @@ namespace KingmakerDiceRoller.CharacterCreation
                 workflow.SetFailure(error);
                 return false;
             }
+            PointBuyOrigin origin;
+            if (!TryCapturePointBuyOrigin(session, out origin, out error)) return false;
             RollCandidate candidate;
             if (!workflow.TryGenerate(out candidate, out error)) return false;
             return TryApplyUserAssignment(
                 session,
                 candidate.Assignment,
-                true,
+                origin,
                 () => workflow.CommitGenerated(session, candidate, false),
                 "Roll",
                 out error);
@@ -306,7 +308,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             return TryApplyUserAssignment(
                 session,
                 candidate.Assignment,
-                false,
+                null,
                 () => workflow.CommitGenerated(session, candidate, true),
                 "Reroll",
                 out error);
@@ -332,7 +334,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             return TryApplyUserAssignment(
                 session,
                 next,
-                false,
+                null,
                 () => workflow.CommitAssignment(session, next, "Assignment order verified on the live preview."),
                 "Reassign",
                 out error);
@@ -360,11 +362,16 @@ namespace KingmakerDiceRoller.CharacterCreation
                 return false;
             }
             StatAssignment next = entry.Assignment;
+            PointBuyOrigin origin = null;
+            if (session.IsPointBuyMode && !TryCapturePointBuyOrigin(session, out origin, out error))
+            {
+                return false;
+            }
             return TryApplyUserAssignment(
                 session,
                 next,
-                session.IsPointBuyMode,
-                () => workflow.CommitAssignment(session, next, "History entry verified on the live preview."),
+                origin,
+                () => workflow.CommitHistorySelection(session, entry),
                 "Use history",
                 out error);
         }
@@ -412,11 +419,16 @@ namespace KingmakerDiceRoller.CharacterCreation
                 workflow.SetFailure("Saved array is invalid: " + error);
                 return false;
             }
+            PointBuyOrigin origin = null;
+            if (session.IsPointBuyMode && !TryCapturePointBuyOrigin(session, out origin, out error))
+            {
+                return false;
+            }
             return TryApplyUserAssignment(
                 session,
                 assignment,
-                session.IsPointBuyMode,
-                () => workflow.CommitAssignment(session, assignment, "Saved array verified on the live preview."),
+                origin,
+                () => workflow.CommitSavedRecall(session, record, assignment),
                 "Recall",
                 out error);
         }
@@ -555,7 +567,7 @@ namespace KingmakerDiceRoller.CharacterCreation
         private bool TryApplyUserAssignment(
             RollSession session,
             StatAssignment next,
-            bool enteringFromPointBuy,
+            PointBuyOrigin capturedOrigin,
             Action commit,
             string commandName,
             out string error)
@@ -584,9 +596,9 @@ namespace KingmakerDiceRoller.CharacterCreation
                     contracts,
                     statAccess);
                 session.ReplaceGenerationRollback(rollback);
-                if (enteringFromPointBuy)
+                if (capturedOrigin != null)
                 {
-                    session.BeginRollMode(CapturePointBuyOrigin(session, contracts), next);
+                    session.BeginRollMode(capturedOrigin, next);
                 }
                 else
                 {
@@ -726,6 +738,40 @@ namespace KingmakerDiceRoller.CharacterCreation
                 session.Generation,
                 contracts,
                 statAccess);
+        }
+
+        private bool TryCapturePointBuyOrigin(
+            RollSession session,
+            out PointBuyOrigin origin,
+            out string error)
+        {
+            origin = null;
+            KingmakerContracts contracts = contractsProvider();
+            if (contracts == null)
+            {
+                error = "Kingmaker contracts are unavailable.";
+                workflow.SetFailure(error);
+                return false;
+            }
+            if (!HasCurrentLiveBinding(session, contracts))
+            {
+                error = "The current point-buy preview is not safely bound to this character-roll session.";
+                workflow.SetFailure(error);
+                return false;
+            }
+            try
+            {
+                origin = CapturePointBuyOrigin(session, contracts);
+                error = null;
+                return true;
+            }
+            catch (Exception exception)
+            {
+                error = exception.Message;
+                workflow.SetFailure(error);
+                logger.Exception("Capture point-buy origin before explicit Roll Mode entry", exception);
+                return false;
+            }
         }
 
         private static string BooleanText(bool value)

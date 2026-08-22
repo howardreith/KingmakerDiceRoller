@@ -196,11 +196,11 @@ def main():
 
     src='\n'.join(p.read_text(encoding='utf-8') for p in (ROOT/'src/KingmakerDiceRoller').rglob('*.cs'))
     stripped_src='\n'.join(strip_csharp(p.read_text(encoding='utf-8')) for p in (ROOT/'src/KingmakerDiceRoller').rglob('*.cs'))
-    require('StatsDistributionStarted' in src and 'StatsDistributionIsComplete' in src and 'LevelUpStateConstructed' in src,'expected three patch bridge surfaces')
+    require('StatsDistributionStarted' in src and 'StatsDistributionIsComplete' in src and 'LevelUpStateConstructed' in src and 'AbilityAllocatorFilled' in src,'expected four narrow patch bridge surfaces')
     for token in ['StatsDistribution.Add','StatsDistribution.Remove','StatsDistribution.CanAdd','StatsDistribution.CanRemove']:
         require(token not in src, f'forbidden broad allocator patch reference: {token}')
     controller=(ROOT/'src/KingmakerDiceRoller/Patches/KingmakerPatchController.cs').read_text(encoding='utf-8')
-    require(controller.count('PatchPostfix(candidate,')==3,'patch controller must install exactly three postfixes')
+    require(controller.count('PatchPostfix(candidate,')==4,'patch controller must install exactly four postfixes')
     require('Priority.VeryLow' in controller,'patch priority must be explicit')
     for token in ['BlueprintScriptableObject','BlueprintBuff','BlueprintFeature','UnitPart','.AddFact(','SaveGame']:
         require(token not in stripped_src, f'save-owned custom content surface is forbidden: {token}')
@@ -296,7 +296,9 @@ def main():
         'RequireInstanceMember(characterBuildControllerType, "CurrentPhase")',
         'RequireInstanceMember(characterBuildControllerType, "Skills")',
         'RequireInstanceMember(skillsPhaseType, "AbilityScoresAllocator")',
-        'GetMethod(', '"FillData"', 'GetField("m_Unit"', 'GetField("m_PreviewUnit"'
+        'GetMethod(', '"FillData"', 'GetField("m_Unit"', 'GetField("m_PreviewUnit"',
+        'GetField("m_StatEntries"', 'GetField("UpButton"', 'GetField("DownButton"',
+        'GetProperty("interactable"', 'GetField("m_MainLabel"', 'GetField("m_Frame"'
     ]:
         require(token in contracts, f'exact native ability presentation contract missing: {token}')
     require('modEntry.OnUpdate = OnUpdate' in main_source,'UMM update lifecycle hook missing')

@@ -1309,6 +1309,134 @@ namespace KingmakerDiceRoller.DomainTests
             AssertEx.Equal(1, diagnostics.SessionsReleased);
         }
 
+        internal static void ExplicitCoordinatorSessionConsumesNoRandomUntilRoll()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            var random = new SequenceRandomSource(
+                6, 5, 4, 1, 6, 5, 4, 1, 6, 5, 4, 1,
+                6, 5, 4, 1, 6, 5, 4, 1, 6, 5, 4, 1);
+            var workflow = NewProductWorkflow(random, RollConfiguration.Default());
+            var tracker = new PointBudgetTracker();
+            CharacterCreationCoordinator coordinator = environment.CreateCoordinator(
+                tracker,
+                new RuntimeDiagnostics(),
+                workflow);
+            FakeState state = environment.NewState(10);
+            coordinator.OnDistributionStarted(state.StatsDistribution, 25);
+            coordinator.OnLevelUpStateConstructed(state, state.Unit, FakeMode.CharGen);
+
+            AssertEx.Equal(0, random.Calls);
+            AssertEx.Equal(RollSessionMode.PointBuy, coordinator.ActiveSession.Mode);
+            AssertEx.True(coordinator.TryRoll(out string error), error);
+            AssertEx.Equal(24, random.Calls);
+            AssertEx.Equal(RollSessionMode.Roll, coordinator.ActiveSession.Mode);
+        }
+
+        internal static void ExplicitRollRestoresModifiedPreRollAllocation()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            CharacterCreationCoordinator coordinator = OpenProductCoordinator(
+                environment,
+                new SequenceRandomSource(Enumerable.Repeat(6, 24).ToArray()),
+                out FakeState state);
+            int[] origin = { 12, 10, 10, 10, 10, 10 };
+            environment.StatAccess.WriteDistributionValues(state.StatsDistribution, origin, environment.Contracts);
+            environment.StatAccess.WriteUnitBaseValues(state.Unit, origin, environment.Contracts);
+            state.StatsDistribution.SetAllocatorState(true, 22, 25);
+
+            AssertEx.True(coordinator.TryRoll(out string error), error);
+            AssertEx.True(coordinator.TryRestorePointBuy(out error), error);
+
+            AssertEx.SequenceEqual(origin, environment.ReadDistribution(state));
+            AssertEx.SequenceEqual(origin, environment.ReadUnit(state.Unit));
+            AssertEx.Equal(22, state.StatsDistribution.Points);
+            AssertEx.Equal(25, state.StatsDistribution.TotalPoints);
+        }
+
+        internal static void SecondRollTransitionCapturesNewPointBuyOrigin()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            CharacterCreationCoordinator coordinator = OpenProductCoordinator(
+                environment,
+                new SequenceRandomSource(Enumerable.Repeat(6, 48).ToArray()),
+                out FakeState state);
+            AssertEx.True(coordinator.TryRoll(out string error), error);
+            AssertEx.True(coordinator.TryRestorePointBuy(out error), error);
+
+            int[] secondOrigin = { 10, 11, 10, 10, 10, 10 };
+            environment.StatAccess.WriteDistributionValues(state.StatsDistribution, secondOrigin, environment.Contracts);
+            environment.StatAccess.WriteUnitBaseValues(state.Unit, secondOrigin, environment.Contracts);
+            state.StatsDistribution.SetAllocatorState(true, 24, 25);
+            AssertEx.True(coordinator.TryRoll(out error), error);
+            AssertEx.True(coordinator.TryRestorePointBuy(out error), error);
+
+            AssertEx.SequenceEqual(secondOrigin, environment.ReadDistribution(state));
+            AssertEx.Equal(24, state.StatsDistribution.Points);
+        }
+
+        internal static void InvalidExplicitRollLeavesPointBuyUntouched()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            var random = new SequenceRandomSource(6);
+            CharacterCreationCoordinator coordinator = OpenProductCoordinator(
+                environment,
+                random,
+                out FakeState state,
+                new RollConfiguration(
+                    DiceRollPreset.CustomExpression,
+                    LowScorePolicy.Tabletop,
+                    3,
+                    "not valid"));
+            AssertEx.True(!coordinator.TryRoll(out string error));
+            AssertEx.True(!string.IsNullOrWhiteSpace(error));
+            AssertEx.Equal(0, random.Calls);
+            AssertEx.Equal(RollSessionMode.PointBuy, coordinator.ActiveSession.Mode);
+            AssertEx.SequenceEqual(Enumerable.Repeat(10, 6), environment.ReadDistribution(state));
+            AssertEx.True(state.StatsDistribution.Available);
+        }
+
+        internal static void NativePointBuyControlsAreSuppressedInRollMode()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            RollSession session = environment.Open(environment.NewState(10));
+            foreach (FakeScoreEntry entry in environment.Allocator.m_StatEntries)
+            {
+                entry.UpButton.interactable = true;
+                entry.DownButton.interactable = true;
+            }
+
+            string error;
+            AssertEx.True(environment.NativeControls.TrySuppressForRoll(
+                session,
+                environment.Contracts,
+                out error), error);
+            AssertEx.True(environment.NativeControls.AreSuppressed(environment.Allocator, environment.Contracts));
+        }
+
+        internal static void NativePointBuyControlOriginalStatesAreRestored()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            RollSession session = environment.Open(environment.NewState(10));
+            for (int index = 0; index < environment.Allocator.m_StatEntries.Count; index++)
+            {
+                environment.Allocator.m_StatEntries[index].UpButton.interactable = index % 2 == 0;
+                environment.Allocator.m_StatEntries[index].DownButton.interactable = index % 2 != 0;
+            }
+
+            string error;
+            AssertEx.True(environment.NativeControls.TrySuppressForRoll(
+                session,
+                environment.Contracts,
+                out error), error);
+            environment.NativeControls.RestoreOwnedStates(environment.Contracts);
+
+            for (int index = 0; index < environment.Allocator.m_StatEntries.Count; index++)
+            {
+                AssertEx.Equal(index % 2 == 0, environment.Allocator.m_StatEntries[index].UpButton.interactable);
+                AssertEx.Equal(index % 2 != 0, environment.Allocator.m_StatEntries[index].DownButton.interactable);
+            }
+        }
+
         private static void StageAndVerify(TestEnvironment environment, RollSession session)
         {
             string error;
@@ -1322,6 +1450,36 @@ namespace KingmakerDiceRoller.DomainTests
                 environment.Contracts,
                 out observation,
                 out error), error);
+        }
+
+        private static CharacterRollWorkflow NewProductWorkflow(
+            IRandomSource random,
+            RollConfiguration configuration)
+        {
+            return new CharacterRollWorkflow(
+                new DiceRollEngine(new DiceExpressionParser(), random),
+                new PointBuyEquivalentCalculator(),
+                configuration,
+                null,
+                () => "2026-08-22T00:00:00Z",
+                null);
+        }
+
+        private static CharacterCreationCoordinator OpenProductCoordinator(
+            TestEnvironment environment,
+            IRandomSource random,
+            out FakeState state,
+            RollConfiguration configuration = null)
+        {
+            var tracker = new PointBudgetTracker();
+            CharacterCreationCoordinator coordinator = environment.CreateCoordinator(
+                tracker,
+                new RuntimeDiagnostics(),
+                NewProductWorkflow(random, configuration ?? RollConfiguration.Default()));
+            state = environment.NewState(10);
+            coordinator.OnDistributionStarted(state.StatsDistribution, 25);
+            coordinator.OnLevelUpStateConstructed(state, state.Unit, FakeMode.CharGen);
+            return coordinator;
         }
 
         private static RollSession RestoreSemantically(TestEnvironment environment, FakeState preview)
@@ -1596,6 +1754,30 @@ namespace KingmakerDiceRoller.DomainTests
                 PointBudgetTracker tracker,
                 RuntimeDiagnostics diagnostics)
             {
+                return CreateCoordinator(tracker, diagnostics, null);
+            }
+
+            internal CharacterCreationCoordinator CreateCoordinator(
+                PointBudgetTracker tracker,
+                RuntimeDiagnostics diagnostics,
+                CharacterRollWorkflow workflow)
+            {
+                if (workflow == null)
+                {
+                    return new CharacterCreationCoordinator(
+                        Policy,
+                        tracker,
+                        new PointBudgetResolver(tracker),
+                        StatAccess,
+                        Sessions,
+                        Application,
+                        Restore,
+                        Presentation,
+                        diagnostics,
+                        Logger,
+                        () => Contracts,
+                        () => false);
+                }
                 return new CharacterCreationCoordinator(
                     Policy,
                     tracker,
@@ -1608,7 +1790,8 @@ namespace KingmakerDiceRoller.DomainTests
                     diagnostics,
                     Logger,
                     () => Contracts,
-                    () => false);
+                    () => false,
+                    workflow);
             }
 
             private static KingmakerContracts CreateContracts()

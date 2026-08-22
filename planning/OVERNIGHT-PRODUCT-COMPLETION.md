@@ -53,18 +53,23 @@ never use direct screen-coordinate drawing as the primary interface.
 
 ## Checkpoints
 
-1. **Complete — product architecture:** PointBuy-first session lifecycle,
+1. **Complete - product architecture:** PointBuy-first session lifecycle,
    command boundary, workflow snapshot, exact transition-time point-buy origin,
    and no-automatic-roll regressions. The focused source/build gate passes with
    155 compiled behavior cases and 25 Python oracle cases.
-2. **In progress — non-UI workflow:** configuration, Roll/Reroll, point-buy
-   origin, assignment, history, saved catalog, totals, transactional
-   application.
-3. **Pending — native panel:** exact contracts, attach/detach, commands,
-   allocator-control ownership, refresh/rebind, fixture coverage.
-4. **Pending — hardening/version/docs:** settings migration, compatibility,
+2. **Complete - product workflow:** configuration, explicit Roll/Reroll,
+   transition-time point-buy origin, duplicate-safe assignment, 20-entry
+   history, 10-entry schema-versioned saved catalog, totals/equivalent, and
+   transactional live application/rollback.
+3. **Complete - source-qualified native panel:** exact `FillData` postfix,
+   code-owned attach/rebind/detach lifecycle, presenter/router separation,
+   native Up/Down ownership, immediate native refresh, and exact UI contract
+   verification. The focused gate passes 181 compiled behavior cases and 25
+   Python oracle cases with zero compiler warnings/errors. Visual layout remains
+   a human runtime gate.
+4. **In progress - hardening/version/docs:** settings migration, compatibility,
    diagnostics, user guide, 0.1.0-alpha.1 metadata.
-5. **Pending — final gates:** clean qualification, package, transactional
+5. **Pending - final gates:** clean qualification, package, transactional
    install, Git synchronization, morning handoff.
 
 ## Commands and gates
@@ -96,5 +101,6 @@ other-mod fingerprints, and a clean-commit qualification rerun.
 
 ## Resume marker
 
-- Current commit: pending Phase A checkpoint based on `8f78d8243ed27ed2cbb3fadafd890aba172975aa`.
-- Next unfinished phase: complete and harden the non-UI command workflow.
+- Current pushed commit: `f1ce731eafddf1fab7c3217eaf0d88419753dd83`.
+- Next unfinished phase: finish product hardening, version metadata, complete
+  player documentation, and the aggregate qualification/install gates.

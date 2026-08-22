@@ -7,17 +7,20 @@ namespace KingmakerDiceRoller.Domain
     {
         public const int Capacity = 10;
         private readonly List<SavedRollArrayRecord> records;
+        private readonly List<string> warnings;
         private int selectedIndex;
 
         public SavedRollCatalog(IEnumerable<SavedRollArrayRecord> source)
         {
             records = new List<SavedRollArrayRecord>();
+            warnings = new List<string>();
             if (source != null)
             {
+                int sourceIndex = 0;
                 foreach (SavedRollArrayRecord record in source)
                 {
                     StatAssignment assignment;
-                    string error;
+                    string error = null;
                     if (record != null && record.TryCreateAssignment(out assignment, out error))
                     {
                         records.Add(SavedRollArrayRecord.Create(
@@ -28,6 +31,13 @@ namespace KingmakerDiceRoller.Domain
                             record.Label));
                         if (records.Count == Capacity) break;
                     }
+                    else
+                    {
+                        warnings.Add(
+                            "Skipped saved array " + (sourceIndex + 1) + ": " +
+                            (error ?? "record is null") + ".");
+                    }
+                    sourceIndex++;
                 }
             }
             selectedIndex = records.Count == 0 ? -1 : 0;
@@ -36,6 +46,7 @@ namespace KingmakerDiceRoller.Domain
         public int Count => records.Count;
         public int SelectedIndex => selectedIndex;
         public SavedRollArrayRecord Selected => selectedIndex < 0 ? null : records[selectedIndex];
+        public IReadOnlyList<string> Warnings => warnings;
 
         public void Store(SavedRollArrayRecord record)
         {

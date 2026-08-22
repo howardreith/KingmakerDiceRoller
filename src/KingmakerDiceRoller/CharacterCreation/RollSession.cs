@@ -9,6 +9,7 @@ namespace KingmakerDiceRoller.CharacterCreation
         private StatAssignment committedAssignment;
         private StatAssignment pendingAssignment;
         private bool pendingEntryFromPointBuy;
+        private bool pendingPriorRollWasVerified;
 
         public RollSession(
             object controller,
@@ -94,6 +95,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             PointBuyOrigin = origin ?? throw new ArgumentNullException(nameof(origin));
             pendingAssignment = assignment ?? throw new ArgumentNullException(nameof(assignment));
             pendingEntryFromPointBuy = true;
+            pendingPriorRollWasVerified = false;
             Lifecycle.BeginRollMode();
             ResetApplicationTracking();
         }
@@ -101,6 +103,7 @@ namespace KingmakerDiceRoller.CharacterCreation
         public void BeginRollReplacement(StatAssignment assignment)
         {
             if (!IsRollMode) throw new InvalidOperationException("Only Roll mode can replace its current assignment.");
+            pendingPriorRollWasVerified = IsApplied;
             pendingAssignment = assignment ?? throw new ArgumentNullException(nameof(assignment));
             pendingEntryFromPointBuy = false;
             ResetApplicationTracking();
@@ -121,6 +124,7 @@ namespace KingmakerDiceRoller.CharacterCreation
 
         public void AbortPendingRoll()
         {
+            bool restorePriorVerifiedRoll = !pendingEntryFromPointBuy && pendingPriorRollWasVerified;
             if (pendingEntryFromPointBuy)
             {
                 Lifecycle.AbortRollModeEntry();
@@ -128,7 +132,13 @@ namespace KingmakerDiceRoller.CharacterCreation
             }
             pendingAssignment = null;
             pendingEntryFromPointBuy = false;
+            pendingPriorRollWasVerified = false;
             ResetApplicationTracking();
+            if (restorePriorVerifiedRoll)
+            {
+                StagedGeneration = Generation;
+                VerifiedGeneration = Generation;
+            }
         }
 
         public void ReplaceGenerationRollback(GenerationRollbackSnapshot snapshot)
@@ -253,6 +263,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             committedAssignment = pendingAssignment;
             pendingAssignment = null;
             pendingEntryFromPointBuy = false;
+            pendingPriorRollWasVerified = false;
             Lifecycle.CommitRollMode();
             VerifiedGeneration = Generation;
             FailedGeneration = 0;

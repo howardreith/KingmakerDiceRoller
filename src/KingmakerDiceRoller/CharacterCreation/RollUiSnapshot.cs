@@ -15,6 +15,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             string ruleText,
             int historyPosition,
             int historyCount,
+            string historyLabel,
             int savedPosition,
             int savedCount,
             string savedLabel,
@@ -31,6 +32,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             RuleText = ruleText ?? string.Empty;
             HistoryPosition = historyPosition;
             HistoryCount = historyCount;
+            HistoryLabel = historyLabel ?? string.Empty;
             SavedPosition = savedPosition;
             SavedCount = savedCount;
             SavedLabel = savedLabel ?? string.Empty;
@@ -48,6 +50,7 @@ namespace KingmakerDiceRoller.CharacterCreation
         public string RuleText { get; }
         public int HistoryPosition { get; }
         public int HistoryCount { get; }
+        public string HistoryLabel { get; }
         public int SavedPosition { get; }
         public int SavedCount { get; }
         public string SavedLabel { get; }

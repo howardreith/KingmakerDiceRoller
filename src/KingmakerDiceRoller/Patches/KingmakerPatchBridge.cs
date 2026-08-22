@@ -1,6 +1,7 @@
 using System;
 using KingmakerDiceRoller.CharacterCreation;
 using KingmakerDiceRoller.Logging;
+using KingmakerDiceRoller.UI;
 
 namespace KingmakerDiceRoller.Patches
 {
@@ -8,16 +9,22 @@ namespace KingmakerDiceRoller.Patches
     {
         private static CharacterCreationCoordinator coordinator;
         private static IModLogger logger;
+        private static NativeRollPanelHost panel;
 
-        public static void Configure(CharacterCreationCoordinator value, IModLogger modLogger)
+        public static void Configure(
+            CharacterCreationCoordinator value,
+            NativeRollPanelHost panelHost,
+            IModLogger modLogger)
         {
             coordinator = value;
+            panel = panelHost;
             logger = modLogger;
         }
 
         public static void Clear()
         {
             coordinator = null;
+            panel = null;
             logger = null;
         }
 
@@ -37,6 +44,12 @@ namespace KingmakerDiceRoller.Patches
         {
             try { coordinator?.OnDistributionIsComplete(__instance, ref __result); }
             catch (Exception exception) { logger?.Exception("StatsDistribution.IsComplete postfix", exception); }
+        }
+
+        public static void AbilityAllocatorFilled(object __instance)
+        {
+            try { panel?.OnAbilityAllocatorFilled(__instance); }
+            catch (Exception exception) { logger?.Exception("Ability allocator FillData postfix", exception); }
         }
     }
 }

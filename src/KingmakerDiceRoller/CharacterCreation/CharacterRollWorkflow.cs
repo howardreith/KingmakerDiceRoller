@@ -14,6 +14,8 @@ namespace KingmakerDiceRoller.CharacterCreation
         private long nextSequence = 1;
         private string inlineError = string.Empty;
         private string status = "Point Buy is active; no roll has been generated.";
+        private string currentRuleId = string.Empty;
+        private string currentExpression = string.Empty;
 
         public CharacterRollWorkflow(
             DiceRollEngine engine,
@@ -70,6 +72,8 @@ namespace KingmakerDiceRoller.CharacterCreation
             if (session == null) throw new ArgumentNullException(nameof(session));
             long sequence = nextSequence++;
             session.CommitRoll(candidate, sequence);
+            currentRuleId = candidate.Rule.Id;
+            currentExpression = candidate.Rule.Expression;
             status = reroll
                 ? "Reroll verified on the live preview."
                 : "Roll Mode is active on the verified live preview.";
@@ -83,6 +87,25 @@ namespace KingmakerDiceRoller.CharacterCreation
             session.CommitRecallOrAssignment(assignment);
             status = message ?? "Assignment verified on the live preview.";
             ClearError();
+        }
+
+        public void CommitHistorySelection(RollSession session, RollHistoryEntry entry)
+        {
+            if (entry == null) throw new ArgumentNullException(nameof(entry));
+            CommitAssignment(session, entry.Assignment, "History entry verified on the live preview.");
+            currentRuleId = entry.RuleId;
+            currentExpression = entry.Expression;
+        }
+
+        public void CommitSavedRecall(
+            RollSession session,
+            SavedRollArrayRecord record,
+            StatAssignment assignment)
+        {
+            if (record == null) throw new ArgumentNullException(nameof(record));
+            CommitAssignment(session, assignment, "Saved array verified on the live preview.");
+            currentRuleId = string.IsNullOrWhiteSpace(record.RuleId) ? "saved" : record.RuleId;
+            currentExpression = record.Expression ?? string.Empty;
         }
 
         public void SetPointBuyStatus()
@@ -158,16 +181,11 @@ namespace KingmakerDiceRoller.CharacterCreation
             {
                 throw new InvalidOperationException("A verified Roll Mode assignment is required before storing.");
             }
-            RollHistoryEntry entry = session.History.Selected;
-            bool currentHistoryEntry = entry != null &&
-                entry.Assignment.RolledArray.Equals(session.Assignment.RolledArray);
-            string ruleId = currentHistoryEntry ? entry.RuleId : "recalled";
-            string expression = currentHistoryEntry ? entry.Expression : string.Empty;
             string label = "Saved " + (saved.Count + 1);
             saved.Store(SavedRollArrayRecord.Create(
                 session.Assignment,
-                ruleId,
-                expression,
+                string.IsNullOrWhiteSpace(currentRuleId) ? "saved" : currentRuleId,
+                currentExpression,
                 utcNow(),
                 label));
             status = "Stored the current base array and assignment in UMM settings.";
@@ -192,12 +210,27 @@ namespace KingmakerDiceRoller.CharacterCreation
 
         public RollUiSnapshot Snapshot(RollSession session)
         {
-            StatAssignment assignment = session == null ? null : session.Assignment;
+            StatAssignment assignment = session == null || session.IsPointBuyMode
+                ? null
+                : session.Assignment;
             RollHistoryEntry history = session == null ? null : session.History.Selected;
             PointBuyEquivalent equivalent = assignment == null
                 ? null
                 : equivalentCalculator.Calculate(assignment.RolledArray);
             SavedRollArrayRecord selectedSaved = saved.Selected;
+            string savedLabel = string.Empty;
+            if (selectedSaved != null)
+            {
+                StatAssignment savedAssignment;
+                string ignored;
+                if (selectedSaved.TryCreateAssignment(out savedAssignment, out ignored))
+                {
+                    savedLabel = (string.IsNullOrWhiteSpace(selectedSaved.Label)
+                        ? "Saved array"
+                        : selectedSaved.Label) + " [" +
+                        string.Join(", ", savedAssignment.ToAssignedArray()) + "]";
+                }
+            }
             return new RollUiSnapshot(
                 session != null,
                 session == null ? RollSessionMode.PointBuy : session.Mode,
@@ -206,12 +239,17 @@ namespace KingmakerDiceRoller.CharacterCreation
                 assignment == null ? 0 : assignment.RolledArray.Total,
                 equivalent == null ? 0 : equivalent.Total,
                 equivalent != null && equivalent.UsesExtendedValues,
-                history == null ? string.Empty : history.Expression,
+                assignment == null
+                    ? string.Empty
+                    : (string.IsNullOrWhiteSpace(currentExpression) ? currentRuleId : currentExpression),
                 history == null ? 0 : session.History.SelectedIndex + 1,
                 session == null ? 0 : session.History.Count,
+                history == null
+                    ? string.Empty
+                    : "[" + string.Join(", ", history.Assignment.ToAssignedArray()) + "]",
                 selectedSaved == null ? 0 : saved.SelectedIndex + 1,
                 saved.Count,
-                selectedSaved == null ? string.Empty : selectedSaved.Label,
+                savedLabel,
                 inlineError,
                 status);
         }
