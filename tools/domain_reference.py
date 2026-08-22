@@ -123,13 +123,15 @@ class RolledArray:
     def __init__(self, values):
         values=tuple(values)
         if len(values)!=6: raise DiceError('six required')
-        if any(not 1<=x<=20 for x in values): raise DiceError('range')
+        if any(not 1<=x<=120 for x in values): raise DiceError('range')
         object.__setattr__(self,'values',values)
 
 @dataclass(frozen=True)
 class Assignment:
     rolled: RolledArray
     slots: tuple=(0,1,2,3,4,5)
+    def __post_init__(self):
+        if len(self.slots)!=6 or set(self.slots)!=set(range(6)): raise DiceError('permutation')
     def swap(self,a,b):
         slots=list(self.slots); slots[a],slots[b]=slots[b],slots[a]
         return Assignment(self.rolled,tuple(slots))
@@ -139,7 +141,7 @@ class Assignment:
 COSTS={7:-4,8:-2,9:-1,10:0,11:1,12:2,13:3,14:5,15:7,16:10,17:13,18:17}
 def score_cost(score):
     if score in COSTS: return COSTS[score]
-    if not 1<=score<=20: raise DiceError('range')
+    if not 1<=score<=120: raise DiceError('range')
     if score<7:
         cost=-4
         for value in range(6,score-1,-1): cost-=((7-value)//2)+2

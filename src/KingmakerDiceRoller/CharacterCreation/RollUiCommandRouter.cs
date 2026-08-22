@@ -14,6 +14,7 @@ namespace KingmakerDiceRoller.CharacterCreation
 
         public RollUiSnapshot Snapshot => target.UiSnapshot;
         public RollSession ActiveSession => target.ActiveSession;
+        public bool CanAttachNativePanel => target.CanAttachNativePanel;
 
         public bool Execute(
             RollUiCommand command,

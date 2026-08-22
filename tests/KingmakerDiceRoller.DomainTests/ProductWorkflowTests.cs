@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Xml.Serialization;
 using KingmakerDiceRoller.CharacterCreation;
 using KingmakerDiceRoller.Domain;
 
@@ -222,6 +224,33 @@ namespace KingmakerDiceRoller.DomainTests
             AssertEx.True(history.Selected.Assignment.Equals(original));
         }
 
+        internal static void BrowsingHistoryDoesNotChangeActiveEntry()
+        {
+            var history = new RollHistory();
+            StatAssignment first = Assignment(10);
+            StatAssignment second = Assignment(11);
+            history.Add(first, Rule(), 1, "one", Equivalent(10));
+            history.Add(second, Rule(), 2, "two", Equivalent(11));
+            history.Previous();
+            StatAssignment movedSecond = second.MoveDown(AbilityScore.Strength);
+            history.UpdateCurrentAssignment(movedSecond);
+
+            AssertEx.Equal(1L, history.Selected.Sequence);
+            AssertEx.True(history.Snapshot()[0].Assignment.Equals(first));
+            AssertEx.True(history.Snapshot()[1].Assignment.Equals(movedSecond));
+            AssertEx.Equal(2L, history.ActiveSequence);
+        }
+
+        internal static void SelectingHistoryMarksOnlyUsedEntryActive()
+        {
+            var history = new RollHistory();
+            history.Add(Assignment(10), Rule(), 1, "one", Equivalent(10));
+            history.Add(Assignment(11), Rule(), 2, "two", Equivalent(11));
+            history.Previous();
+            history.MarkSelectedActive();
+            AssertEx.Equal(1L, history.ActiveSequence);
+        }
+
         internal static void SavedVersionOneMigratesIdentity()
         {
             var record = new SavedRollArrayRecord
@@ -247,6 +276,39 @@ namespace KingmakerDiceRoller.DomainTests
             AssertEx.True(record.TryCreateAssignment(out restored, out error), error);
             AssertEx.True(moved.Equals(restored));
             AssertEx.Equal(2, record.SchemaVersion);
+        }
+
+        internal static void SavedVersionTwoRoundTripsXmlSerialization()
+        {
+            StatAssignment original = new StatAssignment(
+                new RolledStatArray(new[] { 15, 15, 14, 12, 10, 8 }))
+                .Swap(AbilityScore.Strength, AbilityScore.Charisma)
+                .MoveDown(AbilityScore.Dexterity);
+            SavedRollArrayRecord record = SavedRollArrayRecord.Create(
+                original,
+                "4d6-drop-lowest",
+                "4d[6]kh3",
+                "2026-08-22T00:00:00Z",
+                "Saved 1");
+            var serializer = new XmlSerializer(typeof(SavedRollArrayRecord));
+            string xml;
+            using (var writer = new StringWriter())
+            {
+                serializer.Serialize(writer, record);
+                xml = writer.ToString();
+            }
+            SavedRollArrayRecord restored;
+            using (var reader = new StringReader(xml))
+            {
+                restored = (SavedRollArrayRecord)serializer.Deserialize(reader);
+            }
+            StatAssignment restoredAssignment;
+            string error;
+            AssertEx.True(restored.TryCreateAssignment(out restoredAssignment, out error), error);
+            AssertEx.True(original.Equals(restoredAssignment));
+            AssertEx.Equal(record.RuleId, restored.RuleId);
+            AssertEx.Equal(record.Expression, restored.Expression);
+            AssertEx.Equal(record.Label, restored.Label);
         }
 
         internal static void SavedUnsupportedSchemaIsRejected()

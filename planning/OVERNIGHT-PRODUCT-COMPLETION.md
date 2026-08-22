@@ -67,9 +67,13 @@ never use direct screen-coordinate drawing as the primary interface.
    verification. The focused gate passes 181 compiled behavior cases and 25
    Python oracle cases with zero compiler warnings/errors. Visual layout remains
    a human runtime gate.
-4. **In progress - hardening/version/docs:** settings migration, compatibility,
-   diagnostics, user guide, 0.1.0-alpha.1 metadata.
-5. **Pending - final gates:** clean qualification, package, transactional
+4. **Complete - hardening/version/docs:** normalized settings migration,
+   schema-2 XML round trip, corrupt-slot isolation, active-versus-browsed history,
+   strict live-owner panel eligibility, compact native layout, compatibility
+   policy, diagnostics, user guide, and consistent `0.1.0-alpha.1` metadata.
+   The focused gate passes 185 compiled C# behavior cases and 30 Python oracle
+   cases with zero compiler warnings/errors.
+5. **In progress - final gates:** clean qualification, package, transactional
    install, Git synchronization, morning handoff.
 
 ## Commands and gates
@@ -101,6 +105,7 @@ other-mod fingerprints, and a clean-commit qualification rerun.
 
 ## Resume marker
 
-- Current pushed commit: `f1ce731eafddf1fab7c3217eaf0d88419753dd83`.
-- Next unfinished phase: finish product hardening, version metadata, complete
-  player documentation, and the aggregate qualification/install gates.
+- Current pushed commit: `b342c1f78b06246abbc46cd22e22676b12e389c4`.
+- Next unfinished phase: commit/push hardening, then run the clean aggregate
+  qualification, package validation, transactional installation, other-mod
+  fingerprint audit, and final handoff checkpoint.

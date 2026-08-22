@@ -8,10 +8,12 @@ namespace KingmakerDiceRoller.Domain
         public const int Capacity = 20;
         private readonly List<RollHistoryEntry> entries = new List<RollHistoryEntry>();
         private int selectedIndex = -1;
+        private long activeSequence;
 
         public int Count => entries.Count;
         public int SelectedIndex => selectedIndex;
         public RollHistoryEntry Selected => selectedIndex < 0 ? null : entries[selectedIndex];
+        public long ActiveSequence => activeSequence;
 
         public RollHistoryEntry Add(
             StatAssignment assignment,
@@ -31,6 +33,7 @@ namespace KingmakerDiceRoller.Domain
             entries.Add(entry);
             if (entries.Count > Capacity) entries.RemoveAt(0);
             selectedIndex = entries.Count - 1;
+            activeSequence = sequence;
             return entry;
         }
 
@@ -55,9 +58,24 @@ namespace KingmakerDiceRoller.Domain
 
         public void UpdateCurrentAssignment(StatAssignment assignment)
         {
-            if (selectedIndex < 0) return;
-            if (!entries[selectedIndex].Assignment.RolledArray.Equals(assignment.RolledArray)) return;
-            entries[selectedIndex] = entries[selectedIndex].WithAssignment(assignment);
+            if (activeSequence <= 0) return;
+            for (int index = 0; index < entries.Count; index++)
+            {
+                if (entries[index].Sequence != activeSequence) continue;
+                if (!entries[index].Assignment.RolledArray.Equals(assignment.RolledArray)) return;
+                entries[index] = entries[index].WithAssignment(assignment);
+                return;
+            }
+        }
+
+        public void MarkSelectedActive()
+        {
+            activeSequence = Selected == null ? 0 : Selected.Sequence;
+        }
+
+        public void ClearActive()
+        {
+            activeSequence = 0;
         }
 
         public RollHistoryEntry[] Snapshot()

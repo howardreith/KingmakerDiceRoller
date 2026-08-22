@@ -49,6 +49,7 @@ namespace KingmakerDiceRoller
             {
                 logger.Warning(workflow.Saved.Warnings[index]);
             }
+            workflow.Persist();
             coordinator = new CharacterCreationCoordinator(
                 new CharacterCreationContextPolicy(),
                 budgetTracker,
@@ -117,7 +118,8 @@ namespace KingmakerDiceRoller
                 patches.Install(resolved, coordinator, nativePanel);
                 enabled = true;
                 diagnostics.SetStatus("Enabled; waiting for an exact new-main-character LevelUpState.");
-                logger.Info("Kingmaker Dice Roller 0.0.1-alpha.1 enabled in fixed-array mode.");
+                logger.Info("Kingmaker Dice Roller " + ProductMetadata.Version +
+                    " enabled; explicit rolled-ability workflow is ready.");
                 return true;
             }
             catch (Exception exception)

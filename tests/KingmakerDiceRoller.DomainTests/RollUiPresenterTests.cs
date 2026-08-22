@@ -204,6 +204,7 @@ namespace KingmakerDiceRoller.DomainTests
             internal FakeTarget(RollUiSnapshot snapshot) { UiSnapshot = snapshot; }
             public RollUiSnapshot UiSnapshot { get; private set; }
             public RollSession ActiveSession => null;
+            public bool CanAttachNativePanel => UiSnapshot.SessionAvailable;
             internal int CommandCalls { get; private set; }
             internal AbilityScore LastAbility { get; private set; }
             internal bool LastMoveUp { get; private set; }

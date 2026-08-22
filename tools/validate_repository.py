@@ -15,6 +15,7 @@ REQUIRED = [
     'AGENTS.md','CHANGELOG.md','Directory.Build.props','GamePath.props.example','Info.json',
     'KingmakerDiceRoller.sln','LICENSE','PROJECT-STATE.md','README.md','THIRD-PARTY-NOTICES.md',
     'src/KingmakerDiceRoller/KingmakerDiceRoller.csproj',
+    'src/KingmakerDiceRoller/ProductMetadata.cs',
     'src/KingmakerDiceRoller/CharacterCreation/MainCharacterIdentityRelation.cs',
     'src/KingmakerDiceRoller/CharacterCreation/GenerationRollbackSnapshot.cs',
     'src/KingmakerDiceRoller/CharacterCreation/LivePreviewInspector.cs',
@@ -24,9 +25,14 @@ REQUIRED = [
     'src/KingmakerDiceRoller/CharacterCreation/AbilityPhasePresentationService.cs',
     'src/KingmakerDiceRoller/CharacterCreation/PointBuyOrigin.cs',
     'src/KingmakerDiceRoller/CharacterCreation/CharacterRollWorkflow.cs',
+    'src/KingmakerDiceRoller/CharacterCreation/IRollUiCommandTarget.cs',
+    'src/KingmakerDiceRoller/CharacterCreation/NativePanelAttachmentLifecycle.cs',
+    'src/KingmakerDiceRoller/CharacterCreation/RollPanelModel.cs',
+    'src/KingmakerDiceRoller/CharacterCreation/RollUiCommandRouter.cs',
     'src/KingmakerDiceRoller/CharacterCreation/RollUiSnapshot.cs',
     'src/KingmakerDiceRoller/CharacterCreation/NativeAbilityControlService.cs',
     'src/KingmakerDiceRoller/CharacterCreation/RollSessionMode.cs',
+    'src/KingmakerDiceRoller/UI/NativeRollPanelHost.cs',
     'tests/KingmakerDiceRoller.DomainTests/KingmakerDiceRoller.DomainTests.csproj',
     'tests/KingmakerDiceRoller.DomainTests/CharacterCreationContextPolicyTests.cs',
     'tests/KingmakerDiceRoller.DomainTests/PreviewSessionContinuityTests.cs',
@@ -36,7 +42,7 @@ REQUIRED = [
     'scripts/Qualify.ps1','scripts/Collect-RuntimeEvidence.ps1',
     'docs/ARCHITECTURE.md','docs/INTEGRATION-SEAMS.md','docs/COMPATIBILITY.md',
     'docs/SMOKE-TEST.md','docs/RUNTIME-DIAGNOSTICS.md','docs/BUILD-AND-RELEASE.md',
-    'docs/SOURCE-QUALIFICATION.md','docs/UI-DESIGN.md','docs/LICENSING.md'
+    'docs/SOURCE-QUALIFICATION.md','docs/UI-DESIGN.md','docs/USER-GUIDE.md','docs/LICENSING.md'
 ]
 FORBIDDEN_BINARY_SUFFIXES = {'.dll','.exe','.pdb','.mdb','.zip','.zks','.sav','.png','.jpg','.jpeg','.dds','.asset','.bundle'}
 
@@ -144,7 +150,15 @@ def main():
     require(info['AssemblyName']=='KingmakerDiceRoller.dll','unexpected assembly name')
     require(info['EntryMethod']=='KingmakerDiceRoller.Main.Load','unexpected entry method')
     require(info['GameVersion']=='2.1.7','unexpected target game version')
-    ok('Info.json identity')
+    require(info['Version']=='0.1.0-alpha.1','unexpected alpha version')
+    product_metadata=(ROOT/'src/KingmakerDiceRoller/ProductMetadata.cs').read_text(encoding='utf-8')
+    assembly_info=(ROOT/'src/KingmakerDiceRoller/Properties/AssemblyInfo.cs').read_text(encoding='utf-8')
+    require('0.1.0-alpha.1' in product_metadata,'runtime product version is inconsistent')
+    require('AssemblyVersion("0.1.0.0")' in assembly_info and
+            'AssemblyFileVersion("0.1.0.0")' in assembly_info and
+            'AssemblyInformationalVersion("0.1.0-alpha.1")' in assembly_info,
+            'assembly version metadata is inconsistent')
+    ok('Info.json and assembly product identity')
 
     xml_files=list(ROOT.rglob('*.csproj'))+list(ROOT.rglob('*.props'))
     for path in xml_files: ET.parse(path)
@@ -208,6 +222,8 @@ def main():
 
     diagnostic=(ROOT/'src/KingmakerDiceRoller/Domain/DiagnosticArrays.cs').read_text(encoding='utf-8')
     require(re.search(r'16\s*,\s*15\s*,\s*14\s*,\s*12\s*,\s*10\s*,\s*8',diagnostic),'fixed diagnostic array missing')
+    require(src.count('FixedPhaseTwoArray(')==1,
+            'the historical diagnostic array must not remain on a production workflow path')
     restore=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/PointBuyRestoreService.cs').read_text(encoding='utf-8')
     point_buy_origin=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/PointBuyOrigin.cs').read_text(encoding='utf-8')
     rollback=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/GenerationRollbackSnapshot.cs').read_text(encoding='utf-8')
@@ -271,7 +287,7 @@ def main():
     require('Opened a PointBuy-first session' in manager and 'no roll was generated' in manager,'new sessions must open in PointBuy without automatic random generation')
     require('rollbackFactory(replacementGeneration)' in manager,'generation rollback state must follow preview generations')
     require('StableOwner' in decision and 'ControllerPreviewMatches' in decision,'accepted context must retain stable and transient controller identities')
-    require('TryStageCurrentGeneration' in application and '.Refresh(' not in application,'fixed-array staging must not recursively request preview refresh')
+    require('TryStageCurrentGeneration' in application and '.Refresh(' not in application,'rolled-assignment staging must not recursively request preview refresh')
     require('TryMarkLiveVerified' in application and 'InspectLive' in application,'application must verify the live controller generation')
     require('DisablePointBuyAllocator' in application and 'ReadDistributionPoints' in application,'roll staging must disable and verify the point-buy allocator')
     for token in ['applicationGeneration','refreshInProgress','pendingReplacementObserved','sameStableOwner','reboundPreview','currentControllerStateMatches','currentControllerPreviewMatches','liveDistributionMatches','liveUnitValuesMatch','liveAllocatorMatches']:
@@ -282,6 +298,9 @@ def main():
     require('TryMarkLiveVerified' in coordinator and 'MaximumApplicationAttemptsPerGeneration' in coordinator,'bounded post-constructor live verification missing')
     require('if (!session.IsRollMode) return;' in coordinator and 'no array was generated or staged' in coordinator,'PointBuy mode must suppress roll staging and completion behavior')
     require('TryRoll(out string error)' in coordinator and 'TryReroll(out string error)' in coordinator and 'TryApplyUserAssignment' in coordinator,'explicit transactional roll command surface missing')
+    require('TryCapturePointBuyOrigin(session, out origin' in coordinator and
+            coordinator.find('TryCapturePointBuyOrigin(session, out origin') < coordinator.find('workflow.TryGenerate'),
+            'Roll must capture the exact point-buy origin before consuming random values')
     require('TryPrepareDisable' in coordinator and 'TryPrepareDisable' in composition,'disable must restore point buy before removing recovery hooks')
     require('pointBuyPresentation.TrySynchronize' in coordinator and 'Pristine point-buy model is verified and durable' in coordinator,'coordinator must distinguish safe semantic restoration from presentation failure')
     require('error = null;' in coordinator[coordinator.find('bool presentationSynchronized'):coordinator.find('public bool TryPrepareDisable')],'presentation failure must preserve successful semantic point-buy restoration')
@@ -301,12 +320,26 @@ def main():
         'GetProperty("interactable"', 'GetField("m_MainLabel"', 'GetField("m_Frame"'
     ]:
         require(token in contracts, f'exact native ability presentation contract missing: {token}')
+    panel=(ROOT/'src/KingmakerDiceRoller/UI/NativeRollPanelHost.cs').read_text(encoding='utf-8')
+    presenter=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/RollPanelModel.cs').read_text(encoding='utf-8')
+    router=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/RollUiCommandRouter.cs').read_text(encoding='utf-8')
+    settings=(ROOT/'src/KingmakerDiceRoller/Settings.cs').read_text(encoding='utf-8')
+    for token in ['OwnedPanelName','EnsureAttached','DetachCore','CreateAssignmentRows','CreateHistoryRows',
+                  'CreateSavedRows','TrySuppressForRoll']:
+        require(token in panel, f'native product panel surface missing: {token}')
+    require('DiceRollEngine' not in panel and 'WriteDistributionValues' not in panel,
+            'native view must not generate rolls or write Kingmaker stats')
+    require('public RollPanelModel Present(RollUiSnapshot snapshot)' in presenter and
+            'IRollUiCommandTarget' in router,
+            'data-only presenter and command-router separation missing')
+    for token in ['SelectedPreset','SelectedLowScorePolicy','MinimumScore','CustomExpression','SavedArrays']:
+        require(token in settings, f'persistent product setting missing: {token}')
     require('modEntry.OnUpdate = OnUpdate' in main_source,'UMM update lifecycle hook missing')
-    ok('fixed-array, restoration, context, and stale-session invariants')
+    ok('rolled workflow, native UI, restoration, context, and stale-session invariants')
 
     tests=(ROOT/'tests/KingmakerDiceRoller.DomainTests/Program.cs').read_text(encoding='utf-8')
     test_count=tests.count('new TestCase(')
-    require(test_count>=123,f'expected at least 123 C# behavior cases, found {test_count}')
+    require(test_count>=181,f'expected at least 181 C# behavior cases, found {test_count}')
     context_tests=(ROOT/'tests/KingmakerDiceRoller.DomainTests/CharacterCreationContextPolicyTests.cs').read_text(encoding='utf-8')
     for token in [
         'NoMainCharacterValuePermitsCandidate','DirectSameMainCharacterPermitsCandidate',
@@ -357,6 +390,20 @@ def main():
         'ViewBindingMismatchCannotClaimSynchronization'
     ]:
         require(token in continuity_tests, f'preview continuity behavior missing: {token}')
+    product_tests=(ROOT/'tests/KingmakerDiceRoller.DomainTests/ProductWorkflowTests.cs').read_text(encoding='utf-8')
+    presenter_tests=(ROOT/'tests/KingmakerDiceRoller.DomainTests/RollUiPresenterTests.cs').read_text(encoding='utf-8')
+    lifecycle_tests=(ROOT/'tests/KingmakerDiceRoller.DomainTests/NativePanelLifecycleTests.cs').read_text(encoding='utf-8')
+    for token in ['EveryPresetBuildsExpectedExpression','InvalidCustomExpressionFailsBeforeRandomConsumption',
+                  'SourcePositionRoundTripPreservesDuplicates','HistoryEvictsOldestAtTwenty',
+                  'SavedVersionOneMigratesIdentity','SavedCatalogEvictsAtTen',
+                  'AbortedRerollRestoresPriorVerifiedRollState']:
+        require(token in product_tests, f'product workflow behavior missing: {token}')
+    for token in ['PointBuySnapshotOffersRollWithoutAssignment','RollSnapshotBuildsSixAssignmentRows',
+                  'PresenterHasNoCommandSideEffects','RouterRoutesHistoryAndSavedCommands']:
+        require(token in presenter_tests, f'native presenter behavior missing: {token}')
+    for token in ['EligibleAllocatorAttachesExactlyOnce','ReplacementAllocatorRebindsWithoutDuplicateOwnership',
+                  'PhaseExitDetachesOnce','DisableResetPermitsFreshAttachment']:
+        require(token in lifecycle_tests, f'native panel lifecycle behavior missing: {token}')
     python_tests=(ROOT/'tests/python/test_domain_reference.py').read_text(encoding='utf-8')
     python_count=len(re.findall(r'^\s+def test_',python_tests,re.MULTILINE))
     require(python_count>=25,f'expected at least 25 Python oracle cases, found {python_count}')

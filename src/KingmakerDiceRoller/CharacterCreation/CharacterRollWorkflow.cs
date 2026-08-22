@@ -93,6 +93,7 @@ namespace KingmakerDiceRoller.CharacterCreation
         {
             if (entry == null) throw new ArgumentNullException(nameof(entry));
             CommitAssignment(session, entry.Assignment, "History entry verified on the live preview.");
+            session.History.MarkSelectedActive();
             currentRuleId = entry.RuleId;
             currentExpression = entry.Expression;
         }
@@ -103,7 +104,9 @@ namespace KingmakerDiceRoller.CharacterCreation
             StatAssignment assignment)
         {
             if (record == null) throw new ArgumentNullException(nameof(record));
-            CommitAssignment(session, assignment, "Saved array verified on the live preview.");
+            session.CommitRecallOrAssignment(assignment, false);
+            status = "Saved array verified on the live preview.";
+            ClearError();
             currentRuleId = string.IsNullOrWhiteSpace(record.RuleId) ? "saved" : record.RuleId;
             currentExpression = record.Expression ?? string.Empty;
         }
@@ -112,6 +115,14 @@ namespace KingmakerDiceRoller.CharacterCreation
         {
             status = "Point Buy is active; the exact pre-roll allocation was restored.";
             ClearError();
+        }
+
+        public void SetNewSessionStatus()
+        {
+            status = "Point Buy is active; press Roll or Recall to enter Roll Mode.";
+            ClearError();
+            currentRuleId = string.Empty;
+            currentExpression = string.Empty;
         }
 
         public void SetFailure(string error)

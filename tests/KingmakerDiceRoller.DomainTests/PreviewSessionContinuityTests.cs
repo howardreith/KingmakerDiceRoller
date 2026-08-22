@@ -1395,6 +1395,23 @@ namespace KingmakerDiceRoller.DomainTests
             AssertEx.True(state.StatsDistribution.Available);
         }
 
+        internal static void NativePanelEligibilityRequiresCurrentLiveOwnerBinding()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            CharacterCreationCoordinator coordinator = OpenProductCoordinator(
+                environment,
+                new SequenceRandomSource(Enumerable.Repeat(6, 24).ToArray()),
+                out FakeState state);
+            AssertEx.True(state != null);
+            AssertEx.True(coordinator.CanAttachNativePanel);
+
+            environment.Controller.State = new FakeState(
+                FakeUnitDescriptor.Create(10, false),
+                new FakeDistribution(10),
+                true);
+            AssertEx.True(!coordinator.CanAttachNativePanel);
+        }
+
         internal static void NativePointBuyControlsAreSuppressedInRollMode()
         {
             TestEnvironment environment = TestEnvironment.Create();

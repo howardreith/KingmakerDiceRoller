@@ -27,14 +27,23 @@ class DomainReferenceTests(unittest.TestCase):
         with self.assertRaises(DiceError): RolledArray([1,2])
     def test_range(self):
         with self.assertRaises(DiceError): RolledArray([0,2,3,4,5,6])
+    def test_explicit_upper_score_boundary(self): self.assertEqual((120,)*6, RolledArray([120]*6).values)
+    def test_above_score_boundary_rejected(self):
+        with self.assertRaises(DiceError): RolledArray([121]*6)
     def test_duplicate_swap_by_position(self):
         result=Assignment(RolledArray([16,12,12,10,8,8])).swap(0,5)
         self.assertEqual((8,12,12,10,8,16), result.values)
         self.assertEqual((16,12,12,10,8,8), result.swap(0,5).values)
+    def test_invalid_assignment_permutation_rejected(self):
+        with self.assertRaises(DiceError): Assignment(RolledArray([10]*6),(0,0,2,3,4,5))
     def test_standard_point_buy(self): self.assertEqual([-4,-2,-1,0,1,2,3,5,7,10,13,17],[score_cost(x) for x in range(7,19)])
     def test_extended_low_point_buy(self): self.assertEqual([-16,-12,-9,-6],[score_cost(x) for x in [3,4,5,6]])
     def test_extended_high_point_buy(self): self.assertEqual([21,26],[score_cost(x) for x in [19,20]])
     def test_fixed_array_point_buy(self): self.assertEqual(22, point_buy([16,15,14,12,10,8]))
+    def test_assignment_does_not_change_equivalent(self):
+        assignment=Assignment(RolledArray([16,15,14,12,10,8])).swap(0,5)
+        self.assertEqual(point_buy(assignment.rolled.values), point_buy(assignment.values))
+    def test_extended_equivalent_reaches_product_boundary(self): self.assertGreater(score_cost(120), score_cost(20))
     def test_liveness_ignores_failed_observations(self):
         tracker = SessionLiveness()
         for _ in range(20): self.assertFalse(tracker.observe(False, False, 1.0))

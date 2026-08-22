@@ -21,7 +21,8 @@ namespace KingmakerDiceRoller
                 modEntry.OnUpdate = OnUpdate;
                 modEntry.OnSaveGUI = OnSaveGui;
                 modEntry.OnUnload = OnUnload;
-                modEntry.Logger.Log("Kingmaker Dice Roller 0.0.1-alpha.1 loaded; patches are installed only when enabled.");
+                modEntry.Logger.Log("Kingmaker Dice Roller " + ProductMetadata.Version +
+                    " loaded; patches are installed only when enabled.");
                 return true;
             }
             catch (Exception exception)

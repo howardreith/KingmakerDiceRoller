@@ -1,70 +1,90 @@
-# Build and release
+# Build, package, and install
 
-## Requirements
+## Toolchain
 
-- Windows PowerShell 5.1 or newer.
-- Visual Studio Build Tools/MSBuild with .NET Framework 4.7.2 targeting pack.
-- Python 3.
-- Pathfinder: Kingmaker 2.1.7b.
-- Unity Mod Manager 0.32.x with Harmony12.
+- Windows PowerShell 5.1 or newer;
+- Python 3;
+- Visual Studio Build Tools/MSBuild with .NET Framework 4.7.2 references;
+- local Pathfinder: Kingmaker 2.1.7b managed assemblies;
+- local UMM 0.32.x and co-installed Harmony12.
 
-No NuGet package or game binary is vendored.
+No NuGet dependency or game binary is vendored.
 
-## Configure
+## Local paths
 
-```powershell
-Copy-Item GamePath.props.example GamePath.props
-notepad GamePath.props
-```
+Create ignored `GamePath.props` from the example and point it to the actual
+Kingmaker Managed and UnityModManager directories. Never commit this file or
+embed its paths in source, documentation generated for packaging, or
+provenance.
 
-`GamePath.props` is ignored. The build validates `Assembly-CSharp.dll`,
-`UnityModManager.dll`, and `0Harmony12.dll` before resolving references.
-
-## Source-only qualification
+## Focused build
 
 ```powershell
-.\scripts\Qualify.ps1
+powershell -NoLogo -NoProfile -ExecutionPolicy Bypass `
+  -File .\scripts\Build-Local.ps1 -Configuration Release
 ```
 
-This runs the repository validator and Python behavior oracle. It does not imply
-that the C# source compiled.
+This runs repository validation, Python oracle cases, compiled C# behavior
+cases, exact contract verification, and the production build.
 
-## Build qualification
+## Full qualification and package
 
 ```powershell
-.\scripts\Qualify.ps1 -Build
+git diff --check
+
+powershell -NoLogo -NoProfile -ExecutionPolicy Bypass `
+  -File .\scripts\Qualify.ps1 -Build -Package
 ```
 
-This validates source, runs the Python oracle, compiles/runs the C# domain test
-runner, verifies exact local Kingmaker contracts, and rebuilds the production
-DLL. A passing run writes provenance and hashes.
+For final provenance, run from the clean final commit. Qualification reports
+branch, commit, dirty state, test counts, exact Assembly-CSharp MVID/SHA-256,
+compiler warnings/errors, DLL SHA-256, package SHA-256, and package path.
 
-## Package
+Version `0.1.0-alpha.1` packages as:
+
+```text
+artifacts/packages/KingmakerDiceRoller-0.1.0-alpha.1.zip
+```
+
+The archive has one top-level `KingmakerDiceRoller` directory and exactly six
+allowlisted files:
+
+```text
+KingmakerDiceRoller/Info.json
+KingmakerDiceRoller/KingmakerDiceRoller.dll
+KingmakerDiceRoller/LICENSE
+KingmakerDiceRoller/README.md
+KingmakerDiceRoller/THIRD-PARTY-NOTICES.md
+KingmakerDiceRoller/licenses/UPSTREAM-WOTR-DICE-ROLLER-MIT.txt
+```
+
+Package validation rejects duplicates, unsafe paths, unexpected files, wrong
+identity/version metadata, or mismatched hashes.
+
+## Transactional install
+
+Always inspect preflight first:
 
 ```powershell
-.\scripts\Qualify.ps1 -Build -Package
+powershell -NoLogo -NoProfile -ExecutionPolicy Bypass `
+  -File .\scripts\Install.ps1 -WhatIf
 ```
 
-The deterministic ZIP contains exactly one top-level `KingmakerDiceRoller`
-folder with the DLL, UMM metadata, README, license, notices, and upstream MIT
-text. It never contains game assemblies or local configuration.
-
-## Install and uninstall
+It must name only `<Kingmaker>\Mods\KingmakerDiceRoller`. Then install:
 
 ```powershell
-.\scripts\Install.ps1 -WhatIf
-.\scripts\Install.ps1
-.\scripts\Uninstall.ps1 -WhatIf
+powershell -NoLogo -NoProfile -ExecutionPolicy Bypass `
+  -File .\scripts\Install.ps1
 ```
 
-Installation validates an exact, duplicate-free six-file allowlist, stages
-the replacement beside `Mods\KingmakerDiceRoller`, verifies the DLL hash, moves
-the old directory to a timestamped backup, and rolls it back if commit or
-post-commit verification fails. It never touches another mod.
-Uninstallation moves only that directory to a timestamped backup.
+The installer stages and validates the package, backs up only a prior
+KingmakerDiceRoller directory, moves the staged directory into place, validates
+the installed allowlist and DLL hash, and rolls back if a transactional step
+fails. It must not enable, disable, reinstall, or alter another mod.
 
-## Release gate
+## Publication policy
 
-Do not tag or publish a runtime release until `docs/SMOKE-TEST.md` passes and the
-project state is updated with concrete evidence. Keep source-, build-, runtime-,
-and compatibility-qualified labels separate.
+Commit coherent source checkpoints and push normally to
+`pro/kingmaker-dice-roller-mvp`. Do not force-push, rewrite published history,
+merge to main, create a PR, tag, or publish a public release during alpha
+qualification. Build/package/install evidence is not human runtime evidence.

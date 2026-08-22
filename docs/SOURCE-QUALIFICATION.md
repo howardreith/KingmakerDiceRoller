@@ -1,58 +1,48 @@
 # Source qualification
 
-## What the validator proves
+## Validator scope
 
 `tools/validate_repository.py` checks:
 
-- required repository, script, and documentation inventory;
-- UMM identity and target metadata;
-- JSON/XML/Python parseability and PowerShell lexical/delimiter balance;
-- absence of binaries, saves, archives, and extracted assets;
-- balanced C# tokens after stripping comments and literals;
-- rejection of selected post-C#-7.3 syntax;
-- pure-domain dependency separation;
-- exactly three narrow Harmony patch installations;
-- fixed-array, newest-generation point-budget restoration, context-guard,
-  stable-owner rebinding, bounded refresh, live-preview validation, and
-  stale-session lifecycle invariants;
-- exact package allowlist and transactional-install rollback guards;
-- minimum C# and Python behavior-test inventories;
-- attribution/license preservation;
-- explicit qualification disclosure.
+- required source, test, script, and documentation inventory;
+- exact `0.1.0-alpha.1` UMM/runtime/assembly version metadata;
+- JSON, XML, Python, PowerShell, and C# lexical/parse invariants;
+- C# 7.3 compatibility and pure-domain dependency separation;
+- absence of binaries, archives, saves, logs, extracted assets, and game files;
+- exactly four narrow delegated Harmony postfix surfaces;
+- explicit PointBuy-first workflow and no production use of the historical
+  diagnostic array;
+- transition-time point-buy origin versus generation rollback separation;
+- transactional rolled-assignment staging and current-live-preview validation;
+- exact native panel contracts, presenter/command separation, and bounded
+  attach/rebind/detach lifecycle;
+- stable-owner context/liveness guards and all exclusion boundaries;
+- saved schema, history, settings, package allowlist, and transactional install
+  guards;
+- minimum executable C# and Python behavior inventories;
+- attribution and honest qualification disclosure.
 
-## Executed oracle
+Source-token checks supplement executable tests; they do not replace them.
 
-The Python oracle mirrors the bounded expression grammar, immutable arrays,
-position-based swaps, point-buy cost policy, and session-liveness grace rules. It exists so a Linux container
-without .NET can execute the behavioral specification.
+## Executable oracles
 
-It is not compiled production code and cannot establish C# build qualification.
-The independent C# runner must compile and pass on the Windows build host.
+The Python oracle independently exercises the bounded dice grammar, 1-120
+score boundary, immutable arrays, position assignments, standard/extended
+point-buy costs, and liveness policy.
 
-## C# runner
+The compiled C# runner links production domain/workflow/reflection services and
+uses exact-shape fixtures. It covers explicit command/RNG semantics, presets,
+policies, parser failures, transactional workflow modes, point-buy origins,
+preview generations, assignment, history, saved-record XML/migration, native
+presenter routing, panel lifecycle, control suppression/restoration, current
+controller verification, disable recovery, and context exclusions.
 
-`tests/KingmakerDiceRoller.DomainTests` links the exact production domain source
-plus the reflection-only character-context/session services and executes without
-a mocking framework or game assembly. It covers parser
-bounds, rerolls, keep behavior, nested expressions, all presets, low-score
-policies, no-clamp behavior, six-score validation, immutability, duplicate-safe
-assignment, point-buy equivalents, saved-array validation, lifecycle rules,
-confirmed/unconfirmed stale-session release behavior, exact fake reflection
-contracts, main-character identity relations, exclusion guards, and session
-open/rebind ownership. Fake exact contracts additionally execute A-to-B-to-C
-preview replacement, one-time assignment creation, bounded refresh reentrancy,
-detached-object rejection, live-controller verification, stable-owner liveness,
-current-distribution completion, and newest-generation point-buy restoration.
-
-## Fresh handoff result
-
-The source-qualified handoff passed with 61 production/test C# files, 86 C#
-behavior cases discovered, and all 25 executable Python oracle cases
-passing. These counts describe source qualification only.
+The exact-contract script loads Howie's installed 2.1.7b assemblies and proves
+every game/UI member used by production, including signatures, declaring
+types, field types, writable state, and MVID/SHA-256.
 
 ## Limits
 
-Lexical validation cannot replace Roslyn/MSBuild. Reflection contract source
-cannot prove that Howie's exact game build matches. Harmony behavior, preview
-refresh, mod ordering, UI behavior, completion, save/reload, and compatibility
-remain live-game concerns.
+Source and exact-build qualification cannot prove real Unity layout, click
+routing, display scaling, Harmony/mod-order behavior, save/reload, or optional
+mod interoperability. Those remain the human gates in `docs/SMOKE-TEST.md`.

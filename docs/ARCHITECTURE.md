@@ -1,100 +1,127 @@
 # Architecture
 
-## Purpose
+## Product boundary
 
-Kingmaker Dice Roller is a standalone Unity Mod Manager assembly. It changes
-only the ability-allocation mode of one owned new-main-character creation
-session. It creates no blueprint, fact, unit part, component, or custom save
-payload.
+Kingmaker Dice Roller is one independent Unity Mod Manager assembly targeting
+.NET Framework 4.7.2 and C# 7.3. It does not depend on Gunslinger, Tabletop
+Expansion, Bag of Tricks, or Call of the Wild. It creates no blueprint, fact,
+buff, component, unit part, or save-owned record.
 
 ## Layers
 
 ### Pure domain
 
-`Domain/` contains the bounded expression parser, deterministic random-source
-abstraction, presets, immutable six-score arrays, position-based assignment,
-explicit low-score policies, saved-array validation, point-buy-equivalent
-reporting, a lifecycle state machine, and the deterministic session-liveness
-grace policy. It has no Kingmaker, Unity, Harmony,
-or UMM dependency.
+`Domain` contains the bounded expression parser, deterministic roll engine,
+presets, low-score policies, immutable six-score arrays, source-position
+assignment, point-buy equivalent, history, and saved-record validation. It has
+no Kingmaker, Unity, Harmony, or UMM references.
 
-### Reflection contracts
+### Character workflow
 
-`Integration/KingmakerContractResolver.cs` resolves exact 2.1.7b seams before a
-patch is installed. The required constructor, allocator methods, six-ability
-order, stat write path, preview-refresh path, and active Skills ability-page
-refresh/binding path must all resolve. Any missing or ambiguous contract
-disables the mod rather than applying a partial patch.
+`CharacterRollWorkflow` owns player-facing configuration, current rule
+metadata, error/status text, history, saved catalog, and immutable UI snapshots.
+It computes proposed state but never reflects into Kingmaker or creates Unity
+objects.
 
-### Character-creation coordinator
+`CharacterCreationCoordinator` is the command transaction boundary. A command
+captures current live state, computes a candidate, stages it, invokes the exact
+native refresh, verifies the current controller model and controls, and commits
+the workflow only after verification. Failure restores the generation rollback
+snapshot and leaves the prior workflow state intact.
 
-The coordinator owns all stateful behavior. A `RollSession` binds immutable
-stable ownership (one `LevelUpController` instance and its source
-`UnitDescriptor`) separately from a replaceable preview generation (the current
-`LevelUpState`, preview descriptor, `StatsDistribution`, and generation rollback
-snapshot). Same-owner preview clones rebind the same immutable assignment; a
-different controller/source owner is rejected. The legitimate point-buy origin
-is captured once, before the first rolled write, and is never replaced by a
-later preview generation.
+### Session state
 
-The constructor postfix stages the array without requesting a second preview
-refresh. On a later UMM update, after Kingmaker has assigned the replacement
-state and replayed its actions, the coordinator verifies the actual controller
-state, preview, distribution values, and preview base values. A generation may
-receive only its constructor-stage write and one bounded live restage. UMM
-updates release ownership only after the stable controller/source relation has
-left the domain-tested grace period; exact state replacement is not an exit.
+A `RollSession` separates stable build ownership from transient preview state:
 
-### Harmony boundary
+```text
+Stable owner
+  exact LevelUpController instance
+  exact controller source UnitDescriptor
 
-There are three postfix entrypoints only:
+Current generation
+  LevelUpState
+  preview UnitDescriptor
+  StatsDistribution
+  GenerationRollbackSnapshot
+```
 
-1. `LevelUpState(UnitDescriptor, CharBuildMode)` construction.
-2. `StatsDistribution.Start(int)`.
-3. `StatsDistribution.IsComplete()`.
+The mode state machine is:
 
-The bridge catches exceptions and delegates immediately. The project does not
-patch increment/decrement/cost controls, race selection, class selection,
-level-up commit, respec, or save serialization.
+```text
+PointBuy -> EnteringRollMode -> Roll -> RestoringPointBuy -> PointBuy
+```
 
-### Point-buy restoration
+New sessions start in PointBuy. No roll is generated during construction or
+rebind. A same-owner preview clone replaces current-generation references but
+never generates another array or replaces the point-buy origin.
 
-`PristinePointBuyState` captures the first generation's actual `Start(int)`
-budget and provenance, legitimate distribution/unit values, and allocator
-fields before roll mode writes anything. It is immutable for the stable build
-owner. `GenerationRollbackSnapshot` captures the current generation immediately
-before staging and may be replaced on each same-owner rebind; it repairs a
-failed transactional write but can never become the user-facing point-buy
-origin.
+`PointBuyOrigin` is captured at the explicit PointBuy-to-Roll transition. It
+contains the legitimate allocation, actual observed budget and provenance,
+remaining/total points, and allocator availability. It is distinct from the
+per-generation rollback snapshot used only to recover a failed write.
 
-Roll mode explicitly makes the allocator unavailable and owns completion.
-Returning to point buy enters `RestoringPointBuy` and performs one guarded
-`UpdatePreview()`. A replacement constructed inside that call rebinds without
-fixed-array application. Normal `Start(pristineBudget)` then runs against the
-newest distribution so other mods' patches execute, after which the pristine
-allocation and allocator fields are restored and verified against the live
-controller state/preview. Success enters durable `PointBuy` mode: later
-same-owner rebuilds do not reapply the roll and the completion postfix leaves
-ordinary allocator behavior alone. A rolled-array-plus-full-budget hybrid is an
-explicit verification failure. A failed restore returns the isolated roll to
-the newest live generation and keeps recovery hooks installed, or refuses to
-disable if that rollback cannot be proven.
+### Kingmaker integration
 
-Semantic restoration and native presentation synchronization are deliberately
-separate. After the live model is verified and durable PointBuy mode is active,
-`AbilityPhasePresentationService` invokes exactly one
-`CharBAbilityScoresAllocator.FillData()` for that session generation. Exact
-2.1.7b IL shows that this method rereads the controller's current state,
-distribution, source/preview units, racial modifiers, allocator points, costs,
-and button availability. The service then verifies the allocator's native
-source and preview bindings against the live session. It never calls
-`UpdatePreview()`, cannot stage the fixed assignment, and refuses nested or
-repeat refreshes for the same generation. A presentation failure leaves the
-semantically safe PointBuy model in place and is reported independently.
+`KingmakerContractResolver` resolves and caches exact 2.1.7b types, members,
+signatures, instance/static status, and writable properties. Unknown contracts
+fail enablement closed before Roll Mode can be offered.
 
-## Phase boundary
+`CharacterCreationContextPolicy` permits only a controller-owned first-level
+custom main-character preview. It normalizes wrappers through bounded descriptor
+resolution and distinguishes an absent/same preview main character from a
+different established campaign main character.
 
-The current live candidate applies only the diagnostic array
-`16, 15, 14, 12, 10, 8`. Native character-generation controls, random rolling,
-assignment UI, history, persistence, and polished visuals are deliberately
-behind the immediate point-buy presentation runtime gate.
+`StatApplicationService`, `PointBuyRestoreService`, and
+`AbilityPhasePresentationService` separately own model staging, semantic
+restoration, and native page synchronization. Success is never inferred from a
+detached object.
+
+### Native UI
+
+`NativeRollPanelHost` attaches code-owned Unity objects to the current exact
+ability allocator. `RollPanelPresenter` renders a data-only snapshot and
+`RollUiCommandRouter` forwards player commands. Neither view class rolls dice or
+writes stats.
+
+The panel is driven by the narrow `CharBAbilityScoresAllocator.FillData()`
+postfix plus a bounded UMM-update lifecycle observer. Repeated FillData calls
+refresh one panel; allocator replacement rebinds it; invalid context detaches
+it. Only the exact root created by this host is destroyed.
+
+In Roll Mode, `NativeAbilityControlService` records and suppresses the exact 12
+`CharBScoresEntry` Up/Down `interactable` states. Point-buy FillData restores
+native authoritative state; disable/phase cleanup restores any still-owned
+states.
+
+### Harmony
+
+Four narrow postfixes delegate immediately:
+
+- `LevelUpState` constructor;
+- `StatsDistribution.Start(int)`;
+- `StatsDistribution.IsComplete()`;
+- `CharBAbilityScoresAllocator.FillData()`.
+
+No patch contains business logic. Add/remove/cost methods, global progression,
+and save serialization are not patched.
+
+## Persistence
+
+Only global product defaults and at most ten saved arrays are serialized by
+UMM settings. Active owner, mode, history, point-buy origin, and preview objects
+are process/session state and never enter a game save.
+
+Saved schema 1 (values/rule/expression/time) migrates to identity assignment.
+Schema 2 stores the source-position permutation and optional label. Unsupported
+or malformed entries are isolated and skipped.
+
+## Safety invariants
+
+- Roll mode and spendable point buy cannot coexist.
+- A valid recovery path must exist before Roll Mode is entered.
+- Race modifiers are not copied into raw arrays or point-buy origins.
+- Completion override applies only to the current verified Roll Mode
+  distribution.
+- Preview/UI rebuilds do not consume random values.
+- Disabling during Roll Mode restores exact point buy before unpatching or is
+  refused with hooks retained.

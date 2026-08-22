@@ -1,123 +1,125 @@
-# Kingmaker integration seams
+# Kingmaker 2.1.7b integration seams
 
-## Required exact contracts
+All production reflection contracts are resolved against the locally installed
+`Assembly-CSharp.dll` before patches are installed.
 
-The runtime resolver and offline PowerShell probe both require:
+Expected assembly evidence:
 
 ```text
-Kingmaker.UnitLogic.Class.LevelUp.LevelUpState
-  .ctor(UnitDescriptor, LevelUpState.CharBuildMode)
-  Unit
-  StatsDistribution
-  IsFirstLevel
-
-Kingmaker.UnitLogic.Class.LevelUp.StatsDistribution
-  Start(Int32) : Void
-  IsComplete() : Boolean
-  StatValues : IDictionary-compatible
-  Available : Boolean
-  Points : Int32
-  TotalPoints : Int32
-
-Kingmaker.UnitLogic.UnitDescriptor
-  Stats.GetStat(StatType).BaseValue : Int32
-
-Kingmaker.EntitySystem.Stats.StatTypeHelper.Attributes
-  Strength, Dexterity, Constitution, Intelligence, Wisdom, Charisma
-
-Kingmaker.Game.Instance.UI.CharacterBuildController.LevelUpController
-  State : LevelUpState
-  Unit : UnitDescriptor
-  Preview : UnitDescriptor
-  m_RecalculatePreview : Boolean
-  UpdatePreview() : Void
-
-Kingmaker.Game.Instance.Player.MainCharacter
-  MainCharacter : UnitReference
-  Value : UnitEntityData
-  Descriptor : UnitDescriptor
-
-Kingmaker.Game.Instance.UI.CharacterBuildController
-  CurrentPhase : Nullable<CharBPhase.Type>
-  Skills : CharBPhaseSkills
-
-Kingmaker.UI.LevelUp.Phase.CharBPhase.Type
-  Skills
-
-Kingmaker.UI.LevelUp.Phase.CharBPhaseSkills
-  AbilityScoresAllocator : CharBAbilityScoresAllocator
-
-Kingmaker.UI.LevelUp.CharBAbilityScoresAllocator
-  FillData() : Void
-  m_Unit : UnitEntityData
-  m_PreviewUnit : UnitEntityData
-
-Kingmaker.UnitLogic.UnitDescriptor
-  Unit : UnitEntityData
+MVID:    07fa1e4d-8618-41b3-9b8d-faa17d3b26f7
+SHA-256: 3b6450ffec440e296e586f71c711b195aed144b28d53e1cbb29406d18fef5afb
 ```
 
-The context policy additionally requires readable Boolean identity paths for
-main-character, player-faction, pet, and enemy status. Candidate paths are
-resolved conservatively on the runtime unit object.
+## Context and stable ownership
 
-In the exact 2.1.7b new-game lifecycle, `Player.MainCharacter` holds the
-controller's source `Unit`, while `LevelUpState.Unit` is the separately
-deserialized controller `Preview`. A valid new-game relation therefore permits
-either direct descriptor identity or main-character identity with the
-controller source when the candidate is owned by that controller. A different
-main descriptor is rejected, and unresolved identity fails closed.
+```text
+Game.Instance
+Game.Instance.Player.MainCharacter
+Game.Instance.UI.CharacterBuildController
+CharacterBuildController.LevelUpController
+LevelUpController.State
+LevelUpController.Unit
+LevelUpController.Preview
+LevelUpState.Unit
+LevelUpState.StatsDistribution
+LevelUpState.IsFirstLevel
+LevelUpState.CharBuildMode
+```
 
-`LevelUpController.UpdatePreview()` is synchronous but its object identity is
-not stable. It replaces `Preview`, invokes `new LevelUpState(Preview, mode)`,
-assigns the returned state only after that constructor (and its Harmony postfix)
-returns, then replays level-up actions. Preview descriptors are deserialized
-clones and differ by reference. `LevelUpController.Unit` remains the stable
-source descriptor across these generations.
+The stable owner is the exact controller instance plus normalized controller
+source `UnitDescriptor`. State, preview descriptor, and distribution are
+transient generations. `Player.MainCharacter` may be absent, may normalize to
+the candidate/controller preview relation, or may be a different established
+descriptor. Unresolved or different identity fails closed.
 
-Accordingly, a session owns the exact controller/source pair and rebinds its
-state, preview, distribution, and generation rollback snapshot when another
-accepted constructor belongs to that pair. Its pristine first-generation
-point-buy origin and immutable assignment do not rebind. Fixed-array staging
-does not invoke `UpdatePreview()`. The actual controller state/preview, both
-value stores, and disabled allocator state must agree before an application is
-recorded. Explicit refresh is reserved for point-buy restoration and has a
-nested-call guard.
+Supported modes are exact Kingmaker `CharGen` and the observed preview-time
+`LevelUp`; `PreGen`, `Respec`, unknown modes, and non-first-level progression
+are rejected before a session can expose UI.
 
-## Why reflection is used
+## Allocator model
 
-Harmony still targets exact `MethodBase` objects, but the production code does
-not compile business logic against unstable game members. The resolver verifies
-all signatures once, caches the members, and refuses installation when any
-required seam differs. This makes a 2.1.7b mismatch a visible enable failure
-rather than a partially working character creator.
+```text
+Kingmaker.UnitLogic.Class.LevelUp.StatsDistribution.Start(Int32)
+StatsDistribution.IsComplete()
+StatsDistribution.StatValues
+StatsDistribution.Available
+StatsDistribution.Points
+StatsDistribution.TotalPoints
+```
 
-## Ordering
+`Start(int)` is observed to capture the actual allocator budget and is invoked
+normally during point-buy restoration so compatible patches can run. The mod
+does not patch Add, Remove, CanAdd, CanRemove, or cost methods.
 
-All three postfixes use `Priority.VeryLow`. In particular, the `Start(int)`
-postfix observes the final allocator call and records the actual budget. Exact
-2.1.7b IL shows that `Start(int)` sets `Available`, `Points`, and `TotalPoints`;
-it does not reset the six score values. During point-buy restoration, normal
-modded allocator patches run before this mod's postfix observes the restoring
-mode and leaves fixed-array staging suppressed. The pristine allocation is then
-restored and verified on the live preview.
+## Preview lifecycle
 
-The open ability page is refreshed only after semantic restoration has entered
-durable PointBuy mode. Exact 2.1.7b `CharBAbilityScoresAllocator.FillData()` IL
-rereads `LevelUpController.State`, its `StatsDistribution`, the source and
-preview units, racial modifiers, point totals/costs, and add/remove
-availability. Calling that exact native method is narrower than another
-`UpdatePreview()` and preserves Owlcat's presentation lifecycle. The call is
-limited to one attempt per session generation, rejects nested invocation, and
-is followed by reference checks of the current state/distribution and the
-allocator's `m_Unit`/`m_PreviewUnit` bindings.
+```text
+LevelUpController.m_RecalculatePreview
+LevelUpController.UpdatePreview()
+```
 
-The character-build controller sets `LevelUpController` to null from its hide
-and dispose lifecycle. Session liveness therefore follows controller/source
-identity and tolerates transient null or replaced `State`/`Preview` values while
-that stable pair remains active.
+Exact IL and live evidence show preview descriptors/states can be replaced
+within one stable build. Rebind uses controller/source identity; it does not
+generate a new array. Application verification resolves the controller's
+current State and Preview after any replacement and compares both live
+distribution and live unit base values.
 
-## Not patched
+## Native ability page
 
-`StatsDistribution.Add`, `Remove`, `CanAdd`, `CanRemove`, point-cost methods,
-race/class feature application, companion level-up, respec controllers, and
-save serialization are intentionally untouched.
+The exact path is:
+
+```text
+Game.Instance.UI.CharacterBuildController
+  CurrentPhase == CharBPhase.Type.Skills
+  Skills : Kingmaker.UI.LevelUp.CharBPhaseSkills
+    AbilityScoresAllocator : Kingmaker.UI.LevelUp.CharBAbilityScoresAllocator
+```
+
+Verified members:
+
+```text
+CharBAbilityScoresAllocator.FillData() : void
+CharBAbilityScoresAllocator.m_Unit : UnitEntityData
+CharBAbilityScoresAllocator.m_PreviewUnit : UnitEntityData
+CharBAbilityScoresAllocator.m_StatEntries : List<CharBScoresEntry>
+CharBAbilityScoresAllocator.m_MainLabel : TMPro.TextMeshProUGUI
+CharBAbilityScoresAllocator.m_Frame : UnityEngine.UI.Image
+CharBScoresEntry.UpButton : UnityEngine.UI.Button
+CharBScoresEntry.DownButton : UnityEngine.UI.Button
+UnityEngine.UI.Selectable.interactable : readable/writable Boolean
+UnitDescriptor.Unit : UnitEntityData
+```
+
+Exact IL shows `CharBPhaseSkills.FillData(UnitDescriptor)` calls the allocator's
+parameterless `FillData()`. The allocator binds current controller source and
+preview entities, reads the current distribution, updates base/modifier rows,
+updates points, and sets native button availability.
+
+The panel uses a postfix on that exact parameterless method. A data-only
+presenter is rendered into code-owned Unity objects styled from the local
+allocator label, frame, and button. Repeated FillData calls cannot create a
+second owned panel. Phase exit, invalid context, disable, and unload detach it.
+
+## Presentation synchronization
+
+Both directions use the same proven native refresh:
+
+```text
+semantic writes -> CharBAbilityScoresAllocator.FillData() -> exact binding and
+live model/control verification
+```
+
+Roll synchronization additionally verifies all 12 native plus/minus controls
+are non-interactable. Point-buy synchronization verifies current state,
+distribution, source entity, preview entity, restored model values, allocator
+fields, and active Skills phase.
+
+No `UpdatePreview()` loop is used for UI-only synchronization. No visible label
+is directly edited as a substitute for semantic state.
+
+## Harmony surface
+
+The exact four postfix targets are resolved before install. Each patch bridge
+method delegates immediately to the coordinator or panel host. Failure to
+resolve any required target or UI recovery contract prevents partial Roll Mode
+integration.

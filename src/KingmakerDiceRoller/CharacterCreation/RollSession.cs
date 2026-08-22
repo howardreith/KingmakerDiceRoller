@@ -81,7 +81,7 @@ namespace KingmakerDiceRoller.CharacterCreation
         public bool IsEnteringRollMode => Mode == RollSessionMode.EnteringRollMode;
         public bool IsRestoringPointBuy => Mode == RollSessionMode.RestoringPointBuy;
         public bool IsPointBuyMode => Mode == RollSessionMode.PointBuy;
-        public bool RollSuppressedForStableOwner => !IsRollMode;
+        public bool RollSuppressedForStableOwner => IsPointBuyMode || IsRestoringPointBuy;
         public bool PointBuyOriginCaptured => PointBuyOrigin != null && PointBuyOrigin.CapturedBeforeRollOwnership;
         public PointBuyOrigin PristinePointBuy => PointBuyOrigin;
         public bool PristineBaselineCaptured => PointBuyOriginCaptured;
@@ -116,10 +116,11 @@ namespace KingmakerDiceRoller.CharacterCreation
             History.Add(Assignment, candidate.Rule, sequence, candidate.CreatedAtUtc, candidate.Equivalent);
         }
 
-        public void CommitRecallOrAssignment(StatAssignment assignment)
+        public void CommitRecallOrAssignment(StatAssignment assignment, bool updateActiveHistory = true)
         {
             CommitRoll(assignment);
-            History.UpdateCurrentAssignment(Assignment);
+            if (updateActiveHistory) History.UpdateCurrentAssignment(Assignment);
+            else History.ClearActive();
         }
 
         public void AbortPendingRoll()

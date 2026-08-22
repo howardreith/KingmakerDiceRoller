@@ -1,31 +1,79 @@
-# Deferred native UI design
+# Native UI design
 
-The fixed-array gate intentionally uses only the UMM diagnostics panel. A native
-character-generation UI should not be implemented until the integration seam is
-runtime-qualified.
+## Host and ownership
 
-## Planned controls
+The primary interface is a code-owned panel titled **Rolled Ability Scores** on
+the exact active Kingmaker Skills/ability allocator page. It is parented within
+the allocator's local phase hierarchy, anchored at the upper right, bounded to
+470 by 670 layout units, and collapsible.
 
-- Preset selector: 4d6 drop lowest; 4d6 reroll ones drop lowest; 3d6; 2d6+6;
-  1d20; custom expression.
-- Explicit low-score policy: tabletop; reroll individual below minimum; reroll
-  whole array below minimum.
-- Roll button and current immutable array.
-- Six assignment rows with position-based swap/up/down controls.
-- Point-buy-equivalent label, clearly marked extended outside 7–18.
-- History and saved arrays with validated schema.
-- Return-to-point-buy recovery control.
+The host clones no shared prefab and changes no shared asset. It creates clean
+`GameObject`, `RectTransform`, layout, image, TMP label/input, and button
+components. Local native `m_MainLabel`, `m_Frame`, and one score-row button
+provide font, material, sprite, transition, and color styling.
 
-## Behavioral constraints
+The root uses the unique name `KingmakerDiceRoller.NativeRollPanel`. The host
+tracks its own reference and destroys only that owned object.
 
-A roll occurs only from an explicit user action. Phase rebuilds reuse the same
-array. Duplicate values remain distinct by source position. The UI must display
-both base assignment and racial modifiers without baking modifiers into the
-stored array. No vanilla plus/minus control should remain active while roll mode
-owns completion.
+## Layout
 
-## Native integration research
+Top to bottom:
 
-Before implementation, decompile and verify the actual ability-phase view,
-controller, bindings, prefab hierarchy, and refresh lifecycle from the target
-2.1.7b assemblies/assets. Do not clone the Wrath mod's UI or assume WotR paths.
+1. title and Hide/Show control;
+2. mode and status;
+3. preset selector;
+4. low-score policy selector;
+5. minimum selector (inactive for Tabletop);
+6. custom expression input and syntax hint when Custom is selected;
+7. Roll, Reroll, and Point Buy actions;
+8. six STR-CHA rows with assigned base value and Up/Down controls;
+9. total, point-buy equivalent, extended marker, and rule;
+10. history position with Previous/Next/Use;
+11. saved position with Store/Previous/Next/Recall/Delete;
+12. inline validation error and concise status.
+
+Racial modifiers remain in Kingmaker's existing modifier presentation. The
+panel intentionally labels base assignments only.
+
+## Presentation separation
+
+`RollUiSnapshot` contains immutable display data. `RollPanelPresenter` formats
+it without side effects. `RollUiCommandRouter` maps clicks to coordinator
+commands. Rendering cannot roll dice, mutate a session, write a stat, or save
+settings.
+
+All button callbacks catch command failures. Player-facing text stays concise;
+technical controller/generation facts remain in UMM diagnostics.
+
+## Native control behavior
+
+PointBuy mode leaves Kingmaker's plus/minus controls authoritative. Roll Mode
+captures and sets all exact row buttons non-interactable. The original states
+are restored on cleanup, while a successful native point-buy FillData refresh
+becomes authoritative after Return to Point Buy.
+
+Dedicated Up/Down assignment controls never reuse Kingmaker's point-buy click
+handlers.
+
+## Lifecycle
+
+The exact allocator `FillData()` postfix requests attach/refresh. A UMM Update
+observer provides bounded lifecycle cleanup and allocator-replacement handling.
+
+- First eligible allocator: attach once.
+- Repeated FillData on the same allocator: render only.
+- Replacement allocator for the same owner: detach/rebind one panel.
+- Invalid phase/context, cancel, completion, disable, or unload: restore native
+  controls and detach.
+- Contract or construction failure: fail the panel closed and leave vanilla
+  Point Buy untouched.
+
+Attachment and render never generate random values.
+
+## Human layout gate
+
+Exact compilation and contract fixtures cannot prove real resolution, scaling,
+clipping, navigation-button clearance, focus, or click routing. The first live
+alpha gate must check common supported resolution(s), expanded/collapsed modes,
+custom input focus, all controls, and phase navigation. Any overlap or clipped
+essential control remains a runtime blocker.

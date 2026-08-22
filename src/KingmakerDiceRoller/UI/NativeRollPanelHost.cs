@@ -58,6 +58,8 @@ namespace KingmakerDiceRoller.UI
         private Button storeButton;
         private Button recallButton;
         private Button deleteButton;
+        private Button collapseButton;
+        private TextMeshProUGUI collapseButtonLabel;
 
         public NativeRollPanelHost(
             RollUiCommandRouter commands,
@@ -113,7 +115,7 @@ namespace KingmakerDiceRoller.UI
                         out active,
                         out phase,
                         out allocator) ||
-                    !active || allocator == null || !commands.Snapshot.SessionAvailable)
+                    !active || allocator == null || !commands.CanAttachNativePanel)
                 {
                     if (lifecycle.Observe(false, null) == NativePanelAttachmentAction.Detach)
                     {
@@ -164,6 +166,8 @@ namespace KingmakerDiceRoller.UI
             storeButton = null;
             recallButton = null;
             deleteButton = null;
+            collapseButton = null;
+            collapseButtonLabel = null;
             body = null;
             if (root != null) Object.Destroy(root);
             root = null;
@@ -171,7 +175,7 @@ namespace KingmakerDiceRoller.UI
 
         private bool IsEligibleAllocator(object allocator, KingmakerContracts contracts)
         {
-            if (allocator == null || !commands.Snapshot.SessionAvailable) return false;
+            if (allocator == null || !commands.CanAttachNativePanel) return false;
             object characterBuild;
             bool active;
             object phase;
@@ -210,46 +214,48 @@ namespace KingmakerDiceRoller.UI
             rootRect.anchorMax = new Vector2(1f, 1f);
             rootRect.pivot = new Vector2(1f, 1f);
             rootRect.anchoredPosition = new Vector2(-18f, -18f);
-            rootRect.sizeDelta = new Vector2(470f, 670f);
+            rootRect.sizeDelta = new Vector2(470f, 650f);
 
             Image background = root.AddComponent<Image>();
             CopyImage(nativeFrame, background, new Color(1f, 1f, 1f, 0.96f));
             var vertical = root.AddComponent<VerticalLayoutGroup>();
             vertical.padding = new RectOffset(14, 14, 10, 12);
-            vertical.spacing = 5f;
+            vertical.spacing = 4f;
             vertical.childControlWidth = true;
             vertical.childForceExpandWidth = true;
             vertical.childControlHeight = true;
             vertical.childForceExpandHeight = false;
 
-            GameObject titleRow = CreateHorizontal(root.transform, 34f);
-            CreateLabel(titleRow.transform, "Rolled Ability Scores", nativeText, 22f, TextAlignmentOptions.Left);
-            CreateButton(titleRow.transform, "Hide", nativeText, nativeButton, 74f, () =>
+            GameObject titleRow = CreateHorizontal(root.transform, 30f);
+            CreateLabel(titleRow.transform, "Rolled Ability Scores", nativeText, 20f, TextAlignmentOptions.Left);
+            collapseButton = CreateButton(titleRow.transform, "Hide", nativeText, nativeButton, 74f, () =>
             {
                 collapsed = !collapsed;
                 if (body != null) body.SetActive(!collapsed);
+                if (collapseButtonLabel != null) collapseButtonLabel.text = collapsed ? "Show" : "Hide";
             });
+            collapseButtonLabel = collapseButton.GetComponentInChildren<TextMeshProUGUI>();
 
             body = NewUiObject("Body", root.layer);
             body.transform.SetParent(root.transform, false);
             var bodyLayout = body.AddComponent<VerticalLayoutGroup>();
-            bodyLayout.spacing = 4f;
+            bodyLayout.spacing = 3f;
             bodyLayout.childControlWidth = true;
             bodyLayout.childForceExpandWidth = true;
             bodyLayout.childControlHeight = true;
             bodyLayout.childForceExpandHeight = false;
             body.AddComponent<LayoutElement>().flexibleHeight = 1f;
 
-            modeLabel = CreateLabel(body.transform, string.Empty, nativeText, 17f, TextAlignmentOptions.Left, 26f);
+            modeLabel = CreateLabel(body.transform, string.Empty, nativeText, 16f, TextAlignmentOptions.Left, 22f);
             CreateConfigurationRows(nativeText, nativeButton);
             CreateActionRows(nativeText, nativeButton);
             CreateAssignmentRows(nativeText, nativeButton);
-            summaryLabel = CreateLabel(body.transform, string.Empty, nativeText, 16f, TextAlignmentOptions.Left, 48f);
+            summaryLabel = CreateLabel(body.transform, string.Empty, nativeText, 15f, TextAlignmentOptions.Left, 38f);
             CreateHistoryRows(nativeText, nativeButton);
             CreateSavedRows(nativeText, nativeButton);
-            errorLabel = CreateLabel(body.transform, string.Empty, nativeText, 15f, TextAlignmentOptions.Left, 30f);
+            errorLabel = CreateLabel(body.transform, string.Empty, nativeText, 14f, TextAlignmentOptions.Left, 22f);
             errorLabel.color = new Color(1f, 0.45f, 0.35f, 1f);
-            statusLabel = CreateLabel(body.transform, string.Empty, nativeText, 14f, TextAlignmentOptions.Left, 42f);
+            statusLabel = CreateLabel(body.transform, string.Empty, nativeText, 13f, TextAlignmentOptions.Left, 28f);
 
             attachedAllocator = allocator;
             AttachmentCount++;
@@ -257,28 +263,28 @@ namespace KingmakerDiceRoller.UI
 
         private void CreateConfigurationRows(TextMeshProUGUI nativeText, Button nativeButton)
         {
-            GameObject presetRow = CreateHorizontal(body.transform, 34f);
+            GameObject presetRow = CreateHorizontal(body.transform, 28f);
             CreateButton(presetRow.transform, "<", nativeText, nativeButton, 38f,
                 () => Execute(RollUiCommand.PreviousPreset));
             presetLabel = CreateLabel(presetRow.transform, string.Empty, nativeText, 16f, TextAlignmentOptions.Center);
             CreateButton(presetRow.transform, ">", nativeText, nativeButton, 38f,
                 () => Execute(RollUiCommand.NextPreset));
 
-            GameObject policyRow = CreateHorizontal(body.transform, 34f);
+            GameObject policyRow = CreateHorizontal(body.transform, 28f);
             CreateButton(policyRow.transform, "<", nativeText, nativeButton, 38f,
                 () => Execute(RollUiCommand.PreviousPolicy));
             policyLabel = CreateLabel(policyRow.transform, string.Empty, nativeText, 15f, TextAlignmentOptions.Center);
             CreateButton(policyRow.transform, ">", nativeText, nativeButton, 38f,
                 () => Execute(RollUiCommand.NextPolicy));
 
-            minimumRow = CreateHorizontal(body.transform, 34f);
+            minimumRow = CreateHorizontal(body.transform, 28f);
             minimumDown = CreateButton(minimumRow.transform, "-", nativeText, nativeButton, 38f,
                 () => Execute(RollUiCommand.DecreaseMinimum));
             minimumLabel = CreateLabel(minimumRow.transform, string.Empty, nativeText, 16f, TextAlignmentOptions.Center);
             minimumUp = CreateButton(minimumRow.transform, "+", nativeText, nativeButton, 38f,
                 () => Execute(RollUiCommand.IncreaseMinimum));
 
-            customRow = CreateHorizontal(body.transform, 64f);
+            customRow = CreateHorizontal(body.transform, 48f);
             CreateLabel(customRow.transform, "Custom\n4d[6]kh3", nativeText, 13f, TextAlignmentOptions.Left, 95f);
             customInput = CreateInput(customRow.transform, nativeText, nativeButton);
             customInput.onValueChanged.AddListener(value =>
@@ -289,7 +295,7 @@ namespace KingmakerDiceRoller.UI
 
         private void CreateActionRows(TextMeshProUGUI nativeText, Button nativeButton)
         {
-            GameObject actions = CreateHorizontal(body.transform, 38f);
+            GameObject actions = CreateHorizontal(body.transform, 32f);
             rollButton = CreateButton(actions.transform, "Roll", nativeText, nativeButton, 105f,
                 () => Execute(RollUiCommand.Roll));
             rerollButton = CreateButton(actions.transform, "Reroll", nativeText, nativeButton, 105f,
@@ -303,7 +309,7 @@ namespace KingmakerDiceRoller.UI
             for (int index = 0; index < Abilities.Length; index++)
             {
                 AbilityScore ability = Abilities[index];
-                GameObject row = CreateHorizontal(body.transform, 30f);
+                GameObject row = CreateHorizontal(body.transform, 25f);
                 TextMeshProUGUI value = CreateLabel(row.transform, string.Empty, nativeText, 16f, TextAlignmentOptions.Left);
                 Button up = CreateButton(row.transform, "Up", nativeText, nativeButton, 55f,
                     () => Execute(RollUiCommand.MoveUp, ability));
@@ -315,8 +321,8 @@ namespace KingmakerDiceRoller.UI
 
         private void CreateHistoryRows(TextMeshProUGUI nativeText, Button nativeButton)
         {
-            historyLabel = CreateLabel(body.transform, string.Empty, nativeText, 14f, TextAlignmentOptions.Left, 28f);
-            GameObject row = CreateHorizontal(body.transform, 32f);
+            historyLabel = CreateLabel(body.transform, string.Empty, nativeText, 13f, TextAlignmentOptions.Left, 20f);
+            GameObject row = CreateHorizontal(body.transform, 27f);
             CreateButton(row.transform, "Previous", nativeText, nativeButton, 95f,
                 () => Execute(RollUiCommand.PreviousHistory));
             CreateButton(row.transform, "Next", nativeText, nativeButton, 75f,
@@ -327,8 +333,8 @@ namespace KingmakerDiceRoller.UI
 
         private void CreateSavedRows(TextMeshProUGUI nativeText, Button nativeButton)
         {
-            savedLabel = CreateLabel(body.transform, string.Empty, nativeText, 14f, TextAlignmentOptions.Left, 28f);
-            GameObject row = CreateHorizontal(body.transform, 32f);
+            savedLabel = CreateLabel(body.transform, string.Empty, nativeText, 13f, TextAlignmentOptions.Left, 20f);
+            GameObject row = CreateHorizontal(body.transform, 27f);
             storeButton = CreateButton(row.transform, "Store", nativeText, nativeButton, 75f,
                 () => Execute(RollUiCommand.StoreCurrent));
             CreateButton(row.transform, "<", nativeText, nativeButton, 38f,

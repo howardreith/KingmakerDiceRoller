@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0-alpha.1 — in development
+## 0.1.0-alpha.1 - alpha candidate
 
 - Recorded the successful focused live gate at `8f78d824...`: pristine point
   buy and its native ability-page presentation updated immediately without
@@ -17,7 +17,19 @@
 - Added product roll configuration, position-safe assignment serialization,
   bounded 20-entry history, bounded 10-slot saved catalog, schema-v1 migration,
   UI snapshots, and exact native allocator-control contracts.
-- Preserved the explicit 1–120 generated-score boundary with fail-closed,
+- Added a code-owned native ability-page panel with Roll/Reroll, preset and
+  policy controls, custom expression input, duplicate-safe assignment,
+  summaries, history, saved arrays, and exact Point Buy recovery.
+- Added exact one-panel attach/rebind/detach lifecycle through the native
+  allocator `FillData()` seam and restored every captured plus/minus control
+  state on cleanup.
+- Added transactional command rollback: failed Roll keeps Point Buy; failed
+  Reroll/reassignment/recall preserves the prior verified roll.
+- Persisted product defaults and schema-versioned saved arrays in UMM settings,
+  with per-record corrupt-data isolation and warnings.
+- Bumped product, package, assembly file, and informational metadata consistently
+  to `0.1.0-alpha.1` and added a complete player guide and product smoke test.
+- Preserved the explicit 1-120 generated-score boundary with fail-closed,
   no-clamping validation and extended point-buy-equivalent reporting.
 
 ## 0.0.1-alpha.1 — source candidate

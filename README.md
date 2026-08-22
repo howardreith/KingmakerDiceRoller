@@ -1,52 +1,81 @@
 # Kingmaker Dice Roller
 
-A standalone Pathfinder: Kingmaker 2.1.7b Unity Mod Manager project for rolled
-ability-score arrays during new main-character creation.
+Kingmaker Dice Roller is a standalone Unity Mod Manager mod for Pathfinder:
+Kingmaker 2.1.7b. Version `0.1.0-alpha.1` adds an explicit rolled-ability
+workflow to the native new-character ability page.
 
-The current `0.0.1-alpha.1` milestone contains a fully separated roll domain and
-a guarded **fixed-array** Kingmaker integration candidate using:
+The mod starts every supported character in ordinary Point Buy. It rolls only
+when you press **Roll**, never because a preview, race, phase, or UI object was
+rebuilt.
 
-```text
-16, 15, 14, 12, 10, 8
-```
+## Player workflow
 
-It is intentionally not presented as runtime-qualified until the repaired
-point-buy restoration and remaining vanilla gates pass `docs/SMOKE-TEST.md`.
+The native **Rolled Ability Scores** panel provides:
 
-## Safety model
+- Roll and Reroll;
+- `4d6, drop lowest`, `4d6, reroll ones, drop lowest`, `3d6`, `2d6 + 6`,
+  `1d20`, and a custom expression;
+- tabletop, per-score minimum, and whole-array minimum policies;
+- position-based Move Up/Move Down assignment that handles duplicate values;
+- base-score total and informational point-buy equivalent;
+- a 20-entry history for the current character build;
+- 10 persistent saved arrays with Store, Recall, and Delete;
+- immediate Return to Point Buy.
 
-- New main-character creation only.
-- Normal level-ups, companions, pets, enemies, pregens, mercenaries, and respec
-  are rejected.
-- One explicit session owns a stable character-build controller/source pair and
-  rebinds its immutable assignment to each transient preview state and
-  distribution from that same owner.
-- UMM update observation verifies the actual live controller preview and
-  releases canceled/completed ownership only after the stable owner leaves a
-  tested grace period; no extra Harmony lifecycle patch is added.
-- No `StatsDistribution.Add`/`Remove` or point-cost patching.
-- Roll mode disables the point-buy allocator; it never layers a live budget on
-  top of rolled values.
-- Return-to-point-buy follows the newest preview, calls the observed pristine
-  allocator budget, restores the first pre-roll allocation, and enters durable
-  point-buy mode for that build owner.
-- No save-owned custom content.
-- The install script validates an exact six-file package and transactionally
-  restores the previous live directory if replacement fails.
+Custom syntax examples are `4d[6]kh3`, `4d[6]r[1]kh3`, and `2d[6]+6`.
+Generated scores are validated within the explicit 1-120 product boundary and
+are never silently clamped.
 
-## Build
+## Roll Mode and Point Buy
+
+Point Buy remains authoritative until Roll or Recall is pressed. Entering Roll
+Mode captures the exact current allocation, remaining points, total budget, and
+allocator state. Roll Mode disables Kingmaker's native plus/minus controls and
+never layers spendable points on top of a rolled array.
+
+**Return to Point Buy** restores that exact pre-roll state on the current live
+preview and refreshes the open page immediately. This includes legitimate
+non-default budgets supplied by another mod; the implementation does not
+hard-code 25 points or six scores of 10.
+
+Race and heritage modifiers remain Kingmaker-owned. Arrays, history, and saved
+slots contain base values only.
+
+## Persistence and safety
+
+Completed characters contain ordinary Kingmaker base ability values. Dice
+Roller creates no blueprint, fact, buff, component, or unit part and adds no
+content to a game save. Saved-array slots use Unity Mod Manager settings, not a
+character save.
+
+The integration fails closed outside the exact supported new custom main
+character context. Ordinary progression, companions, pets, enemies,
+mercenaries, pregens, and respec are excluded.
+
+## Installation
+
+Install the package with Unity Mod Manager or extract its single
+`KingmakerDiceRoller` directory under the game's `Mods` directory. The package
+contains exactly six files. Do not copy development artifacts or game
+assemblies into the mod directory.
+
+## Alpha qualification
+
+This alpha is source- and build-qualified against the exact local Kingmaker
+2.1.7b assembly during packaging. Player-facing native panel layout and the
+full compatibility matrix still require live acceptance before the mod may be
+called runtime- or compatibility-qualified.
+
+Bag of Tricks and Call of the Wild are detected but never modified. Bag of
+Tricks budgets are observed from the live allocator; Call of the Wild racial
+modifiers remain separate from rolled base values.
+
+For usage details see `docs/USER-GUIDE.md`. For a live acceptance sequence see
+`docs/SMOKE-TEST.md`. Runtime evidence can be collected with:
 
 ```powershell
-Copy-Item GamePath.props.example GamePath.props
-# Edit GamePath.props, then:
-powershell -ExecutionPolicy Bypass -File .\scripts\Qualify.ps1 -Build -Package
+powershell -NoLogo -NoProfile -ExecutionPolicy Bypass `
+  -File .\scripts\Collect-RuntimeEvidence.ps1
 ```
 
-See `docs/BUILD-AND-RELEASE.md`, `docs/ARCHITECTURE.md`, and
-`PROJECT-STATE.md` for exact qualification status.
-
-## Attribution
-
-The expression and dice-mechanic concepts were studied from the MIT-licensed
-`FakeFriend24/wotr-dice-roller`. The implementation here is rewritten around a
-Kingmaker-specific, fail-closed lifecycle. See `THIRD-PARTY-NOTICES.md`.
+Do not commit the collected logs, screenshots, saves, or runtime evidence.

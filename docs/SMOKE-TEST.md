@@ -1,129 +1,136 @@
-# Phase 2 runtime smoke test
+# 0.1.0-alpha.1 human acceptance
 
-## Preconditions
+Source/build/package qualification does not replace this live gate. Preserve
+logs and screenshots outside Git and collect evidence after testing.
 
-1. Use Pathfinder: Kingmaker 2.1.7b and Unity Mod Manager 0.32.x.
-2. Copy `GamePath.props.example` to `GamePath.props` and point it at the actual
-   install.
-3. Run:
+## A. Vanilla product workflow
 
-   ```powershell
-   powershell -ExecutionPolicy Bypass -File .\scripts\Qualify.ps1 -Build -Package
-   ```
+Start from a fully fresh Kingmaker process with Bag of Tricks and Call of the
+Wild disabled.
 
-4. Record the contract report, DLL SHA-256, package SHA-256, branch, commit, and
-   dirty status from `artifacts/`.
-5. Install with `scripts/Install.ps1`. Verify it only changed
-   `Mods\KingmakerDiceRoller`.
-6. Preserve a copy of relevant UMM settings. Start with Bag of Tricks disabled
-   for the first gate.
+1. Start a genuinely new custom human and reach ability scores.
+2. Confirm ordinary point buy appears initially with the real configured
+   budget.
+3. Confirm one native **Rolled Ability Scores** panel appears.
+4. Remain on the page for ten seconds. Confirm no array is generated and no
+   points or values change automatically.
+5. Press **Roll** once. Confirm exactly one six-score array appears, point buy
+   is unavailable, and all native plus/minus controls are disabled.
+6. Confirm the panel shows base assignments, rule, total, and point-buy
+   equivalent.
+7. Press **Reroll**. Confirm a newly generated array replaces the current one,
+   no point budget appears, and history increments by one.
+8. Move values Up and Down. Include an array with duplicate values when
+   practical and confirm each source position moves independently.
+9. Navigate backward and forward. Confirm the current array and assignment
+   return unchanged and history does not grow.
+10. Change race. Confirm Kingmaker's racial modifiers remain separate from the
+    panel's base values and are never accumulated into a reroll.
+11. Select Previous/Next history, Use an earlier entry, and confirm this does
+    not generate another roll.
+12. Store the current array, browse saved slots, Recall it, and confirm values
+    and assignment are restored without changing the point-buy origin.
 
-## Focused immediate-presentation gate
+## B. Exact Point Buy origin
 
-The fixed-array entry/preview-continuity seam passed live at `907f1bc1...`, and
-the pristine semantic restoration at `c5ea92b2...` produced ordinary point buy
-after phase re-entry. Before repeating the full vanilla matrix, use a fresh
-process with Call of the Wild and Bag of Tricks disabled:
+1. In ordinary Point Buy, spend several points and note allocation, remaining
+   points, and total budget.
+2. Press Roll.
+3. Press **Point Buy** in the native panel without navigating away.
+4. Confirm the exact pre-roll allocation and remaining/total budget appear on
+   the same page immediately.
+5. Confirm native plus/minus controls work immediately.
+6. Navigate backward and forward. Confirm Point Buy remains active and no roll
+   returns.
+7. Modify the allocation again, enter Roll Mode a second time, and return.
+8. Confirm the second, newly captured point-buy origin is restored.
 
-1. Start a new human and confirm `16, 15, 14, 12, 10, 8` appears.
-2. Press **Return active roll session to point buy**.
-3. Without navigating away, close UMM and confirm the same ability page
-   immediately shows six base tens and 25 points.
-4. Spend and refund points immediately with the normal plus/minus controls.
-5. Navigate backward and forward; confirm point buy remains active and the
-   fixed array does not reappear.
-6. Repeat with the tested tiefling heritage. Without navigating away, confirm
-   ordinary point-buy base values immediately appear while `+2 STR`, `+2 WIS`,
-   and `-2 CHA` remain separate (displayed totals `12, 10, 10, 10, 12, 8` for
-   the observed default allocation).
-7. Restart the test, leave roll mode active, and disable Dice Roller. It must
-   restore clean point buy before disabling or refuse to disable safely.
-8. Complete a separate fresh character entirely in roll mode, save, quit,
-   disable Dice Roller, and reload. Confirm its legitimate rolled values remain.
-9. Test one existing-character or companion level-up and confirm the fixed
-   array never activates.
+Any rolled values combined with spendable allocator points is a hard failure.
 
-Stop and collect runtime evidence if any step fails. Do not advance to Gates
-A-E or compatibility testing until this focused immediate-presentation gate
-passes.
+## C. Rules and error handling
 
-## Gate A — context isolation
+Test each preset:
 
-1. Launch the game and open an existing save.
-2. Level a companion and, if available, an animal companion.
-3. Confirm no fixed array appears and the log records rejected/non-target
-   contexts only.
-4. Open a respec UI if installed. Confirm its stat behavior is unchanged.
+```text
+4d6, drop lowest
+4d6, reroll ones, drop lowest
+3d6
+2d6 + 6
+1d20
+```
 
-Any non-new-character activation is a hard failure.
+Then test one valid custom expression and one invalid expression, for example:
 
-## Gate B — fixed-array entry
+```text
+valid:   4d[6]r[1]kh3
+invalid: 4d[
+```
 
-1. Return to the main menu and start a genuinely new custom main character.
-2. Reach ability scores.
-3. Confirm the visible and effective values are exactly:
+Test tabletop, individual-minimum, and whole-array-minimum policies. An invalid
+command must show an inline error and preserve the prior verified state.
 
-   ```text
-   STR 16, DEX 15, CON 14, INT 12, WIS 10, CHA 8
-   ```
+## D. Saved-array persistence
 
-4. Confirm creation may continue while roll mode owns completion and no live
-   point-buy budget is layered onto the array.
-5. Check the UMM panel: one accepted context, an active fixed-array status, and
-   a resolved Assembly-CSharp MVID.
+1. Store an assigned array.
+2. Quit fully to desktop.
+3. Restart, begin a new custom character, and remain in Point Buy.
+4. Recall the saved slot. Confirm this explicit command captures the current
+   point-buy origin and enters Roll Mode.
+5. Confirm raw values and assignment permutation.
+6. Delete the slot, restart again, and confirm it remains deleted.
 
-A mismatch between displayed values and preview/base values is a hard failure.
+## E. Completion, save independence, disable
 
-## Gate C — rebuild stability
+1. Complete a character in Roll Mode.
+2. Enter the game and inspect base ability values.
+3. Save and quit fully to desktop.
+4. Disable or uninstall Dice Roller, restart, and reload.
+5. Confirm identical ordinary values and no missing-content warning.
+6. In a separate fresh character, disable Dice Roller while Roll Mode is
+   active on the ability page.
+7. Confirm exact point buy appears immediately before/as disable succeeds. If
+   safe restoration cannot be proven, disable must be refused.
 
-1. Navigate backward and forward across race, class, portrait, and ability
-   phases at least three times.
-2. Change race between one with no ability modifier and one with a modifier.
-3. Confirm the underlying assigned base array remains the same, racial modifiers
-   are applied by Kingmaker, and no second array is generated.
-4. Confirm diagnostic application count may increase because the preview was
-   rebuilt, but the owned array never changes.
-5. Cancel back to the main menu, remain there for at least one second, and
-   confirm the UMM panel increments the released-session count.
-6. Start a second new character and confirm it receives one fresh owned session
-   without an "another unit" rejection or values from the canceled character.
+## F. Context isolation
 
-## Gate D — point-buy restoration
+Confirm neither panel nor roll activation appears in every available path:
 
-1. Before completing creation, press **Return active roll session to point buy**
-   in the UMM panel.
-2. Without leaving the ability page, confirm the rolled values immediately
-   disappear while normal point-buy values and the actual configured budget
-   return. Rolled values plus a full budget, or correct model values that remain
-   visually stale until navigation, are hard failures.
-3. Use plus/minus controls and confirm cost behavior is normal.
-4. Navigate backward and forward and confirm point-buy mode remains active.
-5. Repeat with a race that has ability modifiers and confirm modifiers remain
-   separate from the restored base allocation.
-6. Disable the mod while point-buy mode is active; confirm it does not
-   reintroduce rolled values.
-7. Repeat with the mod enabled and disable it directly while the fixed array is
-   active. It must restore verified point buy before unpatching or refuse to
-   disable while retaining recovery hooks.
+- ordinary existing-character level-up;
+- companion level-up;
+- animal companion level-up;
+- mercenary creation;
+- pregen selection;
+- respec.
 
-## Gate E — completion and persistence
+Any non-new-main-character activation is a hard failure.
 
-1. Re-enable/restart as needed and create a character with the fixed array.
-2. Complete character creation, enter the game, and inspect base abilities.
-3. Save, quit to desktop, restart, and reload.
-4. Confirm the values survive as ordinary base scores with no Dice Roller-owned
-   fact, buff, component, or save warning.
-5. Disable or uninstall the mod, restart, and reload the save again.
+## G. Compatibility matrix
 
-## Compatibility matrix
+Only after vanilla passes, repeat fresh-process entry, Roll/Reroll,
+reassignment, race change, and exact Point Buy restoration with:
 
-After vanilla gates pass, repeat B–E with the finalized mod list, then with Bag
-of Tricks enabled at its intended settings. Capture logs and screenshots with
-`scripts/Collect-RuntimeEvidence.ps1`.
+```text
+Dice Roller + Call of the Wild
+Dice Roller + Bag of Tricks
+Dice Roller + Call of the Wild + Bag of Tricks
+final intended mod list
+```
 
-## Acceptance
+For Bag of Tricks, record its actual configured point-buy budget and prove that
+the exact allocation and budget return. For Call of the Wild, exercise an added
+race/heritage and confirm all modifiers remain separate.
 
-Runtime qualification requires every vanilla gate. Compatibility qualification
-requires the named matrix. A crash, stuck character creator, unintended level-up
-activation, changed point-buy budget, reroll on navigation, or save-load
-regression blocks advancement to native UI/random rolling.
+## Evidence
+
+After the attempt, fully exit and run:
+
+```powershell
+Set-Location 'C:\Dev\KingmakerDiceRollerLab\repo\KingmakerDiceRoller'
+
+powershell -NoLogo -NoProfile -ExecutionPolicy Bypass `
+  -File .\scripts\Collect-RuntimeEvidence.ps1
+```
+
+Report the first failed invariant and preserve evidence outside Git. Do not
+call the alpha runtime-qualified until all vanilla sections pass. Do not call
+it compatibility-qualified until the named matrix passes.

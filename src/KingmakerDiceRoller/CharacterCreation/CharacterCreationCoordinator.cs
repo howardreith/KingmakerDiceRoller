@@ -92,6 +92,22 @@ namespace KingmakerDiceRoller.CharacterCreation
         public bool CanRestorePointBuy => sessions.Active != null && sessions.Active.IsRollMode;
         public RollSession ActiveSession => sessions.Active;
         public RollUiSnapshot UiSnapshot => workflow.Snapshot(sessions.Active);
+        public bool CanAttachNativePanel
+        {
+            get
+            {
+                try
+                {
+                    RollSession session = sessions.Active;
+                    KingmakerContracts contracts = contractsProvider();
+                    return session != null && contracts != null && HasCurrentLiveBinding(session, contracts);
+                }
+                catch
+                {
+                    return false;
+                }
+            }
+        }
 
         public void OnLevelUpStateConstructed(object state, object unit, object mode)
         {
@@ -134,6 +150,11 @@ namespace KingmakerDiceRoller.CharacterCreation
 
             diagnostics.Accepted(context.Reason + " " + sessionReason);
             RecordEvent(sessionReason + " " + BuildSessionFacts(session));
+
+            if (session.Generation == 1 && session.IsPointBuyMode)
+            {
+                workflow.SetNewSessionStatus();
+            }
 
             if (session.IsRestoringPointBuy)
             {
@@ -496,7 +517,7 @@ namespace KingmakerDiceRoller.CharacterCreation
                     "Pristine point-buy model and active ability-page presentation verified; native score rows, " +
                     "racial modifiers, allocator points, and controls now reflect the current live preview. " + facts);
                 diagnostics.SetStatus(
-                    "Pristine point-buy model and the active native ability page are synchronized; fixed-array staging is suppressed.");
+                    "The captured point-buy model and active native ability page are synchronized; rolled-array staging is suppressed.");
                 logger.Info("Verified pristine point-buy model and native ability-page presentation. " + facts);
                 workflow.SetPointBuyStatus();
             }

@@ -32,10 +32,14 @@ namespace KingmakerDiceRoller.UI
 
         public void Draw()
         {
-            GUILayout.Label("Kingmaker Dice Roller — Phase 2 fixed-array alpha");
-            GUILayout.Label("Candidate array: 16, 15, 14, 12, 10, 8");
+            RollUiSnapshot workflow = coordinator.UiSnapshot;
+            GUILayout.Label("Kingmaker Dice Roller " + ProductMetadata.Version);
+            GUILayout.Label("Roll controls are on the native new-character ability-score page.");
             settings.VerboseDiagnostics = GUILayout.Toggle(settings.VerboseDiagnostics, "Verbose diagnostic logging");
             GUILayout.Space(6f);
+            GUILayout.Label("Workflow: " + workflow.Mode +
+                "; history: " + workflow.HistoryCount + "/20" +
+                "; saved arrays: " + workflow.SavedCount + "/10");
             GUILayout.Label("Status: " + diagnostics.Status);
             GUILayout.Label("Accepted contexts: " + diagnostics.AcceptedContexts + "; rejected: " + diagnostics.RejectedContexts + "; applications: " + diagnostics.ArraysApplied + "; released: " + diagnostics.SessionsReleased);
             GUILayout.Label(contracts.Current == null
@@ -50,7 +54,7 @@ namespace KingmakerDiceRoller.UI
 
             GUILayout.Space(6f);
             GUI.enabled = coordinator.CanRestorePointBuy;
-            if (GUILayout.Button("Return active roll session to point buy"))
+            if (GUILayout.Button("Emergency: Return active Roll Mode to Point Buy"))
             {
                 string error;
                 if (!coordinator.TryRestorePointBuy(out error)) diagnostics.SetStatus("Point-buy restoration failed: " + error);

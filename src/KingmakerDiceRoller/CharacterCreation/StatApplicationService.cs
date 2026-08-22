@@ -50,7 +50,7 @@ namespace KingmakerDiceRoller.CharacterCreation
                     !ReferenceEquals(distribution, session.Distribution) ||
                     !ReferenceEquals(unit, session.Unit))
                 {
-                    throw new InvalidOperationException("The preview generation changed while the fixed array was being staged.");
+                    throw new InvalidOperationException("The preview generation changed while the rolled assignment was being staged.");
                 }
 
                 if (!values.SequenceEqual(statAccess.ReadDistributionValues(distribution, contracts)) ||
@@ -75,7 +75,7 @@ namespace KingmakerDiceRoller.CharacterCreation
                 }
                 catch (Exception rollbackException)
                 {
-                    logger.Exception("Rollback failed fixed-array staging", rollbackException);
+                    logger.Exception("Rollback failed rolled-assignment staging", rollbackException);
                 }
                 error = exception.Message;
                 return false;
@@ -98,7 +98,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             observation = InspectLive(session, contracts);
             if (!observation.IsVerified)
             {
-                error = observation.Failure ?? "The live controller preview does not yet contain the staged fixed array.";
+                error = observation.Failure ?? "The live controller preview does not yet contain the staged rolled assignment.";
                 return false;
             }
 
@@ -110,7 +110,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             }
             catch (Exception exception)
             {
-                logger.Exception("Mark live fixed-array application verified", exception);
+                logger.Exception("Mark live rolled-assignment application verified", exception);
                 error = exception.Message;
                 return false;
             }

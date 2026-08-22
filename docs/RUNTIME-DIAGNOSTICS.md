@@ -1,58 +1,71 @@
 # Runtime diagnostics
 
-## UMM panel
+The UMM panel is an operational and recovery surface. The native ability page
+is the primary product UI.
 
-The panel reports current status, accepted/rejected context counts, application
-count, contract MVID, detected compatibility-sensitive mods, and the last twelve
-session events. It also exposes the recovery action to return an active session
-to point buy.
+## UMM status
 
-Context decisions report stable facts for mode, first-level state, candidate
-flags, controller state/unit/preview identity, main-character presence, and
-whether the main descriptor matches the candidate or controller source. Raw
-object contents are not logged, and repeated rejection details remain
-deduplicated while the total rejection count continues increasing.
+The panel reports:
 
-Preview-continuity events distinguish session opening, same-owner rebinding,
-constructor-stage/deferred replacement, verified live application, and true
-stable-owner release. Live verification reports only stable Boolean facts:
-application generation, refresh-in-progress, pending replacement, same stable
-owner, rebound preview, controller state/preview identity, distribution
-identity/value match, and live unit-value match. `APPLY` is counted only after
-the controller's current generation passes all checks, including allocator
-suppression; matching detached objects are not sufficient.
+- product version and current workflow mode;
+- accepted/rejected context totals, verified applications, and releases;
+- exact contract resolution and Assembly-CSharp MVID;
+- detected compatibility mods and warnings;
+- history/saved-array counts;
+- emergency Return to Point Buy while Roll Mode is active;
+- recent deduplicated facts when verbose diagnostics are enabled.
 
-Point-buy transitions report the immutable pristine capture generation, current
-preview generation, whether a replacement snapshot already contained the roll,
-session mode, observed allocator budget, live pristine distribution/unit/
-allocator matches, and stable-owner roll suppression. A successful transition
-uses `RESTORE` and states that pristine point buy was verified on the live
-preview. Rolled values plus a full available budget are a hard verification
-failure and are never reported as restored.
+Rejection counts include repeated observations, but visible rejection messages
+are deduplicated by stable reason. This prevents constructor noise from hiding
+the decisive invariant.
 
-Presentation transitions separately report whether semantic point buy was
-already verified, whether the exact native refresh was requested, the refresh
-method/count, whether the Skills ability phase was active, whether its state,
-distribution, source, and preview bindings match the session, the pre/post
-generation, and post-refresh live-model verification. A presentation failure
-does not undo safe PointBuy mode or revive the rolled completion override.
+## Context facts
 
-## Log phrases
-
-Useful filters:
+Context diagnostics use stable Boolean relations instead of object dumps:
 
 ```text
-Kingmaker Dice Roller
-Contract:
-Character-creation context rejected:
-Fixed diagnostic array application verified against the live controller preview
-same-owner preview generation
-stable controller/source owner
-Restore point-buy allocator
-Verified pristine point-buy state on the live preview
-pristineBaselineCaptured
+mode
+isFirstLevel
+candidateMainFlag
+candidatePlayerFlag
+controllerStateMatches
+controllerUnitMatches
+controllerPreviewMatches
+mainCharacterPresent
+mainMatchesCandidate
+mainMatchesControllerUnit
+mainRelation
+```
+
+Unresolved identity is a rejection, never an implicit acceptance.
+
+## Session and application facts
+
+Key fields include:
+
+```text
+mode
+pointBuyOriginCaptured
+pointBuyOriginGeneration
+currentGeneration
+applicationGeneration
 candidateBaselineContaminated
+pendingReplacementObserved
+reboundPreview
+sameStableOwner
 rollSuppressedForStableOwner
+```
+
+A successful Roll/Reroll/Recall/reassignment reports that the live controller
+model, allocator, native controls, and presentation were verified before the
+workflow commit. A same-owner preview replacement is reported as a rebind, not
+as a second session or new roll.
+
+## Point-buy restoration facts
+
+Restoration distinguishes semantic safety from presentation synchronization:
+
+```text
 semanticPointBuyVerified
 presentationRefreshRequested
 presentationRefreshMethod
@@ -61,32 +74,34 @@ activeAbilityPhaseFound
 abilityPhaseStateMatchesSession
 abilityPhaseDistributionMatchesSession
 abilityPhaseViewModelMatchesSession
+postRefreshGeneration
 postRefreshLiveModelVerified
-Enable failed closed
-remains enabled to preserve recovery hooks
+allocatorBudget
+liveDistributionMatchesPointBuyOrigin
+liveUnitMatchesPointBuyOrigin
+mode=PointBuy
+rollSuppressedForStableOwner=true
 ```
 
-## Contract evidence
+If semantic restoration succeeds but native refresh fails, the safe PointBuy
+model is retained and the failure is reported. Stale labels alone do not cause
+rolled values to be reapplied.
 
-`scripts/Verify-KingmakerContracts.ps1` writes:
+## Saved-data warnings
 
-```text
-artifacts/contracts/runtime-contracts.json
+Malformed or unsupported saved-array records are skipped individually during
+load. Each skipped slot produces a concise warning without dumping serialized
+contents. Valid records continue to load.
+
+## Evidence collection
+
+After a live attempt, fully exit Kingmaker and run:
+
+```powershell
+powershell -NoLogo -NoProfile -ExecutionPolicy Bypass `
+  -File .\scripts\Collect-RuntimeEvidence.ps1
 ```
 
-It records the Assembly-CSharp path, SHA-256, identity, MVID, exact signatures,
-ability order, and resolved identity paths. A source archive must not contain
-that local report.
-
-## Build evidence
-
-`artifacts/build-provenance.json` records branch, commit, dirty status, DLL hash,
-and game-assembly identity. `artifacts/packages/package-manifest.json` records
-package contents and hashes.
-
-## Runtime evidence
-
-`scripts/Collect-RuntimeEvidence.ps1` copies available player/UMM logs into an
-ignored timestamped directory. Add screenshots and written observations there.
-Do not commit saves, logs, screenshots, local paths, or generated reports.
-For Kingmaker 2.1.7b it also checks the live LocalLow `output_log.txt` path.
+Inspect the complete chronological `output_log.txt`, not only the UMM panel's
+recent excerpt. Evidence directories are ignored local artifacts. Never commit
+logs, screenshots, saves, local paths, or copied game files.
