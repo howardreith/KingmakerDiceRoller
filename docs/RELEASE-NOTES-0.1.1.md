@@ -1,8 +1,8 @@
 # Kingmaker Dice Roller 0.1.1
 
-`0.1.1` is a corrective stable release of the `0.1.0` feature set. It does not
-intentionally change dice mechanics, character-creation support, point-buy
-restoration, UI behavior, persistence, or compatibility integrations.
+`0.1.1` is a corrective stable release of the `0.1.0` feature set.
+
+This release does not intentionally change dice mechanics, character-creation support, point-buy restoration, UI behavior, persistence, or compatibility integrations.
 
 ## Why this release exists
 
