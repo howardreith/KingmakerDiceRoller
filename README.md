@@ -1,10 +1,10 @@
 # Kingmaker Dice Roller
 
-**Candidate status:** `0.1.0-alpha.3` implements responsive Roll Stats UI and
-exact mercenary recruitment support. It is source/build/package-qualified and
-installed for human testing; runtime and compatibility qualification remain
-pending. `0.1.0-alpha.2` remains the published prerelease and its bytes are not
-replaced.
+**Stable candidate status:** `0.1.0` implements responsive Roll Stats UI and
+exact mercenary recruitment support. It is source-, exact-contract-, build-,
+package-, and installation-qualified for human testing; runtime and
+compatibility qualification remain pending. `0.1.0-alpha.2` remains the
+published prerelease and its bytes are not replaced.
 
 Kingmaker Dice Roller is a standalone Unity Mod Manager mod for Pathfinder:
 Kingmaker 2.1.7b. It adds an explicit rolled-ability workflow to the native
@@ -81,8 +81,9 @@ Roll or Recall and restored exactly; neither 20 nor 25 is hard-coded.
 
 The currently published package is `KingmakerDiceRoller-0.1.0-alpha.2.zip` in
 the GitHub Release's **Assets** section. Do not download GitHub's automatically
-generated source archives. The `0.1.0-alpha.3` package is a local human-test
-candidate and has not been published or release-authorized.
+generated source archives. `KingmakerDiceRoller-0.1.0.zip` is the installed
+stable-version candidate for human testing and has not been published or
+release-authorized.
 
 Install the ZIP with Unity Mod Manager, or extract its single
 `KingmakerDiceRoller` directory under the game's `Mods` directory. The package
@@ -91,7 +92,7 @@ artifacts or game assemblies.
 
 ## Qualification
 
-The alpha.3 candidate is source-, exact-contract-, build-, package-, and
+The `0.1.0` candidate is source-, exact-contract-, build-, package-, and
 installation-qualified against the configured Kingmaker 2.1.7b environment.
 Human runtime acceptance is still required for responsive geometry, click
 routing, exact mercenary entry/completion/cancellation, and unsupported-context
@@ -100,7 +101,7 @@ isolation. Historical alpha.2 runtime evidence does not qualify the new bytes.
 The candidate does not claim an exhaustive compatibility matrix. Bag of Tricks
 and Call of the Wild are detected but never modified. Bag of Tricks budgets are
 observed from the live allocator; Call of the Wild racial modifiers remain
-separate from rolled base values. Both require a fresh alpha.3 smoke.
+separate from rolled base values. Both require a fresh `0.1.0` smoke.
 
 For usage details see `docs/USER-GUIDE.md`. Build, package, checksum, tag, and
 release instructions are in `docs/BUILD-AND-RELEASE.md`.

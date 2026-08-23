@@ -1,4 +1,4 @@
-# 0.1.0-alpha.3 human acceptance
+# 0.1.0 human acceptance
 
 Source, exact-contract, build, package, and installation qualification do not
 replace this live gate. Preserve logs/screenshots outside Git and collect
@@ -189,5 +189,6 @@ powershell -NoLogo -NoProfile -ExecutionPolicy Bypass `
 ```
 
 Preserve evidence outside Git. Report the first failed invariant. Do not mark
-alpha.3 runtime-qualified until all vanilla sections pass; do not mark it
-compatibility-qualified until the named focused matrix passes.
+the exact installed `0.1.0` artifact runtime-qualified until all vanilla
+sections pass; do not mark it compatibility-qualified until the named focused
+matrix passes.

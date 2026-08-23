@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0-alpha.3 - responsive panel and mercenary recruitment candidate
+## 0.1.0 - responsive panel and mercenary recruitment
 
 - Added an explicit supported creation kind so new campaign main-character
   creation and player-initiated mercenary recruitment cannot cross-rebind.
@@ -34,9 +34,10 @@
 - Added exact context, mercenary lifecycle/point-buy, responsive calculator,
   presenter-profile, UI-state, and source-validator regressions. The candidate
   has 258 deterministic C# cases and 30 Python oracle cases.
-- Advanced UMM/runtime/informational/package metadata to `0.1.0-alpha.3`.
-  Human runtime and compatibility acceptance remain pending; no tag, release,
-  or replacement of alpha.2 bytes is authorized.
+- Promoted UMM/runtime/informational/package metadata to `0.1.0` for the exact
+  installed stable-version candidate. Human runtime and compatibility
+  acceptance remain pending; no tag, release, or replacement of alpha.2 bytes
+  is authorized.
 
 ## 0.1.0-alpha.2 - native panel usability repair
 

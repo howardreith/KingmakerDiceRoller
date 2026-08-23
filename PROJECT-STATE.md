@@ -2,12 +2,12 @@
 
 ## Current candidate
 
-`0.1.0-alpha.3` is implemented on
-`codex/responsive-roll-panel-mercenary-support` as a human-test candidate.
+`0.1.0` is the installed stable-version candidate on
+`codex/responsive-roll-panel-mercenary-support`.
 `0.1.0-alpha.2` remains the published prerelease; no alpha.2 tag, release, or
 asset was changed.
 
-The alpha.3 candidate combines two changes:
+The `0.1.0` stable-version candidate combines two changes:
 
 - a responsive upper-right Roll Stats drawer with Wide and Compact profiles;
 - exact first-level custom mercenary recruitment support alongside existing
@@ -78,7 +78,7 @@ different candidates, and unknown modes remain rejected.
 
 ## Qualification truth
 
-For `0.1.0-alpha.3`:
+For the exact installed `0.1.0` artifact:
 
 - Implemented: **Yes**.
 - Source-qualified: **Yes** — repository validation, 258/258 compiled C#
@@ -88,14 +88,14 @@ For `0.1.0-alpha.3`:
   recovery/UI surface.
 - Build-qualified: **Yes** — the configured exact-game Release build completes
   with zero warnings and zero errors.
-- Package-qualified: **Yes** — the deterministic six-file alpha.3 UMM archive
+- Package-qualified: **Yes** — the deterministic six-file `0.1.0` UMM archive
   is produced and validated by repository-owned tooling.
 - Installed: **Yes** — the validated archive is installed transactionally in
   the configured environment with non-target mod fingerprints preserved.
 - Runtime-qualified: **No** — responsive layout and the complete mercenary
   entry/restoration/lifecycle/completion matrix require human in-game evidence.
 - Compatibility-qualified: **No** — historical alpha.2 smoke does not qualify
-  alpha.3; Bag of Tricks and Call of the Wild need focused retesting.
+  the `0.1.0` bytes; Bag of Tricks and Call of the Wild need focused retesting.
 - Release-authorized: **No**.
 - Publicly released: **No**.
 
@@ -118,5 +118,6 @@ entry and completion, observed-budget restoration from untouched and partial
 Point Buy, cancellation/fresh-owner behavior, unsupported-context isolation,
 Compact overflow behavior, and the limited compatibility matrix.
 
-Do not tag, publish, merge, or call alpha.3 runtime-qualified until that evidence
-is collected and explicitly accepted.
+The immediate next gate is focused human acceptance of the exact installed
+`0.1.0` artifact before publication. Do not tag, publish, or call it
+runtime-qualified until that evidence is collected and explicitly accepted.

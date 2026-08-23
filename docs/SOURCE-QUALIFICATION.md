@@ -5,7 +5,7 @@
 `tools/validate_repository.py` checks:
 
 - required source, test, script, and documentation inventory;
-- exact `0.1.0-alpha.3` UMM/runtime/assembly version metadata;
+- exact `0.1.0` UMM/runtime/assembly version metadata;
 - JSON, XML, Python, PowerShell, and C# lexical/parse invariants;
 - C# 7.3 compatibility and pure-domain dependency separation;
 - absence of binaries, archives, saves, logs, extracted assets, and game files;

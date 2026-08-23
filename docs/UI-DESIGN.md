@@ -182,7 +182,7 @@ observer provides bounded cleanup and allocator-replacement handling.
 
 Exact compilation and contract fixtures cannot prove real resolution scaling,
 prefab offsets, focus, visual clipping, or click routing. The first live
-`0.1.0-alpha.3` gate is 1600 by 900 on both new-character and mercenary screens.
+`0.1.0` gate is 1600 by 900 on both new-character and mercenary screens.
 It must prove Wide content fits without ordinary scrolling, true collapse,
 Back/Next access, one panel through navigation, and complete cleanup. Repeat at
 1920 by 1080, 1536 by 960, 1366 by 768, and 1280 by 720; constrained effective
