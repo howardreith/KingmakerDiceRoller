@@ -50,7 +50,7 @@ REQUIRED = [
     'docs/ARCHITECTURE.md','docs/INTEGRATION-SEAMS.md','docs/COMPATIBILITY.md',
     'docs/SMOKE-TEST.md','docs/RUNTIME-DIAGNOSTICS.md','docs/BUILD-AND-RELEASE.md',
     'docs/SOURCE-QUALIFICATION.md','docs/UI-DESIGN.md','docs/USER-GUIDE.md','docs/LICENSING.md',
-    'docs/RELEASE-NOTES-0.1.0.md'
+    'docs/RELEASE-NOTES-0.1.1.md'
 ]
 FORBIDDEN_BINARY_SUFFIXES = {'.dll','.exe','.pdb','.mdb','.zip','.zks','.sav','.png','.jpg','.jpeg','.dds','.asset','.bundle'}
 
@@ -104,7 +104,6 @@ def balanced(text, path):
             stack.pop()
     require(not stack, f'{path}: unclosed delimiter {stack[-1][0] if stack else ""}')
 
-
 def strip_powershell(text):
     require(not re.search(r'(?m)^\s*@(?:"|\')', text), 'PowerShell here-strings are not supported by the source validator')
     out=[]; i=0; state='normal'
@@ -143,6 +142,14 @@ def sha256(path):
         for chunk in iter(lambda:f.read(1024*1024),b''): h.update(chunk)
     return h.hexdigest()
 
+def parse_umm_version(text):
+    parts=text.split('.')
+    if len(parts)>=4: selected=parts[:4]
+    elif len(parts)>=3: selected=parts[:3]
+    elif len(parts)>=2: selected=parts[:2]
+    else: selected=[parts[0],'0']
+    return tuple(int(re.sub(r'\D','', part)) for part in selected)
+
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--report', type=Path)
@@ -158,16 +165,20 @@ def main():
     require(info['AssemblyName']=='KingmakerDiceRoller.dll','unexpected assembly name')
     require(info['EntryMethod']=='KingmakerDiceRoller.Main.Load','unexpected entry method')
     require(info['GameVersion']=='2.1.7','unexpected target game version')
-    require(info['Version']=='0.1.0','unexpected stable version')
+    require(info['Version']=='0.1.1','unexpected stable version')
     product_metadata=(ROOT/'src/KingmakerDiceRoller/ProductMetadata.cs').read_text(encoding='utf-8')
     assembly_info=(ROOT/'src/KingmakerDiceRoller/Properties/AssemblyInfo.cs').read_text(encoding='utf-8')
-    require('0.1.0' in product_metadata and '0.1.0-alpha' not in product_metadata,
+    require('0.1.1' in product_metadata and '0.1.1-' not in product_metadata,
             'runtime product version is inconsistent')
-    require('AssemblyVersion("0.1.0.0")' in assembly_info and
-            'AssemblyFileVersion("0.1.0.0")' in assembly_info and
-            'AssemblyInformationalVersion("0.1.0")' in assembly_info,
+    require('AssemblyVersion("0.1.1.0")' in assembly_info and
+            'AssemblyFileVersion("0.1.1.0")' in assembly_info and
+            'AssemblyInformationalVersion("0.1.1")' in assembly_info,
             'assembly version metadata is inconsistent')
-    ok('Info.json and assembly product identity')
+    require(parse_umm_version('0.1.0-alpha.2') > parse_umm_version('0.1.0'),
+            'UMM prerelease-ordering regression fixture is invalid')
+    require(parse_umm_version(info['Version']) > parse_umm_version('0.1.0-alpha.2'),
+            'stable version must sort above the published alpha under the UMM parser')
+    ok('Info.json, assembly product identity, and UMM version ordering')
 
     xml_files=list(ROOT.rglob('*.csproj'))+list(ROOT.rglob('*.props'))
     for path in xml_files: ET.parse(path)
@@ -477,6 +488,9 @@ def main():
     installer=(ROOT/'scripts/Install.ps1').read_text(encoding='utf-8')
     common=(ROOT/'scripts/Common.ps1').read_text(encoding='utf-8')
     require('Duplicate package entry' in package_validator and 'exactly $($allowed.Count) files' in package_validator,'exact package allowlist validation missing')
+    require("Join-Path $root 'Info.json'" in package_validator and
+            '$info.Version -ne $expectedInfo.Version' in package_validator,
+            'package validator must derive the expected version from repository Info.json')
     require('rollback was attempted' in installer and '.KingmakerDiceRoller.install.' in installer,'transactional install rollback missing')
     require('Security.Cryptography.SHA256' in common and 'Get-FileHash' not in common,'hash helper must not inherit WhatIf behavior')
     require('[IO.Directory]::CreateDirectory($temporary)' in installer and '[IO.Directory]::Delete($temporary, $true)' in installer,'WhatIf preflight temp lifecycle must execute outside ShouldProcess')
@@ -504,6 +518,12 @@ def main():
             'repository validation must execute release qualification gate tests')
     ok('release publication qualification gate')
 
+    release_notes=(ROOT/'docs/RELEASE-NOTES-0.1.1.md').read_text(encoding='utf-8')
+    for token in ['0.1.0-alpha.2','0.1.0.2','0.1.1',
+                  'does not intentionally change dice mechanics']:
+        require(token in release_notes, f'0.1.1 release-note disclosure missing: {token}')
+    ok('0.1.1 corrective release disclosure')
+
     notices=(ROOT/'THIRD-PARTY-NOTICES.md').read_text(encoding='utf-8')
     upstream=(ROOT/'licenses/UPSTREAM-WOTR-DICE-ROLLER-MIT.txt').read_text(encoding='utf-8')
     require('FakeFriend24/wotr-dice-roller' in notices,'upstream attribution missing')
@@ -511,6 +531,7 @@ def main():
     ok('licensing and attribution')
 
     state=(ROOT/'PROJECT-STATE.md').read_text(encoding='utf-8')
+    require('`0.1.1`' in state,'current corrective version is missing from project state')
     for label in ['Implemented','Source-qualified','Build-qualified','Runtime-qualified','Compatibility-qualified']:
         require(label in state, f'qualification label missing: {label}')
     ok('qualification disclosure')

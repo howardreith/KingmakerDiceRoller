@@ -9,6 +9,10 @@ $root = Get-RepositoryRoot
 Assert-FileExists $PackagePath 'Package ZIP'
 $PackagePath = [IO.Path]::GetFullPath($PackagePath)
 
+$expectedInfoPath = Join-Path $root 'Info.json'
+Assert-FileExists $expectedInfoPath 'Repository Info.json'
+$expectedInfo = Get-Content -LiteralPath $expectedInfoPath -Raw | ConvertFrom-Json
+
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $allowed = @(
     'KingmakerDiceRoller/KingmakerDiceRoller.dll',
@@ -71,7 +75,9 @@ finally {
 
 if ($null -eq $info) { throw 'Info.json could not be read from the package.' }
 if ($info.Id -ne 'KingmakerDiceRoller') { throw "Unexpected packaged UMM ID: $($info.Id)" }
-if ($info.Version -ne '0.1.0') { throw "Unexpected packaged version: $($info.Version)" }
+if ($info.Version -ne $expectedInfo.Version) {
+    throw "Packaged version '$($info.Version)' does not match repository version '$($expectedInfo.Version)'."
+}
 if ($info.AssemblyName -ne 'KingmakerDiceRoller.dll') { throw "Unexpected packaged assembly name: $($info.AssemblyName)" }
 if ($info.EntryMethod -ne 'KingmakerDiceRoller.Main.Load') { throw "Unexpected packaged entry method: $($info.EntryMethod)" }
 if ($dllHeader.Count -ne 2 -or $dllHeader[0] -ne 0x4D -or $dllHeader[1] -ne 0x5A) {
