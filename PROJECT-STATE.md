@@ -89,20 +89,26 @@ different candidates, and unknown modes remain rejected.
 For the exact `0.1.1` corrective artifact:
 
 - Implemented: **Yes**.
-- Source-qualified: **No** — the source changes have not yet run through the
-  complete repository-owned qualification pipeline on the configured Windows
-  Kingmaker environment.
-- Contract-qualified: **No** — no fresh exact-assembly contract run exists for
-  the rebuilt `0.1.1` bytes.
-- Build-qualified: **No**.
-- Package-qualified: **No**.
-- Installed: **No**.
-- Runtime-qualified: **No** — the exact `0.1.1` package has not yet been
-  installed and launched.
+- Source-qualified: **Yes** — repository validation, 258/258 compiled C#
+  behavior cases, and 30/30 Python oracle cases pass.
+- Contract-qualified: **Yes** — exact Kingmaker 2.1.7b contract verification
+  passed against the configured installation.
+- Build-qualified: **Yes** — the Release build completed with zero warnings and
+  zero errors. DLL SHA-256:
+  `b8e99c74b378e088de2b79120b95624131a6c53ad7ddf6e87df1fca41096cd89`.
+- Package-qualified: **Yes** — the deterministic six-file `0.1.1` package
+  validated successfully. Package SHA-256:
+  `94aaefd7ba0724e0d2ce8c793529bd6b1bc471179d8d76544cb2c537b2be43f8`.
+- Installed: **Yes** — the validated package was transactionally installed into
+  the configured Kingmaker Mods directory and its DLL hash matched the
+  qualified artifact.
+- Runtime-qualified: **Yes** — the repository owner performed and accepted the
+  focused human runtime smoke of the exact installed `0.1.1` artifact,
+  including UMM version ordering and Roll -> Return to Point Buy.
 - Compatibility-qualified: **No** — the broader Bag of Tricks and Call of the
   Wild matrix remains incomplete; no new compatibility claim is introduced.
-- Release-authorized: **No** — authorization follows qualification and owner
-  acceptance of the exact rebuilt artifact.
+- Release-authorized: **Yes** — the repository owner accepted the exact
+  qualified and runtime-tested `0.1.1` artifact for publication.
 - Publicly released: **No**.
 
 Historical `0.1.0` evidence remains valid only for that immutable artifact:
