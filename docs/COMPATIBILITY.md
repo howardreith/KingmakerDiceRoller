@@ -13,15 +13,20 @@ fields. It does not assume a 25-point budget. The point-buy origin records the
 live total, remaining points, allocation, availability, and budget provenance
 immediately before Roll Mode.
 
+The same observation applies to mercenary recruitment. Vanilla evidence may
+show 20 points, but Dice Roller neither detects mercenaries by budget nor
+hard-codes that value. A compatible altered mercenary budget must round-trip
+from the captured live origin.
+
 Roll Mode disables native spending independently of point costs. Informational
 point-buy equivalent never drives restoration. Return to Point Buy invokes the
 captured allocator budget normally so compatible Bag of Tricks patches can run,
 then restores and verifies the captured allocation and fields on the newest
 preview.
 
-Positive live evidence exists for default-budget entry/restoration with Bag of
-Tricks active, but alternative budgets/settings and the full matrix remain
-unqualified.
+Historical alpha.2 live evidence exists for default-budget main-character
+entry/restoration with Bag of Tricks active. Alpha.3 mercenary budgets,
+alternative settings, and the full matrix remain unqualified.
 
 ## Call of the Wild
 
@@ -30,8 +35,9 @@ on Kingmaker/CotW stats and are displayed through the native modifier column.
 Preview rebuilds caused by added races reuse the current array and assignment.
 No CotW blueprint, class, or assembly contract is imported.
 
-A limited new-character entry smoke passed with Call of the Wild installed.
-Added-race navigation, restoration, and the complete matrix remain unqualified.
+A limited alpha.2 new-character entry smoke passed with Call of the Wild
+installed. Alpha.3 main/mercenary added-race navigation, restoration, and the
+complete matrix remain unqualified.
 
 ## Gunslinger and other class mods
 
@@ -49,7 +55,8 @@ Run a fully fresh process for:
 4. Dice Roller + both.
 5. The intended full mod list.
 
-For each configuration test PointBuy-first entry, Roll/Reroll, assignment,
-history/recall, race change, exact restoration, completion, and context
-isolation. Record Bag of Tricks' configured budget. Compatibility-qualified
-remains **No** until this evidence exists.
+For each configuration test main-character and mercenary PointBuy-first entry,
+Roll/Reroll, assignment, history/recall, race change, exact restoration,
+completion, and context isolation. Record Bag of Tricks' configured budget for
+both creation kinds. Compatibility-qualified remains **No** until this evidence
+exists.

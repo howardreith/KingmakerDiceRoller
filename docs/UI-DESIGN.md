@@ -32,18 +32,51 @@ The tab must never overlap the racial selector arrows, skill controls, Back,
 or Next. Because the owned root has no `Graphic`, every point outside the tab
 routes directly to Kingmaker while collapsed.
 
-## Expanded surface
+## Responsive expanded surface
 
-The expanded UI is a 400 by 570 rectangular surface with 16-unit internal
-padding. It uses a code-owned solid parchment `Image` at 0.98 opacity and the
-native local material. It deliberately does not copy the allocator's
-`m_Frame` sprite: live evidence showed that sprite is a large curved oval and
-cannot contain this panel's rectangular content.
+The expanded UI is an upper-right rectangular drawer. Wide prefers 620 by 760
+UI units with 18-unit top/right safe insets and a conservative 92-unit bottom
+inset for native navigation. Compact prefers 460 by 650 and clamps to the
+actual relevant parent `RectTransform`. These are Canvas-space values, not raw
+screen pixels.
 
-The surface has a `RectMask2D`. Its content is placed inside a vertical,
-clamped `ScrollRect` with a second masked viewport and no horizontal scrolling.
-No child may render beyond the visible rectangle. A normal compact **Close**
-button in the header returns to the true collapsed state.
+`ResponsiveRollPanelLayoutCalculator` is pure and data-only. Its primitive
+inputs are available parent width/height, safe insets, measured preferred body
+height, prior profile, and prior scroll state. It returns:
+
+```text
+Wide or Compact
+safe width and height
+panel width and height
+header and footer height
+body viewport height
+scroll required
+safe anchored insets
+```
+
+Wide requires meaningful safe geometry (normally at least 560 by 680). An
+8-unit geometry hysteresis avoids profile chatter. All results clamp to safe
+bounds and body space cannot become negative. Responsive profile is not
+persisted as character state and is identical on main-character and mercenary
+screens.
+
+The surface uses a code-owned solid parchment `Image` at 0.98 opacity and the
+native local material. It deliberately does not copy the allocator's `m_Frame`
+sprite: that sprite is a curved oval and cannot contain the drawer.
+
+The 38-unit header is fixed outside the scroll body. It contains the title,
+compact current mode, and a 76 by 30 **Close** button; no
+`ContentSizeFitter` controls its height. A compact 38-unit status/error footer
+is also fixed. Ordinary messages wrap within that footer without reserving a
+large empty error area.
+
+The body has a `RectMask2D`, one measurement `ContentSizeFitter`, and a clamped
+vertical-only `ScrollRect`. After meaningful geometry or visibility changes,
+the host measures `LayoutUtility.GetPreferredHeight(body)` against the returned
+viewport. Overflow beyond a 2-unit tolerance enables scrolling and the narrow
+scrollbar. When content fits, scrolling and scrollbar are disabled and the
+position resets to the top. No child renders beyond the mask and horizontal
+scrolling is never enabled.
 
 ## Typography and contrast
 
@@ -58,25 +91,48 @@ ellipsis only as a last resort. Noninteractive TMP labels always have
 `raycastTarget = false`; button and input backgrounds are the intentional
 raycast targets.
 
-## Progressive disclosure
+## Wide presentation
 
-Point Buy initially shows:
+Wide Point Buy displays relevant configuration without a **Roll Options**
+disclosure:
 
-1. title, Close, and **Point Buy** heading;
-2. captioned **Roll method** selector;
-3. Roll;
-4. collapsed **Roll Options**;
-5. **Saved (n)** only when a saved array can be recalled;
-6. one concise status or validation line.
+```text
+Roll method       [<]  4d6, drop lowest       [>]
+Low-score rule    [<]  Keep all rolls         [>]
+Minimum           [-]  9                      [+]  (minimum rules only)
+Custom expression input + example                 (Custom only)
+Roll
+selected Saved record and Recall controls          (when relevant)
+```
 
-**Roll Options** contains the captioned **Low-score rule** selector. Minimum is
-shown only for a minimum-based rule. Custom input and `Example: 4d[6]kh3` are
-shown only for Custom expression.
+Inactive conditional rows reserve no blank space.
 
-Roll Mode replaces the irrelevant Point Buy controls with Reroll, Return to
-Point Buy, six aligned assignment rows, total/equivalent/rule summary, and
-collapsed **History (n)** and **Saved (n)** sections. Their navigation buttons
-appear only when the player expands that section.
+Wide Roll Mode keeps assignments in one ordered vertical sequence:
+
+```text
+STR  value                                      [Up] [Down]
+DEX  value                                      [Up] [Down]
+CON  value                                      [Up] [Down]
+INT  value                                      [Up] [Down]
+WIS  value                                      [Up] [Down]
+CHA  value                                      [Up] [Down]
+```
+
+It also shows the current roll-method selector, Reroll, Return to Point Buy,
+total, point-buy equivalent, actual applied generation rule (`Rolled with:`),
+one current History record with Previous/Next/Use, one current Saved record
+with Store/Previous/Next/Recall/Delete as applicable, and status. Ordinary
+Wide Roll Mode fits without wheel input at the primary desktop gate.
+
+The selected preset remains separate from the actual applied rule because the
+player may change the selector after rolling.
+
+## Compact presentation
+
+Compact preserves stable-owner-scoped progressive disclosure. **Roll
+Options**, **History**, and **Saved** can begin collapsed, with conditional
+Minimum/Custom rows following the same semantic rules as Wide. Only measured
+overflow activates scrolling. Header and Close never scroll.
 
 Racial modifiers remain in Kingmaker's existing modifier presentation. The
 panel labels base assignments only.
@@ -89,9 +145,11 @@ panel labels base assignments only.
 **Reroll low scores**, and **Reroll whole array**.
 `RollUiCommandRouter` maps workflow clicks to coordinator commands.
 
-Disclosure actions update only `NativeRollPanelState`; rendering and
-open/close never generate dice, mutate the roll session, write a stat, or save
-settings. Technical controller/generation facts remain in UMM diagnostics.
+Disclosure actions update only `NativeRollPanelState`; responsive profile is
+derived geometry. Rendering, profile switching, open/close, and disclosure
+changes never generate dice, mutate the roll session, write a stat, or save
+settings. Technical controller/generation/layout facts remain in UMM
+diagnostics.
 
 ## Native control behavior
 
@@ -124,6 +182,9 @@ observer provides bounded cleanup and allocator-replacement handling.
 
 Exact compilation and contract fixtures cannot prove real resolution scaling,
 prefab offsets, focus, visual clipping, or click routing. The first live
-`0.1.0-alpha.2` gate is 1600 by 900 and must prove readable expanded content,
-true collapse, access to every skill control plus Back/Next, one panel through
-navigation, and complete cleanup. Any obstruction remains a runtime blocker.
+`0.1.0-alpha.3` gate is 1600 by 900 on both new-character and mercenary screens.
+It must prove Wide content fits without ordinary scrolling, true collapse,
+Back/Next access, one panel through navigation, and complete cleanup. Repeat at
+1920 by 1080, 1536 by 960, 1366 by 768, and 1280 by 720; constrained effective
+geometry must select a usable Compact profile. Any obstruction remains a
+runtime blocker.

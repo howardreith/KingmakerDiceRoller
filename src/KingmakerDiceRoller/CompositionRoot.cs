@@ -117,7 +117,7 @@ namespace KingmakerDiceRoller
                 for (int index = 0; index < resolved.Evidence.Count; index++) logger.Info("Contract: " + resolved.Evidence[index]);
                 patches.Install(resolved, coordinator, nativePanel);
                 enabled = true;
-                diagnostics.SetStatus("Enabled; waiting for an exact new-main-character LevelUpState.");
+                diagnostics.SetStatus("Enabled; waiting for exact supported custom creation (new main character or mercenary).");
                 logger.Info("Kingmaker Dice Roller " + ProductMetadata.Version +
                     " enabled; explicit rolled-ability workflow is ready.");
                 return true;

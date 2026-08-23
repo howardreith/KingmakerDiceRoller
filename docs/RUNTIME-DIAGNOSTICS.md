@@ -24,10 +24,13 @@ the decisive invariant.
 Context diagnostics use stable Boolean relations instead of object dumps:
 
 ```text
+accepted creation kind
 mode
 isFirstLevel
 candidateMainFlag
 candidatePlayerFlag
+candidatePetFlag
+candidateEnemyFlag
 controllerStateMatches
 controllerUnitMatches
 controllerPreviewMatches
@@ -35,9 +38,18 @@ mainCharacterPresent
 mainMatchesCandidate
 mainMatchesControllerUnit
 mainRelation
+mercenaryStateEmployee
+mercenaryStableOwnerCustom
+mercenaryDiscriminator
+stableOwnerSource
+observed allocator budget/provenance
 ```
 
-Unresolved identity is a rejection, never an implicit acceptance.
+The mercenary discriminator is reported as exact
+`LevelUpState.IsEmployee + UnitHelper.IsCustomCompanion(controller source)`
+evidence, not a raw object. A rejected context records the first failed
+requirement. Unresolved identity and `DifferentFromCandidate` without exact
+mercenary evidence are rejections, never implicit acceptance.
 
 ## Session and application facts
 
@@ -116,6 +128,28 @@ ownedRootBlocksRaycasts=false
 Collapsed mode must leave only the access tab active and raycastable. A panel
 construction or binding failure destroys all owned UI and leaves vanilla Point
 Buy untouched.
+
+## Responsive layout facts
+
+Layout diagnostics are emitted only when meaningful layout state changes:
+
+```text
+creationKind
+profile=Wide|Compact
+available parent width/height
+effective Canvas scale
+calculated panel width/height
+body viewport height
+measured preferred body height
+scroll=true|false
+expanded anchored position
+access-tab anchored position
+```
+
+They do not expose screen titles or raw Unity/controller objects. The profile
+comes from parent geometry, not character state. A small geometry/overflow
+tolerance prevents per-frame log and layout flicker. Absence of a new line on
+an unchanged frame is expected.
 
 ## Evidence collection
 

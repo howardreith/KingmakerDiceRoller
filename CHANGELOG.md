@@ -1,5 +1,43 @@
 # Changelog
 
+## 0.1.0-alpha.3 - responsive panel and mercenary recruitment candidate
+
+- Added an explicit supported creation kind so new campaign main-character
+  creation and player-initiated mercenary recruitment cannot cross-rebind.
+- Verified the exact Kingmaker mercenary path:
+  `CreateCustomCompanion.RunAction` delegates to
+  `Player.CreateCustomCompanion`, which opens `CharBuildMode.CharGen`; the
+  resulting `LevelUpState.IsEmployee` getter calls
+  `UnitHelper.IsCustomCompanion(LevelUpState.Unit)`.
+- Require both the state `IsEmployee` result and the same exact
+  `IsCustomCompanion(LevelUpController.Unit)` result. A different established
+  `Player.MainCharacter` remains rejected without this independent evidence.
+- Kept controller plus stable source descriptor ownership. Mercenary preview,
+  state, distribution, and allocator replacement rebind the same session;
+  cancellation, completion, disable, and owner loss clear it.
+- Preserved exact observed point-buy origins for mercenaries, including vanilla
+  20-point fixtures, partial allocations, and nonstandard modded budgets. No
+  mercenary budget is hard-coded.
+- Replaced the fixed narrow panel with a responsive upper-right drawer:
+  preferred 620 by 760 Wide geometry, safe-area clamping, deterministic
+  38-unit header, 76 by 30 Close control, and fixed compact status footer.
+- Wide Point Buy displays relevant roll configuration directly. Wide Roll Mode
+  displays all six ordered assignment rows, summary, applied generation rule,
+  current History record, current Saved record, and status without ordinary
+  scrolling.
+- Compact keeps progressive disclosure and enables a masked, vertical-only
+  `ScrollRect` only when measured content exceeds its body viewport. Geometry
+  and scrolling use tolerances to avoid profile flicker.
+- Reduced Unity layout ambiguity to one body `ContentSizeFitter`, explicit row
+  and control heights, cached meaningful layout changes, and controlled layout
+  rebuilds. The allocator oval sprite remains unused.
+- Added exact context, mercenary lifecycle/point-buy, responsive calculator,
+  presenter-profile, UI-state, and source-validator regressions. The candidate
+  has 258 deterministic C# cases and 30 Python oracle cases.
+- Advanced UMM/runtime/informational/package metadata to `0.1.0-alpha.3`.
+  Human runtime and compatibility acceptance remain pending; no tag, release,
+  or replacement of alpha.2 bytes is authorized.
+
 ## 0.1.0-alpha.2 - native panel usability repair
 
 - Recorded the first live player-panel gate accurately: Point Buy remained the

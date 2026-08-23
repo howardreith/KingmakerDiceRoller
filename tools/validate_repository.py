@@ -156,13 +156,13 @@ def main():
     require(info['AssemblyName']=='KingmakerDiceRoller.dll','unexpected assembly name')
     require(info['EntryMethod']=='KingmakerDiceRoller.Main.Load','unexpected entry method')
     require(info['GameVersion']=='2.1.7','unexpected target game version')
-    require(info['Version']=='0.1.0-alpha.2','unexpected alpha version')
+    require(info['Version']=='0.1.0-alpha.3','unexpected alpha version')
     product_metadata=(ROOT/'src/KingmakerDiceRoller/ProductMetadata.cs').read_text(encoding='utf-8')
     assembly_info=(ROOT/'src/KingmakerDiceRoller/Properties/AssemblyInfo.cs').read_text(encoding='utf-8')
-    require('0.1.0-alpha.2' in product_metadata,'runtime product version is inconsistent')
+    require('0.1.0-alpha.3' in product_metadata,'runtime product version is inconsistent')
     require('AssemblyVersion("0.1.0.0")' in assembly_info and
             'AssemblyFileVersion("0.1.0.0")' in assembly_info and
-            'AssemblyInformationalVersion("0.1.0-alpha.2")' in assembly_info,
+            'AssemblyInformationalVersion("0.1.0-alpha.3")' in assembly_info,
             'assembly version metadata is inconsistent')
     ok('Info.json and assembly product identity')
 

@@ -5,7 +5,7 @@
 `tools/validate_repository.py` checks:
 
 - required source, test, script, and documentation inventory;
-- exact `0.1.0-alpha.2` UMM/runtime/assembly version metadata;
+- exact `0.1.0-alpha.3` UMM/runtime/assembly version metadata;
 - JSON, XML, Python, PowerShell, and C# lexical/parse invariants;
 - C# 7.3 compatibility and pure-domain dependency separation;
 - absence of binaries, archives, saves, logs, extracted assets, and game files;
@@ -14,9 +14,11 @@
   diagnostic array;
 - transition-time point-buy origin versus generation rollback separation;
 - transactional rolled-assignment staging and current-live-preview validation;
-- exact native panel contracts, presenter/command separation, and bounded
+- exact native panel contracts, Wide/Compact responsive calculator,
+  presenter/command separation, measured-overflow scrolling, and bounded
   attach/rebind/detach lifecycle;
-- stable-owner context/liveness guards and all exclusion boundaries;
+- stable-owner context/liveness guards, explicit creation kinds, exact
+  custom-companion mercenary evidence, and all exclusion boundaries;
 - saved schema, history, settings, package allowlist, and transactional install
   guards;
 - minimum executable C# and Python behavior inventories;
@@ -34,8 +36,9 @@ The compiled C# runner links production domain/workflow/reflection services and
 uses exact-shape fixtures. It covers explicit command/RNG semantics, presets,
 policies, parser failures, transactional workflow modes, point-buy origins,
 preview generations, assignment, history, saved-record XML/migration, native
-presenter routing, panel lifecycle, control suppression/restoration, current
-controller verification, disable recovery, and context exclusions.
+presenter profiles, responsive geometry, panel lifecycle, control
+suppression/restoration, current controller verification, mercenary origin
+round-trips, disable recovery, and context exclusions.
 
 The exact-contract script loads Howie's installed 2.1.7b assemblies and proves
 every game/UI member used by production, including signatures, declaring

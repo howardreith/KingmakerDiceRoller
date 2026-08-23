@@ -2,7 +2,7 @@
   "Id": "KingmakerDiceRoller",
   "DisplayName": "Kingmaker Dice Roller",
   "Author": "Howie Reith",
-  "Version": "0.1.0-alpha.2",
+  "Version": "0.1.0-alpha.3",
   "ManagerVersion": "0.32.0",
   "GameVersion": "2.1.7",
   "AssemblyName": "KingmakerDiceRoller.dll",

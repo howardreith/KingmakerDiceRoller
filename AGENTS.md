@@ -37,7 +37,11 @@ Harmony patches may not contain business logic.
 
 ## Safety
 
-- Fail closed outside an exact supported new-main-character context.
+- Fail closed outside exact supported first-level custom creation:
+  - a new campaign main character;
+  - player-initiated mercenary recruitment.
+- A different established main-character descriptor is rejected unless the
+  independent exact custom-companion mercenary discriminator also passes.
 - Never patch normal level-up behavior globally.
 - Do not patch `StatsDistribution.Add`, `Remove`, `CanAdd`, `CanRemove`, or cost methods.
 - Do not generate a new array because a preview or phase was rebuilt.
@@ -54,5 +58,5 @@ reproducible smoke-test scenario.
 
 ## Git
 
-Work on `pro/kingmaker-dice-roller-mvp`. Commit coherent checkpoints. Never
+Work on a mission-specific feature branch. Commit coherent checkpoints. Never
 force-push or mix changes from another Kingmaker repository.

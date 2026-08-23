@@ -1,111 +1,122 @@
 # Project state
 
-## Current phase
+## Current candidate
 
-`0.1.0-alpha.2` is the owner-authorized first GitHub release candidate on
-`main`.
+`0.1.0-alpha.3` is implemented on
+`codex/responsive-roll-panel-mercenary-support` as a human-test candidate.
+`0.1.0-alpha.2` remains the published prerelease; no alpha.2 tag, release, or
+asset was changed.
 
-On 2026-08-23, the repository owner explicitly accepted the current feature set
-and presentation as release-ready. Additional improvements may be developed in
-later versions; they are not blockers for publishing this version.
+The alpha.3 candidate combines two changes:
 
-All repository branches have been compared against `main`. The development
-branch `pro/kingmaker-dice-roller-mvp` contains no commits absent from `main`.
+- a responsive upper-right Roll Stats drawer with Wide and Compact profiles;
+- exact first-level custom mercenary recruitment support alongside existing
+  new campaign main-character creation.
 
-## Implemented release behavior
+## Implemented behavior
 
-- A supported new-main-character build opens in ordinary Point Buy.
-- No roll is generated because character creation, navigation, preview rebuild,
-  or UI construction occurs.
-- Roll and Recall capture the exact current point-buy origin before entering
-  Roll Mode.
-- Reroll preserves that origin and replaces the current raw array only after
-  live-state verification.
-- Position-based Move Up and Move Down controls preserve duplicate-score
-  identity.
-- Roll Mode suppresses all native ability plus/minus controls and cannot layer
-  spendable point-buy points on top of a rolled array.
-- Return to Point Buy restores the observed allocation, budget, remaining
-  points, total points, allocator availability, distribution, and preview base
-  values from immediately before Roll Mode.
-- Presets, custom expressions, low-score policies, history, saved arrays, and
-  assignment controls are available through the native character-creation
-  panel.
-- Each new stable owner starts with a compact **Roll Stats** access tab. The
-  expanded panel is bounded, masked, scrollable, and fully removed from the
-  raycast surface when collapsed.
-- Stable-owner UI state survives allocator replacement while cancellation,
-  completion, disable, and unload destroy all owned UI.
-- Completed characters contain ordinary Kingmaker base ability values. The mod
-  creates no save-owned blueprint, fact, buff, component, or unit part.
+- Both supported creation kinds start in ordinary Point Buy with only the
+  compact **Roll Stats** tab visible. No preview, phase, allocator, geometry, or
+  UI rebuild generates a roll.
+- Wide geometry prefers 620 by 760 UI units and keeps the compact header,
+  normal Close control, roll configuration, six assignment rows, summary,
+  current History/Saved records, and status visible without ordinary scrolling.
+- Compact geometry retains progressive disclosure. Its masked vertical
+  `ScrollRect` is enabled only when measured body content overflows; horizontal
+  scrolling is always disabled.
+- Safe top/right and conservative bottom insets keep the drawer inside the
+  relevant parent bounds and away from bottom navigation. Collapse deactivates
+  the complete expanded hierarchy and its raycast footprint.
+- The exact mercenary discriminator requires both
+  `LevelUpState.IsEmployee == true` and
+  `UnitHelper.IsCustomCompanion(LevelUpController.Unit) == true` for the same
+  controller-owned build. It does not infer mercenary purpose from UI text,
+  budget, faction, level, or a different main-character identity.
+- New main-character and mercenary sessions carry distinct immutable creation
+  kinds and cannot cross-rebind. Stable ownership remains the exact
+  `LevelUpController` plus its source `UnitDescriptor`; preview, state,
+  distribution, and allocator are replaceable generations.
+- Roll or Recall captures exact current allocation, observed budget, remaining
+  and total points, allocator availability, and preview base values. Reroll
+  never recaptures that origin. Return to Point Buy restores the captured
+  values and budget rather than assuming 20 or 25.
+- Roll Mode suppresses native plus/minus controls. Completion stores ordinary
+  Kingmaker base values only; no blueprint, fact, buff, component, unit part,
+  hiring marker, or save-owned record is created.
+- Cancellation, completion, phase exit, controller/source loss, disable, and
+  unload remove transient session/UI state. Saved arrays remain intentionally
+  global UMM settings; session History remains build-scoped.
 
 ## Supported integration boundary
 
-The supported owner is the active
-`Game.Instance.UI.CharacterBuildController.LevelUpController` together with its
-stable source `UnitDescriptor`. The implementation fails closed outside the
-supported new custom main-character context and excludes ordinary progression,
-companions, pets, enemies, mercenaries, pregens, respec, unknown modes, and a
-different established campaign main character.
+Accepted only after all exact ownership, first-level, mode, player-facing,
+non-pet, non-enemy, identity, and discriminator checks pass:
 
-The exact native UI contract is Pathfinder: Kingmaker 2.1.7b's
-`CharBPhaseSkills.AbilityScoresAllocator` and
-`CharBAbilityScoresAllocator.FillData()` path. The product targets .NET
-Framework 4.7.2, C# 7.3, Unity Mod Manager 0.32.x, and Harmony12.
+1. new custom campaign main-character creation;
+2. player-initiated custom mercenary recruitment.
+
+Mercenary discovery against exact Kingmaker 2.1.7b IL established:
+
+```text
+CreateCustomCompanion.RunAction
+  -> Player.CreateCustomCompanion(...)
+  -> HandleLevelUpStart(newCompanion.Descriptor, ..., CharBuildMode.CharGen)
+
+LevelUpState.IsEmployee
+  -> UnitHelper.IsCustomCompanion(LevelUpState.Unit)
+```
+
+During that path, `LevelUpController.Unit` is the stable custom-companion
+descriptor; `LevelUpController.Preview` and `LevelUpState.Unit` are transient
+preview descriptors. `Player.MainCharacter` is resolved and remains a different
+established descriptor. No ephemeral launch token or additional Harmony patch
+was required.
+
+Ordinary level-up, existing-character or companion progression, pets, enemies,
+respec, pregenerated selection, unresolved ownership/identity, unmarked
+different candidates, and unknown modes remain rejected.
 
 ## Qualification truth
 
-For `0.1.0-alpha.2`:
+For `0.1.0-alpha.3`:
 
 - Implemented: **Yes**.
-- Source-qualified: **Yes** — the clean aggregate gate passed with 88 C# source
-  files, 212/212 compiled C# behavior cases, and 30/30 Python oracle cases.
-- Build-qualified: **Yes** — the exact Kingmaker build completed with zero
-  warnings and zero errors for the qualified alpha.2 implementation.
-- Installed: **Yes** — the validated six-file package was installed
-  transactionally and non-target mod fingerprints were preserved.
-- Runtime-qualified: **Yes** — the focused live workflow evidence passed its
-  mechanical gates, and the repository owner has accepted the current native
-  panel and click-routing state for release.
-- Compatibility-qualified: **Limited** — Bag of Tricks and Call of the Wild have
-  positive focused smoke evidence, but this release does not claim an exhaustive
-  third-party compatibility matrix.
-- Release-authorized: **Yes** — the owner authorized tagging and GitHub release
-  publication on 2026-08-23.
-- Publicly released: **Pending final local rebuild and GitHub asset upload**.
+- Source-qualified: **Yes** — repository validation, 258/258 compiled C#
+  behavior cases, and 30/30 Python oracle cases pass.
+- Contract-qualified: **Yes** — the exact installed Kingmaker 2.1.7b contract
+  gate verifies the custom-companion discriminator and the existing four-patch
+  recovery/UI surface.
+- Build-qualified: **Yes** — the configured exact-game Release build completes
+  with zero warnings and zero errors.
+- Package-qualified: **Yes** — the deterministic six-file alpha.3 UMM archive
+  is produced and validated by repository-owned tooling.
+- Installed: **Yes** — the validated archive is installed transactionally in
+  the configured environment with non-target mod fingerprints preserved.
+- Runtime-qualified: **No** — responsive layout and the complete mercenary
+  entry/restoration/lifecycle/completion matrix require human in-game evidence.
+- Compatibility-qualified: **No** — historical alpha.2 smoke does not qualify
+  alpha.3; Bag of Tricks and Call of the Wild need focused retesting.
+- Release-authorized: **No**.
+- Publicly released: **No**.
 
-Historical exact-game evidence remains:
+Exact target assembly evidence:
 
-- Assembly-CSharp MVID:
-  `07fa1e4d-8618-41b3-9b8d-faa17d3b26f7`
-- Assembly-CSharp SHA-256:
-  `3b6450ffec440e296e586f71c711b195aed144b28d53e1cbb29406d18fef5afb`
-
-The previously recorded package and DLL hashes describe an earlier clean
-alpha.2 packaging commit. They must not be presented as the hashes of a later
-release commit. The guarded publisher rebuilds, revalidates, and records fresh
-hashes from the exact fully pushed `main` commit used for the release.
-
-## Immediate next gate
-
-The current gate is publication of a freshly rebuilt and package-validated UMM
-archive from the exact fully pushed `main` commit. No additional feature or
-presentation acceptance is required for this version.
-
-## Release procedure
-
-From the configured Windows Kingmaker development checkout, pull the final
-`main` commit and run:
-
-```powershell
-powershell -NoLogo -NoProfile -ExecutionPolicy Bypass `
-  -File .\scripts\Publish-Release.ps1 `
-  -Publish `
-  -ConfirmRuntimeQualified `
-  -ReleaseNotesPath .\docs\RELEASE-NOTES-0.1.0-alpha.2.md
+```text
+Assembly-CSharp MVID:    07fa1e4d-8618-41b3-9b8d-faa17d3b26f7
+Assembly-CSharp SHA-256: 3b6450ffec440e296e586f71c711b195aed144b28d53e1cbb29406d18fef5afb
 ```
 
-Because the current semantic version contains `-alpha.2`, GitHub will label it
-a prerelease. It is nevertheless the owner-authorized final artifact for this
-version. Any subsequent code change must use a new version rather than replacing
-published bytes.
+Final candidate commit, DLL/package hashes, package path, and installation
+result are recorded in the engineering handoff generated from the clean final
+branch. Historical hashes are not reused.
+
+## Immediate human gate
+
+Run `docs/SMOKE-TEST.md` at 1600 by 900 first, then 1920 by 1080, 1536 by 960,
+1366 by 768, and 1280 by 720. Prove main-character regression, exact mercenary
+entry and completion, observed-budget restoration from untouched and partial
+Point Buy, cancellation/fresh-owner behavior, unsupported-context isolation,
+Compact overflow behavior, and the limited compatibility matrix.
+
+Do not tag, publish, merge, or call alpha.3 runtime-qualified until that evidence
+is collected and explicitly accepted.

@@ -41,10 +41,10 @@ For final provenance, run from the clean final commit. Qualification reports
 branch, commit, dirty state, test counts, exact Assembly-CSharp MVID/SHA-256,
 compiler warnings/errors, DLL SHA-256, package SHA-256, and package path.
 
-Version `0.1.0-alpha.2` packages as:
+Version `0.1.0-alpha.3` packages as:
 
 ```text
-artifacts/packages/KingmakerDiceRoller-0.1.0-alpha.2.zip
+artifacts/packages/KingmakerDiceRoller-0.1.0-alpha.3.zip
 ```
 
 The archive has one top-level `KingmakerDiceRoller` directory and exactly six
@@ -94,7 +94,7 @@ powershell -NoLogo -NoProfile -ExecutionPolicy Bypass `
 ```
 
 Use `-ReleaseNotesPath <path>` to prepend project-specific notes. Versions with
-a prerelease suffix, such as `0.1.0-alpha.2`, are automatically marked as
+a prerelease suffix, such as `0.1.0-alpha.3`, are automatically marked as
 GitHub prereleases and are not marked Latest.
 
 The publisher refuses a dirty worktree, a non-default branch, a commit that

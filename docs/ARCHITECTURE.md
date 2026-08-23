@@ -43,6 +43,9 @@ Current generation
   preview UnitDescriptor
   StatsDistribution
   GenerationRollbackSnapshot
+
+Creation purpose
+  NewMainCharacter or Mercenary
 ```
 
 The mode state machine is:
@@ -66,10 +69,21 @@ per-generation rollback snapshot used only to recover a failed write.
 signatures, instance/static status, and writable properties. Unknown contracts
 fail enablement closed before Roll Mode can be offered.
 
-`CharacterCreationContextPolicy` permits only a controller-owned first-level
-custom main-character preview. It normalizes wrappers through bounded descriptor
-resolution and distinguishes an absent/same preview main character from a
-different established campaign main character.
+`CharacterCreationContextPolicy` classifies the accepted purpose explicitly as
+`NewMainCharacter` or `Mercenary`. It normalizes wrappers through bounded
+descriptor resolution. Main-character creation retains its qualified
+absent/same/source-preview identity relationships. A different established
+campaign main character remains rejected unless independent exact mercenary
+evidence passes.
+
+Mercenary evidence is game-owned and read-only: the owned state must report
+`LevelUpState.IsEmployee`, and the stable controller source must independently
+pass exact `UnitHelper.IsCustomCompanion(UnitDescriptor)`. Exact IL proves the
+state property delegates to that same helper. Mercenaries additionally require
+the observed `CharGen` mode, first level, player faction, non-main, non-pet,
+non-enemy flags, owned state/preview/distribution, a resolved different campaign
+main character, and a stable custom-companion source. No UI text or point budget
+participates in classification.
 
 `StatApplicationService`, `PointBuyRestoreService`, and
 `AbilityPhasePresentationService` separately own model staging, semantic
@@ -84,11 +98,24 @@ ability allocator. `RollPanelPresenter` renders a data-only snapshot and
 writes stats.
 
 `NativeRollPanelState` owns only stable-owner-scoped expand/disclosure choices;
-it has no workflow mutation surface. `NativeRollPanelLayoutSpec` makes the
-rectangular dimensions, readable typography floors, mask/scroll policy, and
-raycast boundaries executable. The host's top-level object has no Graphic. Its
-expanded rectangular surface and compact collapsed access tab are mutually
-exclusive, and all noninteractive TMP labels reject raycasts.
+it has no workflow mutation surface and does not persist responsive geometry.
+`ResponsiveRollPanelLayoutCalculator` uses primitive parent bounds, safe insets,
+preferred body height, and prior layout state to return a data-only Wide or
+Compact result. `NativeRollPanelLayoutSpec` makes preferred 620 by 760 Wide
+dimensions, compact thresholds, deterministic header/footer/control sizes,
+typography floors, conditional scroll policy, and raycast boundaries
+executable.
+
+Wide presentation exposes ordinary Point Buy configuration or the complete
+six-row Roll workflow with current History/Saved records. Compact presentation
+uses stable-owner disclosure choices. The host measures the single fitted body,
+enables its masked vertical-only `ScrollRect` only for overflow, and rebuilds
+layout only after meaningful geometry/profile/visibility changes. Header,
+Close, and status footer remain outside the scroll body.
+
+The host's top-level object has no Graphic. Its expanded rectangular surface
+and compact collapsed access tab are mutually exclusive, and all noninteractive
+TMP labels reject raycasts.
 
 The panel is driven by the narrow `CharBAbilityScoresAllocator.FillData()`
 postfix plus a bounded UMM-update lifecycle observer. Repeated FillData calls
@@ -132,5 +159,7 @@ or malformed entries are isolated and skipped.
 - Completion override applies only to the current verified Roll Mode
   distribution.
 - Preview/UI rebuilds do not consume random values.
+- Main-character and mercenary creation kinds cannot cross-rebind.
+- A different main-character identity cannot authorize an unmarked build.
 - Disabling during Roll Mode restores exact point buy before unpatching or is
   refused with hooks retained.

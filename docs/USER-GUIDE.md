@@ -2,22 +2,26 @@
 
 ## Getting started
 
-Enable Kingmaker Dice Roller in Unity Mod Manager, start a genuinely new custom
-main character, and open the ability-score page. Ordinary Point Buy appears
-first. The mod does not roll automatically.
+Enable Kingmaker Dice Roller in Unity Mod Manager, then either start a genuinely
+new custom campaign main character or use the normal in-campaign mercenary
+recruitment flow. On the ability page, ordinary Point Buy appears first. The mod
+does not roll automatically.
 
 The page initially shows a compact **Roll Stats** tab beneath the Racial Bonus
 area when that exact anchor is active, or at a bounded upper-right fallback.
-Press it to open the rectangular **Rolled Ability Scores** panel. Opening or
-closing the panel never rolls or changes your character. Press **Close** to
-remove the full panel and expose every native Skills, Back, and Next control;
-only the compact tab remains. The UMM panel is for diagnostics and emergency
+Press it to open the responsive right-side **Rolled Ability Scores** drawer.
+Wide layouts show ordinary controls directly and keep the six-score Roll
+workflow visible without scrolling. Constrained layouts use Compact
+disclosures and scroll only when content actually overflows. Opening, closing,
+or switching profile never rolls or changes your character. Press **Close** to
+remove the full panel and expose native Skills, Back, and Next controls; only
+the compact tab remains. The UMM panel is for diagnostics and emergency
 recovery, not normal rolling.
 
 ## Presets and minimum policies
 
-Open **Roll Options** when you need the low-score or custom-expression
-settings. It begins collapsed to keep the Point Buy view simple. Choose a
+In Wide, low-score and custom-expression settings are visible directly when
+relevant. In Compact, open **Roll Options**; it begins collapsed. Choose a
 preset under **Roll method** with the arrow controls:
 
 - `4d6, drop lowest` (default);
@@ -39,8 +43,8 @@ panel reports an error and preserves your prior verified state.
 
 ## Custom expressions
 
-Select Custom expression and open **Roll Options** to enter a bounded dice
-expression. The input appears only for that method. Examples:
+Select Custom expression to enter a bounded dice expression. In Compact, first
+open **Roll Options**. The input appears only for that method. Examples:
 
 ```text
 4d[6]kh3
@@ -77,21 +81,24 @@ baked into the array.
 
 ## Summary
 
-The panel displays raw score total, rule/expression, and informational
-point-buy equivalent. Scores outside Kingmaker's ordinary 7-18 cost table are
-marked `(extended)`. Race modifiers are excluded from both numbers.
+The panel displays raw score total, the actual rule/expression used to create
+the active array under **Rolled with**, and informational point-buy equivalent.
+The selected preset may differ after a roll. Scores outside Kingmaker's
+ordinary 7-18 cost table are marked `(extended)`. Race modifiers are excluded
+from both numbers.
 
 ## History
 
-The current character-build session keeps the latest 20 generated arrays.
-Open **History (n)**, then use **Previous** and **Next** to browse and **Use**
-to select an entry. Using an entry restores its array and assignment without
-rolling or replacing your point-buy origin. History is discarded when that
-character-build owner ends.
+The current character-build session keeps the latest 20 generated arrays. Wide
+shows the current History record directly; in Compact, open **History (n)**.
+Use **Previous**, **Next**, and **Use**. Using an entry restores its array and
+assignment without rolling or replacing your point-buy origin. History is
+discarded when that main-character or mercenary build owner ends.
 
 ## Saved arrays
 
-Open **Saved (n)** to manage up to ten arrays persisted in UMM settings:
+Wide shows the current Saved record when relevant; in Compact, open
+**Saved (n)**. Manage up to ten arrays persisted in UMM settings:
 
 - **Store** saves the current raw array and assignment;
 - saved Previous/Next browses slots;
@@ -113,6 +120,10 @@ After returning, navigation remains in Point Buy. A later explicit Roll or
 Recall captures a new origin. If safe restoration cannot be verified, the mod
 fails closed rather than leaving rolled values with a spendable budget.
 
+Mercenary budgets are observed exactly like main-character budgets. Vanilla's
+commonly observed 20-point mercenary allocator is not hard-coded, so a compatible
+modded budget and partial allocation should restore exactly.
+
 ## Completion and saves
 
 A character completed in Roll Mode stores ordinary Kingmaker base values. It
@@ -129,8 +140,10 @@ claimed.
 
 ## Troubleshooting
 
-- If the panel is absent, confirm this is a new custom main character and the
-  Skills/ability page is active.
+- If the panel is absent, confirm this is either a new custom campaign main
+  character or normal custom mercenary recruitment and the Skills/ability page
+  is active. Ordinary level-up, respec, pregens, pets, companions, enemies, and
+  unknown build modes are deliberately unsupported.
 - If Roll fails, read the inline error and leave the current state unchanged.
 - If Point Buy recovery fails, use the UMM emergency action; do not complete a
   character showing rolled values plus spendable points.
