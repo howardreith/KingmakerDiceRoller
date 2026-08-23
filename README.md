@@ -1,9 +1,12 @@
 # Kingmaker Dice Roller
 
+**Release status:** `0.1.0-alpha.2` is owner-authorized for GitHub release.
+Future improvements will use later versions rather than replacing the published
+artifact.
+
 Kingmaker Dice Roller is a standalone Unity Mod Manager mod for Pathfinder:
-Kingmaker 2.1.7b. Version `0.1.0-alpha.2` adds an explicit rolled-ability
-workflow to the native new-character ability page and replaces the first
-alpha's obstructive oval with a compact, readable native panel.
+Kingmaker 2.1.7b. It adds an explicit rolled-ability workflow to the native
+new-character ability page through a compact, readable native panel.
 
 The mod starts every supported character in ordinary Point Buy. It rolls only
 when you press **Roll**, never because a preview, race, phase, or UI object was
@@ -62,28 +65,28 @@ mercenaries, pregens, and respec are excluded.
 
 ## Installation
 
-Install the package with Unity Mod Manager or extract its single
+Download `KingmakerDiceRoller-0.1.0-alpha.2.zip` from the GitHub Release's
+**Assets** section. Do not download GitHub's automatically generated source-code
+archives.
+
+Install the ZIP with Unity Mod Manager, or extract its single
 `KingmakerDiceRoller` directory under the game's `Mods` directory. The package
-contains exactly six files. Do not copy development artifacts or game
-assemblies into the mod directory.
+contains exactly six allowlisted files and does not bundle development
+artifacts or game assemblies.
 
-## Alpha qualification
+## Qualification
 
-This alpha is source- and build-qualified against the exact local Kingmaker
-2.1.7b assembly during packaging. Player-facing native panel layout and the
-full compatibility matrix still require live acceptance before the mod may be
-called runtime- or compatibility-qualified.
+This version is source- and build-qualified against the exact local Kingmaker
+2.1.7b assembly. Focused live testing established Point Buy-first behavior,
+Roll and Reroll, allocator isolation, exact Point Buy restoration, character
+save independence, ordinary-level-up exclusion, and positive limited smoke with
+Bag of Tricks and Call of the Wild. The repository owner accepted the current
+native panel and click-routing behavior for release on 2026-08-23.
 
-Bag of Tricks and Call of the Wild are detected but never modified. Bag of
-Tricks budgets are observed from the live allocator; Call of the Wild racial
-modifiers remain separate from rolled base values.
+The release does not claim an exhaustive compatibility matrix for every mod
+combination. Bag of Tricks and Call of the Wild are detected but never modified.
+Bag of Tricks budgets are observed from the live allocator; Call of the Wild
+racial modifiers remain separate from rolled base values.
 
-For usage details see `docs/USER-GUIDE.md`. For a live acceptance sequence see
-`docs/SMOKE-TEST.md`. Runtime evidence can be collected with:
-
-```powershell
-powershell -NoLogo -NoProfile -ExecutionPolicy Bypass `
-  -File .\scripts\Collect-RuntimeEvidence.ps1
-```
-
-Do not commit the collected logs, screenshots, saves, or runtime evidence.
+For usage details see `docs/USER-GUIDE.md`. Build, package, checksum, tag, and
+release instructions are in `docs/BUILD-AND-RELEASE.md`.
