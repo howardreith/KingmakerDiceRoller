@@ -1,10 +1,10 @@
 # Kingmaker Dice Roller
 
-**Stable candidate status:** `0.1.0` implements responsive Roll Stats UI and
-exact mercenary recruitment support. It is source-, exact-contract-, build-,
-package-, and installation-qualified for human testing; runtime and
-compatibility qualification remain pending. `0.1.0-alpha.2` remains the
-published prerelease and its bytes are not replaced.
+**Current release line:** `0.1.1` is the corrective stable version of the
+published `0.1.0` feature set. It advances version metadata so Unity Mod Manager
+sorts the stable package above the older `0.1.0-alpha.2` prerelease. No gameplay,
+UI, point-buy, persistence, or character-context behavior is intentionally
+changed.
 
 Kingmaker Dice Roller is a standalone Unity Mod Manager mod for Pathfinder:
 Kingmaker 2.1.7b. It adds an explicit rolled-ability workflow to the native
@@ -79,29 +79,30 @@ Roll or Recall and restored exactly; neither 20 nor 25 is hard-coded.
 
 ## Installation
 
-The currently published package is `KingmakerDiceRoller-0.1.0-alpha.2.zip` in
-the GitHub Release's **Assets** section. Do not download GitHub's automatically
-generated source archives. `KingmakerDiceRoller-0.1.0.zip` is the installed
-stable-version candidate for human testing and has not been published or
-release-authorized.
+Download `KingmakerDiceRoller-0.1.1.zip` from the GitHub release **Assets**
+section and install that ZIP with Unity Mod Manager. Do not download GitHub's
+automatically generated source archives.
 
-Install the ZIP with Unity Mod Manager, or extract its single
-`KingmakerDiceRoller` directory under the game's `Mods` directory. The package
-contains exactly six allowlisted files and does not bundle development
-artifacts or game assemblies.
+The earlier `0.1.0-alpha.2` package may appear newer than `0.1.0` because Unity
+Mod Manager interprets the prerelease text as the numeric version `0.1.0.2`.
+Version `0.1.1` supersedes both. After installation, UMM should display `0.1.1`
+and should not offer alpha.2 as an update.
+
+The archive contains one `KingmakerDiceRoller` directory with exactly six
+allowlisted files and does not bundle development artifacts or game assemblies.
 
 ## Qualification
 
-The `0.1.0` candidate is source-, exact-contract-, build-, package-, and
-installation-qualified against the configured Kingmaker 2.1.7b environment.
-Human runtime acceptance is still required for responsive geometry, click
-routing, exact mercenary entry/completion/cancellation, and unsupported-context
-isolation. Historical alpha.2 runtime evidence does not qualify the new bytes.
+The published `0.1.0` behavior was source-, exact-contract-, build-, package-,
+installation-, and human-runtime-qualified against the configured Kingmaker
+2.1.7b environment. Because `0.1.1` produces new package and DLL bytes, the exact
+corrective artifact must still be rebuilt, package-validated, installed, and
+given a brief in-game smoke before publication.
 
-The candidate does not claim an exhaustive compatibility matrix. Bag of Tricks
+The project does not claim an exhaustive compatibility matrix. Bag of Tricks
 and Call of the Wild are detected but never modified. Bag of Tricks budgets are
 observed from the live allocator; Call of the Wild racial modifiers remain
-separate from rolled base values. Both require a fresh `0.1.0` smoke.
+separate from rolled base values.
 
 For usage details see `docs/USER-GUIDE.md`. Build, package, checksum, tag, and
 release instructions are in `docs/BUILD-AND-RELEASE.md`.

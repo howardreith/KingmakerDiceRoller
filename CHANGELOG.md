@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.1.1 - Unity Mod Manager version-order correction
+
+- Advanced UMM, runtime product, assembly, package, validation, and release-note
+  metadata from `0.1.0` to `0.1.1`.
+- Recorded Unity Mod Manager's non-SemVer comparison behavior: it parses
+  `0.1.0-alpha.2` as `0.1.0.2`, which incorrectly sorts above stable `0.1.0`.
+  Patch version `0.1.1` sorts above both prior archives.
+- Added a source-qualification regression that models the installed UMM parser
+  and fails unless the active stable version supersedes the published alpha.
+- Changed package validation to derive its expected version from root
+  `Info.json` rather than duplicating a hard-coded release number.
+- Preserved the stable `KingmakerDiceRoller` UMM ID and all existing dice,
+  assignment, point-buy, UI, character-context, persistence, and save behavior.
+- The exact `0.1.1` package remains unqualified until it is rebuilt,
+  package-validated, installed, and given a focused in-game smoke.
+
 ## 0.1.0 - responsive panel and mercenary recruitment
 
 - Added an explicit supported creation kind so new campaign main-character

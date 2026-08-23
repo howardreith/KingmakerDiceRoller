@@ -2,15 +2,24 @@
 
 ## Current candidate
 
-`0.1.0` is the installed stable-version candidate on `main`.
-`0.1.0-alpha.2` remains the published prerelease; no alpha.2 tag, release, or
-asset was changed.
+`0.1.1` is the corrective stable-version candidate derived from the published
+and runtime-qualified `0.1.0` feature set. The published
+`0.1.0-alpha.2` prerelease remains immutable.
 
-The `0.1.0` stable-version candidate combines two changes:
+Unity Mod Manager does not apply Semantic Versioning precedence to prerelease
+suffixes. It parses `0.1.0-alpha.2` as `0.1.0.2`, which sorts above `0.1.0`.
+The corrective candidate advances every active version surface to `0.1.1`,
+which sorts above both earlier archives.
 
-- a responsive upper-right Roll Stats drawer with Wide and Compact profiles;
-- exact first-level custom mercenary recruitment support alongside existing
-  new campaign main-character creation.
+The candidate intentionally changes only:
+
+- UMM, runtime product, assembly, package, and release-note metadata;
+- package validation so its expected version comes from root `Info.json`;
+- source qualification with an executable UMM-version-ordering regression.
+
+No dice mechanics, assignment rules, point-buy restoration, responsive UI,
+character-context policy, persistence behavior, compatibility integration, or
+save boundary is intentionally changed.
 
 ## Implemented behavior
 
@@ -77,42 +86,45 @@ different candidates, and unknown modes remain rejected.
 
 ## Qualification truth
 
-For the exact installed `0.1.0` artifact:
+For the exact `0.1.1` corrective artifact:
 
 - Implemented: **Yes**.
-- Source-qualified: **Yes** — repository validation, 258/258 compiled C#
-  behavior cases, and 30/30 Python oracle cases pass.
-- Contract-qualified: **Yes** — the exact installed Kingmaker 2.1.7b contract
-  gate verifies the custom-companion discriminator and the existing four-patch
-  recovery/UI surface.
-- Build-qualified: **Yes** — the configured exact-game Release build completes
-  with zero warnings and zero errors.
-- Package-qualified: **Yes** — the deterministic six-file `0.1.0` UMM archive
-  is produced and validated by repository-owned tooling.
-- Installed: **Yes** — the validated archive is installed transactionally in
-  the configured environment with non-target mod fingerprints preserved.
-- Runtime-qualified: **Yes** — the repository owner performed and accepted
-  human runtime testing of the exact installed `0.1.0` artifact.
-- Compatibility-qualified: **No** — historical alpha.2 smoke does not qualify
-  the `0.1.0` bytes; Bag of Tricks and Call of the Wild need focused retesting.
-- Release-authorized: **Yes** — the repository owner accepted the runtime
-  evidence and authorized the exact fully pushed `0.1.0` commit for publication.
+- Source-qualified: **No** — the source changes have not yet run through the
+  complete repository-owned qualification pipeline on the configured Windows
+  Kingmaker environment.
+- Contract-qualified: **No** — no fresh exact-assembly contract run exists for
+  the rebuilt `0.1.1` bytes.
+- Build-qualified: **No**.
+- Package-qualified: **No**.
+- Installed: **No**.
+- Runtime-qualified: **No** — the exact `0.1.1` package has not yet been
+  installed and launched.
+- Compatibility-qualified: **No** — the broader Bag of Tricks and Call of the
+  Wild matrix remains incomplete; no new compatibility claim is introduced.
+- Release-authorized: **No** — authorization follows qualification and owner
+  acceptance of the exact rebuilt artifact.
 - Publicly released: **No**.
 
-Exact target assembly evidence:
+Historical `0.1.0` evidence remains valid only for that immutable artifact:
+repository validation, 258/258 compiled C# behavior cases, 30/30 Python oracle
+cases, exact Kingmaker 2.1.7b contract verification, clean Release build,
+deterministic package validation, transactional installation, and owner-accepted
+human runtime testing all passed.
+
+Exact target assembly evidence used by `0.1.0`:
 
 ```text
 Assembly-CSharp MVID:    07fa1e4d-8618-41b3-9b8d-faa17d3b26f7
 Assembly-CSharp SHA-256: 3b6450ffec440e296e586f71c711b195aed144b28d53e1cbb29406d18fef5afb
 ```
 
-Final candidate commit, DLL/package hashes, package path, and installation
-result are recorded in the engineering handoff generated from the clean final
-branch. Historical hashes are not reused.
-
 ## Immediate next gate
 
-Publish the exact fully pushed `0.1.0` commit after local `main` and
-`origin/main` both resolve to this release-gate fix. Do not tag or publish a
-different commit. `Publicly released` remains **No** until the GitHub release
-actually exists.
+From a clean, fully pushed `main`, run the full `0.1.1` qualification and
+transactional install. Confirm that Unity Mod Manager displays `0.1.1`, does
+not offer `0.1.0-alpha.2` as an update, and that Kingmaker loads the mod without
+a red indicator. Then perform one focused Roll -> Return to Point Buy smoke.
+
+Only after recording that exact evidence may this section mark `0.1.1`
+source-, contract-, build-, package-, installed-, and runtime-qualified and
+release-authorized. The guarded publisher must remain blocked until then.
