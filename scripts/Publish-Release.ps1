@@ -13,6 +13,7 @@ param(
 )
 
 . (Join-Path $PSScriptRoot 'Common.ps1')
+. (Join-Path $PSScriptRoot 'ReleaseQualificationGate.ps1')
 
 function Assert-CommandAvailable {
     param([Parameter(Mandatory = $true)][string] $Name)
@@ -147,28 +148,13 @@ try {
         if ($isPrivate -and -not $AllowPrivateRepositoryRelease) {
             throw 'The repository is private. Use -AllowPrivateRepositoryRelease only when a private release is intentional.'
         }
-        if (-not $ConfirmRuntimeQualified) {
-            throw 'Public publication requires -ConfirmRuntimeQualified.'
-        }
 
         $projectStatePath = Join-Path $root 'PROJECT-STATE.md'
         Assert-FileExists $projectStatePath 'PROJECT-STATE.md'
         $projectState = Get-Content -LiteralPath $projectStatePath -Raw
-        $qualificationStart = $projectState.IndexOf(
-            '## Qualification truth',
-            [StringComparison]::Ordinal)
-        $qualificationEnd = $projectState.IndexOf(
-            '## Immediate next gate',
-            [StringComparison]::Ordinal)
-        if ($qualificationStart -lt 0 -or $qualificationEnd -le $qualificationStart) {
-            throw 'PROJECT-STATE.md does not contain the current qualification section.'
-        }
-        $qualification = $projectState.Substring(
-            $qualificationStart,
-            $qualificationEnd - $qualificationStart)
-        if ($qualification -notmatch 'Runtime-qualified:\s+\*\*Yes\*\*') {
-            throw 'PROJECT-STATE.md does not mark the current candidate Runtime-qualified: Yes.'
-        }
+        Assert-PublicationQualification `
+            -ProjectStateText $projectState `
+            -ConfirmRuntimeQualified:$ConfirmRuntimeQualified
     }
 
     $tag = "v$version"

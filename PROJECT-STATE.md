@@ -2,8 +2,7 @@
 
 ## Current candidate
 
-`0.1.0` is the installed stable-version candidate on
-`codex/responsive-roll-panel-mercenary-support`.
+`0.1.0` is the installed stable-version candidate on `main`.
 `0.1.0-alpha.2` remains the published prerelease; no alpha.2 tag, release, or
 asset was changed.
 
@@ -92,11 +91,12 @@ For the exact installed `0.1.0` artifact:
   is produced and validated by repository-owned tooling.
 - Installed: **Yes** — the validated archive is installed transactionally in
   the configured environment with non-target mod fingerprints preserved.
-- Runtime-qualified: **No** — responsive layout and the complete mercenary
-  entry/restoration/lifecycle/completion matrix require human in-game evidence.
+- Runtime-qualified: **Yes** — the repository owner performed and accepted
+  human runtime testing of the exact installed `0.1.0` artifact.
 - Compatibility-qualified: **No** — historical alpha.2 smoke does not qualify
   the `0.1.0` bytes; Bag of Tricks and Call of the Wild need focused retesting.
-- Release-authorized: **No**.
+- Release-authorized: **Yes** — the repository owner accepted the runtime
+  evidence and authorized the exact fully pushed `0.1.0` commit for publication.
 - Publicly released: **No**.
 
 Exact target assembly evidence:
@@ -110,14 +110,9 @@ Final candidate commit, DLL/package hashes, package path, and installation
 result are recorded in the engineering handoff generated from the clean final
 branch. Historical hashes are not reused.
 
-## Immediate human gate
+## Immediate next gate
 
-Run `docs/SMOKE-TEST.md` at 1600 by 900 first, then 1920 by 1080, 1536 by 960,
-1366 by 768, and 1280 by 720. Prove main-character regression, exact mercenary
-entry and completion, observed-budget restoration from untouched and partial
-Point Buy, cancellation/fresh-owner behavior, unsupported-context isolation,
-Compact overflow behavior, and the limited compatibility matrix.
-
-The immediate next gate is focused human acceptance of the exact installed
-`0.1.0` artifact before publication. Do not tag, publish, or call it
-runtime-qualified until that evidence is collected and explicitly accepted.
+Publish the exact fully pushed `0.1.0` commit after local `main` and
+`origin/main` both resolve to this release-gate fix. Do not tag or publish a
+different commit. `Publicly released` remains **No** until the GitHub release
+actually exists.

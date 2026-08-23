@@ -45,7 +45,8 @@ REQUIRED = [
     'scripts/Common.ps1','scripts/Initialize-GamePath.ps1','scripts/Validate-Repository.ps1',
     'scripts/Test-SourceOracle.ps1','scripts/Test-Domain.ps1','scripts/Verify-KingmakerContracts.ps1',
     'scripts/Build-Local.ps1','scripts/Package.ps1','scripts/Validate-Package.ps1','scripts/Install.ps1','scripts/Uninstall.ps1',
-    'scripts/Qualify.ps1','scripts/Collect-RuntimeEvidence.ps1',
+    'scripts/Qualify.ps1','scripts/Collect-RuntimeEvidence.ps1','scripts/Publish-Release.ps1',
+    'scripts/ReleaseQualificationGate.ps1','scripts/Test-ReleaseQualificationGate.ps1',
     'docs/ARCHITECTURE.md','docs/INTEGRATION-SEAMS.md','docs/COMPATIBILITY.md',
     'docs/SMOKE-TEST.md','docs/RUNTIME-DIAGNOSTICS.md','docs/BUILD-AND-RELEASE.md',
     'docs/SOURCE-QUALIFICATION.md','docs/UI-DESIGN.md','docs/USER-GUIDE.md','docs/LICENSING.md',
@@ -483,6 +484,25 @@ def main():
     collector=(ROOT/'scripts/Collect-RuntimeEvidence.ps1').read_text(encoding='utf-8')
     require("Pathfinder Kingmaker\\output_log.txt" in collector,'runtime evidence collector must include the live LocalLow output log')
     ok('package allowlist and transactional installation guards')
+
+    publisher=(ROOT/'scripts/Publish-Release.ps1').read_text(encoding='utf-8')
+    release_gate=(ROOT/'scripts/ReleaseQualificationGate.ps1').read_text(encoding='utf-8')
+    release_gate_tests=(ROOT/'scripts/Test-ReleaseQualificationGate.ps1').read_text(encoding='utf-8')
+    require("ReleaseQualificationGate.ps1" in publisher and
+            'Assert-PublicationQualification' in publisher,
+            'publisher must delegate to the tested qualification gate')
+    require("'## Immediate next gate'" not in publisher,
+            'publisher must not depend on the name of the following section')
+    require("'(?m)^##[ \\t]+[^\\r\\n]+\\r?$'" in release_gate,
+            'qualification gate must terminate at the next level-2 heading or EOF')
+    for token in ['FollowingHeadingRenameDoesNotBreakGate','ArbitraryFollowingHeadingDoesNotBreakGate',
+                  'EndOfFileTerminatesQualificationSection','LaterSectionCannotAuthorizePublication',
+                  'ConfirmationSwitchRemainsRequired','RuntimeNoRemainsRejected']:
+        require(token in release_gate_tests, f'release qualification gate regression missing: {token}')
+    require('Test-ReleaseQualificationGate.ps1' in
+            (ROOT/'scripts/Validate-Repository.ps1').read_text(encoding='utf-8'),
+            'repository validation must execute release qualification gate tests')
+    ok('release publication qualification gate')
 
     notices=(ROOT/'THIRD-PARTY-NOTICES.md').read_text(encoding='utf-8')
     upstream=(ROOT/'licenses/UPSTREAM-WOTR-DICE-ROLLER-MIT.txt').read_text(encoding='utf-8')
