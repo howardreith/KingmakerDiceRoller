@@ -1,4 +1,4 @@
-# Build, package, and install
+# Build, package, install, and publish
 
 ## Toolchain
 
@@ -6,7 +6,8 @@
 - Python 3;
 - Visual Studio Build Tools/MSBuild with .NET Framework 4.7.2 references;
 - local Pathfinder: Kingmaker 2.1.7b managed assemblies;
-- local UMM 0.32.x and co-installed Harmony12.
+- local UMM 0.32.x and co-installed Harmony12;
+- GitHub CLI (`gh`) authenticated with write access to this repository.
 
 No NuGet dependency or game binary is vendored.
 
@@ -61,6 +62,51 @@ KingmakerDiceRoller/licenses/UPSTREAM-WOTR-DICE-ROLLER-MIT.txt
 Package validation rejects duplicates, unsafe paths, unexpected files, wrong
 identity/version metadata, or mismatched hashes.
 
+## GitHub release publishing
+
+Authenticate GitHub CLI once:
+
+```powershell
+gh auth login
+```
+
+The guarded publisher requires a clean checkout of the repository's fully
+pushed default branch. It re-runs the full build and package qualification,
+validates the exact UMM ZIP, writes `SHA256SUMS.txt`, creates and pushes an
+annotated `v<Info.json Version>` tag, and uploads the ZIP and checksum as
+GitHub Release assets.
+
+Create a draft release for review:
+
+```powershell
+powershell -NoLogo -NoProfile -ExecutionPolicy Bypass `
+  -File .\scripts\Publish-Release.ps1
+```
+
+Publish publicly only after the exact current candidate has passed its human
+runtime gate and `PROJECT-STATE.md` records `Runtime-qualified: **Yes**`:
+
+```powershell
+powershell -NoLogo -NoProfile -ExecutionPolicy Bypass `
+  -File .\scripts\Publish-Release.ps1 `
+  -Publish `
+  -ConfirmRuntimeQualified
+```
+
+Use `-ReleaseNotesPath <path>` to prepend project-specific notes. Versions with
+a prerelease suffix, such as `0.1.0-alpha.2`, are automatically marked as
+GitHub prereleases and are not marked Latest.
+
+The publisher refuses a dirty worktree, a non-default branch, a commit that
+does not exactly match `origin/<default branch>`, an existing release, a
+conflicting tag, a failed qualification gate, or a malformed package. It also
+refuses public publication from a private repository unless
+`-AllowPrivateRepositoryRelease` is supplied deliberately. That override does
+not make a private repository's release publicly downloadable.
+
+Published assets are immutable project history. Advance the version rather than
+replacing a released ZIP.
+
 ## Transactional install
 
 Always inspect preflight first:
@@ -84,7 +130,7 @@ fails. It must not enable, disable, reinstall, or alter another mod.
 
 ## Publication policy
 
-Commit coherent source checkpoints and push normally to
-`pro/kingmaker-dice-roller-mvp`. Do not force-push, rewrite published history,
-merge to main, create a PR, tag, or publish a public release during alpha
-qualification. Build/package/install evidence is not human runtime evidence.
+Feature work may continue on `pro/kingmaker-dice-roller-mvp`, but a release is
+cut only from the clean, fully pushed default branch. Do not force-push,
+retarget, or replace a published version tag. Build/package/install evidence is
+not a substitute for human runtime evidence.
