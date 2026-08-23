@@ -86,6 +86,12 @@ alpha.2 packaging commit. They must not be presented as the hashes of a later
 release commit. The guarded publisher rebuilds, revalidates, and records fresh
 hashes from the exact fully pushed `main` commit used for the release.
 
+## Immediate next gate
+
+The current gate is publication of a freshly rebuilt and package-validated UMM
+archive from the exact fully pushed `main` commit. No additional feature or
+presentation acceptance is required for this version.
+
 ## Release procedure
 
 From the configured Windows Kingmaker development checkout, pull the final
@@ -95,7 +101,8 @@ From the configured Windows Kingmaker development checkout, pull the final
 powershell -NoLogo -NoProfile -ExecutionPolicy Bypass `
   -File .\scripts\Publish-Release.ps1 `
   -Publish `
-  -ConfirmRuntimeQualified
+  -ConfirmRuntimeQualified `
+  -ReleaseNotesPath .\docs\RELEASE-NOTES-0.1.0-alpha.2.md
 ```
 
 Because the current semantic version contains `-alpha.2`, GitHub will label it
