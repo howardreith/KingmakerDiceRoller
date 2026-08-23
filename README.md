@@ -99,7 +99,7 @@ installation-, and human-runtime-qualified against the configured Kingmaker
 corrective artifact must still be rebuilt, package-validated, installed, and
 given a brief in-game smoke before publication.
 
-The project does not claim an exhaustive compatibity matrix. Bag of Tricks
+The project does not claim an exhaustive compatibility matrix. Bag of Tricks
 and Call of the Wild are detected but never modified. Bag of Tricks budgets are
 observed from the live allocator; Call of the Wild racial modifiers remain
 separate from rolled base values.
