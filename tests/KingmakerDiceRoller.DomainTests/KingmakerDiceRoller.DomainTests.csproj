@@ -41,6 +41,7 @@
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\LivePreviewInspector.cs"><Link>CharacterCreation\LivePreviewInspector.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\LivePreviewObservation.cs"><Link>CharacterCreation\LivePreviewObservation.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\MainCharacterIdentityRelation.cs"><Link>CharacterCreation\MainCharacterIdentityRelation.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\SupportedCharacterCreationKind.cs"><Link>CharacterCreation\SupportedCharacterCreationKind.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\NativeAbilityControlService.cs"><Link>CharacterCreation\NativeAbilityControlService.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\NativePanelAttachmentLifecycle.cs"><Link>CharacterCreation\NativePanelAttachmentLifecycle.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\NativeRollPanelLayoutSpec.cs"><Link>CharacterCreation\NativeRollPanelLayoutSpec.cs</Link></Compile>

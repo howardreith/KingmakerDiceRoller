@@ -64,6 +64,172 @@ namespace KingmakerDiceRoller.DomainTests
             AssertEx.True(decision.Reason.Contains("different UnitDescriptor"));
         }
 
+        internal static void ExactMercenaryContextIsAccepted()
+        {
+            ContextHarness harness = CreateMercenaryHarness();
+            CharacterCreationContextDecision decision = harness.Evaluate();
+
+            AssertAccepted(decision, MainCharacterIdentityRelation.DifferentFromCandidate);
+            AssertEx.Equal(SupportedCharacterCreationKind.Mercenary, decision.CreationKind.Value);
+            AssertEx.True(decision.MercenaryEvidence.IsExactMatch);
+            AssertEx.Equal(MercenaryDiscriminatorEvidence.ExactSource, decision.MercenaryEvidence.Source);
+            AssertEx.Equal("CharGen", decision.Mode);
+            AssertEx.True(decision.IsFirstLevel.Value);
+            AssertEx.True(!decision.CandidateIsMainCharacter.Value);
+            AssertEx.True(decision.CandidateIsPlayerFaction.Value);
+            AssertEx.True(decision.StableOwnerSource.Contains("custom-companion source"));
+        }
+
+        internal static void MercenaryMarkerRequiresControllerOwnership()
+        {
+            ContextHarness harness = CreateMercenaryHarness();
+            harness.CharacterBuildController.LevelUpController = null;
+            CharacterCreationContextDecision decision = harness.Evaluate();
+            AssertEx.True(!decision.Accepted);
+            AssertEx.True(decision.Reason.Contains("LevelUpController is null"));
+        }
+
+        internal static void MercenaryMarkerRequiresPlayerFaction()
+        {
+            ContextHarness harness = CreateMercenaryHarness();
+            harness.Candidate.IsPlayerFaction = false;
+            CharacterCreationContextDecision decision = harness.Evaluate();
+            AssertEx.True(!decision.Accepted);
+            AssertEx.True(decision.Reason.Contains("not player-faction"));
+        }
+
+        internal static void MercenaryMarkerRejectsPet()
+        {
+            ContextHarness harness = CreateMercenaryHarness();
+            harness.Candidate.IsPet = true;
+            CharacterCreationContextDecision decision = harness.Evaluate();
+            AssertEx.True(!decision.Accepted);
+            AssertEx.True(decision.Reason.Contains("Pets are excluded"));
+        }
+
+        internal static void MercenaryMarkerRejectsEnemy()
+        {
+            ContextHarness harness = CreateMercenaryHarness();
+            harness.Candidate.IsPlayersEnemy = true;
+            CharacterCreationContextDecision decision = harness.Evaluate();
+            AssertEx.True(!decision.Accepted);
+            AssertEx.True(decision.Reason.Contains("Enemies are excluded"));
+        }
+
+        internal static void MercenaryMarkerRejectsRespec()
+        {
+            ContextHarness harness = CreateMercenaryHarness();
+            harness.Mode = FakeMode.Respec;
+            CharacterCreationContextDecision decision = harness.Evaluate();
+            AssertEx.True(!decision.Accepted);
+            AssertEx.True(decision.Reason.Contains("Respecialization"));
+        }
+
+        internal static void MercenaryMarkerRejectsPreGen()
+        {
+            ContextHarness harness = CreateMercenaryHarness();
+            harness.Mode = FakeMode.PreGen;
+            CharacterCreationContextDecision decision = harness.Evaluate();
+            AssertEx.True(!decision.Accepted);
+            AssertEx.True(decision.Reason.Contains("Pre-generated"));
+        }
+
+        internal static void MercenaryMarkerRejectsUnknownMode()
+        {
+            ContextHarness harness = CreateMercenaryHarness();
+            harness.Mode = FakeMode.Unknown;
+            CharacterCreationContextDecision decision = harness.Evaluate();
+            AssertEx.True(!decision.Accepted);
+            AssertEx.True(decision.Reason.Contains("Unsupported character-build mode"));
+        }
+
+        internal static void MercenaryMarkerRejectsLevelUpMode()
+        {
+            ContextHarness harness = CreateMercenaryHarness();
+            harness.Mode = FakeMode.LevelUp;
+            CharacterCreationContextDecision decision = harness.Evaluate();
+            AssertEx.True(!decision.Accepted);
+            AssertEx.True(decision.Reason.Contains("exact observed CharGen mode"));
+        }
+
+        internal static void MercenaryMarkerRejectsNonFirstLevel()
+        {
+            ContextHarness harness = CreateMercenaryHarness();
+            harness.State.IsFirstLevel = false;
+            CharacterCreationContextDecision decision = harness.Evaluate();
+            AssertEx.True(!decision.Accepted);
+            AssertEx.True(decision.Reason.Contains("not first-level"));
+        }
+
+        internal static void MercenaryMarkerRequiresResolvedMainCharacter()
+        {
+            ContextHarness harness = CreateMercenaryHarness();
+            harness.Player.MainCharacter = new BrokenWrapper { Something = harness.Source };
+            CharacterCreationContextDecision decision = harness.Evaluate();
+            AssertRejected(decision, MainCharacterIdentityRelation.Unresolved);
+        }
+
+        internal static void MercenaryEvidenceCannotAuthorizeAnotherController()
+        {
+            ContextHarness harness = CreateMercenaryHarness();
+            harness.CharacterBuildController.LevelUpController = new FakeLevelUpController
+            {
+                State = NewState(new FakeUnitDescriptor()),
+                Unit = new FakeUnitDescriptor(),
+                Preview = new FakeUnitDescriptor()
+            };
+            CharacterCreationContextDecision decision = harness.Evaluate();
+            AssertEx.True(!decision.Accepted);
+            AssertEx.True(decision.Reason.Contains("not owned by the active"));
+        }
+
+        internal static void MercenaryEvidenceCannotAuthorizeLaterBuild()
+        {
+            ContextHarness harness = CreateMercenaryHarness();
+            harness.Candidate = new FakeUnitDescriptor
+            {
+                IsPlayerFaction = true,
+                IsCustomCompanion = false
+            };
+            harness.State = NewState(harness.Candidate);
+            harness.Controller.State = harness.State;
+            harness.Controller.Preview = harness.Candidate;
+            CharacterCreationContextDecision decision = harness.Evaluate();
+            AssertEx.True(!decision.Accepted);
+            AssertEx.True(decision.Reason.Contains("inconsistent"));
+        }
+
+        internal static void MainAndMercenaryKindsCannotCrossRebind()
+        {
+            ContextHarness harness = CreateMercenaryHarness();
+            CharacterCreationContextDecision mercenary = harness.Evaluate();
+            var sessions = new RollSessionManager();
+            RollSession opened;
+            string reason;
+            AssertEx.True(sessions.TryOpenOrRebind(
+                mercenary,
+                generation => CreateRollback(generation),
+                out opened,
+                out reason));
+
+            harness.Candidate.IsCustomCompanion = false;
+            harness.Source.IsCustomCompanion = false;
+            harness.Source.IsMainCharacter = true;
+            harness.Player.MainCharacter = WrapDescriptor(harness.Source);
+            CharacterCreationContextDecision main = harness.Evaluate();
+            AssertEx.True(main.Accepted, main.Reason);
+            AssertEx.Equal(SupportedCharacterCreationKind.NewMainCharacter, main.CreationKind.Value);
+
+            RollSession ignored;
+            AssertEx.True(!sessions.TryOpenOrRebind(
+                main,
+                generation => CreateRollback(generation),
+                out ignored,
+                out reason));
+            AssertEx.True(reason.Contains("creation kind"));
+            AssertEx.True(ReferenceEquals(opened, sessions.Active));
+        }
+
         internal static void UnresolvableMainCharacterFailsClosed()
         {
             ContextHarness harness = CreateValidHarness();
@@ -261,6 +427,23 @@ namespace KingmakerDiceRoller.DomainTests
             };
         }
 
+        private static ContextHarness CreateMercenaryHarness()
+        {
+            ContextHarness harness = CreateValidHarness();
+            harness.Mode = FakeMode.CharGen;
+            harness.Candidate.IsMainCharacter = false;
+            harness.Candidate.IsCustomCompanion = true;
+            harness.Source.IsMainCharacter = false;
+            harness.Source.IsPlayerFaction = true;
+            harness.Source.IsCustomCompanion = true;
+            harness.Player.MainCharacter = WrapDescriptor(new FakeUnitDescriptor
+            {
+                IsMainCharacter = true,
+                IsPlayerFaction = true
+            });
+            return harness;
+        }
+
         private static FakeState NewState(FakeUnitDescriptor unit)
         {
             return new FakeState
@@ -333,6 +516,8 @@ namespace KingmakerDiceRoller.DomainTests
                 typeof(FakeState).GetProperty("Unit", instance),
                 typeof(FakeState).GetProperty("StatsDistribution", instance),
                 typeof(FakeState).GetProperty("IsFirstLevel", instance),
+                typeof(FakeState).GetProperty("IsEmployee", instance),
+                typeof(FakeUnitHelper).GetMethod("IsCustomCompanion", staticFlags),
                 null,
                 null,
                 null,
@@ -424,6 +609,7 @@ namespace KingmakerDiceRoller.DomainTests
             public bool IsPlayerFaction { get; set; }
             public bool IsPet { get; set; }
             public bool IsPlayersEnemy { get; set; }
+            public bool IsCustomCompanion { get; set; }
         }
 
         private sealed class FakeState
@@ -431,6 +617,15 @@ namespace KingmakerDiceRoller.DomainTests
             public FakeUnitDescriptor Unit { get; set; }
             public FakeDistribution StatsDistribution { get; set; }
             public bool IsFirstLevel { get; set; }
+            public bool IsEmployee => Unit != null && Unit.IsCustomCompanion;
+        }
+
+        private static class FakeUnitHelper
+        {
+            public static bool IsCustomCompanion(FakeUnitDescriptor unit)
+            {
+                return unit != null && unit.IsCustomCompanion;
+            }
         }
 
         private sealed class FakeLevelUpController

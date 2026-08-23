@@ -22,6 +22,10 @@ namespace KingmakerDiceRoller.CharacterCreation
         {
             if (context == null) throw new ArgumentNullException(nameof(context));
             if (!context.Accepted) throw new ArgumentException("Only an accepted context can own a roll session.", nameof(context));
+            if (!context.CreationKind.HasValue)
+            {
+                throw new ArgumentException("An accepted context must identify its supported creation kind.", nameof(context));
+            }
             if (rollbackFactory == null) throw new ArgumentNullException(nameof(rollbackFactory));
 
             lock (sync)
@@ -38,11 +42,20 @@ namespace KingmakerDiceRoller.CharacterCreation
                         context.Unit,
                         context.Distribution,
                         rollback,
-                        pendingReplacement);
+                        pendingReplacement,
+                        context.CreationKind.Value);
                     liveness.Reset();
                     session = active;
-                    reason = "Opened a PointBuy-first session for the stable controller/source owner; no roll was generated.";
+                    reason = "Opened a PointBuy-first session for the stable controller/source owner; " +
+                        "creationKind=" + context.CreationKind.Value + "; no roll was generated.";
                     return true;
+                }
+
+                if (active.CreationKind != context.CreationKind.Value)
+                {
+                    session = null;
+                    reason = "A different supported character-creation kind cannot rebind the active roll session.";
+                    return false;
                 }
 
                 if (!active.OwnsStableOwner(context.Controller, context.StableOwner))

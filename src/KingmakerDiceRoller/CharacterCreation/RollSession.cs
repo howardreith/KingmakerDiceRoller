@@ -18,7 +18,8 @@ namespace KingmakerDiceRoller.CharacterCreation
             object unit,
             object distribution,
             GenerationRollbackSnapshot generationRollback,
-            bool pendingReplacementObserved)
+            bool pendingReplacementObserved,
+            SupportedCharacterCreationKind creationKind = SupportedCharacterCreationKind.NewMainCharacter)
         {
             Controller = controller ?? throw new ArgumentNullException(nameof(controller));
             StableOwner = stableOwner ?? throw new ArgumentNullException(nameof(stableOwner));
@@ -31,6 +32,7 @@ namespace KingmakerDiceRoller.CharacterCreation
                 throw new ArgumentException("The first rollback snapshot must belong to generation 1.", nameof(generationRollback));
             }
             PendingReplacementObserved = pendingReplacementObserved;
+            CreationKind = creationKind;
             Generation = 1;
             Lifecycle = new RollSessionLifecycle();
             Lifecycle.ActivatePointBuy();
@@ -39,6 +41,7 @@ namespace KingmakerDiceRoller.CharacterCreation
 
         public object Controller { get; }
         public object StableOwner { get; }
+        public SupportedCharacterCreationKind CreationKind { get; }
         public object State { get; private set; }
         public object Unit { get; private set; }
         public object Distribution { get; private set; }

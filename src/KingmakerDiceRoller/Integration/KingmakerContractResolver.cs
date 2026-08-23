@@ -9,6 +9,7 @@ namespace KingmakerDiceRoller.Integration
     public sealed class KingmakerContractResolver
     {
         private const BindingFlags InstanceFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+        private const BindingFlags StaticFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
 
         public KingmakerContracts Resolve()
         {
@@ -22,6 +23,7 @@ namespace KingmakerDiceRoller.Integration
             var evidence = new List<string>();
             Type levelUpStateType = RequireType(gameAssembly, "Kingmaker.UnitLogic.Class.LevelUp.LevelUpState");
             Type unitDescriptorType = RequireType(gameAssembly, "Kingmaker.UnitLogic.UnitDescriptor");
+            Type unitHelperType = RequireType(gameAssembly, "Kingmaker.UnitLogic.UnitHelper");
             Type statsDistributionType = RequireType(gameAssembly, "Kingmaker.UnitLogic.Class.LevelUp.StatsDistribution");
             Type statTypeType = RequireType(gameAssembly, "Kingmaker.EntitySystem.Stats.StatType");
             Type statTypeHelperType = RequireType(gameAssembly, "Kingmaker.EntitySystem.Stats.StatTypeHelper");
@@ -29,6 +31,19 @@ namespace KingmakerDiceRoller.Integration
             if (charBuildModeType == null || !charBuildModeType.IsEnum)
             {
                 throw new ContractResolutionException("LevelUpState.CharBuildMode enum was not found.");
+            }
+            object charGenMode;
+            try
+            {
+                charGenMode = Enum.Parse(charBuildModeType, "CharGen", false);
+            }
+            catch (Exception exception)
+            {
+                throw new ContractResolutionException("LevelUpState.CharBuildMode.CharGen was not found: " + exception.Message);
+            }
+            if (Convert.ToInt32(charGenMode) != 1)
+            {
+                throw new ContractResolutionException("LevelUpState.CharBuildMode.CharGen is not exact value 1.");
             }
 
             ConstructorInfo constructor = levelUpStateType.GetConstructor(
@@ -69,6 +84,7 @@ namespace KingmakerDiceRoller.Integration
             MemberInfo stateUnit = ReflectionAccess.RequireInstanceMember(levelUpStateType, "Unit");
             MemberInfo stateDistribution = ReflectionAccess.RequireInstanceMember(levelUpStateType, "StatsDistribution");
             MemberInfo isFirstLevel = ReflectionAccess.RequireInstanceMember(levelUpStateType, "IsFirstLevel");
+            MemberInfo isEmployee = ReflectionAccess.RequireInstanceMember(levelUpStateType, "IsEmployee");
             if (!unitDescriptorType.IsAssignableFrom(ReflectionAccess.GetMemberType(stateUnit)))
             {
                 throw new ContractResolutionException("LevelUpState.Unit is not a UnitDescriptor contract.");
@@ -81,6 +97,32 @@ namespace KingmakerDiceRoller.Integration
             {
                 throw new ContractResolutionException("LevelUpState.IsFirstLevel is not Boolean.");
             }
+            if (ReflectionAccess.GetMemberType(isEmployee) != typeof(bool))
+            {
+                throw new ContractResolutionException("LevelUpState.IsEmployee is not Boolean.");
+            }
+            MethodInfo isCustomCompanion = unitHelperType.GetMethod(
+                "IsCustomCompanion",
+                StaticFlags,
+                null,
+                new[] { unitDescriptorType },
+                null);
+            if (isCustomCompanion == null || isCustomCompanion.ReturnType != typeof(bool))
+            {
+                throw new ContractResolutionException(
+                    "Exact bool UnitHelper.IsCustomCompanion(UnitDescriptor) method was not found.");
+            }
+            var employeeProperty = isEmployee as PropertyInfo;
+            MethodInfo employeeGetter = employeeProperty == null
+                ? null
+                : employeeProperty.GetGetMethod(true);
+            if (employeeGetter == null || employeeGetter.IsStatic ||
+                !MethodBodyContainsToken(employeeGetter, isCustomCompanion.MetadataToken))
+            {
+                throw new ContractResolutionException(
+                    "LevelUpState.IsEmployee does not call the exact UnitHelper.IsCustomCompanion(UnitDescriptor) discriminator.");
+            }
+            evidence.Add(Describe(isCustomCompanion));
 
             MemberInfo unitStats = ReflectionAccess.RequireInstanceMember(unitDescriptorType, "Stats");
             Type unitStatsType = ReflectionAccess.GetMemberType(unitStats);
@@ -288,6 +330,9 @@ namespace KingmakerDiceRoller.Integration
             evidence.Add("ControllerPath=Game.Instance.UI.CharacterBuildController.LevelUpController");
             evidence.Add("Lifecycle=" + controllerType.FullName + ".State");
             evidence.Add("MainCharacterPath=Game.Instance.Player.MainCharacter.Value.Descriptor");
+            evidence.Add(
+                "MercenaryDiscriminator=" + levelUpStateType.FullName +
+                ".IsEmployee + " + unitHelperType.FullName + ".IsCustomCompanion(UnitDescriptor)");
             evidence.Add("ControllerIdentity=" + controllerType.FullName + ".Unit + Preview");
             evidence.Add("Preview=" + controllerType.FullName + ".m_RecalculatePreview + UpdatePreview()");
             evidence.Add("AllocatorState=" + statsDistributionType.FullName + ".Available + Points + TotalPoints (writable)");
@@ -318,6 +363,8 @@ namespace KingmakerDiceRoller.Integration
                 stateUnit,
                 stateDistribution,
                 isFirstLevel,
+                isEmployee,
+                isCustomCompanion,
                 unitStats,
                 getStat,
                 baseValue,
@@ -366,6 +413,26 @@ namespace KingmakerDiceRoller.Integration
         {
             return method.DeclaringType.FullName + "." + method.Name + "(" +
                 string.Join(",", method.GetParameters().Select(parameter => parameter.ParameterType.FullName).ToArray()) + ")";
+        }
+
+        private static bool MethodBodyContainsToken(MethodInfo method, int metadataToken)
+        {
+            MethodBody body = method.GetMethodBody();
+            if (body == null) return false;
+            byte[] bytes = body.GetILAsByteArray();
+            byte[] token = BitConverter.GetBytes(metadataToken);
+            for (int offset = 0; offset <= bytes.Length - token.Length; offset++)
+            {
+                bool matches = true;
+                for (int index = 0; index < token.Length; index++)
+                {
+                    if (bytes[offset + index] == token[index]) continue;
+                    matches = false;
+                    break;
+                }
+                if (matches) return true;
+            }
+            return false;
         }
     }
 }

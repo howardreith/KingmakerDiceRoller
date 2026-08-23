@@ -39,6 +39,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             object stateUnit;
             object distribution;
             bool isFirstLevel;
+            bool isEmployee;
             try
             {
                 stateUnit = ReflectionAccess.Read(contracts.LevelUpStateUnitMember, state);
@@ -48,6 +49,13 @@ namespace KingmakerDiceRoller.CharacterCreation
 
                 object firstLevelValue = ReflectionAccess.Read(contracts.LevelUpStateIsFirstLevelMember, state);
                 isFirstLevel = firstLevelValue is bool && (bool)firstLevelValue;
+                object employeeValue = ReflectionAccess.Read(contracts.LevelUpStateIsEmployeeMember, state);
+                if (!(employeeValue is bool))
+                {
+                    return CharacterCreationContextDecision.Reject(
+                        "LevelUpState.IsEmployee did not return a Boolean value.");
+                }
+                isEmployee = (bool)employeeValue;
             }
             catch (Exception exception)
             {
@@ -79,7 +87,14 @@ namespace KingmakerDiceRoller.CharacterCreation
                     "Candidate identity observation failed with " + exception.GetType().Name + ".");
             }
 
-            string candidateFacts = BuildCandidateFacts(modeName, isFirstLevel, isMain, isPlayer);
+            string candidateFacts = BuildCandidateFacts(
+                modeName,
+                isFirstLevel,
+                isMain,
+                isPlayer,
+                isPet,
+                isEnemy,
+                isEmployee);
             if (isPet) return CharacterCreationContextDecision.Reject("Pets are excluded. " + candidateFacts);
             if (isEnemy) return CharacterCreationContextDecision.Reject("Enemies are excluded. " + candidateFacts);
 
@@ -98,6 +113,28 @@ namespace KingmakerDiceRoller.CharacterCreation
                     "The active character-build controller source identity is unavailable; stable ownership fails closed. " +
                     BuildFacts(modeName, isFirstLevel, isMain, isPlayer, ownership, false, false, null, null));
             }
+
+            bool stableOwnerIsCustomCompanion;
+            try
+            {
+                object customValue = contracts.UnitHelperIsCustomCompanionMethod.Invoke(
+                    null,
+                    new[] { ownership.UnitDescriptor });
+                if (!(customValue is bool))
+                {
+                    return CharacterCreationContextDecision.Reject(
+                        "UnitHelper.IsCustomCompanion(LevelUpController.Unit) did not return a Boolean value.");
+                }
+                stableOwnerIsCustomCompanion = (bool)customValue;
+            }
+            catch (Exception exception)
+            {
+                return CharacterCreationContextDecision.Reject(
+                    "Stable-owner mercenary observation failed with " + exception.GetType().Name + ".");
+            }
+            var mercenaryEvidence = new MercenaryDiscriminatorEvidence(
+                isEmployee,
+                stableOwnerIsCustomCompanion);
 
             object mainDescriptor;
             string mainCharacterDetail;
@@ -120,7 +157,7 @@ namespace KingmakerDiceRoller.CharacterCreation
                 true,
                 mainCharacterResolved,
                 mainDescriptor,
-                relation);
+                relation) + " " + mercenaryEvidence.BuildFacts() + ".";
 
             if (relation == MainCharacterIdentityRelation.Unresolved)
             {
@@ -130,10 +167,73 @@ namespace KingmakerDiceRoller.CharacterCreation
                     relation);
             }
 
+            if (isEmployee != stableOwnerIsCustomCompanion)
+            {
+                return CharacterCreationContextDecision.Reject(
+                    "Mercenary identity evidence is inconsistent between the active state candidate and stable controller source; the context fails closed. " +
+                    facts,
+                    relation);
+            }
+
+            if (mercenaryEvidence.IsExactMatch)
+            {
+                if (!string.Equals(modeName, "CharGen", StringComparison.Ordinal))
+                {
+                    return CharacterCreationContextDecision.Reject(
+                        "Mercenary creation is supported only in the exact observed CharGen mode. " + facts,
+                        relation);
+                }
+                if (!isPlayer)
+                {
+                    return CharacterCreationContextDecision.Reject(
+                        "The custom-companion candidate is not player-faction; mercenary creation fails closed. " + facts,
+                        relation);
+                }
+                if (isMain)
+                {
+                    return CharacterCreationContextDecision.Reject(
+                        "A main-character candidate cannot be classified as mercenary creation. " + facts,
+                        relation);
+                }
+                if (!ownership.StateMatches && !ownership.PreviewMatches)
+                {
+                    return CharacterCreationContextDecision.Reject(
+                        "The custom-companion candidate is not the active controller state or preview generation. " + facts,
+                        relation);
+                }
+                if (relation != MainCharacterIdentityRelation.DifferentFromCandidate)
+                {
+                    return CharacterCreationContextDecision.Reject(
+                        "Mercenary creation requires a resolved, different established campaign main character. " + facts,
+                        relation);
+                }
+
+                return CharacterCreationContextDecision.Accept(
+                    SupportedCharacterCreationKind.Mercenary,
+                    ownership.Controller,
+                    ownership.UnitDescriptor,
+                    state,
+                    stateUnit,
+                    distribution,
+                    "Accepted exact player-initiated first-level custom mercenary creation. " + facts,
+                    ownership.StateMatches,
+                    ownership.UnitMatches,
+                    ownership.PreviewMatches,
+                    relation,
+                    modeName,
+                    isFirstLevel,
+                    isMain,
+                    isPlayer,
+                    isPet,
+                    isEnemy,
+                    mercenaryEvidence,
+                    "LevelUpController.Unit custom-companion source descriptor");
+            }
+
             if (relation == MainCharacterIdentityRelation.DifferentFromCandidate)
             {
                 return CharacterCreationContextDecision.Reject(
-                    "Rejected controller-owned first-level candidate because Player.MainCharacter resolves to a different UnitDescriptor. " +
+                    "Rejected controller-owned first-level non-mercenary candidate because Player.MainCharacter resolves to a different UnitDescriptor. " +
                     mainCharacterDetail + " " + facts,
                     relation);
             }
@@ -153,6 +253,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             }
 
             return CharacterCreationContextDecision.Accept(
+                SupportedCharacterCreationKind.NewMainCharacter,
                 ownership.Controller,
                 ownership.UnitDescriptor,
                 state,
@@ -162,7 +263,15 @@ namespace KingmakerDiceRoller.CharacterCreation
                 ownership.StateMatches,
                 ownership.UnitMatches,
                 ownership.PreviewMatches,
-                relation);
+                relation,
+                modeName,
+                isFirstLevel,
+                isMain,
+                isPlayer,
+                isPet,
+                isEnemy,
+                mercenaryEvidence,
+                "LevelUpController.Unit new-main-character source descriptor");
         }
 
         private static ControllerOwnershipObservation ObserveActiveController(
@@ -275,12 +384,18 @@ namespace KingmakerDiceRoller.CharacterCreation
             string modeName,
             bool isFirstLevel,
             bool isMain,
-            bool isPlayer)
+            bool isPlayer,
+            bool isPet,
+            bool isEnemy,
+            bool isEmployee)
         {
             return "Facts: mode=" + modeName +
                 ", isFirstLevel=" + BooleanText(isFirstLevel) +
                 ", candidateMainFlag=" + BooleanText(isMain) +
-                ", candidatePlayerFlag=" + BooleanText(isPlayer) + ".";
+                ", candidatePlayerFlag=" + BooleanText(isPlayer) +
+                ", candidatePetFlag=" + BooleanText(isPet) +
+                ", candidateEnemyFlag=" + BooleanText(isEnemy) +
+                ", candidateEmployeeFlag=" + BooleanText(isEmployee) + ".";
         }
 
         private static string BuildFacts(

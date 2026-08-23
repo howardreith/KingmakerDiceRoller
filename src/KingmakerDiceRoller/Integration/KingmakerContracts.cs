@@ -19,6 +19,8 @@ namespace KingmakerDiceRoller.Integration
             MemberInfo levelUpStateUnitMember,
             MemberInfo levelUpStateDistributionMember,
             MemberInfo levelUpStateIsFirstLevelMember,
+            MemberInfo levelUpStateIsEmployeeMember,
+            MethodInfo unitHelperIsCustomCompanionMethod,
             MemberInfo unitStatsMember,
             MethodInfo unitStatsGetStatMethod,
             MemberInfo statBaseValueMember,
@@ -67,6 +69,8 @@ namespace KingmakerDiceRoller.Integration
             LevelUpStateUnitMember = levelUpStateUnitMember;
             LevelUpStateDistributionMember = levelUpStateDistributionMember;
             LevelUpStateIsFirstLevelMember = levelUpStateIsFirstLevelMember;
+            LevelUpStateIsEmployeeMember = levelUpStateIsEmployeeMember;
+            UnitHelperIsCustomCompanionMethod = unitHelperIsCustomCompanionMethod;
             UnitStatsMember = unitStatsMember;
             UnitStatsGetStatMethod = unitStatsGetStatMethod;
             StatBaseValueMember = statBaseValueMember;
@@ -116,6 +120,8 @@ namespace KingmakerDiceRoller.Integration
         public MemberInfo LevelUpStateUnitMember { get; }
         public MemberInfo LevelUpStateDistributionMember { get; }
         public MemberInfo LevelUpStateIsFirstLevelMember { get; }
+        public MemberInfo LevelUpStateIsEmployeeMember { get; }
+        public MethodInfo UnitHelperIsCustomCompanionMethod { get; }
         public MemberInfo UnitStatsMember { get; }
         public MethodInfo UnitStatsGetStatMethod { get; }
         public MemberInfo StatBaseValueMember { get; }

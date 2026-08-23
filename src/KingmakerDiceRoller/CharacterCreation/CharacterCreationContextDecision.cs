@@ -5,6 +5,7 @@ namespace KingmakerDiceRoller.CharacterCreation
         private CharacterCreationContextDecision(
             bool accepted,
             string reason,
+            SupportedCharacterCreationKind? creationKind,
             object controller,
             object stableOwner,
             object state,
@@ -13,10 +14,19 @@ namespace KingmakerDiceRoller.CharacterCreation
             bool controllerStateMatches,
             bool controllerUnitMatches,
             bool controllerPreviewMatches,
-            MainCharacterIdentityRelation? mainCharacterRelation)
+            MainCharacterIdentityRelation? mainCharacterRelation,
+            string mode,
+            bool? isFirstLevel,
+            bool? candidateIsMainCharacter,
+            bool? candidateIsPlayerFaction,
+            bool? candidateIsPet,
+            bool? candidateIsEnemy,
+            MercenaryDiscriminatorEvidence mercenaryEvidence,
+            string stableOwnerSource)
         {
             Accepted = accepted;
             Reason = reason;
+            CreationKind = creationKind;
             Controller = controller;
             StableOwner = stableOwner;
             State = state;
@@ -26,10 +36,19 @@ namespace KingmakerDiceRoller.CharacterCreation
             ControllerUnitMatches = controllerUnitMatches;
             ControllerPreviewMatches = controllerPreviewMatches;
             MainCharacterRelation = mainCharacterRelation;
+            Mode = mode ?? string.Empty;
+            IsFirstLevel = isFirstLevel;
+            CandidateIsMainCharacter = candidateIsMainCharacter;
+            CandidateIsPlayerFaction = candidateIsPlayerFaction;
+            CandidateIsPet = candidateIsPet;
+            CandidateIsEnemy = candidateIsEnemy;
+            MercenaryEvidence = mercenaryEvidence ?? new MercenaryDiscriminatorEvidence(false, false);
+            StableOwnerSource = stableOwnerSource ?? string.Empty;
         }
 
         public bool Accepted { get; }
         public string Reason { get; }
+        public SupportedCharacterCreationKind? CreationKind { get; }
         public object Controller { get; }
         public object StableOwner { get; }
         public object State { get; }
@@ -39,8 +58,18 @@ namespace KingmakerDiceRoller.CharacterCreation
         public bool ControllerUnitMatches { get; }
         public bool ControllerPreviewMatches { get; }
         public MainCharacterIdentityRelation? MainCharacterRelation { get; }
+        public string Mode { get; }
+        public bool? IsFirstLevel { get; }
+        public bool? CandidateIsMainCharacter { get; }
+        public bool? CandidateIsPlayerFaction { get; }
+        public bool? CandidateIsPet { get; }
+        public bool? CandidateIsEnemy { get; }
+        public MercenaryDiscriminatorEvidence MercenaryEvidence { get; }
+        public string StableOwnerSource { get; }
+        public object CandidateUnit => Unit;
 
         public static CharacterCreationContextDecision Accept(
+            SupportedCharacterCreationKind creationKind,
             object controller,
             object stableOwner,
             object state,
@@ -50,11 +79,20 @@ namespace KingmakerDiceRoller.CharacterCreation
             bool controllerStateMatches,
             bool controllerUnitMatches,
             bool controllerPreviewMatches,
-            MainCharacterIdentityRelation mainCharacterRelation)
+            MainCharacterIdentityRelation mainCharacterRelation,
+            string mode,
+            bool isFirstLevel,
+            bool candidateIsMainCharacter,
+            bool candidateIsPlayerFaction,
+            bool candidateIsPet,
+            bool candidateIsEnemy,
+            MercenaryDiscriminatorEvidence mercenaryEvidence,
+            string stableOwnerSource)
         {
             return new CharacterCreationContextDecision(
                 true,
                 reason,
+                creationKind,
                 controller,
                 stableOwner,
                 state,
@@ -63,7 +101,15 @@ namespace KingmakerDiceRoller.CharacterCreation
                 controllerStateMatches,
                 controllerUnitMatches,
                 controllerPreviewMatches,
-                mainCharacterRelation);
+                mainCharacterRelation,
+                mode,
+                isFirstLevel,
+                candidateIsMainCharacter,
+                candidateIsPlayerFaction,
+                candidateIsPet,
+                candidateIsEnemy,
+                mercenaryEvidence,
+                stableOwnerSource);
         }
 
         public static CharacterCreationContextDecision Reject(string reason)
@@ -76,9 +122,18 @@ namespace KingmakerDiceRoller.CharacterCreation
                 null,
                 null,
                 null,
+                null,
                 false,
                 false,
                 false,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
                 null);
         }
 
@@ -94,10 +149,19 @@ namespace KingmakerDiceRoller.CharacterCreation
                 null,
                 null,
                 null,
+                null,
                 false,
                 false,
                 false,
-                mainCharacterRelation);
+                mainCharacterRelation,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null);
         }
     }
 }

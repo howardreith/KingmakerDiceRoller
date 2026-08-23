@@ -723,6 +723,7 @@ namespace KingmakerDiceRoller.CharacterCreation
         {
             PointBuyOrigin origin = session.PointBuyOrigin;
             return "Facts: pointBuyOriginCaptured=" + BooleanText(session.PointBuyOriginCaptured) +
+                ", creationKind=" + session.CreationKind +
                 ", pointBuyOriginGeneration=" + (origin == null ? 0 : origin.CapturedGeneration) +
                 ", currentGeneration=" + session.Generation +
                 ", applicationGeneration=" + session.Generation +

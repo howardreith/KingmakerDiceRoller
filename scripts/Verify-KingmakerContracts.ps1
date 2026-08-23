@@ -50,6 +50,17 @@ function Test-BooleanPath([Type] $Type, [string[]] $Paths) {
     }
     return $null
 }
+function Test-ByteSequence([byte[]] $Bytes, [byte[]] $Sequence) {
+    if (-not $Bytes -or -not $Sequence -or $Sequence.Length -gt $Bytes.Length) { return $false }
+    for ($offset = 0; $offset -le $Bytes.Length - $Sequence.Length; $offset++) {
+        $matches = $true
+        for ($index = 0; $index -lt $Sequence.Length; $index++) {
+            if ($Bytes[$offset + $index] -ne $Sequence[$index]) { $matches = $false; break }
+        }
+        if ($matches) { return $true }
+    }
+    return $false
+}
 
 $resolver = [ResolveEventHandler]{
     param($sender, $eventArgs)
@@ -65,6 +76,7 @@ try {
     $assembly = [Reflection.Assembly]::LoadFrom($assemblyPath)
     $state = Require-Type $assembly 'Kingmaker.UnitLogic.Class.LevelUp.LevelUpState'
     $unit = Require-Type $assembly 'Kingmaker.UnitLogic.UnitDescriptor'
+    $unitHelper = Require-Type $assembly 'Kingmaker.UnitLogic.UnitHelper'
     $unitEntity = Require-Type $assembly 'Kingmaker.EntitySystem.Entities.UnitEntityData'
     $unitReference = Require-Type $assembly 'Kingmaker.EntitySystem.Entities.UnitReference'
     $playerType = Require-Type $assembly 'Kingmaker.Player'
@@ -73,6 +85,8 @@ try {
     $statHelper = Require-Type $assembly 'Kingmaker.EntitySystem.Stats.StatTypeHelper'
     $mode = $state.GetNestedType('CharBuildMode', [Reflection.BindingFlags]'Public,NonPublic')
     if (-not $mode -or -not $mode.IsEnum) { throw 'LevelUpState.CharBuildMode enum was not found.' }
+    $charGenMode = [Enum]::Parse($mode, 'CharGen', $false)
+    if ([int] $charGenMode -ne 1) { throw 'LevelUpState.CharBuildMode.CharGen is not exact value 1.' }
     $constructor = $state.GetConstructor($flags, $null, [Type[]]@($unit,$mode), $null)
     if (-not $constructor) { throw 'Exact LevelUpState(UnitDescriptor, CharBuildMode) constructor was not found.' }
     $start = $distribution.GetMethod('Start',$flags,$null,[Type[]]@([int]),$null)
@@ -83,6 +97,22 @@ try {
     $stateDistribution = Require-Member $state 'StatsDistribution'
     $firstLevel = Require-Member $state 'IsFirstLevel'
     if ((Member-Type $firstLevel) -ne [bool]) { throw 'IsFirstLevel is not Boolean.' }
+    $isEmployee = Require-Member $state 'IsEmployee'
+    if ((Member-Type $isEmployee) -ne [bool]) { throw 'IsEmployee is not Boolean.' }
+    $isCustomCompanion = $unitHelper.GetMethod(
+        'IsCustomCompanion',
+        $staticFlags,
+        $null,
+        [Type[]]@($unit),
+        $null)
+    if (-not $isCustomCompanion -or $isCustomCompanion.ReturnType -ne [bool]) {
+        throw 'Exact bool UnitHelper.IsCustomCompanion(UnitDescriptor) was not found.'
+    }
+    $employeeGetter = if ($isEmployee -is [Reflection.PropertyInfo]) { $isEmployee.GetGetMethod($true) } else { $null }
+    if (-not $employeeGetter -or $employeeGetter.IsStatic -or
+        -not (Test-ByteSequence ($employeeGetter.GetMethodBody().GetILAsByteArray()) ([BitConverter]::GetBytes($isCustomCompanion.MetadataToken)))) {
+        throw 'LevelUpState.IsEmployee does not call the exact UnitHelper.IsCustomCompanion(UnitDescriptor) discriminator.'
+    }
     $unitStats = Require-Member $unit 'Stats'
     $statsType = Member-Type $unitStats
     $getStatCandidates = @($statsType.GetMethods($flags) | Where-Object { $_.Name -eq 'GetStat' -and -not $_.IsGenericMethod -and $_.GetParameters().Length -eq 1 -and $_.GetParameters()[0].ParameterType -eq $statType })
@@ -205,6 +235,8 @@ try {
         assembly_mvid = $assembly.ManifestModule.ModuleVersionId.ToString('D')
         signatures = @(
             $constructor.ToString(), $start.ToString(), $complete.ToString(),
+            "$($state.FullName).IsEmployee",
+            "$($unitHelper.FullName).IsCustomCompanion($($unit.FullName))",
             "Game.Instance.UI.CharacterBuildController.LevelUpController -> $($controller.FullName)",
             "$($controller.FullName).State", "$($controller.FullName).Unit", "$($controller.FullName).Preview",
             'Game.Instance.Player.MainCharacter.Value.Descriptor',
@@ -226,6 +258,11 @@ try {
             player_main_character = 'Game.Instance.Player.MainCharacter.Value.Descriptor'
             controller_unit = 'Game.Instance.UI.CharacterBuildController.LevelUpController.Unit'
             controller_preview = 'Game.Instance.UI.CharacterBuildController.LevelUpController.Preview'
+        }
+        mercenary_discriminator = [ordered]@{
+            state = 'Kingmaker.UnitLogic.Class.LevelUp.LevelUpState.IsEmployee'
+            stable_owner = 'Kingmaker.UnitLogic.UnitHelper.IsCustomCompanion(LevelUpController.Unit)'
+            observed_mode = 'CharGen'
         }
         allocator_state_writable = $true
         ability_presentation = [ordered]@{

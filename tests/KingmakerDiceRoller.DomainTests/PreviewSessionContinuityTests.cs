@@ -1332,6 +1332,240 @@ namespace KingmakerDiceRoller.DomainTests
             AssertEx.Equal(RollSessionMode.Roll, coordinator.ActiveSession.Mode);
         }
 
+        internal static void MercenaryPreviewReplacementPreservesSession()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            environment.ConfigureMercenaryOwner();
+            FakeState firstState = environment.NewMercenaryState(10);
+            RollSession first = environment.Open(firstState, 20, "observed mercenary budget");
+            PointBuyOrigin origin = first.PointBuyOrigin;
+            StatAssignment assignment = first.Assignment;
+
+            FakeState replacement = environment.NewMercenaryReplacementState(firstState, 10);
+            RollSession rebound = environment.Rebind(replacement);
+
+            AssertEx.True(ReferenceEquals(first, rebound));
+            AssertEx.Equal(SupportedCharacterCreationKind.Mercenary, rebound.CreationKind);
+            AssertEx.True(ReferenceEquals(origin, rebound.PointBuyOrigin));
+            AssertEx.True(ReferenceEquals(assignment, rebound.Assignment));
+            AssertEx.Equal(2, rebound.Generation);
+        }
+
+        internal static void MercenaryAllocatorReplacementPreservesSession()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            environment.ConfigureMercenaryOwner();
+            FakeState state = environment.NewMercenaryState(10);
+            RollSession first = environment.Open(state, 20, "observed mercenary budget");
+            PointBuyOrigin origin = first.PointBuyOrigin;
+            environment.CharacterBuild.Skills.AbilityScoresAllocator = new FakeAbilityScoresAllocator();
+
+            CharacterCreationContextDecision decision = environment.Evaluate(state, FakeMode.CharGen);
+            RollSession reused;
+            string reason;
+            AssertEx.True(environment.Sessions.TryOpenOrRebind(
+                decision,
+                generation => environment.CaptureRollback(state, generation),
+                out reused,
+                out reason), reason);
+
+            AssertEx.True(ReferenceEquals(first, reused));
+            AssertEx.True(ReferenceEquals(origin, reused.PointBuyOrigin));
+            AssertEx.Equal(1, reused.Generation);
+        }
+
+        internal static void SecondMercenaryStartsFreshSession()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            environment.ConfigureMercenaryOwner();
+            FakeState firstState = environment.NewMercenaryState(10);
+            RollSession first = environment.OpenPointBuy(firstState, FakeMode.CharGen);
+            environment.Sessions.Clear(first);
+
+            environment.ReplaceMercenaryOwner();
+            FakeState secondState = environment.NewMercenaryState(10);
+            RollSession second = environment.OpenPointBuy(secondState, FakeMode.CharGen);
+
+            AssertEx.True(!ReferenceEquals(first, second));
+            AssertEx.True(!ReferenceEquals(first.StableOwner, second.StableOwner));
+            AssertEx.Equal(SupportedCharacterCreationKind.Mercenary, second.CreationKind);
+            AssertEx.Equal(RollSessionMode.PointBuy, second.Mode);
+            AssertEx.Equal(null, second.Assignment);
+            AssertEx.Equal(null, second.PointBuyOrigin);
+        }
+
+        internal static void CanceledMercenaryClearsSession()
+        {
+            AssertMercenaryOwnerLossClearsSession();
+        }
+
+        internal static void CompletedMercenaryClearsSession()
+        {
+            AssertMercenaryOwnerLossClearsSession();
+        }
+
+        internal static void UntouchedMercenaryRestoresObservedTwentyPointOrigin()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            FakeUnitDescriptor campaignMain;
+            FakeState state;
+            CharacterCreationCoordinator coordinator = OpenMercenaryProductCoordinator(
+                environment,
+                new SequenceRandomSource(Enumerable.Repeat(6, 24).ToArray()),
+                20,
+                null,
+                out state,
+                out campaignMain);
+
+            AssertEx.True(coordinator.TryRoll(out string error), error);
+            AssertEx.True(coordinator.TryRestorePointBuy(out error), error);
+
+            AssertEx.SequenceEqual(Enumerable.Repeat(10, 6), environment.ReadDistribution(state));
+            AssertEx.SequenceEqual(Enumerable.Repeat(10, 6), environment.ReadUnit(state.Unit));
+            AssertEx.Equal(20, state.StatsDistribution.Points);
+            AssertEx.Equal(20, state.StatsDistribution.TotalPoints);
+            AssertEx.Equal(20, state.StatsDistribution.LastStartBudget);
+            AssertEx.SequenceEqual(Enumerable.Repeat(10, 6), environment.ReadUnit(campaignMain));
+        }
+
+        internal static void PartialMercenaryAllocationRestoresExactly()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            FakeUnitDescriptor campaignMain;
+            FakeState state;
+            CharacterCreationCoordinator coordinator = OpenMercenaryProductCoordinator(
+                environment,
+                new SequenceRandomSource(Enumerable.Repeat(6, 24).ToArray()),
+                20,
+                null,
+                out state,
+                out campaignMain);
+            int[] allocation = { 12, 11, 10, 10, 9, 8 };
+            environment.StatAccess.WriteDistributionValues(state.StatsDistribution, allocation, environment.Contracts);
+            environment.StatAccess.WriteUnitBaseValues(state.Unit, allocation, environment.Contracts);
+            state.StatsDistribution.SetAllocatorState(true, 7, 20);
+
+            AssertEx.True(coordinator.TryRoll(out string error), error);
+            AssertEx.True(coordinator.TryRestorePointBuy(out error), error);
+
+            AssertEx.SequenceEqual(allocation, environment.ReadDistribution(state));
+            AssertEx.SequenceEqual(allocation, environment.ReadUnit(state.Unit));
+            AssertEx.Equal(7, state.StatsDistribution.Points);
+            AssertEx.Equal(20, state.StatsDistribution.TotalPoints);
+            AssertEx.Equal(20, state.StatsDistribution.LastStartBudget);
+            AssertEx.SequenceEqual(Enumerable.Repeat(10, 6), environment.ReadUnit(campaignMain));
+        }
+
+        internal static void MercenaryNonstandardBudgetIsPreserved()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            FakeUnitDescriptor campaignMain;
+            FakeState state;
+            CharacterCreationCoordinator coordinator = OpenMercenaryProductCoordinator(
+                environment,
+                new SequenceRandomSource(Enumerable.Repeat(6, 24).ToArray()),
+                33,
+                null,
+                out state,
+                out campaignMain);
+            state.StatsDistribution.SetAllocatorState(true, 29, 33);
+
+            AssertEx.True(coordinator.TryRoll(out string error), error);
+            AssertEx.True(coordinator.TryRestorePointBuy(out error), error);
+
+            AssertEx.Equal(29, state.StatsDistribution.Points);
+            AssertEx.Equal(33, state.StatsDistribution.TotalPoints);
+            AssertEx.Equal(33, state.StatsDistribution.LastStartBudget);
+        }
+
+        internal static void MercenaryRerollPreservesOriginalOrigin()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            FakeUnitDescriptor campaignMain;
+            FakeState state;
+            CharacterCreationCoordinator coordinator = OpenMercenaryProductCoordinator(
+                environment,
+                new SequenceRandomSource(Enumerable.Repeat(6, 48).ToArray()),
+                20,
+                null,
+                out state,
+                out campaignMain);
+            int[] allocation = { 11, 10, 10, 10, 10, 9 };
+            environment.StatAccess.WriteDistributionValues(state.StatsDistribution, allocation, environment.Contracts);
+            environment.StatAccess.WriteUnitBaseValues(state.Unit, allocation, environment.Contracts);
+            state.StatsDistribution.SetAllocatorState(true, 17, 20);
+
+            AssertEx.True(coordinator.TryRoll(out string error), error);
+            PointBuyOrigin origin = coordinator.ActiveSession.PointBuyOrigin;
+            AssertEx.True(coordinator.TryReroll(out error), error);
+            AssertEx.True(ReferenceEquals(origin, coordinator.ActiveSession.PointBuyOrigin));
+            AssertEx.True(coordinator.TryRestorePointBuy(out error), error);
+            AssertEx.SequenceEqual(allocation, environment.ReadDistribution(state));
+            AssertEx.Equal(17, state.StatsDistribution.Points);
+        }
+
+        internal static void MercenaryRecallCapturesOriginalOrigin()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            var saved = new[]
+            {
+                SavedRollArrayRecord.Create(
+                    environment.Assignment,
+                    "saved-test",
+                    "4d[6]kh3",
+                    "2026-08-23T00:00:00Z",
+                    "Mercenary recall")
+            };
+            var workflow = new CharacterRollWorkflow(
+                new DiceRollEngine(new DiceExpressionParser(), new SequenceRandomSource(6)),
+                new PointBuyEquivalentCalculator(),
+                RollConfiguration.Default(),
+                saved,
+                () => "2026-08-23T00:00:00Z",
+                null);
+            FakeUnitDescriptor campaignMain;
+            FakeState state;
+            CharacterCreationCoordinator coordinator = OpenMercenaryProductCoordinator(
+                environment,
+                new SequenceRandomSource(Enumerable.Repeat(6, 24).ToArray()),
+                20,
+                workflow,
+                out state,
+                out campaignMain);
+            int[] allocation = { 10, 12, 10, 9, 10, 8 };
+            environment.StatAccess.WriteDistributionValues(state.StatsDistribution, allocation, environment.Contracts);
+            environment.StatAccess.WriteUnitBaseValues(state.Unit, allocation, environment.Contracts);
+            state.StatsDistribution.SetAllocatorState(true, 8, 20);
+
+            AssertEx.True(coordinator.TryRecallSelectedSaved(out string error), error);
+            AssertEx.Equal(20, coordinator.ActiveSession.PointBuyOrigin.AllocatorBudget);
+            AssertEx.Equal(8, coordinator.ActiveSession.PointBuyOrigin.RemainingPoints);
+            AssertEx.True(coordinator.TryRestorePointBuy(out error), error);
+            AssertEx.SequenceEqual(allocation, environment.ReadDistribution(state));
+            AssertEx.Equal(8, state.StatsDistribution.Points);
+            AssertEx.Equal(20, state.StatsDistribution.LastStartBudget);
+        }
+
+        internal static void MercenaryRollLeavesCampaignMainUnchanged()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            FakeUnitDescriptor campaignMain;
+            FakeState state;
+            CharacterCreationCoordinator coordinator = OpenMercenaryProductCoordinator(
+                environment,
+                new SequenceRandomSource(Enumerable.Repeat(6, 24).ToArray()),
+                20,
+                null,
+                out state,
+                out campaignMain);
+            int[] before = environment.ReadUnit(campaignMain);
+
+            AssertEx.True(coordinator.TryRoll(out string error), error);
+
+            AssertEx.SequenceEqual(before, environment.ReadUnit(campaignMain));
+            AssertEx.SequenceEqual(Enumerable.Repeat(18, 6), environment.ReadUnit(state.Unit));
+        }
+
         internal static void ExplicitRollRestoresModifiedPreRollAllocation()
         {
             TestEnvironment environment = TestEnvironment.Create();
@@ -1469,6 +1703,30 @@ namespace KingmakerDiceRoller.DomainTests
                 out error), error);
         }
 
+        private static void AssertMercenaryOwnerLossClearsSession()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            environment.ConfigureMercenaryOwner();
+            RollSession session = environment.OpenPointBuy(
+                environment.NewMercenaryState(10),
+                FakeMode.CharGen);
+            RollSession released;
+            AssertEx.True(!environment.Sessions.ReleaseIfStableOwnerLost(
+                session.Controller,
+                session.StableOwner,
+                true,
+                0f,
+                out released));
+            AssertEx.True(environment.Sessions.ReleaseIfStableOwnerLost(
+                null,
+                null,
+                true,
+                SessionLivenessTracker.ConfirmedGraceSeconds,
+                out released));
+            AssertEx.True(ReferenceEquals(session, released));
+            AssertEx.Equal(null, environment.Sessions.Active);
+        }
+
         private static CharacterRollWorkflow NewProductWorkflow(
             IRandomSource random,
             RollConfiguration configuration)
@@ -1496,6 +1754,29 @@ namespace KingmakerDiceRoller.DomainTests
             state = environment.NewState(10);
             coordinator.OnDistributionStarted(state.StatsDistribution, 25);
             coordinator.OnLevelUpStateConstructed(state, state.Unit, FakeMode.CharGen);
+            return coordinator;
+        }
+
+        private static CharacterCreationCoordinator OpenMercenaryProductCoordinator(
+            TestEnvironment environment,
+            IRandomSource random,
+            int budget,
+            CharacterRollWorkflow workflow,
+            out FakeState state,
+            out FakeUnitDescriptor campaignMain)
+        {
+            campaignMain = environment.ConfigureMercenaryOwner();
+            var tracker = new PointBudgetTracker();
+            CharacterCreationCoordinator coordinator = environment.CreateCoordinator(
+                tracker,
+                new RuntimeDiagnostics(),
+                workflow ?? NewProductWorkflow(random, RollConfiguration.Default()));
+            state = environment.NewMercenaryState(10);
+            state.StatsDistribution.SetAllocatorState(true, budget, budget);
+            coordinator.OnDistributionStarted(state.StatsDistribution, budget);
+            coordinator.OnLevelUpStateConstructed(state, state.Unit, FakeMode.CharGen);
+            AssertEx.True(coordinator.ActiveSession != null);
+            AssertEx.Equal(SupportedCharacterCreationKind.Mercenary, coordinator.ActiveSession.CreationKind);
             return coordinator;
         }
 
@@ -1634,6 +1915,48 @@ namespace KingmakerDiceRoller.DomainTests
                 return state;
             }
 
+            internal FakeUnitDescriptor ConfigureMercenaryOwner()
+            {
+                FakeUnitDescriptor campaignMain = Source;
+                Source = FakeUnitDescriptor.Create(10, false, true);
+                Controller.Unit = Source;
+                Player.MainCharacter = campaignMain;
+                return campaignMain;
+            }
+
+            internal void ReplaceMercenaryOwner()
+            {
+                Source = FakeUnitDescriptor.Create(10, false, true);
+                Controller = new FakeLevelUpController
+                {
+                    Unit = Source,
+                    m_RecalculatePreview = false
+                };
+                CharacterBuild.LevelUpController = Controller;
+            }
+
+            internal FakeState NewMercenaryState(int value)
+            {
+                var state = new FakeState(
+                    FakeUnitDescriptor.Create(value, false, true),
+                    new FakeDistribution(value),
+                    true);
+                Controller.State = state;
+                Controller.Preview = state.Unit;
+                return state;
+            }
+
+            internal FakeState NewMercenaryReplacementState(FakeState previous, int value)
+            {
+                var state = new FakeState(
+                    FakeUnitDescriptor.Create(value, false, true),
+                    new FakeDistribution(value),
+                    true);
+                Controller.State = previous;
+                Controller.Preview = state.Unit;
+                return state;
+            }
+
             internal CharacterCreationContextDecision Evaluate(FakeState state, FakeMode mode)
             {
                 Controller.Preview = state.Unit;
@@ -1678,6 +2001,22 @@ namespace KingmakerDiceRoller.DomainTests
                     session.BeginRollMode(CaptureOrigin(state, budget, budgetSource, 1), assignment);
                     session.CommitRecallOrAssignment(assignment);
                 }
+                return session;
+            }
+
+            internal RollSession OpenPointBuy(FakeState state, FakeMode mode)
+            {
+                Controller.State = state;
+                Controller.Preview = state.Unit;
+                CharacterCreationContextDecision decision = Evaluate(state, mode);
+                AssertEx.True(decision.Accepted, decision.Reason);
+                RollSession session;
+                string reason;
+                AssertEx.True(Sessions.TryOpenOrRebind(
+                    decision,
+                    generation => CaptureRollback(state, generation),
+                    out session,
+                    out reason), reason);
                 return session;
             }
 
@@ -1828,6 +2167,8 @@ namespace KingmakerDiceRoller.DomainTests
                     typeof(FakeState).GetProperty("Unit", instance),
                     typeof(FakeState).GetProperty("StatsDistribution", instance),
                     typeof(FakeState).GetProperty("IsFirstLevel", instance),
+                    typeof(FakeState).GetProperty("IsEmployee", instance),
+                    typeof(FakeUnitHelper).GetMethod("IsCustomCompanion", staticFlags),
                     typeof(FakeUnitDescriptor).GetProperty("Stats", instance),
                     typeof(FakeStats).GetMethod("GetStat", instance),
                     typeof(FakeStat).GetProperty("BaseValue", instance),
@@ -1948,12 +2289,20 @@ namespace KingmakerDiceRoller.DomainTests
             public bool IsPlayerFaction { get; set; }
             public bool IsPet { get; set; }
             public bool IsPlayersEnemy { get; set; }
+            public bool IsCustomCompanion { get; set; }
             public FakeStats Stats { get; }
             public FakeUnitEntityData Unit { get; }
 
-            internal static FakeUnitDescriptor Create(int value, bool isMainCharacter)
+            internal static FakeUnitDescriptor Create(
+                int value,
+                bool isMainCharacter,
+                bool isCustomCompanion = false)
             {
-                return new FakeUnitDescriptor(value, isMainCharacter);
+                var unit = new FakeUnitDescriptor(value, isMainCharacter)
+                {
+                    IsCustomCompanion = isCustomCompanion
+                };
+                return unit;
             }
         }
 
@@ -2016,6 +2365,15 @@ namespace KingmakerDiceRoller.DomainTests
             public FakeUnitDescriptor Unit { get; }
             public FakeDistribution StatsDistribution { get; }
             public bool IsFirstLevel { get; set; }
+            public bool IsEmployee => Unit != null && Unit.IsCustomCompanion;
+        }
+
+        private static class FakeUnitHelper
+        {
+            public static bool IsCustomCompanion(FakeUnitDescriptor unit)
+            {
+                return unit != null && unit.IsCustomCompanion;
+            }
         }
 
         private sealed class FakeLevelUpController
