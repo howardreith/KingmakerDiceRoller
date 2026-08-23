@@ -108,6 +108,114 @@ namespace KingmakerDiceRoller.DomainTests
             AssertEx.True(!model.AdvancedExpanded);
         }
 
+        internal static void WidePointBuyExposesOptionsWithoutDisclosure()
+        {
+            var configuration = new RollConfiguration(
+                DiceRollPreset.CustomExpression,
+                LowScorePolicy.RerollIndividualBelowMinimum,
+                9,
+                "2d[6]+6");
+            RollPanelModel model = new RollPanelPresenter().Present(
+                Snapshot(RollSessionMode.PointBuy, null, configuration),
+                RollPanelDisclosureState.AllCollapsed,
+                RollPanelPresentationProfile.Wide);
+            AssertEx.Equal(RollPanelPresentationProfile.Wide, model.Profile);
+            AssertEx.True(!model.AdvancedVisible);
+            AssertEx.True(model.AdvancedExpanded);
+            AssertEx.True(model.MinimumVisible);
+            AssertEx.True(model.CustomVisible);
+        }
+
+        internal static void WideRollModeExposesOrdinarySections()
+        {
+            RollUiSnapshot snapshot = new RollUiSnapshot(
+                true, RollSessionMode.Roll, RollConfiguration.Default(),
+                new[] { 16, 15, 14, 12, 10, 8 }, 75, 22, false, "4d[6]kh3",
+                1, 1, "history", 1, 1, "saved", string.Empty, "ready");
+            RollPanelModel model = new RollPanelPresenter().Present(
+                snapshot,
+                RollPanelDisclosureState.AllCollapsed,
+                RollPanelPresentationProfile.Wide);
+            AssertEx.Equal(6, model.AssignmentRows.Count);
+            AssertEx.True(model.AssignmentVisible);
+            AssertEx.True(model.HistoryDetailsVisible);
+            AssertEx.True(!model.HistoryDisclosureVisible);
+            AssertEx.True(model.SavedDetailsVisible);
+            AssertEx.True(!model.SavedDisclosureVisible);
+        }
+
+        internal static void WideEmptyHistoryCompactsSection()
+        {
+            RollUiSnapshot snapshot = Snapshot(
+                RollSessionMode.Roll,
+                new[] { 16, 15, 14, 12, 10, 8 });
+            var emptyHistory = new RollUiSnapshot(
+                true, snapshot.Mode, snapshot.Configuration, snapshot.AssignedValues,
+                snapshot.Total, snapshot.PointBuyEquivalent, snapshot.ExtendedEquivalent,
+                snapshot.RuleText, 0, 0, string.Empty, 0, 0, string.Empty,
+                string.Empty, "ready");
+            RollPanelModel model = new RollPanelPresenter().Present(
+                emptyHistory,
+                RollPanelDisclosureState.AllCollapsed,
+                RollPanelPresentationProfile.Wide);
+            AssertEx.True(!model.HistoryDisclosureVisible);
+            AssertEx.True(!model.HistoryDetailsVisible);
+        }
+
+        internal static void SelectedPresetAndAppliedRuleRemainDistinct()
+        {
+            var selected = new RollConfiguration(
+                DiceRollPreset.ThreeD6,
+                LowScorePolicy.Tabletop,
+                3,
+                "3d[6]");
+            RollUiSnapshot snapshot = new RollUiSnapshot(
+                true, RollSessionMode.Roll, selected,
+                new[] { 16, 15, 14, 12, 10, 8 }, 75, 22, false,
+                "4d[6]kh3", 1, 1, "history", 0, 0, string.Empty,
+                string.Empty, "ready");
+            RollPanelModel model = new RollPanelPresenter().Present(
+                snapshot,
+                RollPanelDisclosureState.AllCollapsed,
+                RollPanelPresentationProfile.Wide);
+            AssertEx.Equal("3d6", model.Preset);
+            AssertEx.True(model.Summary.Contains("Rolled with: 4d[6]kh3"));
+        }
+
+        internal static void ProfileSwitchRenderingHasNoCommandSideEffects()
+        {
+            var target = new FakeTarget(Snapshot(RollSessionMode.PointBuy, null));
+            var presenter = new RollPanelPresenter();
+            presenter.Present(
+                target.UiSnapshot,
+                RollPanelDisclosureState.AllCollapsed,
+                RollPanelPresentationProfile.Compact);
+            presenter.Present(
+                target.UiSnapshot,
+                RollPanelDisclosureState.AllCollapsed,
+                RollPanelPresentationProfile.Wide);
+            AssertEx.Equal(0, target.CommandCalls);
+        }
+
+        internal static void CreationKindDoesNotChangePresentation()
+        {
+            RollUiSnapshot shared = Snapshot(
+                RollSessionMode.Roll,
+                new[] { 16, 15, 14, 12, 10, 8 });
+            RollPanelPresenter presenter = new RollPanelPresenter();
+            RollPanelModel mainCharacter = presenter.Present(
+                shared,
+                RollPanelDisclosureState.AllCollapsed,
+                RollPanelPresentationProfile.Wide);
+            RollPanelModel mercenary = presenter.Present(
+                shared,
+                RollPanelDisclosureState.AllCollapsed,
+                RollPanelPresentationProfile.Wide);
+            AssertEx.Equal(mainCharacter.Mode, mercenary.Mode);
+            AssertEx.Equal(mainCharacter.Summary, mercenary.Summary);
+            AssertEx.Equal(mainCharacter.AssignmentRows.Count, mercenary.AssignmentRows.Count);
+        }
+
         internal static void RollModeShowsOnlyRelevantPrimaryControls()
         {
             RollPanelModel model = new RollPanelPresenter().Present(Snapshot(

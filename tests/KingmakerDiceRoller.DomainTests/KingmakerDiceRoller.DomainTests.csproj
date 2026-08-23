@@ -26,6 +26,7 @@
     <Compile Include="NativePanelLifecycleTests.cs" />
     <Compile Include="NativePanelUsabilityTests.cs" />
     <Compile Include="RollUiPresenterTests.cs" />
+    <Compile Include="ResponsiveRollPanelLayoutTests.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="SequenceRandomSource.cs" />
     <Compile Include="..\..\src\KingmakerDiceRoller\Domain\*.cs">
@@ -56,6 +57,7 @@
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\AbilityPhasePresentationService.cs"><Link>CharacterCreation\AbilityPhasePresentationService.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\PreviewRefreshService.cs"><Link>CharacterCreation\PreviewRefreshService.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RollSession.cs"><Link>CharacterCreation\RollSession.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\ResponsiveRollPanelLayout.cs"><Link>CharacterCreation\ResponsiveRollPanelLayout.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RollUiSnapshot.cs"><Link>CharacterCreation\RollUiSnapshot.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RollPanelModel.cs"><Link>CharacterCreation\RollPanelModel.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RollUiCommand.cs"><Link>CharacterCreation\RollUiCommand.cs</Link></Compile>

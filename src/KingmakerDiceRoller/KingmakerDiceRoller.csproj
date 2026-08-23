@@ -32,6 +32,7 @@
     <Reference Include="UnityEngine"><HintPath>$(KingmakerManagedDir)\UnityEngine.dll</HintPath><Private>False</Private></Reference>
     <Reference Include="UnityEngine.CoreModule"><HintPath>$(KingmakerManagedDir)\UnityEngine.CoreModule.dll</HintPath><Private>False</Private></Reference>
     <Reference Include="UnityEngine.IMGUIModule"><HintPath>$(KingmakerManagedDir)\UnityEngine.IMGUIModule.dll</HintPath><Private>False</Private></Reference>
+    <Reference Include="UnityEngine.UIModule"><HintPath>$(KingmakerManagedDir)\UnityEngine.UIModule.dll</HintPath><Private>False</Private></Reference>
     <Reference Include="UnityEngine.UI"><HintPath>$(KingmakerManagedDir)\UnityEngine.UI.dll</HintPath><Private>False</Private></Reference>
   </ItemGroup>
   <ItemGroup>

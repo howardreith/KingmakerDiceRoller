@@ -121,8 +121,18 @@ namespace KingmakerDiceRoller.DomainTests
         internal static void ExpandedDimensionsAreBounded()
         {
             NativeRollPanelLayoutSpec spec = NativeRollPanelLayoutSpec.Default;
-            AssertEx.True(spec.ExpandedWidth >= 380f && spec.ExpandedWidth <= 420f);
-            AssertEx.True(spec.ExpandedHeight >= 540f && spec.ExpandedHeight <= 590f);
+            AssertEx.True(spec.ExpandedWidth >= 600f && spec.ExpandedWidth <= 660f);
+            AssertEx.True(spec.ExpandedHeight >= 720f && spec.ExpandedHeight <= 800f);
+            AssertEx.True(spec.MinimumWideWidth < spec.ExpandedWidth);
+            AssertEx.True(spec.MinimumWideHeight < spec.ExpandedHeight);
+        }
+
+        internal static void HeaderAndCloseDimensionsAreBounded()
+        {
+            NativeRollPanelLayoutSpec spec = NativeRollPanelLayoutSpec.Default;
+            AssertEx.True(spec.HeaderHeight >= 36f && spec.HeaderHeight <= 42f);
+            AssertEx.True(spec.CloseButtonWidth >= 64f && spec.CloseButtonWidth <= 80f);
+            AssertEx.True(spec.CloseButtonHeight >= 28f && spec.CloseButtonHeight <= 32f);
         }
 
         internal static void AccessTabDimensionsAreBounded()
@@ -157,6 +167,8 @@ namespace KingmakerDiceRoller.DomainTests
             NativeRollPanelLayoutSpec spec = NativeRollPanelLayoutSpec.Default;
             AssertEx.True(spec.ContentIsMasked);
             AssertEx.True(spec.UsesBoundedVerticalScroll);
+            AssertEx.True(spec.UsesConditionalVerticalScroll);
+            AssertEx.True(!spec.HorizontalScrollingEnabled);
         }
 
         internal static void AssignmentControlsFitWithinPanel()
@@ -184,6 +196,26 @@ namespace KingmakerDiceRoller.DomainTests
             AssertEx.True(state.IsAttached);
             AssertEx.True(state.AccessTabActive);
             AssertEx.True(!state.ExpandedSurfaceActive);
+        }
+
+        internal static void MovingBetweenCreationOwnersResetsPresentation()
+        {
+            var state = new NativeRollPanelState();
+            var controller = new object();
+            state.ObserveOwner(controller, new object());
+            state.AttachView();
+            state.Open();
+            state.ToggleAdvanced();
+            AssertEx.True(state.ObserveOwner(new object(), new object()));
+            state.AttachView();
+            AssertEx.True(!state.IsExpanded);
+            AssertEx.True(!state.AdvancedExpanded);
+        }
+
+        internal static void ResponsiveProfileIsNotCharacterState()
+        {
+            AssertEx.True(typeof(NativeRollPanelState).GetProperty("Profile") == null);
+            AssertEx.True(typeof(NativeRollPanelState).GetProperty("LayoutProfile") == null);
         }
 
         private static NativeRollPanelState AttachedState()

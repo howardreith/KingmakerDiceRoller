@@ -29,7 +29,9 @@ REQUIRED = [
     'src/KingmakerDiceRoller/CharacterCreation/NativePanelAttachmentLifecycle.cs',
     'src/KingmakerDiceRoller/CharacterCreation/NativeRollPanelLayoutSpec.cs',
     'src/KingmakerDiceRoller/CharacterCreation/NativeRollPanelState.cs',
+    'src/KingmakerDiceRoller/CharacterCreation/ResponsiveRollPanelLayout.cs',
     'src/KingmakerDiceRoller/CharacterCreation/RollPanelModel.cs',
+    'src/KingmakerDiceRoller/CharacterCreation/SupportedCharacterCreationKind.cs',
     'src/KingmakerDiceRoller/CharacterCreation/RollUiCommandRouter.cs',
     'src/KingmakerDiceRoller/CharacterCreation/RollUiSnapshot.cs',
     'src/KingmakerDiceRoller/CharacterCreation/NativeAbilityControlService.cs',
@@ -39,6 +41,7 @@ REQUIRED = [
     'tests/KingmakerDiceRoller.DomainTests/CharacterCreationContextPolicyTests.cs',
     'tests/KingmakerDiceRoller.DomainTests/PreviewSessionContinuityTests.cs',
     'tests/KingmakerDiceRoller.DomainTests/NativePanelUsabilityTests.cs',
+    'tests/KingmakerDiceRoller.DomainTests/ResponsiveRollPanelLayoutTests.cs',
     'scripts/Common.ps1','scripts/Initialize-GamePath.ps1','scripts/Validate-Repository.ps1',
     'scripts/Test-SourceOracle.ps1','scripts/Test-Domain.ps1','scripts/Verify-KingmakerContracts.ps1',
     'scripts/Build-Local.ps1','scripts/Package.ps1','scripts/Validate-Package.ps1','scripts/Install.ps1','scripts/Uninstall.ps1',
@@ -261,6 +264,9 @@ def main():
         require(token in context, f'context guard missing: {token}')
     require('ObserveActiveController' in context and 'LevelUpController' in context,'active controller ownership guard missing')
     require('TryGetMainCharacterDescriptor' in context and 'Player.MainCharacter resolves to a different UnitDescriptor' in context,'new-game main-character boundary guard missing')
+    require('MercenaryDiscriminatorEvidence' in context and 'IsEmployee' in context and
+            'IsCustomCompanion' in context and 'SupportedCharacterCreationKind.Mercenary' in context,
+            'exact custom-companion mercenary discriminator is missing')
     relation=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/MainCharacterIdentityRelation.cs').read_text(encoding='utf-8')
     for token in ['Unresolved','Absent','SameAsCandidate','SameAsControllerUnit','DifferentFromCandidate']:
         require(token in relation, f'main-character relation missing: {token}')
@@ -281,6 +287,9 @@ def main():
     require('UnconfirmedGraceSeconds' in liveness and 'ConfirmedGraceSeconds' in liveness,'session liveness grace policy missing')
     require('ReleaseIfStableOwnerLost' in manager and 'OwnsStableOwner(currentController, currentSourceUnit)' in manager and 'Lifecycle.Abandon' in manager,'stable-owner session release missing')
     require('public object Controller { get; }' in session and 'public object StableOwner { get; }' in session,'immutable stable controller/source ownership missing')
+    require('public SupportedCharacterCreationKind CreationKind { get; }' in session and
+            'active.CreationKind != context.CreationKind' in manager,
+            'main-character and mercenary sessions must not cross-rebind')
     require('public object Unit { get; private set; }' in session and 'int nextGeneration = Generation + 1' in session and 'Generation = nextGeneration' in session,'replaceable preview generation missing')
     require('public PointBuyOrigin PointBuyOrigin { get; private set; }' in session and 'public GenerationRollbackSnapshot GenerationRollback { get; private set; }' in session,'point-buy origin and generation rollback must have distinct lifetimes')
     rebind=session[session.find('public void Rebind('):]
@@ -311,6 +320,10 @@ def main():
     require('ReflectionAccess.CanWrite(available)' in contracts and 'ReflectionAccess.CanWrite(points)' in contracts and 'ReflectionAccess.CanWrite(totalPoints)' in contracts,'allocator state contracts must be proven writable before patching')
     require('RequireInstanceMember(controllerType, "Unit")' in contracts and 'RequireInstanceMember(controllerType, "Preview")' in contracts,'controller identity contracts missing')
     require('RequireInstanceMember(playerType, "MainCharacter")' in contracts and 'UnitReference.Value' in contracts,'Player.MainCharacter normalization contract missing')
+    require('RequireInstanceMember(levelUpStateType, "IsEmployee")' in contracts and
+            'unitHelperType.GetMethod(' in contracts and '"IsCustomCompanion"' in contracts and
+            'new[] { unitDescriptorType }' in contracts,
+            'exact mercenary discriminator contracts missing')
     for token in [
         'Kingmaker.UI.LevelUp.Phase.CharBPhase+Type',
         'Kingmaker.UI.LevelUp.Phase.CharBPhaseSkills',
@@ -333,8 +346,16 @@ def main():
                   'CreateSavedSection','TrySuppressForRoll','PositionAccessTab']:
         require(token in panel, f'native product panel surface missing: {token}')
     for token in ['surfaceImage.sprite = null','RectMask2D','ScrollRect',
-                  'raycastTarget = false','panelState.Close()','panelState.Open()']:
+                  'raycastTarget = false','panelState.Close()','panelState.Open()',
+                  'FixedHeader','FixedFooter','LayoutUtility.GetPreferredHeight',
+                  'bodyScroll.vertical = result.ScrollingRequired']:
         require(token in panel, f'native panel usability invariant missing: {token}')
+    responsive=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/ResponsiveRollPanelLayout.cs').read_text(encoding='utf-8')
+    for token in ['RollPanelPresentationProfile','MinimumWideWidth','GeometryHysteresis',
+                  'OverflowTolerance','BodyViewportHeight','ScrollingRequired']:
+        require(token in responsive, f'responsive layout policy missing: {token}')
+    require('section.AddComponent<ContentSizeFitter>()' not in panel,
+            'nested subsections must not each own a ContentSizeFitter')
     require('CopyImage(nativeFrame' not in panel and 'root.AddComponent<Image>()' not in panel,
             'native panel must not reuse the allocator oval or put a raycast graphic on its owned root')
     require('DiceRollEngine' not in panel and 'WriteDistributionValues' not in panel,
@@ -349,7 +370,7 @@ def main():
 
     tests=(ROOT/'tests/KingmakerDiceRoller.DomainTests/Program.cs').read_text(encoding='utf-8')
     test_count=tests.count('new TestCase(')
-    require(test_count>=212,f'expected at least 212 C# behavior cases, found {test_count}')
+    require(test_count>=258,f'expected at least 258 C# behavior cases, found {test_count}')
     context_tests=(ROOT/'tests/KingmakerDiceRoller.DomainTests/CharacterCreationContextPolicyTests.cs').read_text(encoding='utf-8')
     for token in [
         'NoMainCharacterValuePermitsCandidate','DirectSameMainCharacterPermitsCandidate',
@@ -358,7 +379,13 @@ def main():
         'NonFirstLevelRemainsRejectedWhenMainMatches','PetCandidateRemainsRejected',
         'EnemyCandidateRemainsRejected','ControllerOwnershipRemainsMandatory',
         'DifferentMainCharacterCannotOpenSession','RebuiltStateReusesFixedAssignment',
-        'DiagnosticRelationDistinguishesSameAndDifferent'
+        'DiagnosticRelationDistinguishesSameAndDifferent','ExactMercenaryContextIsAccepted',
+        'MercenaryMarkerRequiresControllerOwnership','MercenaryMarkerRequiresPlayerFaction',
+        'MercenaryMarkerRejectsPet','MercenaryMarkerRejectsEnemy','MercenaryMarkerRejectsRespec',
+        'MercenaryMarkerRejectsPreGen','MercenaryMarkerRejectsUnknownMode',
+        'MercenaryMarkerRejectsNonFirstLevel','MercenaryMarkerRequiresResolvedMainCharacter',
+        'MercenaryEvidenceCannotAuthorizeAnotherController','MercenaryEvidenceCannotAuthorizeLaterBuild',
+        'MainAndMercenaryKindsCannotCrossRebind'
     ]:
         require(token in context_tests, f'context regression behavior missing: {token}')
     continuity_tests=(ROOT/'tests/KingmakerDiceRoller.DomainTests/PreviewSessionContinuityTests.cs').read_text(encoding='utf-8')
@@ -397,7 +424,12 @@ def main():
         'DisableAfterSemanticRestorationRemainsSafe','DisableDuringRollSynchronizesBeforeClear',
         'PresentationRefreshDoesNotRebuildPreview','InactiveAbilityPhaseCannotClaimSynchronization',
         'DiagnosticsSeparateSemanticAndPresentationFailure','DiagnosticsReportNativePresentationVerification',
-        'ViewBindingMismatchCannotClaimSynchronization'
+        'ViewBindingMismatchCannotClaimSynchronization','MercenaryPreviewReplacementPreservesSession',
+        'MercenaryAllocatorReplacementPreservesSession','SecondMercenaryStartsFreshSession',
+        'CanceledMercenaryClearsSession','CompletedMercenaryClearsSession',
+        'UntouchedMercenaryRestoresObservedTwentyPointOrigin','PartialMercenaryAllocationRestoresExactly',
+        'MercenaryNonstandardBudgetIsPreserved','MercenaryRerollPreservesOriginalOrigin',
+        'MercenaryRecallCapturesOriginalOrigin','MercenaryRollLeavesCampaignMainUnchanged'
     ]:
         require(token in continuity_tests, f'preview continuity behavior missing: {token}')
     product_tests=(ROOT/'tests/KingmakerDiceRoller.DomainTests/ProductWorkflowTests.cs').read_text(encoding='utf-8')
@@ -413,7 +445,9 @@ def main():
                   'PresenterHasNoCommandSideEffects','RouterRoutesHistoryAndSavedCommands',
                   'PointBuyUsesProgressiveDisclosure','RollModeShowsOnlyRelevantPrimaryControls',
                   'AdvancedOptionsBeginCollapsed','HistoryDetailsRequireDisclosure',
-                  'SavedDetailsRequireDisclosure','ReadablePlayerFacingLabelsAreUsed']:
+                  'SavedDetailsRequireDisclosure','ReadablePlayerFacingLabelsAreUsed',
+                  'WidePointBuyExposesOptionsWithoutDisclosure','WideRollModeExposesOrdinarySections',
+                  'SelectedPresetAndAppliedRuleRemainDistinct','ProfileSwitchRenderingHasNoCommandSideEffects']:
         require(token in presenter_tests, f'native presenter behavior missing: {token}')
     for token in ['EligibleAllocatorAttachesExactlyOnce','ReplacementAllocatorRebindsWithoutDuplicateOwnership',
                   'PhaseExitDetachesOnce','DisableResetPermitsFreshAttachment']:
@@ -422,8 +456,15 @@ def main():
                   'SameOwnerRebindPreservesExpandedChoice','NewOwnerResetsPresentationChoice',
                   'DetachedViewHasNoRaycastFootprint','LayoutUsesCodeOwnedRectangle',
                   'TypographyAndPaddingRemainReadable','ContentIsMaskedAndScrollable',
-                  'AccessTabPrefersRacialBonusWithSafeFallback']:
+                  'AccessTabPrefersRacialBonusWithSafeFallback','HeaderAndCloseDimensionsAreBounded',
+                  'MovingBetweenCreationOwnersResetsPresentation','ResponsiveProfileIsNotCharacterState']:
         require(token in usability_tests, f'native panel usability behavior missing: {token}')
+    responsive_tests=(ROOT/'tests/KingmakerDiceRoller.DomainTests/ResponsiveRollPanelLayoutTests.cs').read_text(encoding='utf-8')
+    for token in ['AmpleBoundsSelectWide','ConstrainedWidthSelectsCompact','ConstrainedHeightSelectsCompact',
+                  'SafeInsetsArePreserved','BodyViewportCannotBecomeNegative','OrdinaryWidePointBuyDoesNotScroll',
+                  'OrdinaryWideRollModeDoesNotScroll','OversizedContentRequiresScrolling',
+                  'SmallGeometryChangesDoNotFlickerProfile','SmallContentChangesDoNotFlickerScrolling']:
+        require(token in responsive_tests, f'responsive layout regression behavior missing: {token}')
     python_tests=(ROOT/'tests/python/test_domain_reference.py').read_text(encoding='utf-8')
     python_count=len(re.findall(r'^\s+def test_',python_tests,re.MULTILINE))
     require(python_count>=25,f'expected at least 25 Python oracle cases, found {python_count}')

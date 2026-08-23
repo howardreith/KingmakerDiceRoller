@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using KingmakerDiceRoller.CharacterCreation;
 using KingmakerDiceRoller.Domain;
 using KingmakerDiceRoller.Integration;
@@ -41,6 +42,7 @@ namespace KingmakerDiceRoller.UI
         private readonly NativePanelAttachmentLifecycle lifecycle = new NativePanelAttachmentLifecycle();
         private readonly NativeRollPanelState panelState = new NativeRollPanelState();
         private readonly NativeRollPanelLayoutSpec layout = NativeRollPanelLayoutSpec.Default;
+        private readonly ResponsiveRollPanelLayoutCalculator layoutCalculator;
         private readonly List<AssignmentWidgets> assignmentRows = new List<AssignmentWidgets>();
 
         private object attachedAllocator;
@@ -58,7 +60,22 @@ namespace KingmakerDiceRoller.UI
         private GameObject historyDetails;
         private GameObject savedDisclosure;
         private GameObject savedDetails;
+        private GameObject bodyScrollbarObject;
         private bool rendering;
+        private RectTransform expandedSurfaceRect;
+        private RectTransform bodyViewport;
+        private RectTransform bodyContent;
+        private ScrollRect bodyScroll;
+        private LayoutElement headerLayout;
+        private LayoutElement footerLayout;
+        private RollPanelPresentationProfile? lastProfile;
+        private bool? lastScrolling;
+        private ResponsiveRollPanelLayoutResult lastLayoutResult;
+        private float lastAvailableWidth = -1f;
+        private float lastAvailableHeight = -1f;
+        private float lastPreferredBodyHeight = -1f;
+        private string lastLayoutModelKey;
+        private string lastLayoutDiagnostic;
 
         private TextMeshProUGUI modeLabel;
         private TextMeshProUGUI presetLabel;
@@ -67,8 +84,7 @@ namespace KingmakerDiceRoller.UI
         private TextMeshProUGUI summaryLabel;
         private TextMeshProUGUI historyLabel;
         private TextMeshProUGUI savedLabel;
-        private TextMeshProUGUI errorLabel;
-        private TextMeshProUGUI statusLabel;
+        private TextMeshProUGUI footerLabel;
         private TextMeshProUGUI advancedLabel;
         private TextMeshProUGUI historyDisclosureLabel;
         private TextMeshProUGUI savedDisclosureLabel;
@@ -96,6 +112,7 @@ namespace KingmakerDiceRoller.UI
             this.contractsProvider = contractsProvider ?? throw new ArgumentNullException(nameof(contractsProvider));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
             layout.Validate();
+            layoutCalculator = new ResponsiveRollPanelLayoutCalculator(layout);
         }
 
         public bool IsAttached => root != null;
@@ -185,8 +202,7 @@ namespace KingmakerDiceRoller.UI
             summaryLabel = null;
             historyLabel = null;
             savedLabel = null;
-            errorLabel = null;
-            statusLabel = null;
+            footerLabel = null;
             advancedLabel = null;
             historyDisclosureLabel = null;
             savedDisclosureLabel = null;
@@ -212,6 +228,21 @@ namespace KingmakerDiceRoller.UI
             historyDetails = null;
             savedDisclosure = null;
             savedDetails = null;
+            bodyScrollbarObject = null;
+            expandedSurfaceRect = null;
+            bodyViewport = null;
+            bodyContent = null;
+            bodyScroll = null;
+            headerLayout = null;
+            footerLayout = null;
+            lastProfile = null;
+            lastScrolling = null;
+            lastLayoutResult = null;
+            lastAvailableWidth = -1f;
+            lastAvailableHeight = -1f;
+            lastPreferredBodyHeight = -1f;
+            lastLayoutModelKey = null;
+            lastLayoutDiagnostic = null;
             if (root != null) Object.Destroy(root);
             root = null;
             panelState.DetachView();
@@ -285,12 +316,15 @@ namespace KingmakerDiceRoller.UI
         {
             expandedSurface = NewUiObject("ExpandedSurface", root.layer);
             RectTransform surfaceRect = expandedSurface.GetComponent<RectTransform>();
+            expandedSurfaceRect = surfaceRect;
             surfaceRect.SetParent(root.transform, false);
             surfaceRect.anchorMin = new Vector2(1f, 1f);
             surfaceRect.anchorMax = new Vector2(1f, 1f);
             surfaceRect.pivot = new Vector2(1f, 1f);
-            surfaceRect.anchoredPosition = new Vector2(-18f, -18f);
-            surfaceRect.sizeDelta = new Vector2(layout.ExpandedWidth, layout.ExpandedHeight);
+            surfaceRect.anchoredPosition = new Vector2(-layout.SafeRightInset, -layout.SafeTopInset);
+            surfaceRect.sizeDelta = new Vector2(
+                layout.PreferredExpandedWidth,
+                layout.PreferredExpandedHeight);
 
             Image surfaceImage = expandedSurface.AddComponent<Image>();
             surfaceImage.sprite = null;
@@ -308,23 +342,35 @@ namespace KingmakerDiceRoller.UI
             surfaceLayout.padding = new RectOffset(
                 layout.InternalPadding,
                 layout.InternalPadding,
-                12,
-                12);
-            surfaceLayout.spacing = 7f;
+                (int)layout.SurfaceVerticalPadding,
+                (int)layout.SurfaceVerticalPadding);
+            surfaceLayout.spacing = layout.MajorVerticalSpacing;
             surfaceLayout.childControlWidth = true;
             surfaceLayout.childForceExpandWidth = true;
             surfaceLayout.childControlHeight = true;
             surfaceLayout.childForceExpandHeight = false;
 
-            GameObject header = CreateHorizontal(expandedSurface.transform, 34f);
+            GameObject header = CreateHorizontal(expandedSurface.transform, layout.HeaderHeight);
+            header.name = "FixedHeader";
+            headerLayout = header.GetComponent<LayoutElement>();
             CreateLabel(
                 header.transform,
                 "Rolled Ability Scores",
                 nativeText,
                 layout.TitleFontSize,
                 TextAlignmentOptions.Left,
-                34f,
+                layout.HeaderHeight,
                 -1f,
+                HeadingText,
+                true);
+            modeLabel = CreateLabel(
+                header.transform,
+                string.Empty,
+                nativeText,
+                layout.SectionFontSize,
+                TextAlignmentOptions.Right,
+                layout.HeaderHeight,
+                132f,
                 HeadingText,
                 true);
             CreateButton(
@@ -332,15 +378,37 @@ namespace KingmakerDiceRoller.UI
                 "Close",
                 nativeText,
                 nativeButton,
-                76f,
+                layout.CloseButtonWidth,
                 () =>
                 {
                     panelState.Close();
                     ApplySurfaceState();
-                });
+                },
+                layout.CloseButtonHeight);
 
             Transform content = CreateScrollContent(expandedSurface.transform);
             CreatePanelContent(content, nativeText, nativeButton);
+
+            GameObject footer = NewUiObject("FixedFooter", expandedSurface.layer);
+            footer.transform.SetParent(expandedSurface.transform, false);
+            footerLayout = footer.AddComponent<LayoutElement>();
+            footerLayout.preferredHeight = layout.FooterHeight;
+            footerLayout.minHeight = layout.FooterHeight;
+            var footerGroup = footer.AddComponent<HorizontalLayoutGroup>();
+            footerGroup.childControlWidth = true;
+            footerGroup.childForceExpandWidth = true;
+            footerGroup.childControlHeight = true;
+            footerGroup.childForceExpandHeight = false;
+            footerLabel = CreateLabel(
+                footer.transform,
+                string.Empty,
+                nativeText,
+                layout.StatusFontSize,
+                TextAlignmentOptions.Left,
+                layout.FooterHeight,
+                -1f,
+                BodyText,
+                false);
         }
 
         private Transform CreateScrollContent(Transform parent)
@@ -353,6 +421,7 @@ namespace KingmakerDiceRoller.UI
 
             GameObject viewportObject = NewUiObject("Viewport", scrollObject.layer);
             RectTransform viewport = viewportObject.GetComponent<RectTransform>();
+            bodyViewport = viewport;
             viewport.SetParent(scrollObject.transform, false);
             viewport.anchorMin = Vector2.zero;
             viewport.anchorMax = Vector2.one;
@@ -366,6 +435,7 @@ namespace KingmakerDiceRoller.UI
 
             GameObject contentObject = NewUiObject("Content", scrollObject.layer);
             RectTransform content = contentObject.GetComponent<RectTransform>();
+            bodyContent = content;
             content.SetParent(viewport, false);
             content.anchorMin = new Vector2(0f, 1f);
             content.anchorMax = new Vector2(1f, 1f);
@@ -382,15 +452,22 @@ namespace KingmakerDiceRoller.UI
             fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
+            bodyScrollbarObject = CreateVerticalScrollbar(scrollObject.transform);
+            var scrollbar = bodyScrollbarObject.GetComponent<Scrollbar>();
+
             var scroll = scrollObject.AddComponent<ScrollRect>();
+            bodyScroll = scroll;
             scroll.viewport = viewport;
             scroll.content = content;
             scroll.horizontal = false;
-            scroll.vertical = true;
+            scroll.vertical = false;
             scroll.movementType = ScrollRect.MovementType.Clamped;
             scroll.scrollSensitivity = 18f;
             scroll.inertia = true;
             scroll.decelerationRate = 0.135f;
+            scroll.verticalScrollbar = scrollbar;
+            scroll.verticalScrollbarSpacing = 2f;
+            bodyScrollbarObject.SetActive(false);
             return content;
         }
 
@@ -399,17 +476,6 @@ namespace KingmakerDiceRoller.UI
             TextMeshProUGUI nativeText,
             Button nativeButton)
         {
-            modeLabel = CreateLabel(
-                content,
-                string.Empty,
-                nativeText,
-                layout.SectionFontSize,
-                TextAlignmentOptions.Left,
-                24f,
-                -1f,
-                HeadingText,
-                true);
-
             CreateCaptionedSelector(
                 content,
                 "Roll method",
@@ -419,7 +485,7 @@ namespace KingmakerDiceRoller.UI
                 RollUiCommand.NextPreset,
                 out presetLabel);
 
-            GameObject pointActions = CreateHorizontal(content, 34f);
+            GameObject pointActions = CreateHorizontal(content, layout.OrdinaryControlHeight);
             rollButton = CreateButton(pointActions.transform, "Roll", nativeText, nativeButton, 120f,
                 () => Execute(RollUiCommand.Roll));
             rerollButton = CreateButton(pointActions.transform, "Reroll", nativeText, nativeButton, 120f,
@@ -454,31 +520,33 @@ namespace KingmakerDiceRoller.UI
                 RollUiCommand.NextPolicy,
                 out policyLabel);
 
-            minimumSection = CreateVertical("MinimumSection", advancedContent.transform);
+            minimumSection = CreateHorizontal(
+                advancedContent.transform,
+                layout.OrdinaryControlHeight);
+            minimumSection.name = "MinimumSection";
             CreateLabel(
                 minimumSection.transform,
                 "Minimum",
                 nativeText,
                 layout.BodyFontSize,
                 TextAlignmentOptions.Left,
-                19f,
-                -1f,
+                layout.OrdinaryControlHeight,
+                124f,
                 BodyText,
                 true);
-            GameObject minimumRow = CreateHorizontal(minimumSection.transform, 30f);
-            minimumDown = CreateButton(minimumRow.transform, "-", nativeText, nativeButton, 44f,
+            minimumDown = CreateButton(minimumSection.transform, "-", nativeText, nativeButton, 44f,
                 () => Execute(RollUiCommand.DecreaseMinimum));
             minimumLabel = CreateLabel(
-                minimumRow.transform,
+                minimumSection.transform,
                 string.Empty,
                 nativeText,
                 layout.BodyFontSize,
                 TextAlignmentOptions.Center,
-                30f,
+                layout.OrdinaryControlHeight,
                 -1f,
                 BodyText,
                 true);
-            minimumUp = CreateButton(minimumRow.transform, "+", nativeText, nativeButton, 44f,
+            minimumUp = CreateButton(minimumSection.transform, "+", nativeText, nativeButton, 44f,
                 () => Execute(RollUiCommand.IncreaseMinimum));
 
             customSection = CreateVertical("CustomExpressionSection", advancedContent.transform);
@@ -535,27 +603,6 @@ namespace KingmakerDiceRoller.UI
 
             CreateHistorySection(content, nativeText, nativeButton);
             CreateSavedSection(content, nativeText, nativeButton);
-
-            errorLabel = CreateLabel(
-                content,
-                string.Empty,
-                nativeText,
-                layout.BodyFontSize,
-                TextAlignmentOptions.Left,
-                38f,
-                -1f,
-                ErrorText,
-                false);
-            statusLabel = CreateLabel(
-                content,
-                string.Empty,
-                nativeText,
-                layout.StatusFontSize,
-                TextAlignmentOptions.Left,
-                24f,
-                -1f,
-                BodyText,
-                false);
         }
 
         private void CreateCaptionedSelector(
@@ -567,26 +614,26 @@ namespace KingmakerDiceRoller.UI
             RollUiCommand next,
             out TextMeshProUGUI valueLabel)
         {
-            GameObject section = CreateVertical(caption.Replace(" ", string.Empty), parent);
+            GameObject section = CreateHorizontal(parent, layout.OrdinaryControlHeight);
+            section.name = caption.Replace(" ", string.Empty);
             CreateLabel(
                 section.transform,
                 caption,
                 nativeText,
                 layout.BodyFontSize,
                 TextAlignmentOptions.Left,
-                19f,
-                -1f,
+                layout.OrdinaryControlHeight,
+                124f,
                 BodyText,
                 true);
-            GameObject row = CreateHorizontal(section.transform, 32f);
-            CreateButton(row.transform, "<", nativeText, nativeButton, 42f, () => Execute(previous));
+            CreateButton(section.transform, "<", nativeText, nativeButton, 42f, () => Execute(previous));
             valueLabel = CreateLabel(
-                row.transform,
+                section.transform,
                 string.Empty,
                 nativeText,
                 layout.BodyFontSize,
                 TextAlignmentOptions.Center,
-                32f,
+                layout.OrdinaryControlHeight,
                 -1f,
                 BodyText,
                 true);
@@ -594,7 +641,7 @@ namespace KingmakerDiceRoller.UI
             valueLabel.fontSizeMin = layout.BodyFontSize;
             valueLabel.fontSizeMax = layout.SectionFontSize;
             valueLabel.overflowMode = TextOverflowModes.Ellipsis;
-            CreateButton(row.transform, ">", nativeText, nativeButton, 42f, () => Execute(next));
+            CreateButton(section.transform, ">", nativeText, nativeButton, 42f, () => Execute(next));
         }
 
         private void CreateAssignmentRows(
@@ -605,14 +652,14 @@ namespace KingmakerDiceRoller.UI
             for (int index = 0; index < Abilities.Length; index++)
             {
                 AbilityScore ability = Abilities[index];
-                GameObject row = CreateHorizontal(parent, 30f);
+                GameObject row = CreateHorizontal(parent, layout.AssignmentRowHeight);
                 TextMeshProUGUI value = CreateLabel(
                     row.transform,
                     string.Empty,
                     nativeText,
                     layout.BodyFontSize,
                     TextAlignmentOptions.Left,
-                    30f,
+                    layout.AssignmentRowHeight,
                     layout.AssignmentLabelWidth,
                     BodyText,
                     true);
@@ -661,7 +708,7 @@ namespace KingmakerDiceRoller.UI
                 historyDetails.transform,
                 string.Empty,
                 nativeText,
-                layout.StatusFontSize,
+                layout.SectionFontSize,
                 TextAlignmentOptions.Left,
                 25f,
                 -1f,
@@ -703,7 +750,7 @@ namespace KingmakerDiceRoller.UI
                 savedDetails.transform,
                 string.Empty,
                 nativeText,
-                layout.StatusFontSize,
+                layout.SectionFontSize,
                 TextAlignmentOptions.Left,
                 25f,
                 -1f,
@@ -712,14 +759,58 @@ namespace KingmakerDiceRoller.UI
             GameObject row = CreateHorizontal(savedDetails.transform, 30f);
             storeButton = CreateButton(row.transform, "Store", nativeText, nativeButton, 68f,
                 () => Execute(RollUiCommand.StoreCurrent));
-            CreateButton(row.transform, "<", nativeText, nativeButton, 38f,
+            CreateButton(row.transform, "Previous", nativeText, nativeButton, 94f,
                 () => Execute(RollUiCommand.PreviousSaved));
-            CreateButton(row.transform, ">", nativeText, nativeButton, 38f,
+            CreateButton(row.transform, "Next", nativeText, nativeButton, 74f,
                 () => Execute(RollUiCommand.NextSaved));
             recallButton = CreateButton(row.transform, "Recall", nativeText, nativeButton, 72f,
                 () => Execute(RollUiCommand.RecallSaved));
             deleteButton = CreateButton(row.transform, "Delete", nativeText, nativeButton, 72f,
                 () => Execute(RollUiCommand.DeleteSaved));
+        }
+
+        private GameObject CreateVerticalScrollbar(Transform parent)
+        {
+            GameObject scrollbarObject = NewUiObject("VerticalScrollbar", parent.gameObject.layer);
+            RectTransform scrollbarRect = scrollbarObject.GetComponent<RectTransform>();
+            scrollbarRect.SetParent(parent, false);
+            scrollbarRect.anchorMin = new Vector2(1f, 0f);
+            scrollbarRect.anchorMax = new Vector2(1f, 1f);
+            scrollbarRect.pivot = new Vector2(1f, 0.5f);
+            scrollbarRect.anchoredPosition = Vector2.zero;
+            scrollbarRect.sizeDelta = new Vector2(layout.ScrollbarWidth, 0f);
+            Image track = scrollbarObject.AddComponent<Image>();
+            track.sprite = null;
+            track.color = new Color(BodyText.r, BodyText.g, BodyText.b, 0.18f);
+            track.raycastTarget = true;
+
+            GameObject slidingAreaObject = NewUiObject("SlidingArea", scrollbarObject.layer);
+            RectTransform slidingArea = slidingAreaObject.GetComponent<RectTransform>();
+            slidingArea.SetParent(scrollbarObject.transform, false);
+            slidingArea.anchorMin = Vector2.zero;
+            slidingArea.anchorMax = Vector2.one;
+            slidingArea.offsetMin = new Vector2(1f, 1f);
+            slidingArea.offsetMax = new Vector2(-1f, -1f);
+
+            GameObject handleObject = NewUiObject("Handle", scrollbarObject.layer);
+            RectTransform handleRect = handleObject.GetComponent<RectTransform>();
+            handleRect.SetParent(slidingArea, false);
+            handleRect.anchorMin = Vector2.zero;
+            handleRect.anchorMax = Vector2.one;
+            handleRect.offsetMin = Vector2.zero;
+            handleRect.offsetMax = Vector2.zero;
+            Image handle = handleObject.AddComponent<Image>();
+            handle.sprite = null;
+            handle.color = new Color(ButtonSurface.r, ButtonSurface.g, ButtonSurface.b, 0.9f);
+            handle.raycastTarget = true;
+
+            var scrollbar = scrollbarObject.AddComponent<Scrollbar>();
+            scrollbar.handleRect = handleRect;
+            scrollbar.targetGraphic = handle;
+            scrollbar.direction = Scrollbar.Direction.BottomToTop;
+            scrollbar.numberOfSteps = 0;
+            scrollbar.value = 1f;
+            return scrollbarObject;
         }
 
         private void CreateAccessTab(TextMeshProUGUI nativeText, Button nativeButton)
@@ -795,62 +886,30 @@ namespace KingmakerDiceRoller.UI
         private void Render(KingmakerContracts contracts)
         {
             if (root == null) return;
-            RollPanelModel model = presenter.Present(commands.Snapshot, panelState.Disclosure);
+            RollUiSnapshot snapshot = commands.Snapshot;
+            ResponsiveRollPanelLayoutResult preliminaryLayout = CalculateResponsiveLayout(
+                snapshot.Mode == RollSessionMode.Roll
+                    ? layout.OrdinaryWideRollContentHeight
+                    : layout.OrdinaryWidePointBuyContentHeight);
+            RollPanelModel model = presenter.Present(
+                snapshot,
+                panelState.Disclosure,
+                preliminaryLayout.Profile);
             rendering = true;
             try
             {
-                modeLabel.text = model.Mode;
-                presetLabel.text = model.Preset;
-                policyLabel.text = model.Policy;
-                minimumLabel.text = model.Minimum;
-                minimumDown.interactable = model.MinimumEnabled;
-                minimumUp.interactable = model.MinimumEnabled;
-                advancedDisclosure.SetActive(model.AdvancedVisible);
-                advancedContent.SetActive(model.AdvancedExpanded);
-                advancedLabel.text = model.AdvancedLabel;
-                minimumSection.SetActive(model.MinimumVisible);
-                customSection.SetActive(model.CustomVisible);
-                if (customInput.text != model.CustomExpression) customInput.text = model.CustomExpression;
-
-                rollButton.gameObject.SetActive(model.RollVisible);
-                rerollButton.gameObject.SetActive(model.RerollVisible);
-                returnButton.gameObject.SetActive(model.ReturnToPointBuyVisible);
-                rollButton.interactable = model.CanRoll;
-                rerollButton.interactable = model.CanReroll;
-                returnButton.interactable = model.CanReturnToPointBuy;
-
-                assignmentSection.SetActive(model.AssignmentVisible);
-                for (int index = 0; index < assignmentRows.Count; index++)
-                {
-                    AssignmentWidgets widgets = assignmentRows[index];
-                    bool available = model.AssignmentVisible && index < model.AssignmentRows.Count;
-                    widgets.Root.SetActive(available);
-                    if (!available) continue;
-                    RollPanelAssignmentRow row = model.AssignmentRows[index];
-                    widgets.Value.text = row.Label + "   " + row.Value;
-                    widgets.Up.interactable = row.CanMoveUp;
-                    widgets.Down.interactable = row.CanMoveDown;
-                }
-
-                summarySection.SetActive(model.SummaryVisible);
-                summaryLabel.text = model.Summary;
-                historyDisclosure.SetActive(model.HistoryDisclosureVisible);
-                historyDisclosureLabel.text = model.HistoryDisclosureLabel;
-                historyDetails.SetActive(model.HistoryDetailsVisible);
-                historyLabel.text = model.History;
-                useHistoryButton.interactable = model.CanUseHistory;
-
-                savedDisclosure.SetActive(model.SavedDisclosureVisible);
-                savedDisclosureLabel.text = model.SavedDisclosureLabel;
-                savedDetails.SetActive(model.SavedDetailsVisible);
-                savedLabel.text = model.Saved;
-                storeButton.interactable = model.CanStore;
-                recallButton.interactable = model.CanRecall;
-                deleteButton.interactable = model.CanDeleteSaved;
-                errorLabel.gameObject.SetActive(!string.IsNullOrWhiteSpace(model.Error));
-                errorLabel.text = model.Error;
-                statusLabel.text = model.Status;
+                ApplyModel(model);
                 ApplySurfaceState();
+                ApplyResponsiveGeometry(preliminaryLayout);
+                if (panelState.ExpandedSurfaceActive)
+                {
+                    RefreshResponsiveLayout(model, preliminaryLayout);
+                }
+                else
+                {
+                    lastProfile = preliminaryLayout.Profile;
+                    lastLayoutResult = preliminaryLayout;
+                }
                 PositionAccessTab(attachedAllocator, contracts);
             }
             finally
@@ -866,6 +925,227 @@ namespace KingmakerDiceRoller.UI
                     logger.Warning("Native Roll Mode control suppression failed: " + error);
                 }
             }
+        }
+
+        private void ApplyModel(RollPanelModel model)
+        {
+            modeLabel.text = model.Mode;
+            presetLabel.text = model.Preset;
+            policyLabel.text = model.Policy;
+            minimumLabel.text = model.Minimum;
+            minimumDown.interactable = model.MinimumEnabled;
+            minimumUp.interactable = model.MinimumEnabled;
+            advancedDisclosure.SetActive(model.AdvancedVisible);
+            advancedContent.SetActive(model.AdvancedExpanded);
+            advancedLabel.text = model.AdvancedLabel;
+            minimumSection.SetActive(model.MinimumVisible);
+            customSection.SetActive(model.CustomVisible);
+            if (customInput.text != model.CustomExpression) customInput.text = model.CustomExpression;
+
+            rollButton.gameObject.SetActive(model.RollVisible);
+            rerollButton.gameObject.SetActive(model.RerollVisible);
+            returnButton.gameObject.SetActive(model.ReturnToPointBuyVisible);
+            rollButton.interactable = model.CanRoll;
+            rerollButton.interactable = model.CanReroll;
+            returnButton.interactable = model.CanReturnToPointBuy;
+
+            assignmentSection.SetActive(model.AssignmentVisible);
+            for (int index = 0; index < assignmentRows.Count; index++)
+            {
+                AssignmentWidgets widgets = assignmentRows[index];
+                bool available = model.AssignmentVisible && index < model.AssignmentRows.Count;
+                widgets.Root.SetActive(available);
+                if (!available) continue;
+                RollPanelAssignmentRow row = model.AssignmentRows[index];
+                widgets.Value.text = row.Label + "   " + row.Value;
+                widgets.Up.interactable = row.CanMoveUp;
+                widgets.Down.interactable = row.CanMoveDown;
+            }
+
+            summarySection.SetActive(model.SummaryVisible);
+            summaryLabel.text = model.Summary;
+            historyDisclosure.SetActive(model.HistoryDisclosureVisible);
+            historyDisclosureLabel.text = model.HistoryDisclosureLabel;
+            historyDetails.SetActive(model.HistoryDetailsVisible);
+            historyLabel.text = "History   " + model.History;
+            useHistoryButton.interactable = model.CanUseHistory;
+
+            savedDisclosure.SetActive(model.SavedDisclosureVisible);
+            savedDisclosureLabel.text = model.SavedDisclosureLabel;
+            savedDetails.SetActive(model.SavedDetailsVisible);
+            savedLabel.text = "Saved   " + model.Saved;
+            storeButton.interactable = model.CanStore;
+            recallButton.interactable = model.CanRecall;
+            deleteButton.interactable = model.CanDeleteSaved;
+            bool hasError = !string.IsNullOrWhiteSpace(model.Error);
+            footerLabel.text = hasError ? model.Error : model.Status;
+            footerLabel.color = hasError ? ErrorText : BodyText;
+        }
+
+        private ResponsiveRollPanelLayoutResult CalculateResponsiveLayout(float preferredBodyHeight)
+        {
+            RectTransform rootRect = root == null ? null : root.GetComponent<RectTransform>();
+            float availableWidth = rootRect == null ? 0f : Mathf.Max(0f, rootRect.rect.width);
+            float availableHeight = rootRect == null ? 0f : Mathf.Max(0f, rootRect.rect.height);
+            return layoutCalculator.Calculate(new ResponsiveRollPanelLayoutInput(
+                availableWidth,
+                availableHeight,
+                layout.SafeLeftInset,
+                layout.SafeTopInset,
+                layout.SafeRightInset,
+                layout.SafeBottomInset,
+                Mathf.Max(0f, preferredBodyHeight),
+                lastProfile,
+                lastScrolling));
+        }
+
+        private void RefreshResponsiveLayout(
+            RollPanelModel model,
+            ResponsiveRollPanelLayoutResult preliminary)
+        {
+            RectTransform rootRect = root.GetComponent<RectTransform>();
+            float availableWidth = Mathf.Max(0f, rootRect.rect.width);
+            float availableHeight = Mathf.Max(0f, rootRect.rect.height);
+            string modelKey = BuildLayoutModelKey(model);
+            bool meaningfulChange = lastLayoutResult == null ||
+                Mathf.Abs(availableWidth - lastAvailableWidth) > 0.5f ||
+                Mathf.Abs(availableHeight - lastAvailableHeight) > 0.5f ||
+                !string.Equals(modelKey, lastLayoutModelKey, StringComparison.Ordinal) ||
+                lastProfile != model.Profile;
+
+            ResponsiveRollPanelLayoutResult resolved = preliminary;
+            float preferredBodyHeight = lastPreferredBodyHeight < 0f
+                ? (model.AssignmentVisible
+                    ? layout.OrdinaryWideRollContentHeight
+                    : layout.OrdinaryWidePointBuyContentHeight)
+                : lastPreferredBodyHeight;
+            if (meaningfulChange)
+            {
+                LayoutRebuilder.ForceRebuildLayoutImmediate(expandedSurfaceRect);
+                LayoutRebuilder.ForceRebuildLayoutImmediate(bodyContent);
+                preferredBodyHeight = Mathf.Max(0f, LayoutUtility.GetPreferredHeight(bodyContent));
+                resolved = CalculateResponsiveLayout(preferredBodyHeight);
+                bool scrollStateChanged = resolved.ScrollingRequired != preliminary.ScrollingRequired;
+                ApplyResponsiveGeometry(resolved);
+                if (scrollStateChanged)
+                {
+                    LayoutRebuilder.ForceRebuildLayoutImmediate(expandedSurfaceRect);
+                    LayoutRebuilder.ForceRebuildLayoutImmediate(bodyContent);
+                    preferredBodyHeight = Mathf.Max(0f, LayoutUtility.GetPreferredHeight(bodyContent));
+                    resolved = CalculateResponsiveLayout(preferredBodyHeight);
+                    ApplyResponsiveGeometry(resolved);
+                }
+                LayoutRebuilder.ForceRebuildLayoutImmediate(expandedSurfaceRect);
+            }
+            else if (lastLayoutResult != null)
+            {
+                resolved = lastLayoutResult;
+                ApplyResponsiveGeometry(resolved);
+            }
+
+            lastAvailableWidth = availableWidth;
+            lastAvailableHeight = availableHeight;
+            lastPreferredBodyHeight = preferredBodyHeight;
+            lastLayoutModelKey = modelKey;
+            lastProfile = resolved.Profile;
+            lastScrolling = resolved.ScrollingRequired;
+            lastLayoutResult = resolved;
+            ReportResponsiveLayout(resolved, preferredBodyHeight, availableWidth, availableHeight);
+        }
+
+        private void ApplyResponsiveGeometry(ResponsiveRollPanelLayoutResult result)
+        {
+            if (expandedSurfaceRect != null)
+            {
+                expandedSurfaceRect.anchoredPosition = new Vector2(
+                    result.AnchoredPositionX,
+                    result.AnchoredPositionY);
+                expandedSurfaceRect.sizeDelta = new Vector2(result.PanelWidth, result.PanelHeight);
+            }
+            if (headerLayout != null)
+            {
+                headerLayout.preferredHeight = result.HeaderHeight;
+                headerLayout.minHeight = result.HeaderHeight;
+            }
+            if (footerLayout != null)
+            {
+                footerLayout.preferredHeight = result.FooterHeight;
+                footerLayout.minHeight = result.FooterHeight;
+            }
+            if (bodyScroll != null)
+            {
+                bodyScroll.horizontal = false;
+                bodyScroll.vertical = result.ScrollingRequired;
+                if (!result.ScrollingRequired) bodyScroll.verticalNormalizedPosition = 1f;
+            }
+            if (bodyScrollbarObject != null)
+            {
+                bodyScrollbarObject.SetActive(result.ScrollingRequired);
+            }
+            if (bodyViewport != null)
+            {
+                bodyViewport.offsetMin = Vector2.zero;
+                bodyViewport.offsetMax = new Vector2(
+                    result.ScrollingRequired ? -(layout.ScrollbarWidth + 2f) : 0f,
+                    0f);
+            }
+        }
+
+        private static string BuildLayoutModelKey(RollPanelModel model)
+        {
+            return string.Join("|", new[]
+            {
+                model.Profile.ToString(),
+                model.Mode,
+                model.AdvancedVisible.ToString(),
+                model.AdvancedExpanded.ToString(),
+                model.MinimumVisible.ToString(),
+                model.CustomVisible.ToString(),
+                model.AssignmentVisible.ToString(),
+                model.AssignmentRows.Count.ToString(CultureInfo.InvariantCulture),
+                model.SummaryVisible.ToString(),
+                model.HistoryDisclosureVisible.ToString(),
+                model.HistoryDetailsVisible.ToString(),
+                model.SavedDisclosureVisible.ToString(),
+                model.SavedDetailsVisible.ToString(),
+                (model.CustomExpression ?? string.Empty).Length.ToString(CultureInfo.InvariantCulture),
+                (model.History ?? string.Empty).Length.ToString(CultureInfo.InvariantCulture),
+                (model.Saved ?? string.Empty).Length.ToString(CultureInfo.InvariantCulture)
+            });
+        }
+
+        private void ReportResponsiveLayout(
+            ResponsiveRollPanelLayoutResult result,
+            float preferredBodyHeight,
+            float availableWidth,
+            float availableHeight)
+        {
+            Canvas canvas = root == null ? null : root.GetComponentInParent<Canvas>();
+            float canvasScale = canvas == null ? 1f : canvas.scaleFactor;
+            RectTransform tabRect = accessTab == null ? null : accessTab.GetComponent<RectTransform>();
+            Vector2 tabAnchor = tabRect == null ? Vector2.zero : tabRect.anchoredPosition;
+            RollSession session = commands.ActiveSession;
+            string creationKind = session == null ? "None" : session.CreationKind.ToString();
+            string diagnostic = string.Format(
+                CultureInfo.InvariantCulture,
+                "Native Roll Stats layout: creationKind={0}; profile={1}; available={2:0.0}x{3:0.0}; canvasScale={4:0.###}; panel={5:0.0}x{6:0.0}; bodyViewport={7:0.0}; preferredBody={8:0.0}; scroll={9}; expandedAnchor=({10:0.0},{11:0.0}); accessAnchor=({12:0.0},{13:0.0}).",
+                creationKind,
+                result.Profile,
+                availableWidth,
+                availableHeight,
+                canvasScale,
+                result.PanelWidth,
+                result.PanelHeight,
+                result.BodyViewportHeight,
+                preferredBodyHeight,
+                result.ScrollingRequired,
+                result.AnchoredPositionX,
+                result.AnchoredPositionY,
+                tabAnchor.x,
+                tabAnchor.y);
+            if (string.Equals(diagnostic, lastLayoutDiagnostic, StringComparison.Ordinal)) return;
+            lastLayoutDiagnostic = diagnostic;
+            logger.Info(diagnostic);
         }
 
         private void ApplySurfaceState()
@@ -908,9 +1188,6 @@ namespace KingmakerDiceRoller.UI
             layout.childForceExpandWidth = true;
             layout.childControlHeight = true;
             layout.childForceExpandHeight = false;
-            var fitter = section.AddComponent<ContentSizeFitter>();
-            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
-            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
             return section;
         }
 
@@ -921,7 +1198,7 @@ namespace KingmakerDiceRoller.UI
             var layout = row.AddComponent<HorizontalLayoutGroup>();
             layout.spacing = NativeRollPanelLayoutSpec.Default.HorizontalSpacing;
             layout.childControlHeight = true;
-            layout.childForceExpandHeight = true;
+            layout.childForceExpandHeight = false;
             layout.childControlWidth = true;
             layout.childForceExpandWidth = false;
             var element = row.AddComponent<LayoutElement>();
@@ -977,7 +1254,8 @@ namespace KingmakerDiceRoller.UI
             TextMeshProUGUI nativeText,
             Button nativeButton,
             float width,
-            Action action)
+            Action action,
+            float height = -1f)
         {
             GameObject gameObject = NewUiObject("Button." + text, parent.gameObject.layer);
             gameObject.transform.SetParent(parent, false);
@@ -1015,6 +1293,11 @@ namespace KingmakerDiceRoller.UI
             {
                 layout.flexibleWidth = 1f;
             }
+            float resolvedHeight = height > 0f
+                ? height
+                : NativeRollPanelLayoutSpec.Default.OrdinaryControlHeight;
+            layout.preferredHeight = resolvedHeight;
+            layout.minHeight = resolvedHeight;
 
             TextMeshProUGUI label = CreateLabel(
                 gameObject.transform,

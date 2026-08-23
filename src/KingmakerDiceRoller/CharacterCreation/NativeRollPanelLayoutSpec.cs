@@ -18,11 +18,34 @@ namespace KingmakerDiceRoller.CharacterCreation
         {
             BackgroundShape = NativeRollPanelBackgroundShape.SolidRectangle;
             AccessAnchor = NativeRollPanelAccessAnchor.RacialBonusContainerWithUpperRightFallback;
-            ExpandedWidth = 400f;
-            ExpandedHeight = 570f;
+            PreferredExpandedWidth = 620f;
+            PreferredExpandedHeight = 760f;
+            CompactPreferredWidth = 460f;
+            CompactPreferredHeight = 650f;
+            MinimumWideWidth = 560f;
+            MinimumWideHeight = 680f;
+            CompactMinimumWidth = 380f;
+            CompactMinimumHeight = 500f;
             AccessTabWidth = 140f;
             AccessTabHeight = 34f;
             InternalPadding = 16;
+            SafeLeftInset = 18f;
+            SafeTopInset = 18f;
+            SafeRightInset = 18f;
+            SafeBottomInset = 92f;
+            HeaderHeight = 38f;
+            FooterHeight = 38f;
+            SurfaceVerticalPadding = 12f;
+            MajorVerticalSpacing = 6f;
+            OrdinaryControlHeight = 30f;
+            AssignmentRowHeight = 28f;
+            CloseButtonWidth = 76f;
+            CloseButtonHeight = 30f;
+            ScrollbarWidth = 10f;
+            OverflowTolerance = 2f;
+            GeometryHysteresis = 8f;
+            OrdinaryWidePointBuyContentHeight = 310f;
+            OrdinaryWideRollContentHeight = 520f;
             TitleFontSize = 20f;
             SectionFontSize = 16f;
             BodyFontSize = 14f;
@@ -33,6 +56,8 @@ namespace KingmakerDiceRoller.CharacterCreation
             HorizontalSpacing = 6f;
             UsesAllocatorFrameSprite = false;
             UsesBoundedVerticalScroll = true;
+            UsesConditionalVerticalScroll = true;
+            HorizontalScrollingEnabled = false;
             ContentIsMasked = true;
             SelectorValuesAreSingleLine = true;
             NonInteractiveLabelsRaycast = false;
@@ -45,11 +70,36 @@ namespace KingmakerDiceRoller.CharacterCreation
 
         public NativeRollPanelBackgroundShape BackgroundShape { get; }
         public NativeRollPanelAccessAnchor AccessAnchor { get; }
-        public float ExpandedWidth { get; }
-        public float ExpandedHeight { get; }
+        public float PreferredExpandedWidth { get; }
+        public float PreferredExpandedHeight { get; }
+        public float CompactPreferredWidth { get; }
+        public float CompactPreferredHeight { get; }
+        public float MinimumWideWidth { get; }
+        public float MinimumWideHeight { get; }
+        public float CompactMinimumWidth { get; }
+        public float CompactMinimumHeight { get; }
+        public float ExpandedWidth => PreferredExpandedWidth;
+        public float ExpandedHeight => PreferredExpandedHeight;
         public float AccessTabWidth { get; }
         public float AccessTabHeight { get; }
         public int InternalPadding { get; }
+        public float SafeLeftInset { get; }
+        public float SafeTopInset { get; }
+        public float SafeRightInset { get; }
+        public float SafeBottomInset { get; }
+        public float HeaderHeight { get; }
+        public float FooterHeight { get; }
+        public float SurfaceVerticalPadding { get; }
+        public float MajorVerticalSpacing { get; }
+        public float OrdinaryControlHeight { get; }
+        public float AssignmentRowHeight { get; }
+        public float CloseButtonWidth { get; }
+        public float CloseButtonHeight { get; }
+        public float ScrollbarWidth { get; }
+        public float OverflowTolerance { get; }
+        public float GeometryHysteresis { get; }
+        public float OrdinaryWidePointBuyContentHeight { get; }
+        public float OrdinaryWideRollContentHeight { get; }
         public float TitleFontSize { get; }
         public float SectionFontSize { get; }
         public float BodyFontSize { get; }
@@ -60,13 +110,15 @@ namespace KingmakerDiceRoller.CharacterCreation
         public float HorizontalSpacing { get; }
         public bool UsesAllocatorFrameSprite { get; }
         public bool UsesBoundedVerticalScroll { get; }
+        public bool UsesConditionalVerticalScroll { get; }
+        public bool HorizontalScrollingEnabled { get; }
         public bool ContentIsMasked { get; }
         public bool SelectorValuesAreSingleLine { get; }
         public bool NonInteractiveLabelsRaycast { get; }
         public bool InteractiveControlsRaycast { get; }
         public bool OwnedRootRaycast { get; }
 
-        public float AvailableContentWidth => ExpandedWidth - (2f * InternalPadding);
+        public float AvailableContentWidth => PreferredExpandedWidth - (2f * InternalPadding);
 
         public float AssignmentRowRequiredWidth =>
             AssignmentLabelWidth + (2f * AssignmentButtonWidth) +
@@ -80,10 +132,17 @@ namespace KingmakerDiceRoller.CharacterCreation
                 throw new InvalidOperationException(
                     "The native roll panel must use a code-owned rectangular background.");
             }
-            if (ExpandedWidth < 380f || ExpandedWidth > 420f ||
-                ExpandedHeight < 540f || ExpandedHeight > 590f)
+            if (PreferredExpandedWidth < 600f || PreferredExpandedWidth > 660f ||
+                PreferredExpandedHeight < 720f || PreferredExpandedHeight > 800f)
             {
                 throw new InvalidOperationException("Expanded panel dimensions are outside the usability boundary.");
+            }
+            if (MinimumWideWidth < 540f || MinimumWideWidth > PreferredExpandedWidth ||
+                MinimumWideHeight < 640f || MinimumWideHeight > PreferredExpandedHeight ||
+                CompactPreferredWidth < CompactMinimumWidth ||
+                CompactPreferredHeight < CompactMinimumHeight)
+            {
+                throw new InvalidOperationException("Responsive profile thresholds are outside the usability boundary.");
             }
             if (AccessTabWidth < 120f || AccessTabWidth > 150f ||
                 AccessTabHeight < 30f || AccessTabHeight > 38f)
@@ -103,7 +162,17 @@ namespace KingmakerDiceRoller.CharacterCreation
             {
                 throw new InvalidOperationException("The panel background is too translucent.");
             }
-            if (!UsesBoundedVerticalScroll || !ContentIsMasked)
+            if (HeaderHeight < 36f || HeaderHeight > 42f ||
+                FooterHeight < 30f || FooterHeight > 46f ||
+                CloseButtonWidth < 64f || CloseButtonWidth > 80f ||
+                CloseButtonHeight < 28f || CloseButtonHeight > 32f ||
+                OrdinaryControlHeight < 28f || OrdinaryControlHeight > 32f ||
+                AssignmentRowHeight < 28f || AssignmentRowHeight > 30f)
+            {
+                throw new InvalidOperationException("Header, footer, or control dimensions are outside the usability boundary.");
+            }
+            if (!UsesBoundedVerticalScroll || !UsesConditionalVerticalScroll ||
+                HorizontalScrollingEnabled || !ContentIsMasked)
             {
                 throw new InvalidOperationException("Expanded content must be bounded and masked.");
             }

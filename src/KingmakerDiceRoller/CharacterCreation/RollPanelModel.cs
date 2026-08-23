@@ -31,6 +31,7 @@ namespace KingmakerDiceRoller.CharacterCreation
     {
         internal RollPanelModel() { }
 
+        public RollPanelPresentationProfile Profile { get; internal set; }
         public string AccessTabLabel { get; internal set; }
         public string CloseLabel { get; internal set; }
         public string Mode { get; internal set; }
@@ -79,17 +80,32 @@ namespace KingmakerDiceRoller.CharacterCreation
         private static readonly string[] AbilityLabels = { "STR", "DEX", "CON", "INT", "WIS", "CHA" };
 
         public RollPanelModel Present(RollUiSnapshot snapshot) =>
-            Present(snapshot, RollPanelDisclosureState.AllCollapsed);
+            Present(
+                snapshot,
+                RollPanelDisclosureState.AllCollapsed,
+                RollPanelPresentationProfile.Compact);
 
         public RollPanelModel Present(
             RollUiSnapshot snapshot,
-            RollPanelDisclosureState disclosure)
+            RollPanelDisclosureState disclosure) =>
+            Present(snapshot, disclosure, RollPanelPresentationProfile.Compact);
+
+        public RollPanelModel Present(
+            RollUiSnapshot snapshot,
+            RollPanelDisclosureState disclosure,
+            RollPanelPresentationProfile profile)
         {
             if (snapshot == null) throw new ArgumentNullException(nameof(snapshot));
             if (disclosure == null) throw new ArgumentNullException(nameof(disclosure));
+            if (!Enum.IsDefined(typeof(RollPanelPresentationProfile), profile))
+            {
+                throw new ArgumentOutOfRangeException(nameof(profile));
+            }
 
             bool rollMode = snapshot.Mode == RollSessionMode.Roll;
+            bool wide = profile == RollPanelPresentationProfile.Wide;
             bool minimumPolicy = snapshot.Configuration.MinimumApplies;
+            bool pointBuyOptionsVisible = !rollMode && (wide || disclosure.AdvancedExpanded);
             var rows = new List<RollPanelAssignmentRow>();
             if (rollMode && snapshot.AssignedValues != null)
             {
@@ -108,7 +124,7 @@ namespace KingmakerDiceRoller.CharacterCreation
                 ? string.Empty
                 : "Total: " + snapshot.Total + "\nPoint-buy equivalent: " +
                     snapshot.PointBuyEquivalent + (snapshot.ExtendedEquivalent ? " (extended)" : string.Empty) +
-                    "\nRoll method: " + snapshot.RuleText;
+                    "\nRolled with: " + snapshot.RuleText;
             string history = snapshot.HistoryCount == 0
                 ? "No rolls in this session."
                 : snapshot.HistoryPosition + "/" + snapshot.HistoryCount +
@@ -120,6 +136,7 @@ namespace KingmakerDiceRoller.CharacterCreation
 
             return new RollPanelModel
             {
+                Profile = profile,
                 AccessTabLabel = "Roll Stats",
                 CloseLabel = "Close",
                 Mode = FormatMode(snapshot.Mode),
@@ -131,12 +148,12 @@ namespace KingmakerDiceRoller.CharacterCreation
                 MinimumCaption = "Minimum",
                 Minimum = snapshot.Configuration.MinimumScore.ToString(),
                 MinimumEnabled = minimumPolicy,
-                MinimumVisible = disclosure.AdvancedExpanded && minimumPolicy,
-                CustomVisible = disclosure.AdvancedExpanded &&
+                MinimumVisible = pointBuyOptionsVisible && minimumPolicy,
+                CustomVisible = pointBuyOptionsVisible &&
                     snapshot.Configuration.Preset == DiceRollPreset.CustomExpression,
                 CustomExpression = snapshot.Configuration.CustomExpression,
-                AdvancedVisible = !rollMode,
-                AdvancedExpanded = !rollMode && disclosure.AdvancedExpanded,
+                AdvancedVisible = !rollMode && !wide,
+                AdvancedExpanded = pointBuyOptionsVisible,
                 RollVisible = !rollMode,
                 RerollVisible = rollMode,
                 ReturnToPointBuyVisible = rollMode,
@@ -150,14 +167,16 @@ namespace KingmakerDiceRoller.CharacterCreation
                 Summary = summary,
                 HistoryDisclosureLabel = "History (" + snapshot.HistoryCount + ") " +
                     (disclosure.HistoryExpanded ? "-" : "+"),
-                HistoryDisclosureVisible = rollMode && snapshot.HistoryCount > 0,
-                HistoryDetailsVisible = rollMode && snapshot.HistoryCount > 0 && disclosure.HistoryExpanded,
+                HistoryDisclosureVisible = rollMode && snapshot.HistoryCount > 0 && !wide,
+                HistoryDetailsVisible = rollMode && snapshot.HistoryCount > 0 &&
+                    (wide || disclosure.HistoryExpanded),
                 History = history,
                 CanUseHistory = snapshot.CanUseHistory,
                 SavedDisclosureLabel = "Saved (" + snapshot.SavedCount + ") " +
                     (disclosure.SavedExpanded ? "-" : "+"),
-                SavedDisclosureVisible = snapshot.SavedCount > 0 || snapshot.CanStore,
-                SavedDetailsVisible = (snapshot.SavedCount > 0 || snapshot.CanStore) && disclosure.SavedExpanded,
+                SavedDisclosureVisible = (snapshot.SavedCount > 0 || snapshot.CanStore) && !wide,
+                SavedDetailsVisible = (snapshot.SavedCount > 0 || snapshot.CanStore) &&
+                    (wide || disclosure.SavedExpanded),
                 Saved = saved,
                 CanStore = snapshot.CanStore,
                 CanRecall = snapshot.CanRecall,
