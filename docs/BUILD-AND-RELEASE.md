@@ -41,13 +41,13 @@ For final provenance, run from the clean final commit. Qualification reports
 branch, commit, dirty state, test counts, exact Assembly-CSharp MVID/SHA-256,
 compiler warnings/errors, DLL SHA-256, package SHA-256, and package path.
 
-Version `0.1.1` packages as:
+Version `0.1.2` packages as:
 
 ```text
-artifacts/packages/KingmakerDiceRoller-0.1.1.zip
+artifacts/packages/KingmakerDiceRoller-0.1.2.zip
 ```
 
-Its release tag is `v0.1.1`; qualification and installation do not create that
+Its release tag is `v0.1.2`; qualification and installation do not create that
 tag.
 
 The archive has one top-level `KingmakerDiceRoller` directory and exactly six
@@ -105,9 +105,9 @@ KingmakerDiceRoller directory, moves the staged directory into place, validates
 the installed allowlist and DLL hash, and rolls back if a transactional step
 fails. It must not enable, disable, reinstall, or alter another mod.
 
-Before publication, verify the exact installed `0.1.1` artifact:
+Before publication, verify the exact installed `0.1.2` artifact:
 
-1. Unity Mod Manager displays `0.1.1`.
+1. Unity Mod Manager displays `0.1.2`.
 2. UMM does not offer `0.1.0-alpha.2` as an update.
 3. Kingmaker loads Dice Roller without a red UMM indicator.
 4. A supported new-character build can Roll and Return to Point Buy.
@@ -135,7 +135,7 @@ Create a draft release for review:
 ```powershell
 powershell -NoLogo -NoProfile -ExecutionPolicy Bypass `
   -File .\scripts\Publish-Release.ps1 `
-  -ReleaseNotesPath .\docs\RELEASE-NOTES-0.1.1.md
+  -ReleaseNotesPath .\docs\RELEASE-NOTES-0.1.2.md
 ```
 
 Publish publicly only after the exact current candidate has passed its human
@@ -144,7 +144,7 @@ runtime gate and `PROJECT-STATE.md` records `Runtime-qualified: **Yes**`:
 ```powershell
 powershell -NoLogo -NoProfile -ExecutionPolicy Bypass `
   -File .\scripts\Publish-Release.ps1 `
-  -ReleaseNotesPath .\docs\RELEASE-NOTES-0.1.1.md `
+  -ReleaseNotesPath .\docs\RELEASE-NOTES-0.1.2.md `
   -Publish `
   -ConfirmRuntimeQualified
 ```
@@ -157,7 +157,7 @@ refuses public publication from a private repository unless
 not make a private repository's release publicly downloadable.
 
 Published assets are immutable project history. Do not replace `v0.1.0` or
-`v0.1.0-alpha.2`; publish `v0.1.1` as a new release.
+`v0.1.0-alpha.2`; publish `v0.1.2` as a new release.
 
 ## Publication policy
 

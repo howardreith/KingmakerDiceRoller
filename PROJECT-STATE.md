@@ -1,20 +1,20 @@
 # Project state
 
-## Current repair candidate
+## Current 0.1.2 release
 
-The active work is the unreleased mercenary-finalization and collapsed-tab
-placement repair on `codex/mercenary-roll-persistence-repair`.
-The stable version metadata remains `0.1.1`.
+Version `0.1.2` closes the mercenary-finalization and collapsed-tab placement
+repair from `codex/mercenary-roll-persistence-repair`.
 
 ```text
 Starting origin/main commit: cff17351d3282d8a509c928355ee92754759351a
 Product/UMM ID:             KingmakerDiceRoller
-Version metadata:           0.1.1 (unchanged; no release bump authorized)
+Version metadata:           0.1.2
 Target:                     Pathfinder: Kingmaker 2.1.7b
 ```
 
-No public version, tag, release, PR, or `main` change is authorized by this
-candidate. Historical tags, artifacts, and evidence remain immutable.
+Source merge and local deployment of `0.1.2` are owner-authorized. No public
+tag, GitHub Release, or release-asset publication is authorized by this closure.
+Historical tags, artifacts, and evidence remain immutable.
 
 ## Confirmed defects and evidence boundary
 
@@ -130,7 +130,7 @@ different unmarked player descriptor remain fail-closed.
 
 ## Qualification truth
 
-For this unreleased repair candidate:
+For version `0.1.2`:
 
 - Implemented: **Yes**.
 - Source-qualified: **Yes** — repository validation, 283/283 compiled C# cases,
@@ -138,25 +138,21 @@ For this unreleased repair candidate:
 - Contract-qualified: **Yes** — exact Kingmaker 2.1.7b verification passes
   against Assembly-CSharp MVID `07fa1e4d-8618-41b3-9b8d-faa17d3b26f7` and
   SHA-256 `3b6450ffec440e296e586f71c711b195aed144b28d53e1cbb29406d18fef5afb`.
-- Build-qualified: **Yes** — the repository-owned clean-commit qualification at
-  `041c10c88d12b235a9d150d07026685541560273` passed with zero warnings/errors;
-  the Release DLL SHA-256 is
-  `173ee7f2c1c0cee1047bf1a0c75b5fd9ead4f42acc82c6c4d53854bebe72a2d2`.
-- Package-qualified: **Yes** — the deterministic six-file package validated at
-  that commit with SHA-256
-  `76f87f8e3a03fe16fdb5f67b8c3102edd66e032e422e88979cc4c0e93728e26f`.
-- Installed: **Yes** — the transactional `-WhatIf` gate and real repository-owned
-  install both passed. The installed DLL SHA-256 is
-  `173ee7f2c1c0cee1047bf1a0c75b5fd9ead4f42acc82c6c4d53854bebe72a2d2`,
-  byte-identical to the qualified build.
-- Runtime-qualified: **No** — no post-repair live hired-unit or save/reload
-  evidence exists.
+- Build-qualified: **Yes** — Release build completes with zero warnings/errors.
+- Package-qualified: **Yes** — the deterministic six-file `0.1.2` package
+  validates against repository metadata and the package allowlist.
+- Installed: **Yes** — the repository-owned transactional installer deployed
+  the exact merged-main `0.1.2` artifact and verified DLL parity.
+- Focused runtime test: **Accepted by repository owner** — passed for the
+  repaired mercenary creation flow and corrected **Roll Stats** placement.
+- Runtime-qualified: **Yes, for the focused 0.1.2 repair acceptance described
+  above**. No broader runtime matrix is implied.
 - Compatibility-qualified: **No** — the focused Bag of Tricks completion and
   save/reload case has not run.
-- Human visual acceptance: **No** — the required corrected-placement screenshot
-  does not exist.
-- Release-authorized: **No**.
-- Publicly released: **No new repair artifact**.
+- Human visual acceptance: **Accepted by repository owner for corrected button
+  placement**; no screenshot was supplied for repository evidence.
+- Release-authorized: **Yes for source merge and local deployment**.
+- Publicly released: **No**.
 
 Historical qualification is not transferable to this candidate and, after the
 reported defect, cannot qualify mercenary persistence or constrained-resolution
@@ -168,12 +164,9 @@ this installation and contains no repair finalization or access-anchor record;
 it is retained as an explicit negative evidence boundary, not a post-fix runtime
 test.
 
-## Remaining runtime gate
+## Broader unqualified matrix
 
-Run the exact installed final artifact through `docs/SMOKE-TEST.md`. At minimum,
-complete the vanilla mercenary matrix at 1152x720, 1280x720, 1366x768,
-1600x900, and 1920x1080; regress new-main-character creation; verify unsupported
-contexts; inspect the actual hired party unit; then save, exit, restart, reload,
-and inspect it again. Repeat the focused mercenary completion/origin test with
-Bag of Tricks and record its live budget. Preserve the required screenshot,
-logs, hashes, and value tables outside Git.
+The owner acceptance closes the two defects addressed by `0.1.2`; it does not
+claim the broader five-resolution, Bag of Tricks, or save/exit/restart/reload
+matrices. Those remain optional future compatibility evidence under
+`docs/SMOKE-TEST.md` and do not block this authorized closure.

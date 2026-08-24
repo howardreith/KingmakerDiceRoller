@@ -54,7 +54,7 @@ REQUIRED = [
     'docs/ARCHITECTURE.md','docs/INTEGRATION-SEAMS.md','docs/COMPATIBILITY.md',
     'docs/SMOKE-TEST.md','docs/RUNTIME-DIAGNOSTICS.md','docs/BUILD-AND-RELEASE.md',
     'docs/SOURCE-QUALIFICATION.md','docs/UI-DESIGN.md','docs/USER-GUIDE.md','docs/LICENSING.md',
-    'docs/RELEASE-NOTES-0.1.1.md'
+    'docs/RELEASE-NOTES-0.1.1.md','docs/RELEASE-NOTES-0.1.2.md'
 ]
 FORBIDDEN_BINARY_SUFFIXES = {'.dll','.exe','.pdb','.mdb','.zip','.zks','.sav','.png','.jpg','.jpeg','.dds','.asset','.bundle'}
 
@@ -169,14 +169,14 @@ def main():
     require(info['AssemblyName']=='KingmakerDiceRoller.dll','unexpected assembly name')
     require(info['EntryMethod']=='KingmakerDiceRoller.Main.Load','unexpected entry method')
     require(info['GameVersion']=='2.1.7','unexpected target game version')
-    require(info['Version']=='0.1.1','unexpected stable version')
+    require(info['Version']=='0.1.2','unexpected stable version')
     product_metadata=(ROOT/'src/KingmakerDiceRoller/ProductMetadata.cs').read_text(encoding='utf-8')
     assembly_info=(ROOT/'src/KingmakerDiceRoller/Properties/AssemblyInfo.cs').read_text(encoding='utf-8')
-    require('0.1.1' in product_metadata and '0.1.1-' not in product_metadata,
+    require('0.1.2' in product_metadata and '0.1.2-' not in product_metadata,
             'runtime product version is inconsistent')
-    require('AssemblyVersion("0.1.1.0")' in assembly_info and
-            'AssemblyFileVersion("0.1.1.0")' in assembly_info and
-            'AssemblyInformationalVersion("0.1.1")' in assembly_info,
+    require('AssemblyVersion("0.1.2.0")' in assembly_info and
+            'AssemblyFileVersion("0.1.2.0")' in assembly_info and
+            'AssemblyInformationalVersion("0.1.2")' in assembly_info,
             'assembly version metadata is inconsistent')
     require(parse_umm_version('0.1.0-alpha.2') > parse_umm_version('0.1.0'),
             'UMM prerelease-ordering regression fixture is invalid')
@@ -574,6 +574,13 @@ def main():
         require(token in release_notes, f'0.1.1 release-note disclosure missing: {token}')
     ok('0.1.1 corrective release disclosure')
 
+    release_notes_012=(ROOT/'docs/RELEASE-NOTES-0.1.2.md').read_text(encoding='utf-8')
+    for token in ['authoritative mercenary finalization','final stable mercenary descriptor',
+                  'bottom-centered allocator geometry','racial modifiers',
+                  'point-buy restoration','unsupported-context isolation']:
+        require(token in release_notes_012, f'0.1.2 release-note disclosure missing: {token}')
+    ok('0.1.2 mercenary finalization release disclosure')
+
     notices=(ROOT/'THIRD-PARTY-NOTICES.md').read_text(encoding='utf-8')
     upstream=(ROOT/'licenses/UPSTREAM-WOTR-DICE-ROLLER-MIT.txt').read_text(encoding='utf-8')
     require('FakeFriend24/wotr-dice-roller' in notices,'upstream attribution missing')
@@ -581,8 +588,9 @@ def main():
     ok('licensing and attribution')
 
     state=(ROOT/'PROJECT-STATE.md').read_text(encoding='utf-8')
-    require('`0.1.1`' in state,'current corrective version is missing from project state')
-    for label in ['Implemented','Source-qualified','Build-qualified','Runtime-qualified','Compatibility-qualified']:
+    require('`0.1.2`' in state,'current release version is missing from project state')
+    for label in ['Implemented','Source-qualified','Contract-qualified','Build-qualified',
+                  'Package-qualified','Installed','Focused runtime test','Compatibility-qualified']:
         require(label in state, f'qualification label missing: {label}')
     ok('qualification disclosure')
 

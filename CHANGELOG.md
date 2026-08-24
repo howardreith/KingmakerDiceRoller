@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased - mercenary finalization and access-tab placement repair
+## 0.1.2 - mercenary finalization and access-tab placement repair
 
 - Corrected a critical mercenary-completion defect: a verified rolled array on
   `StatsDistribution` and `LevelUpController.Preview` was transient and was not
@@ -29,9 +29,10 @@
   missing/inactive preferred geometry, constrained bounds, navigation inset,
   no upper-right fallback, and 1152x720, 1280x720, 1366x768, 1600x900, and
   1920x1080.
-- The repair is not runtime-, compatibility-, human-visual-, release-, or
-  publication-qualified until the exact built artifact completes the documented
-  in-game hired-unit and save/reload matrix.
+- Repository-owner focused runtime acceptance passed for the repaired
+  mercenary-completion flow and corrected **Roll Stats** placement. Broader Bag
+  of Tricks compatibility and save/reload matrices remain explicitly
+  unqualified.
 
 ## 0.1.1 - Unity Mod Manager version-order correction
 

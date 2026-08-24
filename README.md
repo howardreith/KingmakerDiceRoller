@@ -1,9 +1,7 @@
 # Kingmaker Dice Roller
 
-**Current version metadata:** `0.1.1`. The mission branch contains an unreleased
-repair for mercenary rolled-score finalization and collapsed-tab placement. No
-version bump, tag, release, or replacement of published bytes is authorized by
-that repair.
+**Current version:** `0.1.2`. This release repairs mercenary rolled-score
+finalization and collapsed **Roll Stats** placement.
 
 Kingmaker Dice Roller is a standalone Unity Mod Manager mod for Pathfinder:
 Kingmaker 2.1.7b. It adds an explicit rolled-ability workflow to the native
@@ -70,8 +68,7 @@ For mercenaries, matching preview labels and `StatsDistribution` are not treated
 as completion. After Kingmaker replays native level-up actions onto its stable
 custom-companion descriptor, Dice Roller applies the verified base-only
 assignment at that exact seam and verifies the same descriptor after the native
-success callback. A mismatch is logged as a final failure. Save/reload remains a
-separate required human qualification gate.
+success callback. A mismatch is logged as a final failure.
 
 The supported contexts are exact first-level custom creation of a new campaign
 main character and player-initiated mercenary recruitment. Mercenaries are
@@ -87,26 +84,25 @@ Roll or Recall and restored exactly; neither 20 nor 25 is hard-coded.
 
 ## Installation
 
-Download `KingmakerDiceRoller-0.1.1.zip` from the GitHub release **Assets**
-section and install that ZIP with Unity Mod Manager. Do not download GitHub's
-automatically generated source archives.
+Install `KingmakerDiceRoller-0.1.2.zip` with Unity Mod Manager. If obtaining the
+mod from GitHub, use the ZIP from the release **Assets** section rather than an
+automatically generated source archive.
 
 The earlier `0.1.0-alpha.2` package may appear newer than `0.1.0` because Unity
 Mod Manager interprets the prerelease text as the numeric version `0.1.0.2`.
-Version `0.1.1` supersedes both. After installation, UMM should display `0.1.1`
-and should not offer alpha.2 as an update.
+Version `0.1.2` supersedes all earlier packages. After installation, UMM should
+display `0.1.2` and should not offer alpha.2 as an update.
 
 The archive contains one `KingmakerDiceRoller` directory with exactly six
 allowlisted files and does not bundle development artifacts or game assemblies.
 
 ## Qualification
 
-The repair source has deterministic behavior and exact-contract coverage against
-the configured Kingmaker 2.1.7b assembly. It must still pass the complete live
-mercenary hired-unit, save/exit/restart/reload, resolution, optional-mod, and
-human screenshot gates before any runtime, compatibility, visual, release, or
-publication claim is made. Historical qualification applies only to the exact
-historical artifacts and scenarios that produced it.
+The source has deterministic behavior and exact-contract coverage against the
+configured Kingmaker 2.1.7b assembly. The repository owner accepted the focused
+live mercenary-completion repair and corrected access-button placement. This is
+not an exhaustive Bag of Tricks, save/reload, resolution, or optional-mod
+compatibility claim.
 
 The project does not claim an exhaustive compatibility matrix. Bag of Tricks
 and Call of the Wild are detected but never modified. Bag of Tricks budgets are
