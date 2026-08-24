@@ -138,14 +138,17 @@ For this unreleased repair candidate:
 - Contract-qualified: **Yes** — exact Kingmaker 2.1.7b verification passes
   against Assembly-CSharp MVID `07fa1e4d-8618-41b3-9b8d-faa17d3b26f7` and
   SHA-256 `3b6450ffec440e296e586f71c711b195aed144b28d53e1cbb29406d18fef5afb`.
-- Build-qualified: **No (final clean commit pending)** — a preliminary Release
-  build passed with zero warnings/errors and DLL SHA-256
-  `173ee7f2c1c0cee1047bf1a0c75b5fd9ead4f42acc82c6c4d53854bebe72a2d2`;
-  the required clean-final-commit rerun is not yet recorded here.
-- Package-qualified: **No (final clean commit pending)** — the preliminary
-  deterministic six-file package validated with SHA-256
+- Build-qualified: **Yes** — the repository-owned clean-commit qualification at
+  `041c10c88d12b235a9d150d07026685541560273` passed with zero warnings/errors;
+  the Release DLL SHA-256 is
+  `173ee7f2c1c0cee1047bf1a0c75b5fd9ead4f42acc82c6c4d53854bebe72a2d2`.
+- Package-qualified: **Yes** — the deterministic six-file package validated at
+  that commit with SHA-256
   `76f87f8e3a03fe16fdb5f67b8c3102edd66e032e422e88979cc4c0e93728e26f`.
-- Installed: **No** — transactional WhatIf and exact-artifact install remain.
+- Installed: **Yes** — the transactional `-WhatIf` gate and real repository-owned
+  install both passed. The installed DLL SHA-256 is
+  `173ee7f2c1c0cee1047bf1a0c75b5fd9ead4f42acc82c6c4d53854bebe72a2d2`,
+  byte-identical to the qualified build.
 - Runtime-qualified: **No** — no post-repair live hired-unit or save/reload
   evidence exists.
 - Compatibility-qualified: **No** — the focused Bag of Tricks completion and
@@ -158,6 +161,12 @@ For this unreleased repair candidate:
 Historical qualification is not transferable to this candidate and, after the
 reported defect, cannot qualify mercenary persistence or constrained-resolution
 tab placement for older bytes.
+
+The repository-owned collector wrote ignored evidence under
+`artifacts/runtime-evidence/20260823-231321`. Its only copied game log predates
+this installation and contains no repair finalization or access-anchor record;
+it is retained as an explicit negative evidence boundary, not a post-fix runtime
+test.
 
 ## Remaining runtime gate
 
