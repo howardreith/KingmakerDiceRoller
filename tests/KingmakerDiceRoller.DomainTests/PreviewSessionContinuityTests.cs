@@ -1404,6 +1404,367 @@ namespace KingmakerDiceRoller.DomainTests
             AssertMercenaryOwnerLossClearsSession();
         }
 
+        internal static void PreviewMatchAloneCannotCompleteMercenaryFinalization()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            var diagnostics = new RuntimeDiagnostics();
+            FakeState preview;
+            FakeUnitDescriptor campaignMain;
+            CharacterCreationCoordinator coordinator = OpenMercenaryProductCoordinator(
+                environment,
+                new SequenceRandomSource(Enumerable.Repeat(6, 24).ToArray()),
+                20,
+                null,
+                out preview,
+                out campaignMain,
+                diagnostics);
+            int[] original = { 10, 12, 8, 12, 10, 10 };
+            environment.WriteUnit(environment.Source, original);
+
+            AssertEx.True(coordinator.TryRoll(out string error), error);
+            RollSession session = coordinator.ActiveSession;
+            int[] expected = session.Assignment.ToAssignedArray();
+            AssertEx.SequenceEqual(expected, environment.ReadDistribution(preview));
+            AssertEx.SequenceEqual(expected, environment.ReadUnit(preview.Unit));
+
+            environment.BeginNativeMercenaryFinalization();
+            coordinator.OnLevelUpCommitCompleted(environment.Controller);
+
+            AssertEx.SequenceEqual(original, environment.ReadUnit(environment.Source));
+            AssertEx.True(session.FinalizationFailed);
+            AssertEx.True(!session.FinalizationVerified);
+            AssertEx.Equal(null, coordinator.ActiveSession);
+            AssertEx.Equal(0, diagnostics.FinalizationsVerified);
+            AssertEx.Equal(1, diagnostics.FinalizationFailures);
+            AssertEx.True(environment.Logger.Messages.Any(
+                message => message.Contains("without an authoritative mercenary assignment")));
+        }
+
+        internal static void MercenaryAssignmentReachesAuthoritativeFinalDescriptor()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            var diagnostics = new RuntimeDiagnostics();
+            FakeState preview;
+            FakeUnitDescriptor campaignMain;
+            CharacterCreationCoordinator coordinator = OpenMercenaryProductCoordinator(
+                environment,
+                new SequenceRandomSource(Enumerable.Repeat(6, 24).ToArray()),
+                20,
+                null,
+                out preview,
+                out campaignMain,
+                diagnostics);
+            environment.WriteUnit(environment.Source, new[] { 10, 12, 8, 12, 10, 10 });
+            AssertEx.True(coordinator.TryRoll(out string error), error);
+            RollSession session = coordinator.ActiveSession;
+            int[] expected = session.Assignment.ToAssignedArray();
+
+            FakeState finalState = environment.BeginNativeMercenaryFinalization();
+            coordinator.OnLevelUpAppliedToAuthoritativeUnit(
+                environment.Controller,
+                environment.Source);
+
+            AssertEx.True(ReferenceEquals(finalState.Unit, environment.Source));
+            AssertEx.SequenceEqual(expected, environment.ReadUnit(environment.Source));
+            AssertEx.True(session.AuthoritativeFinalizationApplied);
+            coordinator.OnLevelUpCommitCompleted(environment.Controller);
+
+            AssertEx.True(session.FinalizationVerified);
+            AssertEx.True(!session.FinalizationFailed);
+            AssertEx.Equal(null, coordinator.ActiveSession);
+            AssertEx.Equal(1, diagnostics.FinalizationsVerified);
+            AssertEx.Equal(0, diagnostics.FinalizationFailures);
+            AssertEx.True(environment.Logger.Messages.Any(
+                message => message.Contains("creationKind=Mercenary") &&
+                    message.Contains("passed=true") &&
+                    message.Contains("expectedBase=[18,18,18,18,18,18]") &&
+                    message.Contains("observedFinalBase=[18,18,18,18,18,18]")));
+        }
+
+        internal static void MercenaryFinalStateMismatchIsDetected()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            var diagnostics = new RuntimeDiagnostics();
+            FakeState preview;
+            FakeUnitDescriptor campaignMain;
+            CharacterCreationCoordinator coordinator = OpenMercenaryProductCoordinator(
+                environment,
+                new SequenceRandomSource(Enumerable.Repeat(6, 24).ToArray()),
+                20,
+                null,
+                out preview,
+                out campaignMain,
+                diagnostics);
+            AssertEx.True(coordinator.TryRoll(out string error), error);
+            RollSession session = coordinator.ActiveSession;
+            environment.BeginNativeMercenaryFinalization();
+            coordinator.OnLevelUpAppliedToAuthoritativeUnit(
+                environment.Controller,
+                environment.Source);
+            environment.WriteUnit(environment.Source, new[] { 9, 18, 18, 18, 18, 18 });
+
+            coordinator.OnLevelUpCommitCompleted(environment.Controller);
+
+            AssertEx.True(session.FinalizationFailed);
+            AssertEx.True(!session.FinalizationVerified);
+            AssertEx.Equal(0, diagnostics.FinalizationsVerified);
+            AssertEx.Equal(1, diagnostics.FinalizationFailures);
+            AssertEx.True(environment.Logger.Messages.Any(
+                message => message.Contains("passed=false") &&
+                    message.Contains("observedFinalBase=[9,18,18,18,18,18]")));
+        }
+
+        internal static void MainCharacterCannotUseMercenaryFinalizationSeam()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            FakeState preview;
+            CharacterCreationCoordinator coordinator = OpenProductCoordinator(
+                environment,
+                new SequenceRandomSource(Enumerable.Repeat(6, 24).ToArray()),
+                out preview);
+            AssertEx.True(coordinator.TryRoll(out string error), error);
+            RollSession session = coordinator.ActiveSession;
+            int[] original = environment.ReadUnit(environment.Source);
+            environment.Controller.State = new FakeState(
+                environment.Source,
+                new FakeDistribution(10),
+                true);
+
+            coordinator.OnLevelUpAppliedToAuthoritativeUnit(
+                environment.Controller,
+                environment.Source);
+            coordinator.OnLevelUpCommitCompleted(environment.Controller);
+
+            AssertEx.Equal(SupportedCharacterCreationKind.NewMainCharacter, session.CreationKind);
+            AssertEx.SequenceEqual(original, environment.ReadUnit(environment.Source));
+            AssertEx.True(!session.AuthoritativeFinalizationApplied);
+            AssertEx.True(ReferenceEquals(session, coordinator.ActiveSession));
+        }
+
+        internal static void DifferentFinalizationOwnerCannotReceiveAssignment()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            FakeState preview;
+            FakeUnitDescriptor campaignMain;
+            CharacterCreationCoordinator coordinator = OpenMercenaryProductCoordinator(
+                environment,
+                new SequenceRandomSource(Enumerable.Repeat(6, 24).ToArray()),
+                20,
+                null,
+                out preview,
+                out campaignMain);
+            AssertEx.True(coordinator.TryRoll(out string error), error);
+            int[] original = environment.ReadUnit(environment.Source);
+            var otherDescriptor = FakeUnitDescriptor.Create(10, false, true);
+            var otherController = new FakeLevelUpController { Unit = otherDescriptor };
+            environment.BeginNativeMercenaryFinalization();
+
+            coordinator.OnLevelUpAppliedToAuthoritativeUnit(otherController, otherDescriptor);
+            coordinator.OnLevelUpAppliedToAuthoritativeUnit(
+                environment.Controller,
+                otherDescriptor);
+
+            AssertEx.SequenceEqual(original, environment.ReadUnit(environment.Source));
+            AssertEx.SequenceEqual(Enumerable.Repeat(10, 6), environment.ReadUnit(otherDescriptor));
+            AssertEx.True(!coordinator.ActiveSession.AuthoritativeFinalizationApplied);
+        }
+
+        internal static void PreviewReplacementPreservesOneAssignmentThroughFinalization()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            var random = new SequenceRandomSource(Enumerable.Repeat(6, 24).ToArray());
+            FakeState previewA;
+            FakeUnitDescriptor campaignMain;
+            CharacterCreationCoordinator coordinator = OpenMercenaryProductCoordinator(
+                environment,
+                random,
+                20,
+                null,
+                out previewA,
+                out campaignMain);
+            AssertEx.True(coordinator.TryRoll(out string error), error);
+            RollSession session = coordinator.ActiveSession;
+            StatAssignment assignment = session.Assignment;
+            int[] expected = assignment.ToAssignedArray();
+            AssertEx.Equal(24, random.Calls);
+
+            FakeState previewB = environment.NewMercenaryReplacementState(previewA, 10);
+            coordinator.OnLevelUpStateConstructed(previewB, previewB.Unit, FakeMode.CharGen);
+            environment.Controller.State = previewB;
+            coordinator.Update(0.1f);
+
+            AssertEx.True(ReferenceEquals(session, coordinator.ActiveSession));
+            AssertEx.True(ReferenceEquals(assignment, coordinator.ActiveSession.Assignment));
+            AssertEx.Equal(2, coordinator.ActiveSession.Generation);
+            AssertEx.Equal(24, random.Calls);
+            AssertEx.SequenceEqual(expected, environment.ReadUnit(previewB.Unit));
+
+            environment.BeginNativeMercenaryFinalization();
+            coordinator.OnLevelUpAppliedToAuthoritativeUnit(
+                environment.Controller,
+                environment.Source);
+            coordinator.OnLevelUpCommitCompleted(environment.Controller);
+            AssertEx.SequenceEqual(expected, environment.ReadUnit(environment.Source));
+        }
+
+        internal static void DuplicateMercenaryCompletionObservationIsIdempotent()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            var diagnostics = new RuntimeDiagnostics();
+            FakeState preview;
+            FakeUnitDescriptor campaignMain;
+            CharacterCreationCoordinator coordinator = OpenMercenaryProductCoordinator(
+                environment,
+                new SequenceRandomSource(Enumerable.Repeat(6, 24).ToArray()),
+                20,
+                null,
+                out preview,
+                out campaignMain,
+                diagnostics);
+            AssertEx.True(coordinator.TryRoll(out string error), error);
+            environment.BeginNativeMercenaryFinalization();
+
+            coordinator.OnLevelUpAppliedToAuthoritativeUnit(
+                environment.Controller,
+                environment.Source);
+            coordinator.OnLevelUpAppliedToAuthoritativeUnit(
+                environment.Controller,
+                environment.Source);
+            coordinator.OnLevelUpCommitCompleted(environment.Controller);
+            coordinator.OnLevelUpCommitCompleted(environment.Controller);
+
+            AssertEx.Equal(1, diagnostics.FinalizationsVerified);
+            AssertEx.Equal(0, diagnostics.FinalizationFailures);
+            AssertEx.Equal(1, diagnostics.SessionsReleased);
+            AssertEx.Equal(1, environment.Logger.Messages.Count(
+                message => message.Contains("Mercenary rolled-stat final verification")));
+        }
+
+        internal static void SuccessCallbackOwnerReleaseStillVerifiesFinalDescriptor()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            var diagnostics = new RuntimeDiagnostics();
+            FakeState preview;
+            FakeUnitDescriptor campaignMain;
+            CharacterCreationCoordinator coordinator = OpenMercenaryProductCoordinator(
+                environment,
+                new SequenceRandomSource(Enumerable.Repeat(6, 24).ToArray()),
+                20,
+                null,
+                out preview,
+                out campaignMain,
+                diagnostics);
+            AssertEx.True(coordinator.TryRoll(out string error), error);
+            int[] expected = coordinator.ActiveSession.Assignment.ToAssignedArray();
+            FakeLevelUpController acceptedController = environment.Controller;
+            environment.BeginNativeMercenaryFinalization();
+            coordinator.OnLevelUpAppliedToAuthoritativeUnit(
+                acceptedController,
+                environment.Source);
+
+            environment.CharacterBuild.LevelUpController = null;
+            acceptedController.State = null;
+            coordinator.OnLevelUpCommitCompleted(acceptedController);
+
+            AssertEx.SequenceEqual(expected, environment.ReadUnit(environment.Source));
+            AssertEx.Equal(null, coordinator.ActiveSession);
+            AssertEx.Equal(1, diagnostics.FinalizationsVerified);
+            AssertEx.Equal(0, diagnostics.FinalizationFailures);
+        }
+
+        internal static void CanceledMercenaryCannotCommitLate()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            FakeState preview;
+            FakeUnitDescriptor campaignMain;
+            CharacterCreationCoordinator coordinator = OpenMercenaryProductCoordinator(
+                environment,
+                new SequenceRandomSource(Enumerable.Repeat(6, 24).ToArray()),
+                20,
+                null,
+                out preview,
+                out campaignMain);
+            AssertEx.True(coordinator.TryRoll(out string error), error);
+            RollSession canceled = coordinator.ActiveSession;
+            int[] original = environment.ReadUnit(environment.Source);
+            environment.Sessions.Clear(canceled);
+            environment.BeginNativeMercenaryFinalization();
+
+            coordinator.OnLevelUpAppliedToAuthoritativeUnit(
+                environment.Controller,
+                environment.Source);
+            coordinator.OnLevelUpCommitCompleted(environment.Controller);
+
+            AssertEx.SequenceEqual(original, environment.ReadUnit(environment.Source));
+            AssertEx.True(!canceled.AuthoritativeFinalizationApplied);
+            AssertEx.Equal(null, coordinator.ActiveSession);
+        }
+
+        internal static void MercenaryOwnershipLossCannotCommitLate()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            var diagnostics = new RuntimeDiagnostics();
+            FakeState preview;
+            FakeUnitDescriptor campaignMain;
+            CharacterCreationCoordinator coordinator = OpenMercenaryProductCoordinator(
+                environment,
+                new SequenceRandomSource(Enumerable.Repeat(6, 24).ToArray()),
+                20,
+                null,
+                out preview,
+                out campaignMain,
+                diagnostics);
+            AssertEx.True(coordinator.TryRoll(out string error), error);
+            RollSession session = coordinator.ActiveSession;
+            int[] original = environment.ReadUnit(environment.Source);
+            environment.BeginNativeMercenaryFinalization();
+            environment.CharacterBuild.LevelUpController = new FakeLevelUpController
+            {
+                Unit = FakeUnitDescriptor.Create(10, false, true)
+            };
+
+            coordinator.OnLevelUpAppliedToAuthoritativeUnit(
+                environment.Controller,
+                environment.Source);
+            coordinator.OnLevelUpCommitCompleted(environment.Controller);
+
+            AssertEx.SequenceEqual(original, environment.ReadUnit(environment.Source));
+            AssertEx.True(!session.AuthoritativeFinalizationApplied);
+            AssertEx.True(session.FinalizationFailed);
+            AssertEx.Equal(0, diagnostics.FinalizationsVerified);
+            AssertEx.Equal(1, diagnostics.FinalizationFailures);
+        }
+
+        internal static void MercenaryFinalizationKeepsRacialModifiersSeparate()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            FakeState preview;
+            FakeUnitDescriptor campaignMain;
+            CharacterCreationCoordinator coordinator = OpenMercenaryProductCoordinator(
+                environment,
+                new SequenceRandomSource(Enumerable.Repeat(6, 24).ToArray()),
+                20,
+                null,
+                out preview,
+                out campaignMain);
+            int[] modifiers = { 2, -2, 0, 2, 0, 0 };
+            environment.Source.Stats.SetModifiers(modifiers);
+            AssertEx.True(coordinator.TryRoll(out string error), error);
+            int[] expectedBase = coordinator.ActiveSession.Assignment.ToAssignedArray();
+            int[] expectedDisplayed = expectedBase
+                .Select((value, index) => value + modifiers[index])
+                .ToArray();
+            environment.BeginNativeMercenaryFinalization();
+
+            coordinator.OnLevelUpAppliedToAuthoritativeUnit(
+                environment.Controller,
+                environment.Source);
+            coordinator.OnLevelUpCommitCompleted(environment.Controller);
+
+            AssertEx.SequenceEqual(expectedBase, environment.ReadUnit(environment.Source));
+            AssertEx.SequenceEqual(expectedDisplayed, environment.Source.Stats.ReadDisplayedValues());
+        }
+
         internal static void UntouchedMercenaryRestoresObservedTwentyPointOrigin()
         {
             TestEnvironment environment = TestEnvironment.Create();
@@ -1763,13 +2124,14 @@ namespace KingmakerDiceRoller.DomainTests
             int budget,
             CharacterRollWorkflow workflow,
             out FakeState state,
-            out FakeUnitDescriptor campaignMain)
+            out FakeUnitDescriptor campaignMain,
+            RuntimeDiagnostics diagnostics = null)
         {
             campaignMain = environment.ConfigureMercenaryOwner();
             var tracker = new PointBudgetTracker();
             CharacterCreationCoordinator coordinator = environment.CreateCoordinator(
                 tracker,
-                new RuntimeDiagnostics(),
+                diagnostics ?? new RuntimeDiagnostics(),
                 workflow ?? NewProductWorkflow(random, RollConfiguration.Default()));
             state = environment.NewMercenaryState(10);
             state.StatsDistribution.SetAllocatorState(true, budget, budget);
@@ -2100,6 +2462,18 @@ namespace KingmakerDiceRoller.DomainTests
                 return StatAccess.ReadUnitBaseValues(unit, Contracts);
             }
 
+            internal void WriteUnit(FakeUnitDescriptor unit, int[] values)
+            {
+                StatAccess.WriteUnitBaseValues(unit, values, Contracts);
+            }
+
+            internal FakeState BeginNativeMercenaryFinalization()
+            {
+                var state = new FakeState(Source, new FakeDistribution(10), true);
+                Controller.State = state;
+                return state;
+            }
+
             internal CharacterCreationCoordinator CreateCoordinator()
             {
                 var tracker = new PointBudgetTracker();
@@ -2168,6 +2542,7 @@ namespace KingmakerDiceRoller.DomainTests
                     typeof(FakeState).GetProperty("StatsDistribution", instance),
                     typeof(FakeState).GetProperty("IsFirstLevel", instance),
                     typeof(FakeState).GetProperty("IsEmployee", instance),
+                    typeof(FakeState).GetProperty("Mode", instance),
                     typeof(FakeUnitHelper).GetMethod("IsCustomCompanion", staticFlags),
                     typeof(FakeUnitDescriptor).GetProperty("Stats", instance),
                     typeof(FakeStats).GetMethod("GetStat", instance),
@@ -2188,6 +2563,8 @@ namespace KingmakerDiceRoller.DomainTests
                     typeof(FakeLevelUpController).GetProperty("Preview", instance),
                     typeof(FakeLevelUpController).GetField("m_RecalculatePreview", instance),
                     typeof(FakeLevelUpController).GetMethod("UpdatePreview", instance),
+                    typeof(FakeLevelUpController).GetMethod("ApplyLevelup", instance),
+                    typeof(FakeLevelUpController).GetMethod("Commit", instance),
                     typeof(FakeCharacterBuildController).GetProperty("CurrentPhase", instance),
                     FakePhaseType.Skills,
                     typeof(FakeCharacterBuildController).GetProperty("Skills", instance),
@@ -2360,12 +2737,14 @@ namespace KingmakerDiceRoller.DomainTests
                 Unit = unit;
                 StatsDistribution = distribution;
                 IsFirstLevel = isFirstLevel;
+                Mode = FakeMode.CharGen;
             }
 
             public FakeUnitDescriptor Unit { get; }
             public FakeDistribution StatsDistribution { get; }
             public bool IsFirstLevel { get; set; }
             public bool IsEmployee => Unit != null && Unit.IsCustomCompanion;
+            public FakeMode Mode { get; set; }
         }
 
         private static class FakeUnitHelper
@@ -2390,6 +2769,15 @@ namespace KingmakerDiceRoller.DomainTests
                 UpdatePreviewCount++;
                 Action action = OnUpdatePreview;
                 action?.Invoke();
+            }
+
+            private List<object> ApplyLevelup(FakeUnitDescriptor unit)
+            {
+                return new List<object>();
+            }
+
+            public void Commit()
+            {
             }
         }
 

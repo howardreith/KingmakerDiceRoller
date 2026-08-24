@@ -21,6 +21,7 @@
   <ItemGroup>
     <Compile Include="AssertEx.cs" />
     <Compile Include="CharacterCreationContextPolicyTests.cs" />
+    <Compile Include="CollapsedAccessTabLayoutTests.cs" />
     <Compile Include="PreviewSessionContinuityTests.cs" />
     <Compile Include="ProductWorkflowTests.cs" />
     <Compile Include="NativePanelLifecycleTests.cs" />
@@ -36,12 +37,15 @@
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\CharacterCreationContextDecision.cs"><Link>CharacterCreation\CharacterCreationContextDecision.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\CharacterCreationContextPolicy.cs"><Link>CharacterCreation\CharacterCreationContextPolicy.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\CharacterCreationCoordinator.cs"><Link>CharacterCreation\CharacterCreationCoordinator.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\CollapsedAccessTabLayout.cs"><Link>CharacterCreation\CollapsedAccessTabLayout.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\IRollUiCommandTarget.cs"><Link>CharacterCreation\IRollUiCommandTarget.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\CharacterRollWorkflow.cs"><Link>CharacterCreation\CharacterRollWorkflow.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\KingmakerStatAccess.cs"><Link>CharacterCreation\KingmakerStatAccess.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\LivePreviewInspector.cs"><Link>CharacterCreation\LivePreviewInspector.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\LivePreviewObservation.cs"><Link>CharacterCreation\LivePreviewObservation.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\MainCharacterIdentityRelation.cs"><Link>CharacterCreation\MainCharacterIdentityRelation.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\MercenaryFinalizationObservation.cs"><Link>CharacterCreation\MercenaryFinalizationObservation.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\MercenaryFinalizationService.cs"><Link>CharacterCreation\MercenaryFinalizationService.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\SupportedCharacterCreationKind.cs"><Link>CharacterCreation\SupportedCharacterCreationKind.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\NativeAbilityControlService.cs"><Link>CharacterCreation\NativeAbilityControlService.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\NativePanelAttachmentLifecycle.cs"><Link>CharacterCreation\NativePanelAttachmentLifecycle.cs</Link></Compile>

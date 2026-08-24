@@ -39,6 +39,8 @@ namespace KingmakerDiceRoller.Patches
                 PatchPostfix(candidate, contracts.DistributionStartMethod, nameof(KingmakerPatchBridge.StatsDistributionStarted));
                 PatchPostfix(candidate, contracts.DistributionIsCompleteMethod, nameof(KingmakerPatchBridge.StatsDistributionIsComplete));
                 PatchPostfix(candidate, contracts.AbilityAllocatorFillDataMethod, nameof(KingmakerPatchBridge.AbilityAllocatorFilled));
+                PatchPostfix(candidate, contracts.LevelUpApplyLevelupMethod, nameof(KingmakerPatchBridge.LevelUpAppliedToAuthoritativeUnit));
+                PatchPostfix(candidate, contracts.LevelUpCommitMethod, nameof(KingmakerPatchBridge.LevelUpCommitCompleted));
                 harmony = candidate;
             }
             catch

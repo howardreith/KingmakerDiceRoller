@@ -58,6 +58,10 @@ namespace KingmakerDiceRoller.CharacterCreation
         public int FailedGeneration { get; private set; }
         public bool PendingReplacementObserved { get; private set; }
         public bool CandidateBaselineContaminated { get; private set; }
+        public bool AuthoritativeFinalizationApplied { get; private set; }
+        public bool FinalizationVerified { get; private set; }
+        public bool FinalizationFailed { get; private set; }
+        public object FinalizationDescriptor { get; private set; }
         public bool ReboundPreview => Generation > 1;
 
         public bool OwnsState(object state) => ReferenceEquals(State, state);
@@ -224,6 +228,55 @@ namespace KingmakerDiceRoller.CharacterCreation
         {
             RequireCurrentGeneration(generation);
             FailedGeneration = generation;
+        }
+
+        public void MarkAuthoritativeFinalizationApplied(
+            object controller,
+            object finalDescriptor)
+        {
+            if (CreationKind != SupportedCharacterCreationKind.Mercenary)
+            {
+                throw new InvalidOperationException("Only a mercenary session can commit at the authoritative finalization seam.");
+            }
+            if (!IsApplied || Assignment == null)
+            {
+                throw new InvalidOperationException("Only a verified Roll Mode assignment can be finalized.");
+            }
+            if (!OwnsStableOwner(controller, finalDescriptor))
+            {
+                throw new InvalidOperationException("The final descriptor is not the session's exact stable owner.");
+            }
+            if (FinalizationDescriptor != null &&
+                !ReferenceEquals(FinalizationDescriptor, finalDescriptor))
+            {
+                throw new InvalidOperationException("A different final descriptor was already recorded.");
+            }
+            FinalizationDescriptor = finalDescriptor;
+            AuthoritativeFinalizationApplied = true;
+            FinalizationFailed = false;
+        }
+
+        public void MarkFinalizationVerified(object controller, object finalDescriptor)
+        {
+            if (!AuthoritativeFinalizationApplied ||
+                !OwnsStableOwner(controller, finalDescriptor) ||
+                !ReferenceEquals(FinalizationDescriptor, finalDescriptor))
+            {
+                throw new InvalidOperationException("The exact authoritative mercenary descriptor was not applied before verification.");
+            }
+            FinalizationVerified = true;
+            FinalizationFailed = false;
+        }
+
+        public void MarkFinalizationFailed()
+        {
+            FinalizationFailed = true;
+            FinalizationVerified = false;
+        }
+
+        public void Complete()
+        {
+            Lifecycle.Complete();
         }
 
         public void Rebind(

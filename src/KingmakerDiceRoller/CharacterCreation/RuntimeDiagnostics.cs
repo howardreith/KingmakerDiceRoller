@@ -16,6 +16,8 @@ namespace KingmakerDiceRoller.CharacterCreation
         public int ArraysApplied { get; private set; }
         public int PointBuyRestorations { get; private set; }
         public int SessionsReleased { get; private set; }
+        public int FinalizationsVerified { get; private set; }
+        public int FinalizationFailures { get; private set; }
 
         public void SetStatus(string value)
         {
@@ -85,6 +87,26 @@ namespace KingmakerDiceRoller.CharacterCreation
             {
                 SessionsReleased++;
                 AddRecent("RELEASE " + detail);
+            }
+        }
+
+        public void FinalizationVerified(string detail)
+        {
+            lock (sync)
+            {
+                FinalizationsVerified++;
+                SessionsReleased++;
+                AddRecent("FINAL PASS " + detail);
+            }
+        }
+
+        public void FinalizationFailed(string detail)
+        {
+            lock (sync)
+            {
+                FinalizationFailures++;
+                SessionsReleased++;
+                AddRecent("FINAL FAIL " + detail);
             }
         }
 

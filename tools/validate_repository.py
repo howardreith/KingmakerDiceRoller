@@ -27,6 +27,7 @@ REQUIRED = [
     'src/KingmakerDiceRoller/CharacterCreation/CharacterRollWorkflow.cs',
     'src/KingmakerDiceRoller/CharacterCreation/IRollUiCommandTarget.cs',
     'src/KingmakerDiceRoller/CharacterCreation/NativePanelAttachmentLifecycle.cs',
+    'src/KingmakerDiceRoller/CharacterCreation/CollapsedAccessTabLayout.cs',
     'src/KingmakerDiceRoller/CharacterCreation/NativeRollPanelLayoutSpec.cs',
     'src/KingmakerDiceRoller/CharacterCreation/NativeRollPanelState.cs',
     'src/KingmakerDiceRoller/CharacterCreation/ResponsiveRollPanelLayout.cs',
@@ -36,9 +37,12 @@ REQUIRED = [
     'src/KingmakerDiceRoller/CharacterCreation/RollUiSnapshot.cs',
     'src/KingmakerDiceRoller/CharacterCreation/NativeAbilityControlService.cs',
     'src/KingmakerDiceRoller/CharacterCreation/RollSessionMode.cs',
+    'src/KingmakerDiceRoller/CharacterCreation/MercenaryFinalizationObservation.cs',
+    'src/KingmakerDiceRoller/CharacterCreation/MercenaryFinalizationService.cs',
     'src/KingmakerDiceRoller/UI/NativeRollPanelHost.cs',
     'tests/KingmakerDiceRoller.DomainTests/KingmakerDiceRoller.DomainTests.csproj',
     'tests/KingmakerDiceRoller.DomainTests/CharacterCreationContextPolicyTests.cs',
+    'tests/KingmakerDiceRoller.DomainTests/CollapsedAccessTabLayoutTests.cs',
     'tests/KingmakerDiceRoller.DomainTests/PreviewSessionContinuityTests.cs',
     'tests/KingmakerDiceRoller.DomainTests/NativePanelUsabilityTests.cs',
     'tests/KingmakerDiceRoller.DomainTests/ResponsiveRollPanelLayoutTests.cs',
@@ -230,11 +234,13 @@ def main():
 
     src='\n'.join(p.read_text(encoding='utf-8') for p in (ROOT/'src/KingmakerDiceRoller').rglob('*.cs'))
     stripped_src='\n'.join(strip_csharp(p.read_text(encoding='utf-8')) for p in (ROOT/'src/KingmakerDiceRoller').rglob('*.cs'))
-    require('StatsDistributionStarted' in src and 'StatsDistributionIsComplete' in src and 'LevelUpStateConstructed' in src and 'AbilityAllocatorFilled' in src,'expected four narrow patch bridge surfaces')
+    for token in ['StatsDistributionStarted','StatsDistributionIsComplete','LevelUpStateConstructed',
+                  'AbilityAllocatorFilled','LevelUpAppliedToAuthoritativeUnit','LevelUpCommitCompleted']:
+        require(token in src, f'expected narrow patch bridge surface missing: {token}')
     for token in ['StatsDistribution.Add','StatsDistribution.Remove','StatsDistribution.CanAdd','StatsDistribution.CanRemove']:
         require(token not in src, f'forbidden broad allocator patch reference: {token}')
     controller=(ROOT/'src/KingmakerDiceRoller/Patches/KingmakerPatchController.cs').read_text(encoding='utf-8')
-    require(controller.count('PatchPostfix(candidate,')==4,'patch controller must install exactly four postfixes')
+    require(controller.count('PatchPostfix(candidate,')==6,'patch controller must install exactly six postfixes')
     require('Priority.VeryLow' in controller,'patch priority must be explicit')
     for token in ['BlueprintScriptableObject','BlueprintBuff','BlueprintFeature','UnitPart','.AddFact(','SaveGame']:
         require(token not in stripped_src, f'save-owned custom content surface is forbidden: {token}')
@@ -296,6 +302,7 @@ def main():
     preview_refresh=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/PreviewRefreshService.cs').read_text(encoding='utf-8')
     coordinator=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/CharacterCreationCoordinator.cs').read_text(encoding='utf-8')
     contracts=(ROOT/'src/KingmakerDiceRoller/Integration/KingmakerContractResolver.cs').read_text(encoding='utf-8')
+    finalization=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/MercenaryFinalizationService.cs').read_text(encoding='utf-8')
     composition=(ROOT/'src/KingmakerDiceRoller/CompositionRoot.cs').read_text(encoding='utf-8')
     main_source=(ROOT/'src/KingmakerDiceRoller/Main.cs').read_text(encoding='utf-8')
     require('UnconfirmedGraceSeconds' in liveness and 'ConfirmedGraceSeconds' in liveness,'session liveness grace policy missing')
@@ -338,6 +345,22 @@ def main():
             'unitHelperType.GetMethod(' in contracts and '"IsCustomCompanion"' in contracts and
             'new[] { unitDescriptorType }' in contracts,
             'exact mercenary discriminator contracts missing')
+    for token in ['RequireInstanceMember(levelUpStateType, "Mode")','"ApplyLevelup"',
+                  '"Commit"','"SetupNewCharacher"','"m_OnSuccess"',
+                  'FindTokenOffset(commit, controllerUnit.MetadataToken)',
+                  'FindTokenOffset(commit, applyLevelup.MetadataToken)',
+                  'FindTokenOffset(commit, setupNewCharacter.MetadataToken)',
+                  'FindTokenOffset(commit, onSuccess.MetadataToken)']:
+        require(token in contracts, f'authoritative mercenary finalization contract missing: {token}')
+    for token in ['SupportedCharacterCreationKind.Mercenary','session.OwnsStableOwner',
+                  'session.IsApplied','LevelUpControllerUnitMember','LevelUpStateModeMember',
+                  'IsCustomCompanionMethod','WriteUnitBaseValues','MarkAuthoritativeFinalizationApplied',
+                  'MarkFinalizationVerified']:
+        require(token in finalization, f'exact mercenary finalization guard missing: {token}')
+    require('OnLevelUpAppliedToAuthoritativeUnit' in coordinator and
+            'OnLevelUpCommitCompleted' in coordinator and
+            'Mercenary rolled-stat final verification' in coordinator,
+            'coordinator final-mercenary application and verification lifecycle missing')
     for token in [
         'Kingmaker.UI.LevelUp.Phase.CharBPhase+Type',
         'Kingmaker.UI.LevelUp.Phase.CharBPhaseSkills',
@@ -352,6 +375,7 @@ def main():
     ]:
         require(token in contracts, f'exact native ability presentation contract missing: {token}')
     panel=(ROOT/'src/KingmakerDiceRoller/UI/NativeRollPanelHost.cs').read_text(encoding='utf-8')
+    access_layout=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/CollapsedAccessTabLayout.cs').read_text(encoding='utf-8')
     presenter=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/RollPanelModel.cs').read_text(encoding='utf-8')
     router=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/RollUiCommandRouter.cs').read_text(encoding='utf-8')
     settings=(ROOT/'src/KingmakerDiceRoller/Settings.cs').read_text(encoding='utf-8')
@@ -364,6 +388,14 @@ def main():
                   'FixedHeader','FixedFooter','LayoutUtility.GetPreferredHeight',
                   'bodyScroll.vertical = result.ScrollingRequired']:
         require(token in panel, f'native panel usability invariant missing: {token}')
+    for token in ['CollapsedAccessTabLayoutCalculator','TryGetLocalBounds','AllocatorFrame',
+                  'AllocatorRegion','AbilityPhaseRoot','BottomNavigationInset','SafeGap']:
+        require(token in panel or token in access_layout,
+                f'bottom-center access-tab geometry invariant missing: {token}')
+    require('RacialBonusContainerWithUpperRightFallback' not in src and
+            'bounded upper-right fallback anchor' not in panel and
+            'new Vector2(-18f, -18f)' not in panel,
+            'upper-right Roll Stats fallback must not be restored')
     responsive=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/ResponsiveRollPanelLayout.cs').read_text(encoding='utf-8')
     for token in ['RollPanelPresentationProfile','MinimumWideWidth','GeometryHysteresis',
                   'OverflowTolerance','BodyViewportHeight','ScrollingRequired']:
@@ -384,7 +416,7 @@ def main():
 
     tests=(ROOT/'tests/KingmakerDiceRoller.DomainTests/Program.cs').read_text(encoding='utf-8')
     test_count=tests.count('new TestCase(')
-    require(test_count>=258,f'expected at least 258 C# behavior cases, found {test_count}')
+    require(test_count>=283,f'expected at least 283 C# behavior cases, found {test_count}')
     context_tests=(ROOT/'tests/KingmakerDiceRoller.DomainTests/CharacterCreationContextPolicyTests.cs').read_text(encoding='utf-8')
     for token in [
         'NoMainCharacterValuePermitsCandidate','DirectSameMainCharacterPermitsCandidate',
@@ -441,6 +473,14 @@ def main():
         'ViewBindingMismatchCannotClaimSynchronization','MercenaryPreviewReplacementPreservesSession',
         'MercenaryAllocatorReplacementPreservesSession','SecondMercenaryStartsFreshSession',
         'CanceledMercenaryClearsSession','CompletedMercenaryClearsSession',
+        'PreviewMatchAloneCannotCompleteMercenaryFinalization',
+        'MercenaryAssignmentReachesAuthoritativeFinalDescriptor',
+        'MercenaryFinalStateMismatchIsDetected','MainCharacterCannotUseMercenaryFinalizationSeam',
+        'DifferentFinalizationOwnerCannotReceiveAssignment',
+        'PreviewReplacementPreservesOneAssignmentThroughFinalization',
+        'DuplicateMercenaryCompletionObservationIsIdempotent',
+        'SuccessCallbackOwnerReleaseStillVerifiesFinalDescriptor','CanceledMercenaryCannotCommitLate',
+        'MercenaryOwnershipLossCannotCommitLate','MercenaryFinalizationKeepsRacialModifiersSeparate',
         'UntouchedMercenaryRestoresObservedTwentyPointOrigin','PartialMercenaryAllocationRestoresExactly',
         'MercenaryNonstandardBudgetIsPreserved','MercenaryRerollPreservesOriginalOrigin',
         'MercenaryRecallCapturesOriginalOrigin','MercenaryRollLeavesCampaignMainUnchanged'
@@ -470,9 +510,19 @@ def main():
                   'SameOwnerRebindPreservesExpandedChoice','NewOwnerResetsPresentationChoice',
                   'DetachedViewHasNoRaycastFootprint','LayoutUsesCodeOwnedRectangle',
                   'TypographyAndPaddingRemainReadable','ContentIsMaskedAndScrollable',
-                  'AccessTabPrefersRacialBonusWithSafeFallback','HeaderAndCloseDimensionsAreBounded',
+                  'AccessTabUsesBottomCenterAbilityGeometry','HeaderAndCloseDimensionsAreBounded',
                   'MovingBetweenCreationOwnersResetsPresentation','ResponsiveProfileIsNotCharacterState']:
         require(token in usability_tests, f'native panel usability behavior missing: {token}')
+    access_layout_tests=(ROOT/'tests/KingmakerDiceRoller.DomainTests/CollapsedAccessTabLayoutTests.cs').read_text(encoding='utf-8')
+    for token in ['PreferredRacialAnchorIsBottomCentered','MissingRacialAnchorUsesAllocatorFrame',
+                  'InactiveRacialAnchorUsesAllocatorFrame','ConstrainedWidthClampsInsideSafeBounds',
+                  'UnsuitableRacialAnchorUsesAllocatorFrame',
+                  'ConstrainedHeightPreservesNavigationInset','BottomNavigationInsetMovesAccessTabUpward',
+                  'MissingAbilityChildrenNeverUsesUpperRight','AccessTabCentersWithinVerifiedAbilityRegion',
+                  'Resolution1152x720IsBounded','Resolution1280x720IsBounded',
+                  'Resolution1366x768IsBounded','Resolution1600x900IsBounded',
+                  'Resolution1920x1080IsBounded']:
+        require(token in access_layout_tests, f'collapsed access-tab geometry behavior missing: {token}')
     responsive_tests=(ROOT/'tests/KingmakerDiceRoller.DomainTests/ResponsiveRollPanelLayoutTests.cs').read_text(encoding='utf-8')
     for token in ['AmpleBoundsSelectWide','ConstrainedWidthSelectsCompact','ConstrainedHeightSelectsCompact',
                   'SafeInsetsArePreserved','BodyViewportCannotBecomeNegative','OrdinaryWidePointBuyDoesNotScroll',

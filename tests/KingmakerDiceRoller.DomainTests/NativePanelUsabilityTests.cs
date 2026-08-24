@@ -177,10 +177,10 @@ namespace KingmakerDiceRoller.DomainTests
             AssertEx.True(spec.AssignmentRowRequiredWidth <= spec.AvailableContentWidth);
         }
 
-        internal static void AccessTabPrefersRacialBonusWithSafeFallback()
+        internal static void AccessTabUsesBottomCenterAbilityGeometry()
         {
             AssertEx.Equal(
-                NativeRollPanelAccessAnchor.RacialBonusContainerWithUpperRightFallback,
+                NativeRollPanelAccessAnchor.BottomCenterFromAbilityGeometry,
                 NativeRollPanelLayoutSpec.Default.AccessAnchor);
         }
 

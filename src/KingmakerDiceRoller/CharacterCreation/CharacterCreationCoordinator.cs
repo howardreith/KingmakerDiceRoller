@@ -14,6 +14,7 @@ namespace KingmakerDiceRoller.CharacterCreation
         private readonly KingmakerStatAccess statAccess;
         private readonly RollSessionManager sessions;
         private readonly StatApplicationService application;
+        private readonly MercenaryFinalizationService mercenaryFinalization;
         private readonly PointBuyRestoreService pointBuyRestore;
         private readonly AbilityPhasePresentationService pointBuyPresentation;
         private readonly RuntimeDiagnostics diagnostics;
@@ -79,6 +80,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             this.statAccess = statAccess;
             this.sessions = sessions;
             this.application = application;
+            mercenaryFinalization = new MercenaryFinalizationService(statAccess);
             this.pointBuyRestore = pointBuyRestore;
             this.pointBuyPresentation = pointBuyPresentation;
             this.diagnostics = diagnostics;
@@ -218,6 +220,89 @@ namespace KingmakerDiceRoller.CharacterCreation
             if (contracts != null && application.IsCurrentLiveDistribution(session, distribution, contracts))
             {
                 result = true;
+            }
+        }
+
+        public void OnLevelUpAppliedToAuthoritativeUnit(
+            object controller,
+            object finalDescriptor)
+        {
+            RollSession session = sessions.Active;
+            if (session == null ||
+                session.CreationKind != SupportedCharacterCreationKind.Mercenary ||
+                !ReferenceEquals(session.Controller, controller) ||
+                !ReferenceEquals(session.StableOwner, finalDescriptor))
+            {
+                return;
+            }
+
+            KingmakerContracts contracts = contractsProvider();
+            MercenaryFinalizationObservation observation;
+            string error;
+            if (mercenaryFinalization.TryApplyAuthoritativeAssignment(
+                session,
+                controller,
+                finalDescriptor,
+                contracts,
+                out observation,
+                out error))
+            {
+                return;
+            }
+
+            session.MarkFinalizationFailed();
+            string detail = "Mercenary authoritative assignment failed before the native success callback: " +
+                observation.BuildFacts();
+            diagnostics.SetStatus(detail);
+            if (diagnostics.Event("FINALIZATION APPLY FAILURE " + detail))
+            {
+                logger.Error(detail);
+            }
+        }
+
+        public void OnLevelUpCommitCompleted(object controller)
+        {
+            RollSession session = sessions.Active;
+            if (session == null ||
+                session.CreationKind != SupportedCharacterCreationKind.Mercenary ||
+                !ReferenceEquals(session.Controller, controller) ||
+                !session.IsRollMode)
+            {
+                return;
+            }
+
+            KingmakerContracts contracts = contractsProvider();
+            MercenaryFinalizationObservation observation;
+            string error;
+            bool passed = mercenaryFinalization.TryVerifyAfterSuccessCallback(
+                session,
+                controller,
+                contracts,
+                out observation,
+                out error);
+            if (!passed) session.MarkFinalizationFailed();
+
+            try
+            {
+                session.Complete();
+            }
+            finally
+            {
+                sessions.Clear(session);
+            }
+
+            string detail = "Mercenary rolled-stat final verification: " + observation.BuildFacts();
+            if (passed)
+            {
+                diagnostics.FinalizationVerified(detail);
+                diagnostics.SetStatus("The final hired mercenary retained the verified rolled base values.");
+                logger.Info(detail);
+            }
+            else
+            {
+                diagnostics.FinalizationFailed(detail);
+                diagnostics.SetStatus(detail);
+                logger.Error(detail);
             }
         }
 

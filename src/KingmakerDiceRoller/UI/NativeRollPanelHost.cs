@@ -43,10 +43,11 @@ namespace KingmakerDiceRoller.UI
         private readonly NativeRollPanelState panelState = new NativeRollPanelState();
         private readonly NativeRollPanelLayoutSpec layout = NativeRollPanelLayoutSpec.Default;
         private readonly ResponsiveRollPanelLayoutCalculator layoutCalculator;
+        private readonly CollapsedAccessTabLayoutCalculator accessTabLayoutCalculator;
         private readonly List<AssignmentWidgets> assignmentRows = new List<AssignmentWidgets>();
 
         private object attachedAllocator;
-        private bool? accessTabAnchoredToRaceBonus;
+        private CollapsedAccessTabAnchorSource? lastAccessTabAnchorSource;
         private GameObject root;
         private GameObject expandedSurface;
         private GameObject accessTab;
@@ -113,6 +114,7 @@ namespace KingmakerDiceRoller.UI
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
             layout.Validate();
             layoutCalculator = new ResponsiveRollPanelLayoutCalculator(layout);
+            accessTabLayoutCalculator = new CollapsedAccessTabLayoutCalculator();
         }
 
         public bool IsAttached => root != null;
@@ -193,7 +195,7 @@ namespace KingmakerDiceRoller.UI
         {
             nativeControls.RestoreOwnedStates(contracts);
             attachedAllocator = null;
-            accessTabAnchoredToRaceBonus = null;
+            lastAccessTabAnchorSource = null;
             assignmentRows.Clear();
             modeLabel = null;
             presetLabel = null;
@@ -839,48 +841,75 @@ namespace KingmakerDiceRoller.UI
         {
             RectTransform tabRect = accessTab == null ? null : accessTab.GetComponent<RectTransform>();
             RectTransform rootRect = root == null ? null : root.GetComponent<RectTransform>();
+            if (tabRect == null || rootRect == null || allocator == null || contracts == null) return;
+
             GameObject raceBonus = contracts.AbilityAllocatorRaceBonusContainerField.GetValue(allocator) as GameObject;
             RectTransform raceRect = raceBonus == null ? null : raceBonus.GetComponent<RectTransform>();
+            Image allocatorFrame = contracts.AbilityAllocatorFrameField.GetValue(allocator) as Image;
+            RectTransform frameRect = allocatorFrame == null ? null : allocatorFrame.rectTransform;
+            MonoBehaviour allocatorBehaviour = allocator as MonoBehaviour;
+            RectTransform allocatorRect = allocatorBehaviour == null
+                ? null
+                : allocatorBehaviour.transform as RectTransform;
 
-            if (tabRect != null && rootRect != null && raceRect != null && raceBonus.activeInHierarchy)
-            {
-                var corners = new Vector3[4];
-                raceRect.GetWorldCorners(corners);
-                Vector3 worldBottomCenter = (corners[0] + corners[3]) * 0.5f;
-                Vector3 local = rootRect.InverseTransformPoint(worldBottomCenter);
-                Rect bounds = rootRect.rect;
-                float halfWidth = layout.AccessTabWidth * 0.5f;
-                float x = Mathf.Clamp(local.x, bounds.xMin + halfWidth + 8f, bounds.xMax - halfWidth - 8f);
-                float y = Mathf.Clamp(local.y - 8f, bounds.yMin + layout.AccessTabHeight + 8f, bounds.yMax - 8f);
-                tabRect.anchorMin = new Vector2(0.5f, 0.5f);
-                tabRect.anchorMax = new Vector2(0.5f, 0.5f);
-                tabRect.pivot = new Vector2(0.5f, 1f);
-                tabRect.anchoredPosition = new Vector2(x, y);
-                ReportAccessAnchor(true);
-                return;
-            }
+            LocalLayoutRect? raceBounds = TryGetLocalBounds(raceRect, rootRect);
+            LocalLayoutRect? frameBounds = TryGetLocalBounds(frameRect, rootRect);
+            LocalLayoutRect? allocatorBounds = TryGetLocalBounds(allocatorRect, rootRect);
+            Rect bounds = rootRect.rect;
+            var input = new CollapsedAccessTabLayoutInput(
+                new LocalLayoutRect(bounds.xMin, bounds.yMin, bounds.xMax, bounds.yMax),
+                raceBounds,
+                raceBonus != null && raceBonus.activeInHierarchy,
+                frameBounds,
+                allocatorBounds,
+                layout.AccessTabWidth,
+                layout.AccessTabHeight,
+                layout.SafeLeftInset,
+                layout.SafeRightInset,
+                layout.SafeTopInset,
+                layout.SafeBottomInset,
+                layout.AccessTabSafeGap);
+            CollapsedAccessTabLayoutResult result = accessTabLayoutCalculator.Calculate(input);
 
-            if (tabRect != null)
-            {
-                tabRect.anchorMin = new Vector2(1f, 1f);
-                tabRect.anchorMax = new Vector2(1f, 1f);
-                tabRect.pivot = new Vector2(1f, 1f);
-                tabRect.anchoredPosition = new Vector2(-18f, -18f);
-            }
-            ReportAccessAnchor(false);
+            tabRect.anchorMin = new Vector2(0.5f, 0.5f);
+            tabRect.anchorMax = new Vector2(0.5f, 0.5f);
+            tabRect.pivot = new Vector2(0.5f, 0.5f);
+            tabRect.anchoredPosition = new Vector2(result.CenterX, result.CenterY);
+            ReportAccessAnchor(result.Source);
         }
 
-        private void ReportAccessAnchor(bool raceBonusAnchor)
+        private static LocalLayoutRect? TryGetLocalBounds(
+            RectTransform candidate,
+            RectTransform rootRect)
         {
-            if (accessTabAnchoredToRaceBonus.HasValue &&
-                accessTabAnchoredToRaceBonus.Value == raceBonusAnchor)
+            if (candidate == null || rootRect == null) return null;
+            var corners = new Vector3[4];
+            candidate.GetWorldCorners(corners);
+            Vector3 first = rootRect.InverseTransformPoint(corners[0]);
+            float xMin = first.x;
+            float xMax = first.x;
+            float yMin = first.y;
+            float yMax = first.y;
+            for (int index = 1; index < corners.Length; index++)
             {
-                return;
+                Vector3 local = rootRect.InverseTransformPoint(corners[index]);
+                xMin = Mathf.Min(xMin, local.x);
+                xMax = Mathf.Max(xMax, local.x);
+                yMin = Mathf.Min(yMin, local.y);
+                yMax = Mathf.Max(yMax, local.y);
             }
-            accessTabAnchoredToRaceBonus = raceBonusAnchor;
-            logger.Info(raceBonusAnchor
-                ? "Native Roll Stats access tab anchored beneath the exact Racial Bonus container."
-                : "Native Roll Stats access tab used the bounded upper-right fallback anchor.");
+            var result = new LocalLayoutRect(xMin, yMin, xMax, yMax);
+            return result.IsFinitePositive ? result : (LocalLayoutRect?)null;
+        }
+
+        private void ReportAccessAnchor(CollapsedAccessTabAnchorSource source)
+        {
+            if (lastAccessTabAnchorSource.HasValue &&
+                lastAccessTabAnchorSource.Value == source) return;
+            lastAccessTabAnchorSource = source;
+            logger.Info(
+                "Native Roll Stats access tab is bottom-centered from verified ability geometry; " +
+                "anchorSource=" + source + ".");
         }
 
         private void Render(KingmakerContracts contracts)

@@ -9,7 +9,7 @@ namespace KingmakerDiceRoller.CharacterCreation
 
     public enum NativeRollPanelAccessAnchor
     {
-        RacialBonusContainerWithUpperRightFallback
+        BottomCenterFromAbilityGeometry
     }
 
     public sealed class NativeRollPanelLayoutSpec
@@ -17,7 +17,7 @@ namespace KingmakerDiceRoller.CharacterCreation
         private NativeRollPanelLayoutSpec()
         {
             BackgroundShape = NativeRollPanelBackgroundShape.SolidRectangle;
-            AccessAnchor = NativeRollPanelAccessAnchor.RacialBonusContainerWithUpperRightFallback;
+            AccessAnchor = NativeRollPanelAccessAnchor.BottomCenterFromAbilityGeometry;
             PreferredExpandedWidth = 620f;
             PreferredExpandedHeight = 760f;
             CompactPreferredWidth = 460f;
@@ -28,6 +28,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             CompactMinimumHeight = 500f;
             AccessTabWidth = 140f;
             AccessTabHeight = 34f;
+            AccessTabSafeGap = 8f;
             InternalPadding = 16;
             SafeLeftInset = 18f;
             SafeTopInset = 18f;
@@ -82,6 +83,7 @@ namespace KingmakerDiceRoller.CharacterCreation
         public float ExpandedHeight => PreferredExpandedHeight;
         public float AccessTabWidth { get; }
         public float AccessTabHeight { get; }
+        public float AccessTabSafeGap { get; }
         public int InternalPadding { get; }
         public float SafeLeftInset { get; }
         public float SafeTopInset { get; }
@@ -145,7 +147,8 @@ namespace KingmakerDiceRoller.CharacterCreation
                 throw new InvalidOperationException("Responsive profile thresholds are outside the usability boundary.");
             }
             if (AccessTabWidth < 120f || AccessTabWidth > 150f ||
-                AccessTabHeight < 30f || AccessTabHeight > 38f)
+                AccessTabHeight < 30f || AccessTabHeight > 38f ||
+                AccessTabSafeGap < 6f || AccessTabSafeGap > 12f)
             {
                 throw new InvalidOperationException("Collapsed access-tab dimensions are outside the usability boundary.");
             }

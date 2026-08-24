@@ -20,6 +20,7 @@ namespace KingmakerDiceRoller.Integration
             MemberInfo levelUpStateDistributionMember,
             MemberInfo levelUpStateIsFirstLevelMember,
             MemberInfo levelUpStateIsEmployeeMember,
+            MemberInfo levelUpStateModeMember,
             MethodInfo unitHelperIsCustomCompanionMethod,
             MemberInfo unitStatsMember,
             MethodInfo unitStatsGetStatMethod,
@@ -40,6 +41,8 @@ namespace KingmakerDiceRoller.Integration
             MemberInfo levelUpControllerPreviewMember,
             FieldInfo previewRecalculateField,
             MethodInfo previewUpdateMethod,
+            MethodInfo levelUpApplyLevelupMethod,
+            MethodInfo levelUpCommitMethod,
             MemberInfo characterBuildCurrentPhaseMember,
             object skillsPhaseValue,
             MemberInfo characterBuildSkillsPhaseMember,
@@ -70,6 +73,7 @@ namespace KingmakerDiceRoller.Integration
             LevelUpStateDistributionMember = levelUpStateDistributionMember;
             LevelUpStateIsFirstLevelMember = levelUpStateIsFirstLevelMember;
             LevelUpStateIsEmployeeMember = levelUpStateIsEmployeeMember;
+            LevelUpStateModeMember = levelUpStateModeMember;
             UnitHelperIsCustomCompanionMethod = unitHelperIsCustomCompanionMethod;
             UnitStatsMember = unitStatsMember;
             UnitStatsGetStatMethod = unitStatsGetStatMethod;
@@ -90,6 +94,8 @@ namespace KingmakerDiceRoller.Integration
             LevelUpControllerPreviewMember = levelUpControllerPreviewMember;
             PreviewRecalculateField = previewRecalculateField;
             PreviewUpdateMethod = previewUpdateMethod;
+            LevelUpApplyLevelupMethod = levelUpApplyLevelupMethod;
+            LevelUpCommitMethod = levelUpCommitMethod;
             CharacterBuildCurrentPhaseMember = characterBuildCurrentPhaseMember;
             SkillsPhaseValue = skillsPhaseValue;
             CharacterBuildSkillsPhaseMember = characterBuildSkillsPhaseMember;
@@ -121,6 +127,7 @@ namespace KingmakerDiceRoller.Integration
         public MemberInfo LevelUpStateDistributionMember { get; }
         public MemberInfo LevelUpStateIsFirstLevelMember { get; }
         public MemberInfo LevelUpStateIsEmployeeMember { get; }
+        public MemberInfo LevelUpStateModeMember { get; }
         public MethodInfo UnitHelperIsCustomCompanionMethod { get; }
         public MemberInfo UnitStatsMember { get; }
         public MethodInfo UnitStatsGetStatMethod { get; }
@@ -141,6 +148,8 @@ namespace KingmakerDiceRoller.Integration
         public MemberInfo LevelUpControllerPreviewMember { get; }
         public FieldInfo PreviewRecalculateField { get; }
         public MethodInfo PreviewUpdateMethod { get; }
+        public MethodInfo LevelUpApplyLevelupMethod { get; }
+        public MethodInfo LevelUpCommitMethod { get; }
         public MemberInfo CharacterBuildCurrentPhaseMember { get; }
         public object SkillsPhaseValue { get; }
         public MemberInfo CharacterBuildSkillsPhaseMember { get; }

@@ -10,6 +10,8 @@ $config = Get-KingmakerConfiguration $GamePathProps
 $assemblyPath = Join-Path $config.ManagedDir 'Assembly-CSharp.dll'
 $flags = [Reflection.BindingFlags]'Public,NonPublic,Instance'
 $staticFlags = [Reflection.BindingFlags]'Public,NonPublic,Static'
+$allFlags = [Reflection.BindingFlags]'Public,NonPublic,Instance,Static'
+$nestedFlags = [Reflection.BindingFlags]'Public,NonPublic'
 
 function Require-Type([Reflection.Assembly] $Assembly, [string] $Name) {
     $type = $Assembly.GetType($Name, $false)
@@ -51,15 +53,18 @@ function Test-BooleanPath([Type] $Type, [string[]] $Paths) {
     return $null
 }
 function Test-ByteSequence([byte[]] $Bytes, [byte[]] $Sequence) {
-    if (-not $Bytes -or -not $Sequence -or $Sequence.Length -gt $Bytes.Length) { return $false }
+    return (Find-ByteSequenceOffset $Bytes $Sequence) -ge 0
+}
+function Find-ByteSequenceOffset([byte[]] $Bytes, [byte[]] $Sequence) {
+    if (-not $Bytes -or -not $Sequence -or $Sequence.Length -gt $Bytes.Length) { return -1 }
     for ($offset = 0; $offset -le $Bytes.Length - $Sequence.Length; $offset++) {
         $matches = $true
         for ($index = 0; $index -lt $Sequence.Length; $index++) {
             if ($Bytes[$offset + $index] -ne $Sequence[$index]) { $matches = $false; break }
         }
-        if ($matches) { return $true }
+        if ($matches) { return $offset }
     }
-    return $false
+    return -1
 }
 
 $resolver = [ResolveEventHandler]{
@@ -99,6 +104,8 @@ try {
     if ((Member-Type $firstLevel) -ne [bool]) { throw 'IsFirstLevel is not Boolean.' }
     $isEmployee = Require-Member $state 'IsEmployee'
     if ((Member-Type $isEmployee) -ne [bool]) { throw 'IsEmployee is not Boolean.' }
+    $stateMode = Require-Member $state 'Mode'
+    if ((Member-Type $stateMode) -ne $mode) { throw 'LevelUpState.Mode is not the exact CharBuildMode enum.' }
     $isCustomCompanion = $unitHelper.GetMethod(
         'IsCustomCompanion',
         $staticFlags,
@@ -172,6 +179,124 @@ try {
     $recalculate = $controller.GetField('m_RecalculatePreview',$flags)
     $update = $controller.GetMethod('UpdatePreview',$flags,$null,[Type[]]@(),$null)
     if (-not $recalculate -or $recalculate.FieldType -ne [bool] -or -not $update -or $update.ReturnType -ne [void]) { throw 'Exact preview refresh contract is unavailable.' }
+
+    $levelUpAction = Require-Type $assembly 'Kingmaker.UnitLogic.Class.LevelUp.Actions.ILevelUpAction'
+    $applyLevelup = $controller.GetMethod('ApplyLevelup',$flags,$null,[Type[]]@($unit),$null)
+    $commit = $controller.GetMethod('Commit',$flags,$null,[Type[]]@(),$null)
+    $setupNewCharacter = $controller.GetMethod('SetupNewCharacher',$flags,$null,[Type[]]@(),$null)
+    $applyAction = $levelUpAction.GetMethod('Apply',$flags,$null,[Type[]]@($state,$unit),$null)
+    $onSuccess = $controller.GetField('m_OnSuccess',$flags)
+    if (-not $applyLevelup -or $applyLevelup.IsStatic -or $applyLevelup.IsPublic -or
+        -not $applyLevelup.ReturnType.IsGenericType -or
+        $applyLevelup.ReturnType.GetGenericTypeDefinition().FullName -ne 'System.Collections.Generic.List`1' -or
+        $applyLevelup.ReturnType.GetGenericArguments()[0] -ne $levelUpAction -or
+        -not $commit -or $commit.IsStatic -or -not $commit.IsPublic -or $commit.ReturnType -ne [void] -or
+        -not $setupNewCharacter -or $setupNewCharacter.IsStatic -or $setupNewCharacter.IsPublic -or
+        $setupNewCharacter.ReturnType -ne [void] -or
+        -not $applyAction -or $applyAction.IsStatic -or $applyAction.ReturnType -ne [void] -or
+        -not $onSuccess -or $onSuccess.IsStatic -or $onSuccess.FieldType -ne [Action]) {
+        throw 'Exact LevelUpController authoritative finalization methods were not found.'
+    }
+    $commitBytes = $commit.GetMethodBody().GetILAsByteArray()
+    $commitUnitOffset = Find-ByteSequenceOffset $commitBytes ([BitConverter]::GetBytes($controllerUnit.MetadataToken))
+    $commitApplyOffset = Find-ByteSequenceOffset $commitBytes ([BitConverter]::GetBytes($applyLevelup.MetadataToken))
+    $commitSetupOffset = Find-ByteSequenceOffset $commitBytes ([BitConverter]::GetBytes($setupNewCharacter.MetadataToken))
+    $commitSuccessOffset = Find-ByteSequenceOffset $commitBytes ([BitConverter]::GetBytes($onSuccess.MetadataToken))
+    if ($commitUnitOffset -lt 0 -or $commitApplyOffset -le $commitUnitOffset -or
+        $commitSetupOffset -le $commitApplyOffset -or $commitSuccessOffset -le $commitSetupOffset) {
+        throw 'LevelUpController.Commit no longer applies to Unit before first-level setup and the success callback.'
+    }
+    $applyBytes = $applyLevelup.GetMethodBody().GetILAsByteArray()
+    if ((Find-ByteSequenceOffset $applyBytes ([BitConverter]::GetBytes($constructor.MetadataToken))) -lt 0 -or
+        (Find-ByteSequenceOffset $applyBytes ([BitConverter]::GetBytes($applyAction.MetadataToken))) -lt 0) {
+        throw 'ApplyLevelup no longer constructs a fresh LevelUpState and replays ILevelUpAction.Apply.'
+    }
+    $updateBytes = $update.GetMethodBody().GetILAsByteArray()
+    if ((Find-ByteSequenceOffset $updateBytes ([BitConverter]::GetBytes($applyLevelup.MetadataToken))) -lt 0) {
+        throw 'UpdatePreview no longer uses the same ApplyLevelup replay path as finalization.'
+    }
+
+    $createCompanionAction = Require-Type $assembly 'Kingmaker.Designers.EventConditionActionSystem.Actions.CreateCustomCompanion'
+    $levelUpInitiateHandler = Require-Type $assembly 'Kingmaker.PubSubSystem.ILevelUpInitiateUIHandler'
+    $runCreateCompanion = $createCompanionAction.GetMethod('RunAction',$flags,$null,[Type[]]@(),$null)
+    $playerCreateCandidates = @($playerType.GetMethods($allFlags) | Where-Object {
+        if ($_.Name -ne 'CreateCustomCompanion') { return $false }
+        $parameters = $_.GetParameters()
+        return $parameters.Length -eq 3 -and
+            $parameters[0].ParameterType -eq [Action] -and
+            $parameters[1].ParameterType.IsGenericType -and
+            $parameters[1].ParameterType.GetGenericTypeDefinition().FullName -eq 'System.Nullable`1' -and
+            $parameters[1].ParameterType.GetGenericArguments()[0] -eq [int] -and
+            $parameters[2].ParameterType -eq [bool]
+    })
+    if (-not $runCreateCompanion -or $runCreateCompanion.ReturnType -ne [void] -or
+        $playerCreateCandidates.Count -ne 1) {
+        throw 'Exact CreateCustomCompanion.RunAction -> Player.CreateCustomCompanion contract was not found.'
+    }
+    $playerCreateCompanion = $playerCreateCandidates[0]
+    $actionClosureType = $createCompanionAction.GetNestedType('<>c__DisplayClass5_0',$nestedFlags)
+    $playerClosureType = $playerType.GetNestedType('<>c__DisplayClass168_0',$nestedFlags)
+    if (-not $actionClosureType -or -not $playerClosureType) {
+        throw 'Expected mercenary success/start callback closure types were not found.'
+    }
+    $actionSuccessCallback = $actionClosureType.GetMethod('<RunAction>b__0',$flags,$null,[Type[]]@(),$null)
+    $playerStartCallback = $playerClosureType.GetMethod(
+        '<CreateCustomCompanion>b__0',
+        $flags,
+        $null,
+        [Type[]]@($levelUpInitiateHandler),
+        $null)
+    $handleLevelUpStart = $levelUpInitiateHandler.GetMethod('HandleLevelUpStart',$flags)
+    $characterBuildHandleStart = $characterBuild.GetMethod('HandleLevelUpStart',$flags)
+    if (-not $actionSuccessCallback -or $actionSuccessCallback.ReturnType -ne [void] -or
+        -not $playerStartCallback -or $playerStartCallback.ReturnType -ne [void] -or
+        -not $handleLevelUpStart -or -not $characterBuildHandleStart) {
+        throw 'Mercenary creation callback or HandleLevelUpStart contract was not found.'
+    }
+    $handleParameters = $handleLevelUpStart.GetParameters()
+    if ($handleParameters.Length -ne 4 -or $handleParameters[0].ParameterType -ne $unit -or
+        $handleParameters[1].ParameterType.FullName -ne 'Newtonsoft.Json.Linq.JToken' -or
+        $handleParameters[2].ParameterType -ne [Action] -or $handleParameters[3].ParameterType -ne $mode) {
+        throw 'ILevelUpInitiateUIHandler.HandleLevelUpStart has an unexpected signature.'
+    }
+    $levelUpStart = $controller.GetMethod(
+        'Start',
+        $staticFlags,
+        $null,
+        [Type[]]@($unit,[bool],$handleParameters[1].ParameterType,[Action],$mode),
+        $null)
+    if (-not $levelUpStart -or -not $levelUpStart.IsStatic -or $levelUpStart.ReturnType -ne $controller) {
+        throw 'Exact LevelUpController.Start mercenary entry contract was not found.'
+    }
+    $runBytes = $runCreateCompanion.GetMethodBody().GetILAsByteArray()
+    $runCallbackOffset = Find-ByteSequenceOffset $runBytes ([BitConverter]::GetBytes($actionSuccessCallback.MetadataToken))
+    $runCreateOffset = Find-ByteSequenceOffset $runBytes ([BitConverter]::GetBytes($playerCreateCompanion.MetadataToken))
+    $playerCreateBytes = $playerCreateCompanion.GetMethodBody().GetILAsByteArray()
+    $playerCallbackBytes = $playerStartCallback.GetMethodBody().GetILAsByteArray()
+    $characterBuildStartBytes = $characterBuildHandleStart.GetMethodBody().GetILAsByteArray()
+    if ($runCallbackOffset -lt 0 -or $runCreateOffset -le $runCallbackOffset -or
+        (Find-ByteSequenceOffset $playerCreateBytes ([BitConverter]::GetBytes($playerStartCallback.MetadataToken))) -lt 0 -or
+        (Find-ByteSequenceOffset $playerCallbackBytes ([BitConverter]::GetBytes($handleLevelUpStart.MetadataToken))) -lt 0 -or
+        (Find-ByteSequenceOffset $characterBuildStartBytes ([BitConverter]::GetBytes($levelUpStart.MetadataToken))) -lt 0) {
+        throw 'The native mercenary entry lifecycle no longer reaches LevelUpController.Start through the expected callbacks.'
+    }
+    $onCreate = $createCompanionAction.GetField('OnCreate',$flags)
+    if (-not $onCreate -or
+        (Find-ByteSequenceOffset ($actionSuccessCallback.GetMethodBody().GetILAsByteArray()) ([BitConverter]::GetBytes($onCreate.MetadataToken))) -lt 0) {
+        throw 'The supplied mercenary success callback no longer invokes CreateCustomCompanion.OnCreate.'
+    }
+    $remoteCompanions = Require-Member $playerType 'RemoteCompanions'
+    $crossSceneState = $playerType.GetField('CrossSceneState',$flags)
+    $gamePlayerReader = if ($gamePlayer -is [Reflection.PropertyInfo]) { $gamePlayer.GetGetMethod($true) } else { $gamePlayer }
+    $remoteCompanionsReader = if ($remoteCompanions -is [Reflection.PropertyInfo]) { $remoteCompanions.GetGetMethod($true) } else { $remoteCompanions }
+    $setupBytes = $setupNewCharacter.GetMethodBody().GetILAsByteArray()
+    if (-not $crossSceneState -or
+        (Find-ByteSequenceOffset $setupBytes ([BitConverter]::GetBytes($controllerUnit.MetadataToken))) -lt 0 -or
+        (Find-ByteSequenceOffset $setupBytes ([BitConverter]::GetBytes($gamePlayerReader.MetadataToken))) -lt 0 -or
+        (Find-ByteSequenceOffset $setupBytes ([BitConverter]::GetBytes($crossSceneState.MetadataToken))) -lt 0 -or
+        (Find-ByteSequenceOffset $setupBytes ([BitConverter]::GetBytes($remoteCompanionsReader.MetadataToken))) -lt 0) {
+        throw 'SetupNewCharacher no longer inserts LevelUpController.Unit through native player companion ownership.'
+    }
     $phaseKind = Require-Type $assembly 'Kingmaker.UI.LevelUp.Phase.CharBPhase+Type'
     $skillsPhase = Require-Type $assembly 'Kingmaker.UI.LevelUp.Phase.CharBPhaseSkills'
     $abilityAllocator = Require-Type $assembly 'Kingmaker.UI.LevelUp.CharBAbilityScoresAllocator'
@@ -241,6 +366,12 @@ try {
             "$($controller.FullName).State", "$($controller.FullName).Unit", "$($controller.FullName).Preview",
             'Game.Instance.Player.MainCharacter.Value.Descriptor',
             "$($controller.FullName).m_RecalculatePreview", "$($controller.FullName).UpdatePreview()",
+            "$($createCompanionAction.FullName).RunAction()",
+            "$($playerType.FullName).CreateCustomCompanion(Action, Nullable<Int32>, Boolean)",
+            "$($levelUpInitiateHandler.FullName).HandleLevelUpStart(UnitDescriptor, JToken, Action, CharBuildMode)",
+            "$($controller.FullName).Start(UnitDescriptor, Boolean, JToken, Action, CharBuildMode)",
+            "$($controller.FullName).ApplyLevelup(UnitDescriptor)",
+            "$($controller.FullName).Commit()", "$($controller.FullName).SetupNewCharacher()",
             "$($distribution.FullName).Available", "$($distribution.FullName).Points", "$($distribution.FullName).TotalPoints",
             "$($characterBuild.FullName).CurrentPhase == $($phaseKind.FullName).Skills",
             "$($characterBuild.FullName).Skills -> $($skillsPhase.FullName).AbilityScoresAllocator",
@@ -264,6 +395,20 @@ try {
             stable_owner = 'Kingmaker.UnitLogic.UnitHelper.IsCustomCompanion(LevelUpController.Unit)'
             observed_mode = 'CharGen'
         }
+        mercenary_entry_lifecycle = [ordered]@{
+            action = 'CreateCustomCompanion.RunAction'
+            player_factory = 'Player.CreateCustomCompanion(successCallback, xp, importable)'
+            start_callback = 'ILevelUpInitiateUIHandler.HandleLevelUpStart(newCompanion.Descriptor, null, successCallback, CharGen)'
+            controller_start = 'CharacterBuildController.HandleLevelUpStart -> LevelUpController.Start'
+        }
+        mercenary_finalization = [ordered]@{
+            native_order = 'LevelUpController.Commit -> ApplyLevelup(LevelUpController.Unit) -> SetupNewCharacher -> m_OnSuccess'
+            replay = 'ApplyLevelup constructs a fresh LevelUpState and replays ILevelUpAction.Apply against the supplied descriptor'
+            preview = 'UpdatePreview also invokes ApplyLevelup, but on the transient Preview descriptor'
+            authoritative_assignment_seam = 'postfix LevelUpController.ApplyLevelup(Unit), before SetupNewCharacher and success callback'
+            verification_seam = 'postfix LevelUpController.Commit, after success callback'
+            final_descriptor = 'LevelUpController.Unit inserted through Player.CrossSceneState and Player.RemoteCompanions'
+        }
         allocator_state_writable = $true
         ability_presentation = [ordered]@{
             active_phase = 'Game.Instance.UI.CharacterBuildController.CurrentPhase == Skills'
@@ -274,7 +419,8 @@ try {
             score_rows = 'm_StatEntries -> CharBScoresEntry'
             controls = @('UpButton.interactable','DownButton.interactable')
             style_anchors = @('m_MainLabel: TMPro.TextMeshProUGUI','m_Frame: UnityEngine.UI.Image')
-            access_tab_anchor = 'm_RaceBonusContainer: UnityEngine.GameObject'
+            preferred_access_tab_geometry = 'm_RaceBonusContainer: UnityEngine.GameObject'
+            fallback_access_tab_geometry = @('m_Frame: UnityEngine.UI.Image','ability allocator RectTransform','ability phase root RectTransform')
         }
     }
     $target = if ([IO.Path]::IsPathRooted($OutputPath)) { $OutputPath } else { Join-Path $root $OutputPath }

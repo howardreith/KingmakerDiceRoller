@@ -41,7 +41,7 @@ namespace KingmakerDiceRoller.UI
                 "; history: " + workflow.HistoryCount + "/20" +
                 "; saved arrays: " + workflow.SavedCount + "/10");
             GUILayout.Label("Status: " + diagnostics.Status);
-            GUILayout.Label("Accepted contexts: " + diagnostics.AcceptedContexts + "; rejected: " + diagnostics.RejectedContexts + "; applications: " + diagnostics.ArraysApplied + "; released: " + diagnostics.SessionsReleased);
+            GUILayout.Label("Accepted contexts: " + diagnostics.AcceptedContexts + "; rejected: " + diagnostics.RejectedContexts + "; applications: " + diagnostics.ArraysApplied + "; final pass/fail: " + diagnostics.FinalizationsVerified + "/" + diagnostics.FinalizationFailures + "; released: " + diagnostics.SessionsReleased);
             GUILayout.Label(contracts.Current == null
                 ? "Kingmaker contracts: unavailable"
                 : "Kingmaker contracts: resolved; MVID " + contracts.Current.AssemblyMvid.ToString("D"));

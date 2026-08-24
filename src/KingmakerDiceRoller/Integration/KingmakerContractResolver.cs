@@ -85,6 +85,7 @@ namespace KingmakerDiceRoller.Integration
             MemberInfo stateDistribution = ReflectionAccess.RequireInstanceMember(levelUpStateType, "StatsDistribution");
             MemberInfo isFirstLevel = ReflectionAccess.RequireInstanceMember(levelUpStateType, "IsFirstLevel");
             MemberInfo isEmployee = ReflectionAccess.RequireInstanceMember(levelUpStateType, "IsEmployee");
+            MemberInfo stateMode = ReflectionAccess.RequireInstanceMember(levelUpStateType, "Mode");
             if (!unitDescriptorType.IsAssignableFrom(ReflectionAccess.GetMemberType(stateUnit)))
             {
                 throw new ContractResolutionException("LevelUpState.Unit is not a UnitDescriptor contract.");
@@ -100,6 +101,10 @@ namespace KingmakerDiceRoller.Integration
             if (ReflectionAccess.GetMemberType(isEmployee) != typeof(bool))
             {
                 throw new ContractResolutionException("LevelUpState.IsEmployee is not Boolean.");
+            }
+            if (ReflectionAccess.GetMemberType(stateMode) != charBuildModeType)
+            {
+                throw new ContractResolutionException("LevelUpState.Mode is not the exact CharBuildMode enum.");
             }
             MethodInfo isCustomCompanion = unitHelperType.GetMethod(
                 "IsCustomCompanion",
@@ -235,6 +240,63 @@ namespace KingmakerDiceRoller.Integration
                 throw new ContractResolutionException("Exact LevelUpController preview refresh contract was not found.");
             }
 
+            Type levelUpActionType = RequireType(
+                gameAssembly,
+                "Kingmaker.UnitLogic.Class.LevelUp.Actions.ILevelUpAction");
+            MethodInfo applyLevelup = controllerType.GetMethod(
+                "ApplyLevelup",
+                InstanceFlags,
+                null,
+                new[] { unitDescriptorType },
+                null);
+            MethodInfo commit = controllerType.GetMethod(
+                "Commit",
+                InstanceFlags,
+                null,
+                Type.EmptyTypes,
+                null);
+            MethodInfo setupNewCharacter = controllerType.GetMethod(
+                "SetupNewCharacher",
+                InstanceFlags,
+                null,
+                Type.EmptyTypes,
+                null);
+            MethodInfo applyAction = levelUpActionType.GetMethod(
+                "Apply",
+                InstanceFlags,
+                null,
+                new[] { levelUpStateType, unitDescriptorType },
+                null);
+            FieldInfo onSuccess = controllerType.GetField("m_OnSuccess", InstanceFlags);
+            if (applyLevelup == null || applyLevelup.IsStatic || applyLevelup.IsPublic ||
+                !applyLevelup.ReturnType.IsGenericType ||
+                applyLevelup.ReturnType.GetGenericTypeDefinition() != typeof(List<>) ||
+                applyLevelup.ReturnType.GetGenericArguments()[0] != levelUpActionType ||
+                commit == null || commit.IsStatic || !commit.IsPublic ||
+                commit.ReturnType != typeof(void) ||
+                setupNewCharacter == null || setupNewCharacter.IsStatic ||
+                setupNewCharacter.IsPublic || setupNewCharacter.ReturnType != typeof(void) ||
+                applyAction == null || applyAction.IsStatic ||
+                applyAction.ReturnType != typeof(void) ||
+                onSuccess == null || onSuccess.IsStatic || onSuccess.FieldType != typeof(Action))
+            {
+                throw new ContractResolutionException(
+                    "Exact LevelUpController authoritative finalization methods were not found.");
+            }
+            int commitUnitOffset = FindTokenOffset(commit, controllerUnit.MetadataToken);
+            int commitApplyOffset = FindTokenOffset(commit, applyLevelup.MetadataToken);
+            int commitSetupOffset = FindTokenOffset(commit, setupNewCharacter.MetadataToken);
+            int commitSuccessOffset = FindTokenOffset(commit, onSuccess.MetadataToken);
+            if (commitUnitOffset < 0 || commitApplyOffset <= commitUnitOffset ||
+                commitSetupOffset <= commitApplyOffset || commitSuccessOffset <= commitSetupOffset ||
+                FindTokenOffset(applyLevelup, constructor.MetadataToken) < 0 ||
+                FindTokenOffset(applyLevelup, applyAction.MetadataToken) < 0 ||
+                FindTokenOffset(updatePreview, applyLevelup.MetadataToken) < 0)
+            {
+                throw new ContractResolutionException(
+                    "LevelUpController.Commit no longer applies LevelUpActions to Unit before first-level setup and the success callback.");
+            }
+
             Type phaseKindType = RequireType(gameAssembly, "Kingmaker.UI.LevelUp.Phase.CharBPhase+Type");
             Type skillsPhaseType = RequireType(gameAssembly, "Kingmaker.UI.LevelUp.Phase.CharBPhaseSkills");
             Type abilityAllocatorType = RequireType(gameAssembly, "Kingmaker.UI.LevelUp.CharBAbilityScoresAllocator");
@@ -335,6 +397,12 @@ namespace KingmakerDiceRoller.Integration
                 ".IsEmployee + " + unitHelperType.FullName + ".IsCustomCompanion(UnitDescriptor)");
             evidence.Add("ControllerIdentity=" + controllerType.FullName + ".Unit + Preview");
             evidence.Add("Preview=" + controllerType.FullName + ".m_RecalculatePreview + UpdatePreview()");
+            evidence.Add(
+                "MercenaryFinalization=" + controllerType.FullName +
+                ".Commit -> ApplyLevelup(Unit) -> SetupNewCharacher -> m_OnSuccess");
+            evidence.Add(
+                "AuthoritativeAssignmentSeam=postfix " + controllerType.FullName +
+                ".ApplyLevelup(Unit), before first-level setup/success callback; final verification=postfix Commit()");
             evidence.Add("AllocatorState=" + statsDistributionType.FullName + ".Available + Points + TotalPoints (writable)");
             evidence.Add(
                 "AbilityPresentation=Game.Instance.UI.CharacterBuildController.CurrentPhase(Skills) -> " +
@@ -364,6 +432,7 @@ namespace KingmakerDiceRoller.Integration
                 stateDistribution,
                 isFirstLevel,
                 isEmployee,
+                stateMode,
                 isCustomCompanion,
                 unitStats,
                 getStat,
@@ -384,6 +453,8 @@ namespace KingmakerDiceRoller.Integration
                 controllerPreview,
                 recalculate,
                 updatePreview,
+                applyLevelup,
+                commit,
                 currentPhase,
                 skillsPhaseValue,
                 skillsPhase,
@@ -417,8 +488,13 @@ namespace KingmakerDiceRoller.Integration
 
         private static bool MethodBodyContainsToken(MethodInfo method, int metadataToken)
         {
+            return FindTokenOffset(method, metadataToken) >= 0;
+        }
+
+        private static int FindTokenOffset(MethodBase method, int metadataToken)
+        {
             MethodBody body = method.GetMethodBody();
-            if (body == null) return false;
+            if (body == null) return -1;
             byte[] bytes = body.GetILAsByteArray();
             byte[] token = BitConverter.GetBytes(metadataToken);
             for (int offset = 0; offset <= bytes.Length - token.Length; offset++)
@@ -430,9 +506,9 @@ namespace KingmakerDiceRoller.Integration
                     matches = false;
                     break;
                 }
-                if (matches) return true;
+                if (matches) return offset;
             }
-            return false;
+            return -1;
         }
     }
 }
