@@ -1,4 +1,4 @@
-# 0.1.0 human acceptance
+# Mercenary-finalization repair human acceptance
 
 Source, exact-contract, build, package, and installation qualification do not
 replace this live gate. Preserve logs/screenshots outside Git and collect
@@ -6,14 +6,15 @@ evidence only after fully exiting Kingmaker.
 
 ## Resolution matrix
 
-Run 1600 by 900 first and record effective parent/Canvas geometry from UMM
-diagnostics. Then repeat focused layout/collapse checks at:
+Run the mercenary screen at 1152 by 720 first and record effective
+parent/Canvas geometry from UMM diagnostics. Then repeat focused
+layout/collapse checks at:
 
 ```text
-1920 x 1080
-1536 x  960
-1366 x  768
 1280 x  720
+1366 x  768
+1600 x  900
+1920 x 1080
 ```
 
 Test both **NEW CHARACTER** and normal **NEW MERCENARY** screens. Visible title
@@ -55,7 +56,10 @@ From an established campaign, use the normal player recruitment interaction:
 1. Reach the mercenary ability allocator.
 2. Confirm one compact **Roll Stats** tab appears, no array is generated, and
    vanilla Point Buy remains available before an explicit command.
-3. Confirm the tab does not cover racial controls and Back/Next work collapsed.
+3. Confirm the tab is horizontally centered within the ability/allocator region,
+   above bottom navigation, fully visible/clickable, and clear of ability arrows,
+   racial controls, skill controls, Back, and Next. An upper-right placement is
+   a hard failure.
 4. Open it. Confirm the same responsive Wide presentation and geometry as the
    main-character screen; no technical mercenary enum/diagnostic text appears.
 5. Confirm context diagnostics report `creationKind=Mercenary`, `CharGen`, first
@@ -68,12 +72,15 @@ failure.
 
 ## C. Mercenary Point Buy and Roll
 
-1. Record the untouched six base values, remaining points, total points, and
-   allocator availability. Vanilla is expected to show 20, but use the observed
-   value as evidence.
-2. Roll once. Confirm one array is applied, native plus/minus controls are
-   disabled, all six rows and ordinary sections fit without wheel input, and the
-   point-buy-equivalent display does not masquerade as allocator budget.
+1. Record separately the untouched six base values, racial modifiers, displayed
+   totals, `StatsDistribution.StatValues`, preview-descriptor base values,
+   remaining points, total points, and allocator availability. Vanilla may show
+   20 points, but use the observed value as evidence.
+2. Roll a deliberately distinctive array. Record the assigned base values,
+   racial modifiers, displayed totals, distribution values, and current preview
+   descriptor base values as distinct fields. Confirm native plus/minus controls
+   are disabled and the point-buy-equivalent display does not masquerade as
+   allocator budget.
 3. Return to Point Buy. Confirm exact recorded values, remaining/total points,
    allocator availability, preview display, and native controls. No 25-point
    main-character budget may appear.
@@ -105,15 +112,29 @@ Any rolled values combined with spendable allocator points is a hard failure.
 
 ## E. Mercenary completion and save independence
 
-1. Complete recruitment in Roll Mode.
-2. Confirm the hired mercenary has the selected ordinary base values and racial
-   modifiers remain correct/separate.
-3. Confirm campaign main-character and other companion scores are unchanged.
-4. Confirm hiring price/payment behavior is vanilla.
-5. Confirm cleanup after completion and no Dice Roller fact, buff, component,
-   unit part, blueprint, or persistent marker exists on the mercenary.
-6. Save, quit, disable/uninstall Dice Roller, reload, and confirm ordinary values
-   remain with no missing-content warning.
+1. Before pressing the final native action, record the exact
+   `LevelUpController`, `Unit`, `Preview`, `State`, `LevelUpState.Unit`,
+   distribution identities, and distinctive expected base values.
+2. Complete the entire recruitment workflow in Roll Mode. A closing UI or
+   matching preview is not proof of persistence.
+3. Require one final diagnostic record with `creationKind=Mercenary`, exact
+   controller/source/preview/final identities, expected and observed six-value
+   base arrays, and `passed=true`. Any missing record or `FINAL FAIL` is a hard
+   failure.
+4. Inspect the actual hired party unit, not the creation preview. Record its six
+   base values, racial modifiers, and displayed totals separately. The base
+   values must equal the distinctive assignment and modifiers must remain
+   native/separate.
+5. Confirm campaign main-character and every other companion remain unchanged,
+   and hiring price/payment behavior is vanilla.
+6. Confirm cleanup after completion and no Dice Roller fact, buff, component,
+   unit part, blueprint, persistent marker, or surviving transient session exists
+   on the mercenary.
+7. Save, exit the process, restart, and reload. Inspect that same party unit and
+   record reloaded base values, modifiers, and displayed totals. The six base
+   values must still equal the assignment.
+8. When safe, repeat reload with Dice Roller disabled/uninstalled and confirm no
+   missing-content warning. Ordinary Kingmaker character data must be sufficient.
 
 ## F. Rules, errors, History, and Saved
 
@@ -150,7 +171,7 @@ Confirm no **Roll Stats** tab appears during:
 
 Any activation in these paths is a hard failure.
 
-## H. Compact fallback and raycasts
+## H. Compact placement and raycasts
 
 At constrained effective dimensions on both supported screens:
 
@@ -160,13 +181,15 @@ At constrained effective dimensions on both supported screens:
 4. Confirm vertical scrolling and narrow scrollbar appear only for measured
    overflow; fitting content ignores wheel input and no horizontal scroll exists.
 5. Confirm the masked body clips every child.
-6. Collapse and prove racial controls, Skills, Back, and Next are accessible.
+6. Collapse and prove the access tab remains bottom-centered even when the
+   racial-bonus container is absent, inactive, or rebuilt. Prove racial controls,
+   Skills, Back, and Next are accessible and no full-screen raycast exists.
 
 ## I. Focused compatibility
 
 After vanilla passes, repeat supported entry, Roll/Reroll, race change, exact
-Point Buy restoration, collapse, completion, and unsupported-context isolation
-with supported versions of:
+Point Buy restoration, collapse, completion, final party-unit inspection, and
+save/exit/restart/reload with supported versions of:
 
 ```text
 Dice Roller + Bag of Tricks
@@ -175,9 +198,11 @@ Dice Roller + both
 the intended final mod list
 ```
 
-Record Bag of Tricks' actual configured main and mercenary budgets. With Call
-of the Wild, test an added race/heritage and keep modifiers separate. This is a
-focused matrix, not an exhaustive compatibility claim.
+For Bag of Tricks, record the actual live mercenary budget and original
+allocation, prove Return to Point Buy restores both, and record the final and
+reloaded rolled base values with native racial modifiers. Do not infer a broad
+compatibility claim from that focused case. With Call of the Wild, test an added
+race/heritage and keep modifiers separate.
 
 ## Evidence
 
@@ -188,7 +213,8 @@ powershell -NoLogo -NoProfile -ExecutionPolicy Bypass `
   -File .\scripts\Collect-RuntimeEvidence.ps1
 ```
 
-Preserve evidence outside Git. Report the first failed invariant. Do not mark
-the exact installed `0.1.0` artifact runtime-qualified until all vanilla
-sections pass; do not mark it compatibility-qualified until the named focused
-matrix passes.
+Preserve evidence outside Git. Include a screenshot of corrected collapsed-tab
+placement at the constrained mercenary gate, but never use a screenshot as
+proof of persistence. Report the first failed invariant. Do not mark the exact
+repair artifact runtime-qualified until all vanilla sections pass; do not mark
+it compatibility-qualified until the named focused matrix passes.

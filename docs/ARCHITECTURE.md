@@ -90,6 +90,17 @@ participates in classification.
 restoration, and native page synchronization. Success is never inferred from a
 detached object.
 
+`MercenaryFinalizationService` is a separate reflection-backed lifecycle
+service. Exact 2.1.7b IL proves that `LevelUpController.Commit()` discards the
+transient preview, calls `ApplyLevelup(LevelUpController.Unit)`, runs
+`SetupNewCharacher()`, and then invokes its success callback. `ApplyLevelup`
+constructs a fresh state and replays native actions; preview-only rolled writes
+are therefore not authoritative. After native replay, the service applies the
+verified six base values only to the exact active first-level `CharGen`
+mercenary stable owner. A post-callback verifier reads the same descriptor and
+produces one final PASS/FAIL result. It never handles `NewMainCharacter` or an
+unsupported context and never writes modifiers.
+
 ### Native UI
 
 `NativeRollPanelHost` attaches code-owned Unity objects to the current exact
@@ -99,6 +110,10 @@ writes stats.
 
 `NativeRollPanelState` owns only stable-owner-scoped expand/disclosure choices;
 it has no workflow mutation surface and does not persist responsive geometry.
+`CollapsedAccessTabLayoutCalculator` uses primitive local bounds to select
+active racial-bonus, allocator-frame, allocator-region, or ability-root
+geometry and returns a bottom-center position above native navigation. It has no
+upper-right fallback.
 `ResponsiveRollPanelLayoutCalculator` uses primitive parent bounds, safe insets,
 preferred body height, and prior layout state to return a data-only Wide or
 Compact result. `NativeRollPanelLayoutSpec` makes preferred 620 by 760 Wide
@@ -131,12 +146,14 @@ states.
 
 ### Harmony
 
-Four narrow postfixes delegate immediately:
+Six narrow postfixes delegate immediately:
 
 - `LevelUpState` constructor;
 - `StatsDistribution.Start(int)`;
 - `StatsDistribution.IsComplete()`;
-- `CharBAbilityScoresAllocator.FillData()`.
+- `CharBAbilityScoresAllocator.FillData()`;
+- `LevelUpController.ApplyLevelup(UnitDescriptor)`;
+- `LevelUpController.Commit()`.
 
 No patch contains business logic. Add/remove/cost methods, global progression,
 and save serialization are not patched.
@@ -147,6 +164,10 @@ Only global product defaults and at most ten saved arrays are serialized by
 UMM settings. Active owner, mode, history, point-buy origin, and preview objects
 are process/session state and never enter a game save.
 
+Completed mercenary base values are ordinary fields on the same native
+`LevelUpController.Unit` descriptor that `SetupNewCharacher` inserts into player
+companion ownership. Dice Roller adds no character-owned persistence record.
+
 Saved schema 1 (values/rule/expression/time) migrates to identity assignment.
 Schema 2 stores the source-position permutation and optional label. Unsupported
 or malformed entries are isolated and skipped.
@@ -156,8 +177,10 @@ or malformed entries are isolated and skipped.
 - Roll mode and spendable point buy cannot coexist.
 - A valid recovery path must exist before Roll Mode is entered.
 - Race modifiers are not copied into raw arrays or point-buy origins.
-- Completion override applies only to the current verified Roll Mode
-  distribution.
+- A matching transient distribution/preview cannot qualify mercenary
+  completion; the exact stable descriptor must be applied and verified.
+- Mercenary finalization applies only after native replay to the immutable
+  mercenary kind and exact accepted controller/source owner.
 - Preview/UI rebuilds do not consume random values.
 - Main-character and mercenary creation kinds cannot cross-rebind.
 - A different main-character identity cannot authorize an unmarked build.

@@ -1,136 +1,170 @@
 # Project state
 
-## Current candidate
+## Current repair candidate
 
-`0.1.1` is the corrective stable-version candidate derived from the published
-and runtime-qualified `0.1.0` feature set. The published
-`0.1.0-alpha.2` prerelease remains immutable.
+The active work is the unreleased mercenary-finalization and collapsed-tab
+placement repair on `codex/mercenary-roll-persistence-repair`.
+The stable version metadata remains `0.1.1`.
 
-Unity Mod Manager does not apply Semantic Versioning precedence to prerelease
-suffixes. It parses `0.1.0-alpha.2` as `0.1.0.2`, which sorts above `0.1.0`.
-The corrective candidate advances every active version surface to `0.1.1`,
-which sorts above both earlier archives.
+```text
+Starting origin/main commit: cff17351d3282d8a509c928355ee92754759351a
+Product/UMM ID:             KingmakerDiceRoller
+Version metadata:           0.1.1 (unchanged; no release bump authorized)
+Target:                     Pathfinder: Kingmaker 2.1.7b
+```
 
-The candidate intentionally changes only:
+No public version, tag, release, PR, or `main` change is authorized by this
+candidate. Historical tags, artifacts, and evidence remain immutable.
 
-- UMM, runtime product, assembly, package, and release-note metadata;
-- package validation so its expected version comes from root `Info.json`;
-- source qualification with an executable UMM-version-ordering regression.
+## Confirmed defects and evidence boundary
 
-No dice mechanics, assignment rules, point-buy restoration, responsive UI,
-character-context policy, persistence behavior, compatibility integration, or
-save boundary is intentionally changed.
+The reported main-campaign mercenary failure had two parts:
 
-## Implemented behavior
+- at approximately 1152 by 720, the collapsed **Roll Stats** control used the
+  upper-right fallback instead of safe bottom-center ability geometry;
+- rolled values matched the creation preview but the hired unit retained its
+  original `10/12/8/12/10/10` base allocation.
 
-- Both supported creation kinds start in ordinary Point Buy with only the
-  compact **Roll Stats** tab visible. No preview, phase, allocator, geometry, or
-  UI rebuild generates a roll.
-- Wide geometry prefers 620 by 760 UI units and keeps the compact header,
-  normal Close control, roll configuration, six assignment rows, summary,
-  current History/Saved records, and status visible without ordinary scrolling.
-- Compact geometry retains progressive disclosure. Its masked vertical
-  `ScrollRect` is enabled only when measured body content overflows; horizontal
-  scrolling is always disabled.
-- Safe top/right and conservative bottom insets keep the drawer inside the
-  relevant parent bounds and away from bottom navigation. Collapse deactivates
-  the complete expanded hierarchy and its raycast footprint.
-- The exact mercenary discriminator requires both
-  `LevelUpState.IsEmployee == true` and
-  `UnitHelper.IsCustomCompanion(LevelUpController.Unit) == true` for the same
-  controller-owned build. It does not infer mercenary purpose from UI text,
-  budget, faction, level, or a different main-character identity.
-- New main-character and mercenary sessions carry distinct immutable creation
-  kinds and cannot cross-rebind. Stable ownership remains the exact
-  `LevelUpController` plus its source `UnitDescriptor`; preview, state,
-  distribution, and allocator are replaceable generations.
-- Roll or Recall captures exact current allocation, observed budget, remaining
-  and total points, allocator availability, and preview base values. Reroll
-  never recaptures that origin. Return to Point Buy restores the captured
-  values and budget rather than assuming 20 or 25.
-- Roll Mode suppresses native plus/minus controls. Completion stores ordinary
-  Kingmaker base values only; no blueprint, fact, buff, component, unit part,
-  hiring marker, or save-owned record is created.
-- Cancellation, completion, phase exit, controller/source loss, disable, and
-  unload remove transient session/UI state. Saved arrays remain intentionally
-  global UMM settings; session History remains build-scoped.
+No safe interactive pre-fix Kingmaker session was available during this mission,
+so those observations remain reporter-provided rather than independently
+reproduced. The configured installation was available for exact 2.1.7b
+reflection/IL inspection. No runtime values, screenshot, hired party unit, or
+save/reload result has been invented.
 
-## Supported integration boundary
+## Root cause and authoritative seam
 
-Accepted only after all exact ownership, first-level, mode, player-facing,
-non-pet, non-enemy, identity, and discriminator checks pass:
-
-1. new custom campaign main-character creation;
-2. player-initiated custom mercenary recruitment.
-
-Mercenary discovery against exact Kingmaker 2.1.7b IL established:
+Exact 2.1.7b IL proves this lifecycle:
 
 ```text
 CreateCustomCompanion.RunAction
-  -> Player.CreateCustomCompanion(...)
-  -> HandleLevelUpStart(newCompanion.Descriptor, ..., CharBuildMode.CharGen)
+  -> Player.CreateCustomCompanion(success callback, xp, importable)
+  -> HandleLevelUpStart(newCompanion.Descriptor, null, callback, CharGen)
+  -> LevelUpController.Start(...)
 
-LevelUpState.IsEmployee
-  -> UnitHelper.IsCustomCompanion(LevelUpState.Unit)
+LevelUpController.UpdatePreview
+  -> ApplyLevelup(Preview)
+       -> fresh LevelUpState and StatsDistribution
+       -> replay native ILevelUpAction instances on Preview
+
+LevelUpController.Commit
+  -> dispose Preview.Unit
+  -> ApplyLevelup(LevelUpController.Unit)
+       -> fresh LevelUpState and StatsDistribution
+       -> replay native ILevelUpAction instances on the stable source
+  -> SetupNewCharacher
+       -> native player companion ownership
+  -> success callback
 ```
 
-During that path, `LevelUpController.Unit` is the stable custom-companion
-descriptor; `LevelUpController.Preview` and `LevelUpState.Unit` are transient
-preview descriptors. `Player.MainCharacter` is resolved and remains a different
-established descriptor. No ephemeral launch token or additional Harmony patch
-was required.
+The old implementation wrote and verified `StatsDistribution` plus the
+transient Preview descriptor. It did not add a native action representing the
+rolled assignment. On commit, Kingmaker discarded Preview and replayed actions
+against `LevelUpController.Unit`; the stable mercenary's original allocation
+therefore superseded the visual roll.
 
-Ordinary level-up, existing-character or companion progression, pets, enemies,
-respec, pregenerated selection, unresolved ownership/identity, unmarked
-different candidates, and unknown modes remain rejected.
+The repair adds a postfix after `ApplyLevelup(Unit)` native replay and before
+first-level setup/callback. It applies the six verified base values only when
+the target is the exact active controller/source owner of an immutable
+`Mercenary` session and the fresh state independently passes first-level,
+`CharGen`, `IsEmployee`, and `IsCustomCompanion` checks. Preview calls, different
+controllers/sources, cancellation, owner loss, main-character creation, level
+up, respec, and other contexts are ignored.
+
+A `Commit()` postfix reads the same stable descriptor after the success callback
+and produces one final PASS or FAIL record with controller/source/preview/final
+identities and expected/observed arrays. It is idempotent and clears transient
+session state even on mismatch. Race modifiers remain native modifiers; only
+base values are written. No save-owned Dice Roller content is created.
+
+New-main-character creation uses the same native controller replay mechanics,
+but the repair's final write is restricted to `Mercenary`; the established main
+path is unchanged. Bag of Tricks is not part of the finalization seam. Its known
+Dice Roller interaction is the live allocator budget used for Point Buy
+round-trip, which still requires focused runtime confirmation.
+
+## Collapsed access-tab repair
+
+The upper-right defect came from treating active
+`m_RaceBonusContainer` as the only usable anchor and otherwise assigning fixed
+top/right anchors and offsets. The repair computes local Canvas geometry and
+always places the 140 by 34 tab above the 92-unit bottom-navigation inset plus an
+8-unit gap. Horizontal geometry is selected from:
+
+1. active usable racial-bonus container;
+2. allocator frame;
+3. allocator region;
+4. ability-phase root.
+
+The result is centered within the selected ability region and clamped to safe
+bounds. There is no upper-right fallback and the owned root remains non-graphic,
+so collapsed mode has only the tab's raycast footprint.
+
+## Implemented and automated evidence
+
+- Mercenary authoritative application and post-callback verification services.
+- Exact cached `LevelUpState.Mode`, private `ApplyLevelup(Unit)`, and `Commit()`
+  contracts plus native token-order validation.
+- Six narrow Harmony postfixes; patch methods still delegate immediately.
+- Bounded final PASS/FAIL diagnostics with expected and observed six-value base
+  arrays and object identities.
+- Pure bottom-center access-tab geometry shared by main and mercenary UI hosts.
+- 283 deterministic C# behavior cases and 30 Python oracle cases, including
+  preview-only false success, final mismatch, kind/owner isolation, same-owner
+  preview replacement without another roll, duplicate callbacks, cancellation,
+  ownership loss, post-callback verification, modifier separation, absent or
+  inactive preferred UI geometry, constrained bounds, bottom navigation, no
+  upper-right fallback, and all five required resolutions.
+- Standalone exact-contract verification of launch callbacks, preview replay,
+  authoritative replay, native companion insertion, and success callback order.
+
+## Supported boundary
+
+Only these exact first-level custom creation kinds may expose Roll Stats:
+
+1. a new campaign main character;
+2. player-initiated custom mercenary recruitment.
+
+Ordinary level-up, respec, existing companions, pets, animal companions,
+enemies, pregenerated characters, unresolved ownership, unknown modes, and a
+different unmarked player descriptor remain fail-closed.
 
 ## Qualification truth
 
-For the exact `0.1.1` corrective artifact:
+For this unreleased repair candidate:
 
 - Implemented: **Yes**.
-- Source-qualified: **Yes** — repository validation, 258/258 compiled C#
-  behavior cases, and 30/30 Python oracle cases pass.
-- Contract-qualified: **Yes** — exact Kingmaker 2.1.7b contract verification
-  passed against the configured installation.
-- Build-qualified: **Yes** — the Release build completed with zero warnings and
-  zero errors. DLL SHA-256:
-  `b8e99c74b378e088de2b79120b95624131a6c53ad7ddf6e87df1fca41096cd89`.
-- Package-qualified: **Yes** — the deterministic six-file `0.1.1` package
-  validated successfully. Package SHA-256:
-  `94aaefd7ba0724e0d2ce8c793529bd6b1bc471179d8d76544cb2c537b2be43f8`.
-- Installed: **Yes** — the validated package was transactionally installed into
-  the configured Kingmaker Mods directory and its DLL hash matched the
-  qualified artifact.
-- Runtime-qualified: **Yes** — the repository owner performed and accepted the
-  focused human runtime smoke of the exact installed `0.1.1` artifact,
-  including UMM version ordering and Roll -> Return to Point Buy.
-- Compatibility-qualified: **No** — the broader Bag of Tricks and Call of the
-  Wild matrix remains incomplete; no new compatibility claim is introduced.
-- Release-authorized: **Yes** — the repository owner accepted the exact
-  qualified and runtime-tested `0.1.1` artifact for publication.
-- Publicly released: **No**.
+- Source-qualified: **Yes** — repository validation, 283/283 compiled C# cases,
+  and 30/30 Python oracle cases pass on the repair source.
+- Contract-qualified: **Yes** — exact Kingmaker 2.1.7b verification passes
+  against Assembly-CSharp MVID `07fa1e4d-8618-41b3-9b8d-faa17d3b26f7` and
+  SHA-256 `3b6450ffec440e296e586f71c711b195aed144b28d53e1cbb29406d18fef5afb`.
+- Build-qualified: **No (final clean commit pending)** — a preliminary Release
+  build passed with zero warnings/errors and DLL SHA-256
+  `173ee7f2c1c0cee1047bf1a0c75b5fd9ead4f42acc82c6c4d53854bebe72a2d2`;
+  the required clean-final-commit rerun is not yet recorded here.
+- Package-qualified: **No (final clean commit pending)** — the preliminary
+  deterministic six-file package validated with SHA-256
+  `76f87f8e3a03fe16fdb5f67b8c3102edd66e032e422e88979cc4c0e93728e26f`.
+- Installed: **No** — transactional WhatIf and exact-artifact install remain.
+- Runtime-qualified: **No** — no post-repair live hired-unit or save/reload
+  evidence exists.
+- Compatibility-qualified: **No** — the focused Bag of Tricks completion and
+  save/reload case has not run.
+- Human visual acceptance: **No** — the required corrected-placement screenshot
+  does not exist.
+- Release-authorized: **No**.
+- Publicly released: **No new repair artifact**.
 
-Historical `0.1.0` evidence remains valid only for that immutable artifact:
-repository validation, 258/258 compiled C# behavior cases, 30/30 Python oracle
-cases, exact Kingmaker 2.1.7b contract verification, clean Release build,
-deterministic package validation, transactional installation, and owner-accepted
-human runtime testing all passed.
+Historical qualification is not transferable to this candidate and, after the
+reported defect, cannot qualify mercenary persistence or constrained-resolution
+tab placement for older bytes.
 
-Exact target assembly evidence used by `0.1.0`:
+## Remaining runtime gate
 
-```text
-Assembly-CSharp MVID:    07fa1e4d-8618-41b3-9b8d-faa17d3b26f7
-Assembly-CSharp SHA-256: 3b6450ffec440e296e586f71c711b195aed144b28d53e1cbb29406d18fef5afb
-```
-
-## Immediate next gate
-
-From a clean, fully pushed `main`, run the full `0.1.1` qualification and
-transactional install. Confirm that Unity Mod Manager displays `0.1.1`, does
-not offer `0.1.0-alpha.2` as an update, and that Kingmaker loads the mod without
-a red indicator. Then perform one focused Roll -> Return to Point Buy smoke.
-
-Only after recording that exact evidence may this section mark `0.1.1`
-source-, contract-, build-, package-, installed-, and runtime-qualified and
-release-authorized. The guarded publisher must remain blocked until then.
+Run the exact installed final artifact through `docs/SMOKE-TEST.md`. At minimum,
+complete the vanilla mercenary matrix at 1152x720, 1280x720, 1366x768,
+1600x900, and 1920x1080; regress new-main-character creation; verify unsupported
+contexts; inspect the actual hired party unit; then save, exit, restart, reload,
+and inspect it again. Repeat the focused mercenary completion/origin test with
+Bag of Tricks and record its live budget. Preserve the required screenshot,
+logs, hashes, and value tables outside Git.

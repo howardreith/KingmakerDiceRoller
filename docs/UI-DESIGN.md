@@ -23,10 +23,22 @@ replacement, and resets for a genuinely new owner.
 
 Collapsed mode deactivates the complete expanded surface, background, layout,
 mask, and content. Only a 140 by 34 **Roll Stats** button remains raycastable.
-The preferred exact anchor is immediately beneath
-`CharBAbilityScoresAllocator.m_RaceBonusContainer`. When that container is not
-active or cannot supply a safe local `RectTransform`, a bounded upper-right
-anchor with an 18-unit inset is used.
+The tab is always placed at the safe bottom center of verified ability-page
+geometry, above the 92-unit bottom-navigation inset plus an 8-unit gap. Its
+horizontal geometry source is selected in this order:
+
+```text
+active, usable CharBAbilityScoresAllocator.m_RaceBonusContainer
+CharBAbilityScoresAllocator.m_Frame RectTransform
+ability allocator RectTransform
+ability-phase root RectTransform
+```
+
+Every candidate is converted into the owned root's local Canvas coordinates.
+The tab is horizontally centered within that candidate, then clamped inside the
+18-unit left/right and top safe bounds. An absent, inactive, rebuilt, or
+off-region racial container cannot send the tab to the screen corner. There is
+no upper-right fallback.
 
 The tab must never overlap the racial selector arrows, skill controls, Back,
 or Next. Because the owned root has no `Graphic`, every point outside the tab
@@ -181,10 +193,11 @@ observer provides bounded cleanup and allocator-replacement handling.
 ## Human layout gate
 
 Exact compilation and contract fixtures cannot prove real resolution scaling,
-prefab offsets, focus, visual clipping, or click routing. The first live
-`0.1.0` gate is 1600 by 900 on both new-character and mercenary screens.
-It must prove Wide content fits without ordinary scrolling, true collapse,
-Back/Next access, one panel through navigation, and complete cleanup. Repeat at
-1920 by 1080, 1536 by 960, 1366 by 768, and 1280 by 720; constrained effective
-geometry must select a usable Compact profile. Any obstruction remains a
-runtime blocker.
+prefab offsets, focus, visual clipping, or click routing. The repair's first
+live mercenary gate is 1152 by 720, followed by 1280 by 720, 1366 by 768, 1600
+by 900, and 1920 by 1080. New-main-character creation must also be regressed.
+The gate must prove safe bottom-center tab placement, true collapse, Back/Next
+access, one panel through navigation/rebuild, and complete cleanup. Constrained
+effective geometry must remain fully visible and clickable. Any obstruction or
+upper-right placement remains a runtime blocker and requires a screenshot for
+human visual acceptance.

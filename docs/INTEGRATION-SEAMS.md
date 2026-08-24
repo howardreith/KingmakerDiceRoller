@@ -76,11 +76,11 @@ Player.MainCharacter        = resolved, different campaign-main descriptor
 StatsDistribution.Start     = invoked with the actual mercenary budget
 ```
 
-The state/helper discriminator is sufficient without a launch token, so no
-fifth Harmony entrypoint exists. Completion and cancellation are handled by the
-existing exact controller/source lifecycle: completion releases immediately;
-controller/source disappearance is released after bounded liveness
-confirmation; disable/unload clears the session and all owned UI.
+The state/helper discriminator is sufficient without patching the launch path.
+Cancellation and controller/source disappearance use the existing bounded
+owner lifecycle. Mercenary completion now has two additional narrow delegated
+postfixes at the authoritative native replay and final verification seams
+described below.
 
 New-main-character creation supports exact `CharGen` and its previously
 qualified preview-time `LevelUp`. Mercenary creation supports only the observed
@@ -117,6 +117,66 @@ within one stable build. Rebind uses controller/source identity; it does not
 generate a new array. Application verification resolves the controller's
 current State and Preview after any replacement and compares both live
 distribution and live unit base values.
+
+## Authoritative mercenary finalization
+
+Exact 2.1.7b IL establishes this synchronous completion order:
+
+```text
+LevelUpController.Commit()
+  -> dispose LevelUpController.Preview.Unit
+  -> ApplyLevelup(LevelUpController.Unit)
+       -> new LevelUpState(target, prior mode)
+       -> replay every ILevelUpAction.Check/Apply against target
+  -> first-level SetupNewCharacher()
+       -> insert LevelUpController.Unit through Player.CrossSceneState
+          and Player.RemoteCompanions
+  -> m_OnSuccess()
+       -> supplied CreateCustomCompanion success callback
+```
+
+`UpdatePreview()` also calls `ApplyLevelup`, but supplies a replaceable Preview
+descriptor. Its fresh `LevelUpState` owns a fresh `StatsDistribution`; matching
+that distribution and preview therefore proves presentation only. The previous
+implementation wrote the rolled assignment to those transient objects but did
+not encode it in a native `ILevelUpAction`. When `Commit()` discarded Preview
+and replayed actions against `LevelUpController.Unit`, the stable mercenary's
+original allocation became authoritative. That is the exact point at which the
+rolled preview was superseded.
+
+The repair uses a postfix on private `ApplyLevelup(UnitDescriptor)` after all
+native actions have replayed and before `SetupNewCharacher` or the success
+callback. It writes only six `BaseValue` fields and only when all of these still
+hold:
+
+```text
+session.CreationKind == Mercenary (immutable)
+controller == session.Controller == active LevelUpController
+target == session.StableOwner == LevelUpController.Unit == LevelUpState.Unit
+mode == CharGen (numeric 1)
+IsFirstLevel == true
+IsEmployee == true
+UnitHelper.IsCustomCompanion(target) == true
+current preview generation already verified the exact assignment
+```
+
+Preview-target calls to the same method are ignored. New-main-character
+creation shares Kingmaker's native `Commit`/replay mechanics, but this repair is
+not applied to its distinct creation kind; its existing path remains unchanged.
+
+A postfix on `Commit()` runs after the supplied success callback and reads that
+same stable descriptor. It emits exactly one final PASS record only when all six
+base values match. A mismatch emits a final FAIL record and the transient
+session is still cleared; no session is retained to conceal an incomplete
+commit. Duplicate observations are idempotent. Cancellation or loss of exact
+ownership before the authoritative write cannot trigger a late commit.
+
+Race and heritage modifiers are never copied into the six base values. No
+custom persistence is needed: after native companion insertion, ordinary
+Kingmaker descriptor/save data owns the result. Bag of Tricks is not referenced
+by this lifecycle seam; Dice Roller only observes its effect, if any, on the
+allocator budget. That narrow compatibility statement still requires live
+confirmation.
 
 ## Native ability page
 
@@ -155,10 +215,14 @@ creation kinds. A data-only presenter is rendered into code-owned Unity objects
 using the local allocator font and UI materials. Geometry never inspects the
 visible character-screen title. `m_Frame` remains a verified material/style
 source but its oval sprite is never used as the product-panel shape. The exact
-`m_RaceBonusContainer` supplies the preferred local anchor for the compact
-collapsed access tab; an upper-right local fallback is bounded and fail-safe.
-Repeated FillData calls cannot create a second owned panel. Phase exit, invalid
-context, disable, and unload detach it.
+`m_RaceBonusContainer` supplies preferred horizontal geometry for the compact
+collapsed access tab when it is active and usable. Otherwise the host selects
+the verified allocator frame, allocator `RectTransform`, or ability-phase root.
+In every case it uses local Canvas coordinates to center the tab horizontally,
+place it above the conservative bottom-navigation inset, and clamp it inside
+safe bounds. There is no upper-right fallback. Repeated FillData calls cannot
+create a second owned panel. Phase exit, invalid context, disable, and unload
+detach it.
 
 The owned root has no `Graphic`. Expanded and collapsed children are mutually
 exclusive, so a collapsed view leaves no full-panel raycast target over native
@@ -183,8 +247,20 @@ is directly edited as a substitute for semantic state.
 
 ## Harmony surface
 
-The exact four postfix targets are resolved before install. No mercenary-launch
-patch was added. Each patch bridge method delegates immediately to the
-coordinator or panel host. Failure to resolve any required target,
-custom-companion discriminator, or UI recovery contract prevents partial Roll
-Mode integration.
+The exact six postfix targets are resolved before install:
+
+```text
+LevelUpState(UnitDescriptor, CharBuildMode)
+StatsDistribution.Start(Int32)
+StatsDistribution.IsComplete()
+CharBAbilityScoresAllocator.FillData()
+LevelUpController.ApplyLevelup(UnitDescriptor)
+LevelUpController.Commit()
+```
+
+No mercenary-launch method is patched. Each patch bridge method delegates
+immediately to the coordinator or panel host. Contract resolution proves the
+`Commit -> ApplyLevelup(Unit) -> SetupNewCharacher -> m_OnSuccess` token order
+and action replay shape before installing any hook. Failure to resolve a target,
+custom-companion discriminator, finalization order, or UI recovery contract
+prevents partial Roll Mode integration.

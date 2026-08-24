@@ -1,5 +1,38 @@
 # Changelog
 
+## Unreleased - mercenary finalization and access-tab placement repair
+
+- Corrected a critical mercenary-completion defect: a verified rolled array on
+  `StatsDistribution` and `LevelUpController.Preview` was transient and was not
+  part of Kingmaker's final action replay onto `LevelUpController.Unit`.
+- Verified the exact 2.1.7b native order as
+  `Commit -> ApplyLevelup(Unit) -> SetupNewCharacher -> success callback`.
+  After native actions replay, a six-value base-only assignment is now applied
+  only to the exact active first-level `CharGen` custom-companion source. A
+  `Commit` postfix then verifies that same stable descriptor after the success
+  callback and emits one truthful final PASS or FAIL record.
+- Kept racial modifiers native and separate. The repair creates no blueprint,
+  fact, component, unit part, hiring marker, or custom save persistence and is
+  ignored for new-main-character creation and every unsupported progression
+  context.
+- Replaced the collapsed tab's upper-right fallback. **Roll Stats** is now
+  bottom-centered above the native navigation inset using local Canvas geometry:
+  active racial-bonus bounds when usable, then allocator frame, allocator
+  region, and finally the ability-phase root.
+- Expanded exact assembly verification through the mercenary launch callbacks,
+  shared preview replay, authoritative commit replay, native companion insertion,
+  and success callback.
+- Added lifecycle regressions for preview-only false success, final-state
+  mismatch, exact owner/kind isolation, preview replacement without another
+  roll, duplicate completion, cancellation/owner loss, post-callback
+  verification, and base/modifier separation. Added pure layout cases for
+  missing/inactive preferred geometry, constrained bounds, navigation inset,
+  no upper-right fallback, and 1152x720, 1280x720, 1366x768, 1600x900, and
+  1920x1080.
+- The repair is not runtime-, compatibility-, human-visual-, release-, or
+  publication-qualified until the exact built artifact completes the documented
+  in-game hired-unit and save/reload matrix.
+
 ## 0.1.1 - Unity Mod Manager version-order correction
 
 - Advanced UMM, runtime product, assembly, package, validation, and release-note

@@ -8,7 +8,8 @@ is the primary product UI.
 The panel reports:
 
 - product version and current workflow mode;
-- accepted/rejected context totals, verified applications, and releases;
+- accepted/rejected context totals, verified preview applications, final
+  mercenary PASS/FAIL totals, and releases;
 - exact contract resolution and Assembly-CSharp MVID;
 - detected compatibility mods and warnings;
 - history/saved-array counts;
@@ -73,6 +74,30 @@ model, allocator, native controls, and presentation were verified before the
 workflow commit. A same-owner preview replacement is reported as a rebind, not
 as a second session or new roll.
 
+## Mercenary finalization facts
+
+Preview verification and final-character verification are separate events. A
+successful mercenary completion produces one concise `FINAL PASS` record after
+Kingmaker's success callback. A failure produces `FINAL FAIL`; it is never
+reported as committed merely because the preview matched.
+
+```text
+creationKind=Mercenary
+controller=<type@bounded identity>
+source=<type@bounded identity>
+preview=<type@bounded identity>
+final=<type@bounded identity>
+expectedBase=[STR,DEX,CON,INT,WIS,CHA]
+observedFinalBase=[STR,DEX,CON,INT,WIS,CHA]
+passed=true|false
+failure=<first failed invariant, when present>
+```
+
+The authoritative-write hook is silent for preview targets and unrelated
+controllers. A pre-callback ownership/application failure is bounded and logged
+once by its deduplicated facts. The final record reads the accepted stable
+descriptor; racial modifiers are intentionally absent from both arrays.
+
 ## Point-buy restoration facts
 
 Restoration distinguishes semantic safety from presentation synchronization:
@@ -107,11 +132,13 @@ contents. Valid records continue to load.
 
 ## Native panel presentation facts
 
-The runtime records whether the compact **Roll Stats** access tab used the
-exact active `m_RaceBonusContainer` anchor or the bounded upper-right fallback.
-Attachment and cleanup failures identify the first exact UI contract that could
-not be resolved. The native player surface intentionally does not show
-controller IDs, generation counters, or raw objects.
+The runtime records the compact **Roll Stats** horizontal geometry source as
+`RacialBonusContainer`, `AllocatorFrame`, `AllocatorRegion`, or
+`AbilityPhaseRoot`. Every source uses the same bounded bottom-center placement;
+none is an upper-right fallback. Attachment and cleanup failures identify the
+first exact UI contract that could not be resolved. The native player surface
+intentionally does not show controller IDs, generation counters, or raw
+objects.
 
 The presentation model exposes these stable states for executable coverage:
 

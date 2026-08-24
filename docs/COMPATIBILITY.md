@@ -24,9 +24,18 @@ captured allocator budget normally so compatible Bag of Tricks patches can run,
 then restores and verifies the captured allocation and fields on the newest
 preview.
 
+The mercenary persistence repair does not reference Bag of Tricks. Exact
+Kingmaker IL shows the authoritative finalization lifecycle is the native
+`Commit -> ApplyLevelup(Unit) -> SetupNewCharacher -> callback` path; the known
+Bag of Tricks interaction is allocator-budget policy, not a separate Dice
+Roller completion owner. This is a contract inference, not live compatibility
+qualification. The focused Bag of Tricks gate must still prove the observed
+budget/origin round-trip and final/reloaded mercenary base values.
+
 Historical alpha.2 live evidence exists for default-budget main-character
-entry/restoration with Bag of Tricks active. Alpha.3 mercenary budgets,
-alternative settings, and the full matrix remain unqualified.
+entry/restoration with Bag of Tricks active. Repair-candidate mercenary
+completion, alternative settings, save/reload, and the full matrix remain
+unqualified.
 
 ## Call of the Wild
 
@@ -36,8 +45,8 @@ Preview rebuilds caused by added races reuse the current array and assignment.
 No CotW blueprint, class, or assembly contract is imported.
 
 A limited alpha.2 new-character entry smoke passed with Call of the Wild
-installed. Alpha.3 main/mercenary added-race navigation, restoration, and the
-complete matrix remain unqualified.
+installed. Repair-candidate main/mercenary added-race navigation, restoration,
+completion, and the complete matrix remain unqualified.
 
 ## Gunslinger and other class mods
 

@@ -1,10 +1,9 @@
 # Kingmaker Dice Roller
 
-**Current release line:** `0.1.1` is the corrective stable version of the
-published `0.1.0` feature set. It advances version metadata so Unity Mod Manager
-sorts the stable package above the older `0.1.0-alpha.2` prerelease. No gameplay,
-UI, point-buy, persistence, or character-context behavior is intentionally
-changed.
+**Current version metadata:** `0.1.1`. The mission branch contains an unreleased
+repair for mercenary rolled-score finalization and collapsed-tab placement. No
+version bump, tag, release, or replacement of published bytes is authorized by
+that repair.
 
 Kingmaker Dice Roller is a standalone Unity Mod Manager mod for Pathfinder:
 Kingmaker 2.1.7b. It adds an explicit rolled-ability workflow to the native
@@ -18,8 +17,10 @@ rebuilt.
 ## Player workflow
 
 The ability page initially shows only a compact **Roll Stats** access tab. It
-does not cover the Skills page or roll automatically. Press the tab to open the
-rectangular **Rolled Ability Scores** panel. The panel provides:
+is bottom-centered within verified ability/allocator geometry, above the native
+bottom-navigation inset. It does not cover the Skills page or roll
+automatically. Press the tab to open the rectangular **Rolled Ability Scores**
+panel. The panel provides:
 
 - Roll and Reroll;
 - `4d6, drop lowest`, `4d6, reroll ones, drop lowest`, `3d6`, `2d6 + 6`,
@@ -65,6 +66,13 @@ Roller creates no blueprint, fact, buff, component, or unit part and adds no
 content to a game save. Saved-array slots use Unity Mod Manager settings, not a
 character save.
 
+For mercenaries, matching preview labels and `StatsDistribution` are not treated
+as completion. After Kingmaker replays native level-up actions onto its stable
+custom-companion descriptor, Dice Roller applies the verified base-only
+assignment at that exact seam and verifies the same descriptor after the native
+success callback. A mismatch is logged as a final failure. Save/reload remains a
+separate required human qualification gate.
+
 The supported contexts are exact first-level custom creation of a new campaign
 main character and player-initiated mercenary recruitment. Mercenaries are
 accepted only when Kingmaker's exact custom-companion markers agree for the
@@ -93,11 +101,12 @@ allowlisted files and does not bundle development artifacts or game assemblies.
 
 ## Qualification
 
-The published `0.1.0` behavior was source-, exact-contract-, build-, package-,
-installation-, and human-runtime-qualified against the configured Kingmaker
-2.1.7b environment. Because `0.1.1` produces new package and DLL bytes, the exact
-corrective artifact must still be rebuilt, package-validated, installed, and
-given a brief in-game smoke before publication.
+The repair source has deterministic behavior and exact-contract coverage against
+the configured Kingmaker 2.1.7b assembly. It must still pass the complete live
+mercenary hired-unit, save/exit/restart/reload, resolution, optional-mod, and
+human screenshot gates before any runtime, compatibility, visual, release, or
+publication claim is made. Historical qualification applies only to the exact
+historical artifacts and scenarios that produced it.
 
 The project does not claim an exhaustive compatibility matrix. Bag of Tricks
 and Call of the Wild are detected but never modified. Bag of Tricks budgets are

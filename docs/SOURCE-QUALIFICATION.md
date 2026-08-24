@@ -5,11 +5,11 @@
 `tools/validate_repository.py` checks:
 
 - required source, test, script, and documentation inventory;
-- exact `0.1.0` UMM/runtime/assembly version metadata;
+- exact `0.1.1` UMM/runtime/assembly version metadata and UMM ordering;
 - JSON, XML, Python, PowerShell, and C# lexical/parse invariants;
 - C# 7.3 compatibility and pure-domain dependency separation;
 - absence of binaries, archives, saves, logs, extracted assets, and game files;
-- exactly four narrow delegated Harmony postfix surfaces;
+- exactly six narrow delegated Harmony postfix surfaces;
 - explicit PointBuy-first workflow and no production use of the historical
   diagnostic array;
 - transition-time point-buy origin versus generation rollback separation;
@@ -19,6 +19,10 @@
   attach/rebind/detach lifecycle;
 - stable-owner context/liveness guards, explicit creation kinds, exact
   custom-companion mercenary evidence, and all exclusion boundaries;
+- authoritative mercenary replay/verification contracts, exact-owner final
+  application, and fail-loud final diagnostics;
+- bottom-center access-tab geometry and a source guard against restoring the
+  retired upper-right fallback;
 - saved schema, history, settings, package allowlist, and transactional install
   guards;
 - minimum executable C# and Python behavior inventories;
@@ -38,11 +42,17 @@ policies, parser failures, transactional workflow modes, point-buy origins,
 preview generations, assignment, history, saved-record XML/migration, native
 presenter profiles, responsive geometry, panel lifecycle, control
 suppression/restoration, current controller verification, mercenary origin
-round-trips, disable recovery, and context exclusions.
+round-trips, authoritative finalization, final mismatch detection, modifier
+separation, bottom-center placement at the required resolutions, disable
+recovery, and context exclusions.
 
 The exact-contract script loads Howie's installed 2.1.7b assemblies and proves
 every game/UI member used by production, including signatures, declaring
-types, field types, writable state, and MVID/SHA-256.
+types, field types, writable state, and MVID/SHA-256. It also proves the native
+mercenary launch callbacks and the exact
+`Commit -> ApplyLevelup(Unit) -> SetupNewCharacher -> success callback` order,
+fresh-state action replay, shared preview replay, and native player-companion
+insertion path.
 
 ## Limits
 

@@ -7,9 +7,12 @@ new custom campaign main character or use the normal in-campaign mercenary
 recruitment flow. On the ability page, ordinary Point Buy appears first. The mod
 does not roll automatically.
 
-The page initially shows a compact **Roll Stats** tab beneath the Racial Bonus
-area when that exact anchor is active, or at a bounded upper-right fallback.
-Press it to open the responsive right-side **Rolled Ability Scores** drawer.
+The page initially shows a compact **Roll Stats** tab at the safe bottom center
+of the ability region, above Back/Next navigation. An active Racial Bonus
+container supplies preferred horizontal geometry; if it is absent or inactive,
+the allocator frame, allocator region, or ability-page root supplies the same
+bounded bottom-center placement. There is no upper-right fallback. Press the tab
+to open the responsive right-side **Rolled Ability Scores** drawer.
 Wide layouts show ordinary controls directly and keep the six-score Roll
 workflow visible without scrolling. Constrained layouts use Compact
 disclosures and scroll only when content actually overflows. Opening, closing,
@@ -126,10 +129,13 @@ modded budget and partial allocation should restore exactly.
 
 ## Completion and saves
 
-A character completed in Roll Mode stores ordinary Kingmaker base values. It
-does not receive Dice Roller facts or components. The save remains valid after
-the mod is disabled or uninstalled. History and active session state are not
-saved with the character.
+A character completed in Roll Mode stores ordinary Kingmaker base values. For a
+mercenary, the mod does not equate a matching preview with completion: it feeds
+the verified base assignment to the exact stable custom-companion descriptor
+after native action replay and verifies that descriptor after the success
+callback. Racial modifiers remain separate. A final mismatch is an error, not a
+successful commit claim. The character receives no Dice Roller facts or
+components; History and active session state are not saved with the character.
 
 ## Compatibility status
 
