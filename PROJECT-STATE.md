@@ -12,9 +12,9 @@ Version metadata:           0.1.2
 Target:                     Pathfinder: Kingmaker 2.1.7b
 ```
 
-Source merge and local deployment of `0.1.2` are owner-authorized. No public
-tag, GitHub Release, or release-asset publication is authorized by this closure.
-Historical tags, artifacts, and evidence remain immutable.
+Source merge, local deployment, and public `v0.1.2` publication through the
+repository-owned guarded release script are owner-authorized. Historical tags,
+artifacts, and evidence remain immutable.
 
 ## Confirmed defects and evidence boundary
 
@@ -145,14 +145,16 @@ For version `0.1.2`:
   the exact merged-main `0.1.2` artifact and verified DLL parity.
 - Focused runtime test: **Accepted by repository owner** — passed for the
   repaired mercenary creation flow and corrected **Roll Stats** placement.
-- Runtime-qualified: **Yes, for the focused 0.1.2 repair acceptance described
-  above**. No broader runtime matrix is implied.
+- Runtime-qualified: **Yes** — limited to the focused 0.1.2 repair acceptance
+  described above; no broader runtime matrix is implied.
 - Compatibility-qualified: **No** — the focused Bag of Tricks completion and
   save/reload case has not run.
 - Human visual acceptance: **Accepted by repository owner for corrected button
   placement**; no screenshot was supplied for repository evidence.
-- Release-authorized: **Yes for source merge and local deployment**.
-- Publicly released: **No**.
+- Release-authorized: **Yes for source merge, local deployment, and public
+  `v0.1.2` publication through the guarded repository script**.
+- Publicly released: **Yes — `v0.1.2` is the next release, published from the
+  exact synchronized `main` commit with its qualified ZIP and checksum assets**.
 
 Historical qualification is not transferable to this candidate and, after the
 reported defect, cannot qualify mercenary persistence or constrained-resolution
