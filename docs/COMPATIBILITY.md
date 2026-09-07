@@ -1,5 +1,13 @@
 # Compatibility
 
+## Owner acceptance of 0.1.3
+
+Howie confirmed the released workflow works and requested official release.
+This is release acceptance of the unchanged 0.1.3 package. The confirmation did
+not identify every provider/character case or save/reload result; the service,
+contract, and development-session live matrix below retains its recorded scope.
+newman55 remains unimplemented, and no additional provider is newly qualified.
+
 ## Policy
 
 Optional mods are detected by UMM ID/assembly evidence but never referenced as

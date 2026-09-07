@@ -1,10 +1,11 @@
-# Current testing release
+# Current official release
 
-Howie authorized finalizing, merging, pushing, tagging, and publishing `0.1.3`
-for testing after the implementation handoff. Publish it as a GitHub prerelease
-with `-Publish -TestingPrerelease`; keep `0.1.2` as the latest stable release.
-This is explicit publication authority, not runtime acceptance. Local installation,
-game launch, profile changes, and save operations remain separate tasks.
+Howie confirmed the released 0.1.3 workflow works and authorized official release.
+Promote the existing GitHub release to stable/latest and record that sign-off.
+Preserve the published ZIP, checksum asset, and annotated tag; no new build or
+package is needed for promotion. Detailed compatibility evidence remains scoped
+to the recorded tests and owner report. Local installation and gameplay remain
+separate tasks.
 
 DATA uses Windows PowerShell 5.1, its existing Python 3.12 on the process PATH,
 .NET Framework 4.7.2, C# 7.3, and installed UMM 0.33.0 / Harmony12 libraries.
@@ -156,7 +157,7 @@ powershell -NoLogo -NoProfile -ExecutionPolicy Bypass `
   -ReleaseNotesPath .\docs\RELEASE-NOTES-0.1.3.md
 ```
 
-For the explicitly authorized testing prerelease:
+For a future explicitly authorized testing prerelease (the original 0.1.3 publication used this path):
 
 ```powershell
 powershell -NoLogo -NoProfile -ExecutionPolicy Bypass `
@@ -189,8 +190,24 @@ refuses public publication from a private repository unless
 `-AllowPrivateRepositoryRelease` is supplied deliberately. That override does
 not make a private repository's release publicly downloadable.
 
-Published assets are immutable project history. Do not replace `v0.1.0` or
-`v0.1.0-alpha.2`, or `v0.1.2`; publish `v0.1.3` as a new testing release.
+Published assets are immutable project history. Do not replace published ZIPs,
+checksum assets, or version tags. New implementation bytes need a new version.
+
+## Promote an existing tested prerelease
+
+Owner confirmation and official-release authorization can promote an existing
+public prerelease without rebuilding it. Record the scoped runtime sign-off in
+`PROJECT-STATE.md`, validate the repository and publication qualification gate,
+and prepare updated notes retaining the original checksum and release commit.
+
+Use `gh release edit v0.1.3 --repo howardreith/KingmakerDiceRoller --prerelease=false
+--latest --title "Kingmaker Dice Roller v0.1.3" --notes-file <prepared-notes>
+--verify-tag` as one command. The guarded new-release publisher deliberately
+refuses an existing public release; do not rerun it or replace its assets.
+Verify the latest-release response, prerelease flag, asset IDs/digests, and peeled
+tag commit against the pre-promotion record. Promotion documentation on `main`
+may be newer than the immutable tagged build. The packaged README remains the
+original artifact's README; the current repository and release page record promotion.
 
 ## Publication policy
 

@@ -1,4 +1,4 @@
-# Kingmaker Dice Roller 0.1.3 - respec testing prerelease
+# Kingmaker Dice Roller 0.1.3
 
 This release addresses the missing **Roll Stats** control in eligible native and
 Eddic respecs that reopen all six starting ability scores. It adds explicit
@@ -12,20 +12,24 @@ then checks that the starting assignment reaches the completed recipient.
 - Preserve native racial modifiers and locked identity phases; ordinary level-up,
   pets, enemies, and retraining with locked starting scores stay ineligible.
 
-**Released for in-game testing.** 316/316 C# service cases and 30/30 Python cases
-pass. Exact Kingmaker 2.1.7b and installed Eddic 1.0 contracts were inspected;
+**Official release following owner confirmation.** Howie confirmed that the
+released workflow works and requested official release. This promotion retains
+the exact ZIP, DLL, checksum, and tag from the tested prerelease.
+
+316/316 C# service cases and 30/30 Python cases pass. Exact Kingmaker 2.1.7b and installed Eddic 1.0 contracts were inspected;
 eleven respec contract groups include four checks using the installed Harmony
 libraries. Release compilation and package validation pass.
 
-Live button clickability, native/Eddic completion, provider retention, catch-up
-progression, and save/reload remain **NOT RUN** by the development session. Test
-on a disposable copy of a campaign and verify the completed character, including
-after saving and reloading. A preview or PASS log alone is not persistence evidence.
+Owner confirmation provides release acceptance for the tested workflow. The
+confirmation did not enumerate individual provider/character cases or save/reload
+results. Those detailed compatibility lanes remain unverified; no separate
+agent-operated gameplay run or broad persistence qualification is claimed.
 
 newman55 Respecialization is **not integrated**: its exact DLL was unavailable.
 Bag of Tricks, Call of the Wild, remote companions, and the full mod profile still
 need their focused live checks. Detailed cases are in docs/SMOKE-TEST.md, section J.
 
 Built against DATA's existing UMM 0.33.0 and Harmony12 installation; no loader or
-runtime-library downgrade is required. Version 0.1.2 remains the latest stable
-release while this prerelease is tested.
+runtime-library downgrade is required. Version 0.1.3 is the latest official
+release. The ZIP retains its original testing README to preserve the accepted
+package bytes; the release page records the current status.

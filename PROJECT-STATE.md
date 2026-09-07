@@ -1,9 +1,10 @@
 # Project state
 
-## Current 0.1.3 testing prerelease
+## Current 0.1.3 official release
 
-Version `0.1.3` was published as an owner-authorized public testing prerelease
-on 2026-09-07 at 02:13:13 UTC.
+Version `0.1.3` was initially published as a testing prerelease on 2026-09-07
+at 02:13:13 UTC. Howie subsequently confirmed that it works and authorized its
+official release. Promotion preserves the same published package and tag.
 Implementation is commit `4629adf3202f6d04d547f3a7ec7c805b89a9f221` on
 `codex/respec-starting-scores`; publication uses the clean, pushed `main` branch.
 The clean DATA checkout began at `bbf145014df0d1b889f811a655d9d183ccc1f087`, the
@@ -14,14 +15,13 @@ The unchanged source baseline built to different bytes
 (`1b1c8f12335636aa4e83da06971f2ffc2ec6fbb885bb6608b6e53bdc970754d5`);
 same-version metadata was not treated as byte parity.
 
-After reviewing the candidate limitations, Howie explicitly authorized finalizing,
-merging, remote pushing, and cutting this release so he can test it in his game.
-That current instruction authorizes publishing `v0.1.3` as a GitHub prerelease;
-`v0.1.2` remains the latest stable release. Runtime qualification remains No.
-The publisher requires explicit testing authorization plus passing source,
-contract, build, and package gates; the stable-release runtime gate is unchanged.
-Game launch, local installation/profile changes, and save operations were not
-requested. Historical acceptance does not qualify these bytes.
+Howie first authorized publication for testing, then reported:
+"Confirmed this work. Please make this a real official release."
+This is current owner acceptance of the released 0.1.3 workflow and explicit
+authority to promote it to official/latest. It does not enumerate individual
+provider/character cases or save/reload results; those lanes are not inferred
+from the confirmation. No agent-operated game launch, installation, or save
+operation is part of this promotion.
 
 ## Confirmed local causes and repair
 
@@ -49,10 +49,10 @@ rejected as a hybrid. It now passes only with independently captured origin
 provenance and exact live values/budget/availability/ownership. The prior invalid
 hybrid regression remains protected.
 
-There was no safe interactive reproduction on DATA. The missing button remains
-Howie's reported observation; local source and installed binary contracts confirm
-the admission defect. Live UI appearance, skill navigation, provider retention,
-final party values, and persistence have not been inferred from the tests.
+The development session did not run an interactive reproduction on DATA. Local
+source and installed binary contracts confirmed the admission defect. Howie later
+confirmed the released workflow works. That human acceptance is recorded separately
+from service tests and does not supply unspecified per-provider or persistence results.
 
 ## Baseline and implementation evidence
 
@@ -76,7 +76,7 @@ replacement without RNG, modified-budget and previously rolled origins,
 pre-action authoritative staging, copy/overwrite detection, duplicate/reentered
 commits, cancellation, exceptions, source rollback, disable, and owner loss have
 service coverage. Existing layout/control regressions cover the reused panel;
-clickability and real Unity visibility still require observation.
+the owner supplied overall workflow acceptance without a per-control visual record.
 
 ## Qualification truth
 
@@ -85,14 +85,14 @@ clickability and real Unity visibility still require observation.
 - Contract-qualified: **Yes** — exact native contracts plus eleven respec contract groups; four Harmony scope cases.
 - Build-qualified: **Yes** — Release, zero warnings/errors, installed UMM/Harmony references.
 - Package-qualified: **Yes** - deterministic 0.1.3 archive passed the six-file allowlist and hash gate.
-- Installed: **No** for this candidate.
-- Focused runtime test: **NOT RUN** â€” no authorized disposable fixture/guarded launch.
-- Runtime-qualified: **No**.
-- Compatibility-qualified: **No**.
-- Human visual acceptance: **NOT RUN**.
-- Release-authorized: **Yes** - current owner instruction covers merge, push, tag, and publication.
-- Testing-prerelease-authorized: **Yes** - for owner testing with runtime qualification still No.
-- Publicly released: **Yes** - `v0.1.3` is a GitHub testing prerelease, not latest stable.
+- Installed: **Not performed by the agent**; owner-reported use has no installed-byte parity record.
+- Focused runtime test: **Owner-confirmed** for released 0.1.3 usage; detailed scenario results were not supplied.
+- Runtime-qualified: **Yes** for the owner-confirmed workflow and release sign-off; the full matrix remains unverified.
+- Compatibility-qualified: **No** for the exhaustive provider/character/configuration matrix.
+- Human visual acceptance: **Owner sign-off**; no separate per-control screenshot record.
+- Release-authorized: **Yes** - current owner instruction explicitly requests official release.
+- Testing-prerelease-authorized: **Yes** - historical authorization for the initial 0.1.3 publication.
+- Publicly released: **Yes** - `v0.1.3` is official, non-prerelease, and GitHub Latest.
 
 The release package is `artifacts/packages/KingmakerDiceRoller-0.1.3.zip`.
 Exact commit, dirty state, DLL/package hashes, contract reports and inventory are
@@ -102,8 +102,16 @@ Cloud, and saves remain untouched.
 
 ## Verified publication
 
+Official promotion was verified through GitHub: `isDraft=false`,
+`isPrerelease=false`, title `Kingmaker Dice Roller v0.1.3`, and the latest-release
+endpoint returns `v0.1.3`. Both asset IDs, SHA-256 digests, sizes, download URLs,
+and the peeled annotated tag commit match the pre-promotion record. No package
+was rebuilt or uploaded. Repository validation and all 13 publication-gate cases
+pass; the stable publication gate accepts the scoped owner runtime sign-off.
+
+
 [GitHub release v0.1.3](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.3)
-is public and marked prerelease. Its annotated tag resolves to release commit
+was initially published as a prerelease. Its annotated tag resolves to release commit
 `f9772f06b6d86338a0b22af94b86cbba1cc6d317`. Both implementation and release
 finalization were fast-forwarded into `main` and pushed without rewriting history.
 
@@ -116,8 +124,10 @@ and `SHA256SUMS.txt` were downloaded and compared with the qualified local bytes
 - DLL SHA-256: `7f1265aedab4f74c210f4181e8f0458d06710e791eebbcf1b7b2546a523e85d2`.
 - DLL bytes match the tested implementation candidate; the ZIP changed because
   its packaged README now contains finalized release/install information.
-- GitHub still reports `v0.1.2` as latest stable. No prior release assets or tags
-  were replaced. In-game testing remains with the owner; no local install occurred.
+- The original publication retained `v0.1.2` as latest stable. Official promotion
+  changes release metadata only; no release assets or tags are replaced.
+- The published ZIP keeps the original testing README. Current repository docs
+  and release notes record the owner's subsequent acceptance and official status.
 
 ## Remaining provider and runtime lanes
 
@@ -128,9 +138,10 @@ Original-score/legacy settings, replacement callback, and final mercenary
 recipient remain unresolved; no adapter was invented. Installed newman55 Cheat
 Menu is a different mod. No additional installed full-respec engine was found.
 
-All live lanes are **NOT RUN**: creation/recruitment regressions, native main and
-mercenary respec, native locked-base story negative control, Eddic main/mercenary/
+Detailed development-session live lanes remain **NOT RUN**: creation/recruitment
+regressions, native main and mercenary respec, native locked-base story negative control, Eddic main/mercenary/
 story/remote and NPC entry, Bag of Tricks/CotW, full profile, later progression,
 and save/reload including without Dice Roller. They require the specific guarded
 procedure in `docs/SMOKE-TEST.md` and an owner-nominated disposable fixture. The
-candidate's acceptance remains open until those relevant live outcomes exist.
+owner's release acceptance is complete; the unspecified detailed compatibility
+and persistence lanes remain open.

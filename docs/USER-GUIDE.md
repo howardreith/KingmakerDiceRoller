@@ -150,8 +150,8 @@ claimed.
   Native/Eddic respecs require a player-selected full starting-score rebuild.
   Recruitment-level story retraining, later ability increases, pregens, pets,
   enemies, locked starting scores, and unrecognized provider paths stay ineligible.
-  The 0.1.3 testing prerelease still requires the live qualification matrix;
-  newman55 Respecialization is not qualified.
+  The 0.1.3 release has owner confirmation for the tested workflow; the detailed
+  compatibility matrix remains open. newman55 Respecialization is not integrated.
 - If Roll fails, read the inline error and leave the current state unchanged.
 - If Point Buy recovery fails, use the UMM emergency action; do not complete a
   character showing rolled values plus spendable points.

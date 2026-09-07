@@ -1,8 +1,8 @@
 # Kingmaker Dice Roller
 
-**Testing prerelease:** `0.1.3`. Adds scoped native/Eddic starting-score
-respec integration. Service tests, exact assembly contracts, and builds pass;
-live UI, completion, and save/reload qualification are still pending.
+**Latest official release:** `0.1.3`. Adds scoped native/Eddic starting-score
+respec integration. Howie confirmed the released workflow works and authorized
+official release. Service tests, exact assembly contracts, and builds pass.
 
 Kingmaker Dice Roller is a standalone Unity Mod Manager mod for Pathfinder:
 Kingmaker 2.1.7b. It adds an explicit rolled-ability workflow to the native
@@ -92,25 +92,26 @@ Roll or Recall and restored exactly; neither 20 nor 25 is hard-coded.
 ## Installation
 
 Download **KingmakerDiceRoller-0.1.3.zip** from the
-[0.1.3 testing release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.3),
+[0.1.3 release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.3),
 then drag that ZIP into Unity Mod Manager's Mods tab for Pathfinder: Kingmaker.
 Confirm UMM displays version **0.1.3**. Keep the installed UMM/Harmony libraries;
 no loader downgrade is required. GitHub's Source code archives are not mod packages.
 
-Test the respec repair on a disposable copy of your campaign. In-game and
-save/reload qualification remain pending; `0.1.2` remains the latest stable release.
+Version `0.1.3` is the latest official release. It uses the same ZIP and DLL as
+the owner-confirmed prerelease; the archive's original testing README is retained
+to preserve those published bytes.
 
 The archive contains one `KingmakerDiceRoller` directory with exactly six
 allowlisted files and does not bundle development artifacts or game assemblies.
 
 ## Qualification
 
-The candidate has deterministic service coverage and exact-contract checks against
+The release has deterministic service coverage and exact-contract checks against
 Kingmaker 2.1.7b, including native replay/copy order and installed Harmony scope
-behavior. These checks do not prove live button visibility, input, provider
-completion, or save/reload. Historical `0.1.2` owner acceptance does not qualify
-these new bytes. See `PROJECT-STATE.md` and `docs/SMOKE-TEST.md` for the remaining
-provider matrix and guarded procedure.
+behavior. Howie's confirmation of the released 0.1.3 workflow supplies the human
+release sign-off. Individual provider/character cases and save/reload results were
+not specified in that confirmation, so the detailed matrix remains separately
+unverified. See `PROJECT-STATE.md` and `docs/SMOKE-TEST.md` for its scope.
 
 The project does not claim an exhaustive compatibility matrix. Bag of Tricks
 and Call of the Wild are detected but never modified. Bag of Tricks budgets are
