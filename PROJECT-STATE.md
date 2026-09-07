@@ -2,7 +2,8 @@
 
 ## Current 0.1.3 testing prerelease
 
-Version `0.1.3` is prepared for an owner-authorized public testing prerelease.
+Version `0.1.3` was published as an owner-authorized public testing prerelease
+on 2026-09-07 at 02:13:13 UTC.
 Implementation is commit `4629adf3202f6d04d547f3a7ec7c805b89a9f221` on
 `codex/respec-starting-scores`; publication uses the clean, pushed `main` branch.
 The clean DATA checkout began at `bbf145014df0d1b889f811a655d9d183ccc1f087`, the
@@ -91,13 +92,32 @@ clickability and real Unity visibility still require observation.
 - Human visual acceptance: **NOT RUN**.
 - Release-authorized: **Yes** - current owner instruction covers merge, push, tag, and publication.
 - Testing-prerelease-authorized: **Yes** - for owner testing with runtime qualification still No.
-- Publicly released: **Pending publication** of `v0.1.3`.
+- Publicly released: **Yes** - `v0.1.3` is a GitHub testing prerelease, not latest stable.
 
-The candidate path is `artifacts/packages/KingmakerDiceRoller-0.1.3.zip`.
+The release package is `artifacts/packages/KingmakerDiceRoller-0.1.3.zip`.
 Exact commit, dirty state, DLL/package hashes, contract reports and inventory are
 recorded in ignored artifacts by the final qualification commands. No installed
 parity or save/reload result is claimed. The installed profile, Steam state,
 Cloud, and saves remain untouched.
+
+## Verified publication
+
+[GitHub release v0.1.3](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.3)
+is public and marked prerelease. Its annotated tag resolves to release commit
+`f9772f06b6d86338a0b22af94b86cbba1cc6d317`. Both implementation and release
+finalization were fast-forwarded into `main` and pushed without rewriting history.
+
+The publisher reran qualification from clean, fully pushed `main`: 316/316 C#
+cases, 30/30 Python cases, 13/13 publication-gate cases, exact native contracts,
+eleven respec contract groups, and zero Release warnings/errors. The public ZIP
+and `SHA256SUMS.txt` were downloaded and compared with the qualified local bytes.
+
+- ZIP SHA-256: `a298fa8d21879b9b45de08c8c6e321bd83056959b562801680ca00a24dcc7513`.
+- DLL SHA-256: `7f1265aedab4f74c210f4181e8f0458d06710e791eebbcf1b7b2546a523e85d2`.
+- DLL bytes match the tested implementation candidate; the ZIP changed because
+  its packaged README now contains finalized release/install information.
+- GitHub still reports `v0.1.2` as latest stable. No prior release assets or tags
+  were replaced. In-game testing remains with the owner; no local install occurred.
 
 ## Remaining provider and runtime lanes
 
