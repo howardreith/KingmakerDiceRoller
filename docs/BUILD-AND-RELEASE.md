@@ -1,22 +1,25 @@
-# Candidate build boundary
+# Current testing release
 
-The current `0.1.3` respec candidate is unpublished. Build/package are authorized;
-install, launch/profile changes, push, merge, tag, and release are not authorized
-by this mission. Historical 0.1.2 publication instructions below are reference
-only. DATA uses Windows PowerShell 5.1, its existing Python 3.12 tool directory
-on the process PATH, .NET Framework 4.7.2, C# 7.3, and the installed UMM 0.33.0 /
-Harmony12 libraries. Do not downgrade the loader to match older prose.
+Howie authorized finalizing, merging, pushing, tagging, and publishing `0.1.3`
+for testing after the implementation handoff. Publish it as a GitHub prerelease
+with `-Publish -TestingPrerelease`; keep `0.1.2` as the latest stable release.
+This is explicit publication authority, not runtime acceptance. Local installation,
+game launch, profile changes, and save operations remain separate tasks.
 
-`Build-Local.ps1` also runs `Verify-RespecContracts.ps1` after compilation. The
-verifier patches only an owned test fixture outside Unity; it never launches the
-game or executes player respec. Separate logs and JSON live under ignored
-`artifacts`. The current archive is `artifacts/packages/KingmakerDiceRoller-0.1.3.zip`.
+DATA uses Windows PowerShell 5.1, its existing Python 3.12 on the process PATH,
+.NET Framework 4.7.2, C# 7.3, and installed UMM 0.33.0 / Harmony12 libraries.
+PowerShell Core is not a substitute for the desktop .NET contract fixture.
+Do not downgrade the installed loader.
+
+`Build-Local.ps1` runs `Verify-RespecContracts.ps1` after compilation. The verifier
+patches an owned test fixture outside Unity; it never launches the game or executes
+player respec. Reports remain under ignored `artifacts`.
 
 # Build, package, install, and publish
 
 ## Toolchain
 
-- Windows PowerShell 5.1 or newer;
+- Windows PowerShell 5.1 (desktop .NET Framework);
 - Python 3;
 - Visual Studio Build Tools/MSBuild with .NET Framework 4.7.2 references;
 - local Pathfinder: Kingmaker 2.1.7b managed assemblies;
@@ -56,13 +59,13 @@ For final provenance, run from the clean final commit. Qualification reports
 branch, commit, dirty state, test counts, exact Assembly-CSharp MVID/SHA-256,
 compiler warnings/errors, DLL SHA-256, package SHA-256, and package path.
 
-Version `0.1.2` packages as:
+Version `0.1.3` packages as:
 
 ```text
-artifacts/packages/KingmakerDiceRoller-0.1.2.zip
+artifacts/packages/KingmakerDiceRoller-0.1.3.zip
 ```
 
-Its release tag is `v0.1.2`; qualification and installation do not create that
+Its release tag is `v0.1.3`; qualification and installation do not create that
 tag.
 
 The archive has one top-level `KingmakerDiceRoller` directory and exactly six
@@ -120,9 +123,9 @@ KingmakerDiceRoller directory, moves the staged directory into place, validates
 the installed allowlist and DLL hash, and rolls back if a transactional step
 fails. It must not enable, disable, reinstall, or alter another mod.
 
-Before publication, verify the exact installed `0.1.2` artifact:
+Before claiming runtime qualification or making a stable release, verify the exact installed artifact:
 
-1. Unity Mod Manager displays `0.1.2`.
+1. Unity Mod Manager displays the version under test.
 2. UMM does not offer `0.1.0-alpha.2` as an update.
 3. Kingmaker loads Dice Roller without a red UMM indicator.
 4. A supported new-character build can Roll and Return to Point Buy.
@@ -150,16 +153,31 @@ Create a draft release for review:
 ```powershell
 powershell -NoLogo -NoProfile -ExecutionPolicy Bypass `
   -File .\scripts\Publish-Release.ps1 `
-  -ReleaseNotesPath .\docs\RELEASE-NOTES-0.1.2.md
+  -ReleaseNotesPath .\docs\RELEASE-NOTES-0.1.3.md
 ```
 
-Publish publicly only after the exact current candidate has passed its human
-runtime gate and `PROJECT-STATE.md` records `Runtime-qualified: **Yes**`:
+For the explicitly authorized testing prerelease:
 
 ```powershell
 powershell -NoLogo -NoProfile -ExecutionPolicy Bypass `
   -File .\scripts\Publish-Release.ps1 `
-  -ReleaseNotesPath .\docs\RELEASE-NOTES-0.1.2.md `
+  -ReleaseNotesPath .\docs\RELEASE-NOTES-0.1.3.md `
+  -Publish `
+  -TestingPrerelease
+```
+
+This requires current Source/Contract/Build/Package-qualified, Release-authorized,
+and Testing-prerelease-authorized statuses to be Yes. It marks the GitHub release
+as a prerelease and not latest; it does not mark runtime qualification Yes.
+Keep the numeric UMM version `0.1.3` so future version ordering remains predictable.
+
+Publish a stable release only after the exact current candidate has passed its
+human runtime gate and `PROJECT-STATE.md` records `Runtime-qualified: **Yes**`:
+
+```powershell
+powershell -NoLogo -NoProfile -ExecutionPolicy Bypass `
+  -File .\scripts\Publish-Release.ps1 `
+  -ReleaseNotesPath .\docs\RELEASE-NOTES-0.1.3.md `
   -Publish `
   -ConfirmRuntimeQualified
 ```
@@ -172,7 +190,7 @@ refuses public publication from a private repository unless
 not make a private repository's release publicly downloadable.
 
 Published assets are immutable project history. Do not replace `v0.1.0` or
-`v0.1.0-alpha.2`; publish `v0.1.2` as a new release.
+`v0.1.0-alpha.2`, or `v0.1.2`; publish `v0.1.3` as a new testing release.
 
 ## Publication policy
 

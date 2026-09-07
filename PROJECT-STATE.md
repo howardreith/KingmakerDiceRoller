@@ -1,8 +1,10 @@
 # Project state
 
-## Current 0.1.3 respec candidate
+## Current 0.1.3 testing prerelease
 
-Version `0.1.3` is an unpublished candidate on `codex/respec-starting-scores`.
+Version `0.1.3` is prepared for an owner-authorized public testing prerelease.
+Implementation is commit `4629adf3202f6d04d547f3a7ec7c805b89a9f221` on
+`codex/respec-starting-scores`; publication uses the clean, pushed `main` branch.
 The clean DATA checkout began at `bbf145014df0d1b889f811a655d9d183ccc1f087`, the
 reviewed historical `0.1.2` main. No newer local source was replaced. The installed
 0.1.2 DLL was inspected, not overwritten; its SHA-256 is
@@ -11,10 +13,14 @@ The unchanged source baseline built to different bytes
 (`1b1c8f12335636aa4e83da06971f2ffc2ec6fbb885bb6608b6e53bdc970754d5`);
 same-version metadata was not treated as byte parity.
 
-This mission authorizes source work, local commits, deterministic testing,
-read-only inspection, and candidate packaging. It authorizes no push, merge,
-tag, publication, game launch, active-profile change, or valued-save operation.
-Historical 0.1.2 acceptance and release authorizations apply only to that history.
+After reviewing the candidate limitations, Howie explicitly authorized finalizing,
+merging, remote pushing, and cutting this release so he can test it in his game.
+That current instruction authorizes publishing `v0.1.3` as a GitHub prerelease;
+`v0.1.2` remains the latest stable release. Runtime qualification remains No.
+The publisher requires explicit testing authorization plus passing source,
+contract, build, and package gates; the stable-release runtime gate is unchanged.
+Game launch, local installation/profile changes, and save operations were not
+requested. Historical acceptance does not qualify these bytes.
 
 ## Confirmed local causes and repair
 
@@ -83,8 +89,9 @@ clickability and real Unity visibility still require observation.
 - Runtime-qualified: **No**.
 - Compatibility-qualified: **No**.
 - Human visual acceptance: **NOT RUN**.
-- Release-authorized: **No**.
-- Publicly released: **No**.
+- Release-authorized: **Yes** - current owner instruction covers merge, push, tag, and publication.
+- Testing-prerelease-authorized: **Yes** - for owner testing with runtime qualification still No.
+- Publicly released: **Pending publication** of `v0.1.3`.
 
 The candidate path is `artifacts/packages/KingmakerDiceRoller-0.1.3.zip`.
 Exact commit, dirty state, DLL/package hashes, contract reports and inventory are

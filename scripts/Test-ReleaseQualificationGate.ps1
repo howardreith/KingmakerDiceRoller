@@ -31,7 +31,49 @@ function Assert-Throws {
     throw "Expected error matching '$MessagePattern', but no error was raised."
 }
 
+$testingState = @'
+## Qualification truth
+- Runtime-qualified: **No**.
+- Source-qualified: **Yes**.
+- Contract-qualified: **Yes**.
+- Build-qualified: **Yes**.
+- Package-qualified: **Yes**.
+- Release-authorized: **Yes**.
+- Testing-prerelease-authorized: **Yes**.
+'@
+
 $tests = [ordered]@{
+    AuthorizedTestingPrereleaseDoesNotClaimRuntimeQualification = {
+        Assert-PublicationQualification -ProjectStateText $testingState -TestingPrerelease
+        Assert-True -Condition ($testingState -match 'Runtime-qualified: \*\*No\*\*') `
+            -Message 'Testing publication changed runtime evidence.'
+    }
+    TestingAuthorizationCannotPublishStableRelease = {
+        Assert-Throws -Action {
+            Assert-PublicationQualification -ProjectStateText $testingState -ConfirmRuntimeQualified
+        } -MessagePattern 'does not mark.*Runtime-qualified: Yes'
+    }
+    TestingPrereleaseRequiresEveryCurrentQualification = {
+        foreach ($label in @('Source-qualified', 'Contract-qualified', 'Build-qualified',
+                              'Package-qualified', 'Release-authorized', 'Testing-prerelease-authorized')) {
+            $state = $testingState.Replace("$label`: **Yes**", "$label`: **No**")
+            Assert-Throws -Action {
+                Assert-PublicationQualification -ProjectStateText $state -TestingPrerelease
+            } -MessagePattern ([Regex]::Escape("requires current $label`: Yes"))
+        }
+    }
+    HistoricalTestingAuthorizationCannotPublish = {
+        $state = "## Qualification truth`n- Runtime-qualified: **No**.`n## Historical record`n" + $testingState
+        Assert-Throws -Action {
+            Assert-PublicationQualification -ProjectStateText $state -TestingPrerelease
+        } -MessagePattern 'requires current Source-qualified: Yes'
+    }
+    TestingSwitchRemainsExplicit = {
+        Assert-Throws -Action {
+            Assert-PublicationQualification -ProjectStateText $testingState
+        } -MessagePattern 'requires -ConfirmRuntimeQualified'
+    }
+
     FollowingHeadingRenameDoesNotBreakGate = {
         $state = @'
 # Project state

@@ -1,13 +1,13 @@
 # Changelog
 
-## 0.1.3 candidate (unpublished)
+## 0.1.3 - native/Eddic respec testing prerelease
 
 - Add scoped native/Eddic six-starting-score respec integration with exact
   original/rebuild ownership and verified native copy completion.
 - Preserve assignments across preview replacement and close before catch-up levels.
 - Restore coincidentally identical pre-Roll allocations with proven origin/budget.
 - Add deterministic respec regressions and installed-assembly/Harmony contract checks.
-- newman55 and live UI/save qualification remain pending; no candidate deployment.
+- Released for owner testing; live UI/save qualification and newman55 integration remain pending.
 
 
 ## 0.1.2 - mercenary finalization and access-tab placement repair

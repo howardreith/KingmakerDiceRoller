@@ -9,6 +9,8 @@ param(
 
     [switch] $ConfirmRuntimeQualified,
 
+    [switch] $TestingPrerelease,
+
     [switch] $AllowPrivateRepositoryRelease
 )
 
@@ -151,14 +153,17 @@ try {
 
         $projectStatePath = Join-Path $root 'PROJECT-STATE.md'
         Assert-FileExists $projectStatePath 'PROJECT-STATE.md'
-        $projectState = Get-Content -LiteralPath $projectStatePath -Raw
+        $projectState = Get-Content -LiteralPath $projectStatePath -Raw -Encoding UTF8
         Assert-PublicationQualification `
             -ProjectStateText $projectState `
-            -ConfirmRuntimeQualified:$ConfirmRuntimeQualified
+            -ConfirmRuntimeQualified:$ConfirmRuntimeQualified `
+            -TestingPrerelease:$TestingPrerelease
     }
 
     $tag = "v$version"
+    $isPrerelease = $TestingPrerelease -or $version.Contains('-')
     $title = "$displayName $tag"
+    if ($TestingPrerelease) { $title += ' (respec testing)' }
     $existingRelease = $null
 
     if (Test-NativeCommand -FilePath 'gh' -Arguments @(
@@ -240,7 +245,7 @@ try {
         '## Compatibility',
         '',
         "- Pathfinder: Kingmaker $($info.GameVersion)",
-        "- Unity Mod Manager $($info.ManagerVersion)",
+        "- Unity Mod Manager $($info.ManagerVersion) or newer (minimum)",
         '',
         '## Verification',
         '',
@@ -260,7 +265,7 @@ try {
             Join-Path $root $ReleaseNotesPath
         }
         Assert-FileExists $resolvedNotesPath 'Release notes file'
-        $customNotes = (Get-Content -LiteralPath $resolvedNotesPath -Raw).Trim()
+        $customNotes = (Get-Content -LiteralPath $resolvedNotesPath -Raw -Encoding UTF8).Trim()
         if (-not [string]::IsNullOrWhiteSpace($customNotes)) {
             $notes = $customNotes + [Environment]::NewLine +
                 [Environment]::NewLine + $notes
@@ -280,7 +285,7 @@ try {
             '--notes-file', $generatedNotesPath,
             '--verify-tag'
         )
-        if ($version.Contains('-')) {
+        if ($isPrerelease) {
             $releaseArguments += '--prerelease'
             $releaseArguments += '--latest=false'
         }
@@ -312,7 +317,7 @@ try {
         else {
             $editArguments += '--draft'
         }
-        if ($version.Contains('-')) {
+        if ($isPrerelease) {
             $editArguments += '--prerelease'
             if ($Publish) {
                 $editArguments += '--latest=false'

@@ -37,8 +37,22 @@ function Assert-PublicationQualification {
         [AllowEmptyString()]
         [string] $ProjectStateText,
 
-        [switch] $ConfirmRuntimeQualified
+        [switch] $ConfirmRuntimeQualified,
+
+        [switch] $TestingPrerelease
     )
+
+    if ($TestingPrerelease) {
+        $qualification = Get-QualificationTruthSection -ProjectStateText $ProjectStateText
+        foreach ($label in @('Source-qualified', 'Contract-qualified', 'Build-qualified',
+                              'Package-qualified', 'Release-authorized', 'Testing-prerelease-authorized')) {
+            $pattern = '(?m)^- ' + [Regex]::Escape($label) + ':\s+\*\*Yes\*\*'
+            if ($qualification -notmatch $pattern) {
+                throw "Testing prerelease requires current $label`: Yes."
+            }
+        }
+        return
+    }
 
     if (-not $ConfirmRuntimeQualified) {
         throw 'Public publication requires -ConfirmRuntimeQualified.'

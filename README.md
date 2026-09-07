@@ -1,6 +1,6 @@
 # Kingmaker Dice Roller
 
-**Candidate version:** `0.1.3` (unpublished). Adds scoped native/Eddic starting-score
+**Testing prerelease:** `0.1.3`. Adds scoped native/Eddic starting-score
 respec integration. Service tests, exact assembly contracts, and builds pass;
 live UI, completion, and save/reload qualification are still pending.
 
@@ -77,7 +77,7 @@ Respecs require exact original/rebuild/preview ownership and the inspected
 native copy callback. Native story-companion retraining that preserves the
 recruitment-level build remains ineligible. Ordinary level-up, pets, enemies,
 pregens, locked starting scores, and unknown ownership remain excluded.
-newman55 Respecialization has no adapter in this candidate: its exact DLL was
+newman55 Respecialization has no adapter in this release: its exact DLL was
 unavailable for inspection.
 
 For eligible respecs the same panel starts in Point Buy. The starting assignment
@@ -91,10 +91,14 @@ Roll or Recall and restored exactly; neither 20 nor 25 is hard-coded.
 
 ## Installation
 
-The unpublished candidate is `KingmakerDiceRoller-0.1.3.zip`. Install only into an
-approved test profile through the guarded project installer or UMM. This mission
-did not install the candidate or change the active profile. Published `0.1.2`
-remains a separate historical artifact.
+Download **KingmakerDiceRoller-0.1.3.zip** from the
+[0.1.3 testing release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.3),
+then drag that ZIP into Unity Mod Manager's Mods tab for Pathfinder: Kingmaker.
+Confirm UMM displays version **0.1.3**. Keep the installed UMM/Harmony libraries;
+no loader downgrade is required. GitHub's Source code archives are not mod packages.
+
+Test the respec repair on a disposable copy of your campaign. In-game and
+save/reload qualification remain pending; `0.1.2` remains the latest stable release.
 
 The archive contains one `KingmakerDiceRoller` directory with exactly six
 allowlisted files and does not bundle development artifacts or game assemblies.
