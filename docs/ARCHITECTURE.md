@@ -70,11 +70,11 @@ signatures, instance/static status, and writable properties. Unknown contracts
 fail enablement closed before Roll Mode can be offered.
 
 `CharacterCreationContextPolicy` classifies the accepted purpose explicitly as
-`NewMainCharacter` or `Mercenary`. It normalizes wrappers through bounded
+`NewMainCharacter`, `Mercenary`, or separately owned `Respec`. It normalizes wrappers through bounded
 descriptor resolution. Main-character creation retains its qualified
 absent/same/source-preview identity relationships. A different established
 campaign main character remains rejected unless independent exact mercenary
-evidence passes.
+evidence or a qualified respec launch/copy relationship passes.
 
 Mercenary evidence is game-owned and read-only: the owned state must report
 `LevelUpState.IsEmployee`, and the stable controller source must independently
@@ -186,3 +186,22 @@ or malformed entries are isolated and skipped.
 - A different main-character identity cannot authorize an unmarked build.
 - Disabling during Roll Mode restores exact point buy before unpatching or is
   refused with hooks retained.
+
+## Respec extension
+
+`NativeRespecContracts` caches optional game contracts. `NativeRespecEntryService`
+qualifies the selected original, native callback, rebuild source, current provider,
+and party/remote membership. `RespecOwnership` carries those immutable identities;
+`RespecLifecycleService` owns the first-level commit ticket and post-copy checks.
+Harmony bridges delegate to these services. The pure dice domain is unchanged.
+
+Respec is admitted only when starting allocation is editable. Sessions remain
+PointBuy-first and preserve their assignment/origin across owned preview
+replacement. The ticket stages before native first-level action checks, verifies
+replay, observes the exact copy callback, rereads the original entity's current
+descriptor, and closes before ordinary catch-up. The recruitment-only finalization
+service and its immutable Mercenary guard are retained.
+
+The point-buy hybrid check accepts coincidentally identical rolled/origin values
+only when independent pre-Roll provenance and all live origin fields match.
+No point-buy equivalent or fixed budget is used for restoration.

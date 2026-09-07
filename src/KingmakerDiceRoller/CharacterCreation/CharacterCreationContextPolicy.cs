@@ -11,7 +11,8 @@ namespace KingmakerDiceRoller.CharacterCreation
         private static readonly string[] PetPaths = { "IsPet", "Unit.IsPet" };
         private static readonly string[] EnemyPaths = { "IsPlayersEnemy", "Unit.IsPlayersEnemy" };
 
-        public CharacterCreationContextDecision Evaluate(object state, object constructorUnit, object mode, KingmakerContracts contracts)
+        public CharacterCreationContextDecision Evaluate(object state, object constructorUnit, object mode, KingmakerContracts contracts,
+            RespecOwnership respec = null, bool ownedRollMode = false)
         {
             if (state == null || constructorUnit == null || mode == null || contracts == null)
             {
@@ -26,11 +27,10 @@ namespace KingmakerDiceRoller.CharacterCreation
             {
                 return CharacterCreationContextDecision.Reject("Pre-generated character creation is excluded.");
             }
-            if (string.Equals(modeName, "Respec", StringComparison.Ordinal))
-            {
-                return CharacterCreationContextDecision.Reject("Respecialization is excluded.");
-            }
-            if (!string.Equals(modeName, "CharGen", StringComparison.Ordinal) &&
+            bool isRespec = string.Equals(modeName, "Respec", StringComparison.Ordinal);
+            if (isRespec && respec == null)
+                return CharacterCreationContextDecision.Reject("Respec has no supported player-initiated ownership/copy contract.");
+            if (!isRespec && !string.Equals(modeName, "CharGen", StringComparison.Ordinal) &&
                 !string.Equals(modeName, "LevelUp", StringComparison.Ordinal))
             {
                 return CharacterCreationContextDecision.Reject("Unsupported character-build mode " + DescribeMode(mode) + ".");
@@ -112,6 +112,23 @@ namespace KingmakerDiceRoller.CharacterCreation
                 return CharacterCreationContextDecision.Reject(
                     "The active character-build controller source identity is unavailable; stable ownership fails closed. " +
                     BuildFacts(modeName, isFirstLevel, isMain, isPlayer, ownership, false, false, null, null));
+            }
+
+            if (isRespec)
+            {
+                if (!isPlayer || !respec.Owns(ownership.Controller, ownership.UnitDescriptor) ||
+                    !ownership.PreviewMatches ||
+                    ReferenceEquals(stateUnit, ownership.UnitDescriptor))
+                    return CharacterCreationContextDecision.Reject("Respec preview is not owned by the selected player rebuild.");
+                // Available means the six-score allocator, not AttributePoints at level 4/8/etc.
+                if (!ownedRollMode && !Equals(ReflectionAccess.Read(contracts.DistributionAvailableMember, distribution), true))
+                    return CharacterCreationContextDecision.Reject("Respec starting scores are locked; native retraining is preserved.");
+                return CharacterCreationContextDecision.Accept(
+                    SupportedCharacterCreationKind.Respec, ownership.Controller, ownership.UnitDescriptor,
+                    state, stateUnit, distribution, "Accepted owned starting-score respec; provider=" + respec.Provider + ".",
+                    ownership.StateMatches, false, true, MainCharacterIdentityRelation.DifferentFromCandidate,
+                    modeName, true, isMain, isPlayer, isPet, isEnemy,
+                    new MercenaryDiscriminatorEvidence(false, false), "Exact selected respec rebuild source");
             }
 
             bool stableOwnerIsCustomCompanion;

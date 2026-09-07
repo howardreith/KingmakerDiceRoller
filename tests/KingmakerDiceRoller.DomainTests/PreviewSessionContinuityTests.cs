@@ -10,7 +10,7 @@ using KingmakerDiceRoller.Logging;
 
 namespace KingmakerDiceRoller.DomainTests
 {
-    internal static class PreviewSessionContinuityTests
+    internal static partial class PreviewSessionContinuityTests
     {
         private static readonly int[] FixedValues = { 16, 15, 14, 12, 10, 8 };
 
@@ -2726,7 +2726,17 @@ namespace KingmakerDiceRoller.DomainTests
 
         private sealed class FakeStat
         {
-            public int BaseValue { get; set; }
+            private int baseValue;
+            internal bool FailNextWrite { get; set; }
+            public int BaseValue
+            {
+                get { return baseValue; }
+                set
+                {
+                    if (FailNextWrite) { FailNextWrite = false; throw new InvalidOperationException("stat write boundary failed"); }
+                    baseValue = value;
+                }
+            }
             internal int Modifier { get; set; }
         }
 

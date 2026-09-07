@@ -3,8 +3,8 @@
 ## Getting started
 
 Enable Kingmaker Dice Roller in Unity Mod Manager, then either start a genuinely
-new custom campaign main character or use the normal in-campaign mercenary
-recruitment flow. On the ability page, ordinary Point Buy appears first. The mod
+new custom campaign main character, recruit a mercenary, or select an eligible
+native/Eddic respec that reopens all six starting scores. On the ability page, ordinary Point Buy appears first. The mod
 does not roll automatically.
 
 The page initially shows a compact **Roll Stats** tab at the safe bottom center
@@ -146,10 +146,12 @@ claimed.
 
 ## Troubleshooting
 
-- If the panel is absent, confirm this is either a new custom campaign main
-  character or normal custom mercenary recruitment and the Skills/ability page
-  is active. Ordinary level-up, respec, pregens, pets, companions, enemies, and
-  unknown build modes are deliberately unsupported.
+- If the panel is absent, confirm the starting-ability allocator is active.
+  Native/Eddic respecs require a player-selected full starting-score rebuild.
+  Recruitment-level story retraining, later ability increases, pregens, pets,
+  enemies, locked starting scores, and unrecognized provider paths stay ineligible.
+  The unpublished 0.1.3 adapter still requires the live qualification matrix;
+  newman55 Respecialization is not qualified.
 - If Roll fails, read the inline error and leave the current state unchanged.
 - If Point Buy recovery fails, use the UMM emergency action; do not complete a
   character showing rolled values plus spendable points.

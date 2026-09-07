@@ -117,6 +117,14 @@ namespace KingmakerDiceRoller.UI
             accessTabLayoutCalculator = new CollapsedAccessTabLayoutCalculator();
         }
 
+        private readonly System.Collections.Generic.HashSet<string> attachmentDiagnostics =
+            new System.Collections.Generic.HashSet<string>(StringComparer.Ordinal);
+
+        private void ReportAttachment(string message)
+        {
+            if (attachmentDiagnostics.Count < 16 && attachmentDiagnostics.Add(message)) logger.Warning(message);
+        }
+
         public bool IsAttached => root != null;
         public int AttachmentCount { get; private set; }
 
@@ -138,7 +146,7 @@ namespace KingmakerDiceRoller.UI
             }
             catch (Exception exception)
             {
-                logger.Exception("Attach or refresh native Dice Roller panel", exception);
+                ReportAttachment("Dice Roller panel attachment failure: " + exception.GetType().Name + ": " + exception.Message);
                 Detach(contractsProvider());
             }
         }
@@ -158,7 +166,7 @@ namespace KingmakerDiceRoller.UI
                         out active,
                         out phase,
                         out allocator) ||
-                    !active || allocator == null || !commands.CanAttachNativePanel)
+                    !active || allocator == null || !IsEligibleAllocator(allocator, contracts))
                 {
                     if (lifecycle.Observe(false, null) == NativePanelAttachmentAction.Detach)
                     {
@@ -174,7 +182,7 @@ namespace KingmakerDiceRoller.UI
             }
             catch (Exception exception)
             {
-                logger.Exception("Observe native Dice Roller panel lifecycle", exception);
+                ReportAttachment("Dice Roller panel lifecycle failure: " + exception.GetType().Name + ": " + exception.Message);
                 Detach(contracts);
             }
         }
@@ -252,7 +260,12 @@ namespace KingmakerDiceRoller.UI
 
         private bool IsEligibleAllocator(object allocator, KingmakerContracts contracts)
         {
-            if (allocator == null || !commands.CanAttachNativePanel) return false;
+            var behaviour = allocator as MonoBehaviour;
+            if (commands.ActiveSession != null && (behaviour == null || !behaviour.isActiveAndEnabled))
+                ReportAttachment("Roll Stats unavailable: the owned ability allocator is hidden or inactive.");
+            if (commands.ActiveSession != null && !commands.CanAttachNativePanel)
+                ReportAttachment("Roll Stats unavailable: the current controller/preview binding is unresolved, unowned, or starting scores became locked.");
+            if (behaviour == null || !behaviour.isActiveAndEnabled || !commands.CanAttachNativePanel) return false;
             object characterBuild;
             bool active;
             object phase;

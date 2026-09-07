@@ -163,7 +163,10 @@ namespace KingmakerDiceRoller.CharacterCreation
                 live,
                 rolledDistributionMatches,
                 rolledUnitMatches,
-                fullBudget);
+                fullBudget,
+                pristine.CapturedBeforeRollOwnership && live.IsVerified &&
+                assignment.SequenceEqual(pristine.Values.DistributionValues) &&
+                assignment.SequenceEqual(pristine.Values.UnitValues));
         }
     }
 }

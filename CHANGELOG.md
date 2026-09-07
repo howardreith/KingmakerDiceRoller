@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.3 candidate (unpublished)
+
+- Add scoped native/Eddic six-starting-score respec integration with exact
+  original/rebuild ownership and verified native copy completion.
+- Preserve assignments across preview replacement and close before catch-up levels.
+- Restore coincidentally identical pre-Roll allocations with proven origin/budget.
+- Add deterministic respec regressions and installed-assembly/Harmony contract checks.
+- newman55 and live UI/save qualification remain pending; no candidate deployment.
+
+
 ## 0.1.2 - mercenary finalization and access-tab placement repair
 
 - Corrected a critical mercenary-completion defect: a verified rolled array on
@@ -155,7 +165,7 @@
 - Preserved the explicit 1-120 generated-score boundary with fail-closed,
   no-clamping validation and extended point-buy-equivalent reporting.
 
-## 0.0.1-alpha.1 — source candidate
+## 0.0.1-alpha.1 â€” source candidate
 
 - Initialized a standalone Kingmaker 2.1.7b UMM project.
 - Added a pure deterministic dice-expression and roll-preset domain.

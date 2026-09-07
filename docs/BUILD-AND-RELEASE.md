@@ -1,3 +1,17 @@
+# Candidate build boundary
+
+The current `0.1.3` respec candidate is unpublished. Build/package are authorized;
+install, launch/profile changes, push, merge, tag, and release are not authorized
+by this mission. Historical 0.1.2 publication instructions below are reference
+only. DATA uses Windows PowerShell 5.1, its existing Python 3.12 tool directory
+on the process PATH, .NET Framework 4.7.2, C# 7.3, and the installed UMM 0.33.0 /
+Harmony12 libraries. Do not downgrade the loader to match older prose.
+
+`Build-Local.ps1` also runs `Verify-RespecContracts.ps1` after compilation. The
+verifier patches only an owned test fixture outside Unity; it never launches the
+game or executes player respec. Separate logs and JSON live under ignored
+`artifacts`. The current archive is `artifacts/packages/KingmakerDiceRoller-0.1.3.zip`.
+
 # Build, package, install, and publish
 
 ## Toolchain
@@ -6,7 +20,8 @@
 - Python 3;
 - Visual Studio Build Tools/MSBuild with .NET Framework 4.7.2 references;
 - local Pathfinder: Kingmaker 2.1.7b managed assemblies;
-- local UMM 0.32.x and co-installed Harmony12;
+- DATA: verified UMM 0.33.0 and co-installed Harmony12 1.2.0.1;
+  preserve the installed runtime libraries;
 - GitHub CLI (`gh`) authenticated with write access to this repository.
 
 No NuGet dependency or game binary is vendored.
@@ -26,7 +41,7 @@ powershell -NoLogo -NoProfile -ExecutionPolicy Bypass `
 ```
 
 This runs repository validation, Python oracle cases, compiled C# behavior
-cases, exact contract verification, and the production build.
+cases, exact contract verification, the production build, and optional respec contracts/scope checks.
 
 ## Full qualification and package
 

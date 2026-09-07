@@ -15,6 +15,8 @@ namespace KingmakerDiceRoller.CharacterCreation
         private readonly RollSessionManager sessions;
         private readonly StatApplicationService application;
         private readonly MercenaryFinalizationService mercenaryFinalization;
+        private readonly RespecLifecycleService respec;
+        public RespecLifecycleService Respec => respec;
         private readonly PointBuyRestoreService pointBuyRestore;
         private readonly AbilityPhasePresentationService pointBuyPresentation;
         private readonly RuntimeDiagnostics diagnostics;
@@ -81,6 +83,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             this.sessions = sessions;
             this.application = application;
             mercenaryFinalization = new MercenaryFinalizationService(statAccess);
+            respec = new RespecLifecycleService(statAccess);
             this.pointBuyRestore = pointBuyRestore;
             this.pointBuyPresentation = pointBuyPresentation;
             this.diagnostics = diagnostics;
@@ -115,7 +118,11 @@ namespace KingmakerDiceRoller.CharacterCreation
         {
             KingmakerContracts contracts = contractsProvider();
             if (contracts == null) return;
-            CharacterCreationContextDecision context = contextPolicy.Evaluate(state, unit, mode, contracts);
+            // The one-use authoritative ticket applies before native action checks, while
+            // first admission waits for HandleLevelUpStart to finish binding the controller.
+            respec.BeforeReplay(state, unit, contracts);
+            CharacterCreationContextDecision context = contextPolicy.Evaluate(state, unit, mode, contracts,
+                respec.Active, sessions.Active != null && (sessions.Active.IsRollMode || sessions.Active.IsRestoringPointBuy));
             if (!context.Accepted)
             {
                 bool newlyObserved = diagnostics.Rejected(context.Reason);
@@ -191,6 +198,50 @@ namespace KingmakerDiceRoller.CharacterCreation
             }
         }
 
+        public void OnRespecBound(RespecOwnership owner)
+        {
+            if (owner == null || sessions.Active != null || !respec.Bind(owner)) return;
+            ObserveRespecPreview(owner.Controller);
+            if (sessions.Active == null) respec.Abort(owner.Controller, "Respec admission rejected.");
+        }
+
+        public void ObserveRespecPreview(object controller)
+        {
+            KingmakerContracts contracts = contractsProvider();
+            RespecOwnership owner = respec.Active;
+            if (owner == null || !owner.Owns(controller, owner.Source) || contracts == null) return;
+            object state = ReflectionAccess.Read(contracts.LevelUpControllerStateMember, controller);
+            object preview = ReflectionAccess.Read(contracts.LevelUpControllerPreviewMember, controller);
+            if (state == null || !ReferenceEquals(ReflectionAccess.Read(contracts.LevelUpStateUnitMember, state), preview)) return;
+            OnLevelUpStateConstructed(state, preview, ReflectionAccess.Read(contracts.LevelUpStateModeMember, state));
+        }
+
+        public void OnRespecCommitStarted(object controller, Func<bool> inProgress)
+        {
+            RollSession session = sessions.Active;
+            if (!respec.BeginCommit(session, controller, contractsProvider(), inProgress)) return;
+            sessions.Clear(session);
+            session.Complete();
+        }
+
+        public void OnBuildCanceled(object controller)
+        {
+            respec.Abort(controller, "Canceled or interrupted native build.");
+            RollSession session = sessions.Active;
+            if (session != null && session.CreationKind == SupportedCharacterCreationKind.Respec && ReferenceEquals(session.Controller, controller))
+            { session.Lifecycle.Abandon(); sessions.Clear(session); }
+        }
+
+        public void ReportRespecContract(string detail)
+        {
+            if (diagnostics.Event(detail)) logger.Info(detail);
+        }
+
+        public void ReportRespecExclusion(string reason)
+        {
+            if (diagnostics.Rejected(reason)) logger.Info("Respec panel unavailable: " + reason);
+        }
+
         public void OnDistributionStarted(object distribution, int pointBudget)
         {
             budgetTracker.Record(distribution, pointBudget);
@@ -227,6 +278,8 @@ namespace KingmakerDiceRoller.CharacterCreation
             object controller,
             object finalDescriptor)
         {
+            if (respec.HasPendingCommit) respec.AfterReplay(controller, finalDescriptor, contractsProvider());
+            if (respec.Active != null) ObserveRespecPreview(controller);
             RollSession session = sessions.Active;
             if (session == null ||
                 session.CreationKind != SupportedCharacterCreationKind.Mercenary ||
@@ -260,8 +313,16 @@ namespace KingmakerDiceRoller.CharacterCreation
             }
         }
 
+        public void OnRespecCopyCompleted(object context) { respec.ObserveCopyCompleted(context); }
+
         public void OnLevelUpCommitCompleted(object controller)
         {
+            if (respec.Complete(controller, contractsProvider()))
+            {
+                diagnostics.SetStatus(respec.LastResult);
+                if (respec.LastPassed == true) { diagnostics.FinalizationVerified(respec.LastResult); logger.Info(respec.LastResult); }
+                else { diagnostics.FinalizationFailed(respec.LastResult); logger.Error(respec.LastResult); }
+            }
             RollSession session = sessions.Active;
             if (session == null ||
                 session.CreationKind != SupportedCharacterCreationKind.Mercenary ||
@@ -308,6 +369,10 @@ namespace KingmakerDiceRoller.CharacterCreation
 
         public void Update(float deltaTime)
         {
+            if (respec.ExpireInterruptedCommit())
+            { diagnostics.FinalizationFailed(respec.LastResult); logger.Error(respec.LastResult); }
+            if (respec.Active != null && !respec.Active.IsCurrent)
+                OnBuildCanceled(respec.Active.Controller);
             RollSession session = sessions.Active;
             if (session == null) return;
             KingmakerContracts contracts = contractsProvider();
@@ -330,6 +395,7 @@ namespace KingmakerDiceRoller.CharacterCreation
                 deltaTime,
                 out released))
             {
+                respec.Abort(released.Controller, "Exact source owner disappeared.");
                 diagnostics.Released("The active character-build controller/source owner disappeared; session ownership was cleared.");
                 diagnostics.SetStatus("Canceled or completed character-creation session released; waiting for a new exact context.");
                 logger.Info("Released the Kingmaker Dice Roller session after its stable controller/source owner left character creation.");
@@ -578,6 +644,8 @@ namespace KingmakerDiceRoller.CharacterCreation
                 error = "Kingmaker contracts are unavailable.";
                 return false;
             }
+            if (session.CreationKind == SupportedCharacterCreationKind.Respec && !HasCurrentLiveBinding(session, contracts))
+            { error = "Respec ownership/generation was lost; restoration cannot retarget a character."; return false; }
             PointBuyRestoreObservation restored;
             if (!pointBuyRestore.TryRestore(session, contracts, out restored, out error))
             {
@@ -587,6 +655,11 @@ namespace KingmakerDiceRoller.CharacterCreation
                 return false;
             }
 
+            if (session.CreationKind == SupportedCharacterCreationKind.Respec)
+            {
+                try { respec.Active.RefreshDerivedStats(session.State); }
+                catch (Exception exception) { logger.Exception("Refresh native respec derived stats after exact Point Buy restore", exception); }
+            }
             PointBuyPresentationObservation presentation;
             string presentationError;
             bool presentationSynchronized = pointBuyPresentation.TrySynchronize(
@@ -621,6 +694,9 @@ namespace KingmakerDiceRoller.CharacterCreation
 
         public bool TryPrepareDisable(out string error)
         {
+            if (sessions.Active != null && sessions.Active.CreationKind == SupportedCharacterCreationKind.Respec &&
+                (respec.Active == null || !respec.Active.IsCurrent)) OnBuildCanceled(sessions.Active.Controller);
+            if (sessions.Active == null) respec.Abort(null, "Disabled or unloaded.");
             RollSession session = sessions.Active;
             if (session == null)
             {
@@ -644,6 +720,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             }
 
             if (session != null) sessions.Clear(session);
+            respec.Abort(null, "Disabled or unloaded.");
             error = null;
             return true;
         }
@@ -727,6 +804,8 @@ namespace KingmakerDiceRoller.CharacterCreation
                 {
                     throw new InvalidOperationException(error);
                 }
+                if (session.CreationKind == SupportedCharacterCreationKind.Respec)
+                    respec.Active.RefreshDerivedStats(session.State);
                 if (!application.TryMarkLiveVerified(session, contracts, out live, out error))
                 {
                     throw new InvalidOperationException(error);
@@ -784,7 +863,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             }
         }
 
-        private static bool HasCurrentLiveBinding(RollSession session, KingmakerContracts contracts)
+        private bool HasCurrentLiveBinding(RollSession session, KingmakerContracts contracts)
         {
             object controller;
             object source;
@@ -800,7 +879,13 @@ namespace KingmakerDiceRoller.CharacterCreation
             {
                 return false;
             }
+            if (session.CreationKind == SupportedCharacterCreationKind.Respec &&
+                (respec.Active == null || !respec.Active.Owns(controller, source) ||
+                 !Equals(ReflectionAccess.Read(contracts.LevelUpStateIsFirstLevelMember, state), true) ||
+                 ReflectionAccess.Read(contracts.LevelUpStateModeMember, state).ToString() != "Respec")) return false;
             object distribution = ReflectionAccess.Read(contracts.LevelUpStateDistributionMember, state);
+            if (session.CreationKind == SupportedCharacterCreationKind.Respec && session.IsPointBuyMode &&
+                !statAccess.ReadDistributionAvailable(distribution, contracts)) return false;
             return session.OwnsDistribution(distribution);
         }
 

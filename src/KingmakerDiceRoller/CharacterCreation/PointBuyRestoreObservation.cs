@@ -6,20 +6,26 @@ namespace KingmakerDiceRoller.CharacterCreation
             LivePreviewObservation livePreview,
             bool rolledDistributionMatches,
             bool rolledUnitMatches,
-            bool fullAllocatorBudgetAvailable)
+            bool fullAllocatorBudgetAvailable,
+            bool matchesProvenPreRollOrigin = false)
         {
             LivePreview = livePreview;
             RolledDistributionMatches = rolledDistributionMatches;
             RolledUnitMatches = rolledUnitMatches;
             FullAllocatorBudgetAvailable = fullAllocatorBudgetAvailable;
+            MatchesProvenPreRollOrigin = matchesProvenPreRollOrigin;
         }
 
         public LivePreviewObservation LivePreview { get; }
         public bool RolledDistributionMatches { get; }
         public bool RolledUnitMatches { get; }
         public bool FullAllocatorBudgetAvailable { get; }
+        public bool MatchesProvenPreRollOrigin { get; }
         public bool RolledAssignmentStillPresent => RolledDistributionMatches && RolledUnitMatches;
-        public bool HybridStateDetected => RolledAssignmentStillPresent && FullAllocatorBudgetAvailable;
+        // An independently captured origin can legitimately equal a newly rolled array.
+        // Reject only the hybrid that fails exact allocation/budget/ownership verification.
+        public bool HybridStateDetected => RolledAssignmentStillPresent && FullAllocatorBudgetAvailable &&
+            (!MatchesProvenPreRollOrigin || LivePreview == null || !LivePreview.IsVerified);
         public bool IsVerified => LivePreview != null && LivePreview.IsVerified && !HybridStateDetected;
 
         public string BuildFacts(RollSession session, bool refreshInProgress)

@@ -1,7 +1,8 @@
 # Kingmaker Dice Roller
 
-**Current version:** `0.1.2`. This release repairs mercenary rolled-score
-finalization and collapsed **Roll Stats** placement.
+**Candidate version:** `0.1.3` (unpublished). Adds scoped native/Eddic starting-score
+respec integration. Service tests, exact assembly contracts, and builds pass;
+live UI, completion, and save/reload qualification are still pending.
 
 Kingmaker Dice Roller is a standalone Unity Mod Manager mod for Pathfinder:
 Kingmaker 2.1.7b. It adds an explicit rolled-ability workflow to the native
@@ -30,7 +31,7 @@ panel. The panel provides:
 - 10 persistent saved arrays with Store, Recall, and Delete;
 - immediate Return to Point Buy.
 
-The panel starts collapsed for every supported new main-character or mercenary
+The panel starts collapsed for every supported creation or eligible respec
 build. Wide layouts show ordinary Point Buy options and the complete six-score
 Roll workflow, History, Saved, summary, and status without wheel input. Compact
 layouts retain **Roll Options**, **History**, and **Saved** disclosures and add
@@ -70,13 +71,19 @@ custom-companion descriptor, Dice Roller applies the verified base-only
 assignment at that exact seam and verifies the same descriptor after the native
 success callback. A mismatch is logged as a final failure.
 
-The supported contexts are exact first-level custom creation of a new campaign
-main character and player-initiated mercenary recruitment. Mercenaries are
-accepted only when Kingmaker's exact custom-companion markers agree for the
-owned state and stable controller source. Ordinary level-up, companion
-progression, pets, enemies, pregens, respec, unresolved ownership, and unknown
-build modes remain excluded. A merely different campaign main character is not
-an acceptance signal.
+Supported contexts are new-main creation, custom mercenary recruitment, and
+player-selected native/Eddic respecs that reopen all six starting scores.
+Respecs require exact original/rebuild/preview ownership and the inspected
+native copy callback. Native story-companion retraining that preserves the
+recruitment-level build remains ineligible. Ordinary level-up, pets, enemies,
+pregens, locked starting scores, and unknown ownership remain excluded.
+newman55 Respecialization has no adapter in this candidate: its exact DLL was
+unavailable for inspection.
+
+For eligible respecs the same panel starts in Point Buy. The starting assignment
+is applied once before native first-level action checks, verified after replay
+and after copying into the original character, then released before catch-up
+levels. Race modifiers and later ability increases remain native.
 
 Mercenary Point Buy uses the same observed-origin transaction as main-character
 creation. The current allocation and actual live budget are captured before
@@ -84,25 +91,22 @@ Roll or Recall and restored exactly; neither 20 nor 25 is hard-coded.
 
 ## Installation
 
-Install `KingmakerDiceRoller-0.1.2.zip` with Unity Mod Manager. If obtaining the
-mod from GitHub, use the ZIP from the release **Assets** section rather than an
-automatically generated source archive.
-
-The earlier `0.1.0-alpha.2` package may appear newer than `0.1.0` because Unity
-Mod Manager interprets the prerelease text as the numeric version `0.1.0.2`.
-Version `0.1.2` supersedes all earlier packages. After installation, UMM should
-display `0.1.2` and should not offer alpha.2 as an update.
+The unpublished candidate is `KingmakerDiceRoller-0.1.3.zip`. Install only into an
+approved test profile through the guarded project installer or UMM. This mission
+did not install the candidate or change the active profile. Published `0.1.2`
+remains a separate historical artifact.
 
 The archive contains one `KingmakerDiceRoller` directory with exactly six
 allowlisted files and does not bundle development artifacts or game assemblies.
 
 ## Qualification
 
-The source has deterministic behavior and exact-contract coverage against the
-configured Kingmaker 2.1.7b assembly. The repository owner accepted the focused
-live mercenary-completion repair and corrected access-button placement. This is
-not an exhaustive Bag of Tricks, save/reload, resolution, or optional-mod
-compatibility claim.
+The candidate has deterministic service coverage and exact-contract checks against
+Kingmaker 2.1.7b, including native replay/copy order and installed Harmony scope
+behavior. These checks do not prove live button visibility, input, provider
+completion, or save/reload. Historical `0.1.2` owner acceptance does not qualify
+these new bytes. See `PROJECT-STATE.md` and `docs/SMOKE-TEST.md` for the remaining
+provider matrix and guarded procedure.
 
 The project does not claim an exhaustive compatibility matrix. Bag of Tricks
 and Call of the Wild are detected but never modified. Bag of Tricks budgets are

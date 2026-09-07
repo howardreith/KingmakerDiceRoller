@@ -3,7 +3,8 @@ namespace KingmakerDiceRoller.CharacterCreation
     public enum SupportedCharacterCreationKind
     {
         NewMainCharacter,
-        Mercenary
+        Mercenary,
+        Respec
     }
 
     public sealed class MercenaryDiscriminatorEvidence

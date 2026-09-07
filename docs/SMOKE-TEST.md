@@ -1,4 +1,4 @@
-# Mercenary-finalization repair human acceptance
+# Candidate human acceptance
 
 Source, exact-contract, build, package, and installation qualification do not
 replace this live gate. Preserve logs/screenshots outside Git and collect
@@ -161,7 +161,7 @@ Confirm no **Roll Stats** tab appears during:
 
 - ordinary campaign-main level-up;
 - ordinary companion progression;
-- respecialization;
+- retraining that locks/preserves starting scores;
 - pregenerated-character selection;
 - animal companion or pet creation;
 - enemy/NPC construction or unrelated first-level controller paths when
@@ -218,3 +218,64 @@ placement at the constrained mercenary gate, but never use a screenshot as
 proof of persistence. Report the first failed invariant. Do not mark the exact
 repair artifact runtime-qualified until all vanilla sections pass; do not mark
 it compatibility-qualified until the named focused matrix passes.
+
+## J. Guarded 0.1.3 respec matrix (NOT RUN)
+
+DATA's current machine policy does not authorize game/Steam launch, desktop
+input, Cloud changes, profile changes, or valued-save use. There is no nominated
+disposable fixture in this mission. No fixture name or prior runtime token is
+authorization. All steps below are a reproducible remaining procedure, not run
+results.
+
+1. Obtain explicit authorization for one owner-nominated disposable campaign,
+   exact fixture/save paths, a guarded launch, and each temporary mod profile.
+   Any Cloud isolation requires its own approved action and recorded original
+   setting. Keep valued saves out of scope; do not select Continue arbitrarily.
+2. With Kingmaker stopped, inventory and back up the authorized save/profile
+   scope outside it; verify hashes/readability and reject reparse points or stale
+   deployment state. Record all active UMM IDs/settings. Validate the 0.1.3 package
+   and run `Install.ps1 -WhatIf -PackagePath <candidate>`; after install approval,
+   use that exact package and verify installed DLL parity. Save authorization
+   does not follow merely from installation.
+3. Use a fresh process for each approved profile. Run Dice-only new-main and
+   mercenary sections A-E first. Then native respec with Eddic/newman55 disabled:
+   main and mercenary full rebuilds, plus story-companion locked-base negative
+   control. A level-4 single-point increase is not a starting-score allocator.
+4. In a separate fresh Eddic 1.0 profile, run main, mercenary, and story companion
+   through the selector, then representative NPC entry with Eddic enabled. Add
+   a remote companion when the disposable fixture supports it. Preserve story
+   identity/locked phases; do not change race/portrait simply to expose the tab.
+5. For each positive core path: confirm one clickable bottom-center Roll Stats
+   tab, PointBuy-first entry, no auto RNG, Roll/Reroll/reassignment, back/next and
+   one genuine preview rebuild, then complete. Use a fixed-racial case and a
+   floating bonus case. Confirm native Skills and navigation stay clickable when
+   collapsed and native spending is disabled only in the owned Roll allocator.
+6. Across representative cases, use History/Recall, return to the exact partial
+   Point Buy origin with its actual remaining/total budget, cancel before and
+   after rolling, respec again, and switch characters. Include a character whose
+   previous starting scores were rolled. Preserve identities and permanent
+   modifiers; compare disputed provider cancellation/retention behavior with the
+   same fixture and profile with Dice disabled.
+7. Record the six assigned starting scores, native racial/permanent modifiers,
+   live preview/distribution, source after first-level action replay, original
+   recipient after callback, and final party/remote descriptor separately.
+   Require one copy-observed final diagnostic, then inspect the real character.
+   A PASS log alone is insufficient. Capture concise local screenshots of the
+   active/collapsed panel and values; retain evidence outside Git.
+8. Use a leveled fixture crossing at least levels 4 and 8. Verify native ability
+   increases persist through catch-up and a subsequent ordinary level-up, with
+   no reopened rolling panel or initial-array rewrite. Save to the authorized
+   disposable destination, exit, restart and reload. When separately safe,
+   repeat reload without Dice Roller and verify ordinary persisted stats.
+9. Run a focused nondefault Bag of Tricks budget and CotW race/class case, then
+   the intended full profile in fresh processes. Simultaneous respec engines
+   are a separate conflict lane, not a prerequisite for individual coverage.
+10. newman55 is blocked until its exact DLL/version is supplied. First establish
+    launch modes, Original-score behavior, disabled legacy Light behavior, and
+    the actual replacement mercenary/callback. Implement/verify that adapter
+    before running its main/mercenary/story matrix; do not reinterpret the native
+    adapter's tests as newman55 evidence.
+11. After each approved run, exit normally, collect evidence, restore authorized
+    profile/Cloud changes transactionally, and reverify protected manifests.
+    Separate any provider baseline defect from Dice-added effects. Report the
+    first failed invariant and the exact candidate hash.

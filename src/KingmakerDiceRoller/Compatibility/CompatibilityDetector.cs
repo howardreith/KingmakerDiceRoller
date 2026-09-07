@@ -12,7 +12,8 @@ namespace KingmakerDiceRoller.Compatibility
             new[] { "CallOfTheWild", "Call of the Wild" },
             new[] { "TweakOrTreat", "Tweak or Treat" },
             new[] { "RacesUnleashed", "Races Unleashed" },
-            new[] { "Respecialization", "Respec", "RespecMod" }
+            new[] { "Respecialization" },
+            new[] { "EddicKingmakerRespec" }
         };
 
         public CompatibilitySnapshot Detect()
@@ -31,14 +32,14 @@ namespace KingmakerDiceRoller.Compatibility
                 }
 
                 if (found == null) continue;
-                loaded.Add(found.Info.Id + " " + found.Info.Version);
+                loaded.Add(found.Info.Id + " " + found.Info.Version + " enabled=" + found.Enabled + " active=" + found.Active);
                 if (string.Equals(KnownMods[group][0], "BagOfTricks", StringComparison.Ordinal))
                 {
                     warnings.Add("Bag of Tricks changes character-creation point-buy behavior. Dice Roller observes the live allocator budget, but compatibility is not qualified until the dedicated smoke matrix passes.");
                 }
                 else if (string.Equals(KnownMods[group][0], "Respecialization", StringComparison.Ordinal))
                 {
-                    warnings.Add("A respec mod is loaded. Kingmaker Dice Roller rejects respec contexts and must not be used as a respec stat editor.");
+                    warnings.Add("newman55 Respecialization was detected. Its replacement/Original-score contracts are not qualified; this provider has no adapter.");
                 }
             }
 

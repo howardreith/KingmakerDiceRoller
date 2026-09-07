@@ -50,7 +50,7 @@ The mercenary discriminator is reported as exact
 `LevelUpState.IsEmployee + UnitHelper.IsCustomCompanion(controller source)`
 evidence, not a raw object. A rejected context records the first failed
 requirement. Unresolved identity and `DifferentFromCandidate` without exact
-mercenary evidence are rejections, never implicit acceptance.
+mercenary evidence or exact respec ownership are rejections, never implicit acceptance.
 
 ## Session and application facts
 
@@ -190,3 +190,22 @@ powershell -NoLogo -NoProfile -ExecutionPolicy Bypass `
 Inspect the complete chronological `output_log.txt`, not only the UMM panel's
 recent excerpt. Evidence directories are ignored local artifacts. Never commit
 logs, screenshots, saves, local paths, or copied game files.
+
+## Respec absence and completion
+
+Bounded diagnostics distinguish missing selector/provider contracts, locked-base
+retrains, unowned original/source/preview, unresolved controller binding, inactive
+allocator, and attachment failure. The panel host emits at most sixteen distinct
+attachment diagnostics, not an error every frame. A hidden preferred racial
+anchor still uses the established bottom-center fallback.
+
+At an accepted launch, both available Harmony APIs report owners and priorities
+for native respec, state construction, replay, and Commit. This is observation,
+not an ordering override. Installed patch attributes alone are not evidence of
+active patches in Unity.
+
+A respec final PASS requires the exact callback completion observation, verified
+source replay, and the original entity's current descriptor. Diagnostics retain
+provider, original/source/recipient identities and expected/observed arrays.
+Missing callback, replay overwrite, post-copy mismatch, or exception yields FAIL;
+there are no delayed repairs. No such record proves UI clickability or save/reload.

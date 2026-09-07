@@ -1,174 +1,109 @@
 # Project state
 
-## Current 0.1.2 release
+## Current 0.1.3 respec candidate
 
-Version `0.1.2` closes the mercenary-finalization and collapsed-tab placement
-repair from `codex/mercenary-roll-persistence-repair`.
+Version `0.1.3` is an unpublished candidate on `codex/respec-starting-scores`.
+The clean DATA checkout began at `bbf145014df0d1b889f811a655d9d183ccc1f087`, the
+reviewed historical `0.1.2` main. No newer local source was replaced. The installed
+0.1.2 DLL was inspected, not overwritten; its SHA-256 is
+`962d5968d5021db2868d39104b4cbfc3911fe1de00ebde85974a1a2b1b977acd`.
+The unchanged source baseline built to different bytes
+(`1b1c8f12335636aa4e83da06971f2ffc2ec6fbb885bb6608b6e53bdc970754d5`);
+same-version metadata was not treated as byte parity.
 
-```text
-Starting origin/main commit: cff17351d3282d8a509c928355ee92754759351a
-Product/UMM ID:             KingmakerDiceRoller
-Version metadata:           0.1.2
-Target:                     Pathfinder: Kingmaker 2.1.7b
-```
+This mission authorizes source work, local commits, deterministic testing,
+read-only inspection, and candidate packaging. It authorizes no push, merge,
+tag, publication, game launch, active-profile change, or valued-save operation.
+Historical 0.1.2 acceptance and release authorizations apply only to that history.
 
-Source merge, local deployment, and public `v0.1.2` publication through the
-repository-owned guarded release script are owner-authorized. Historical tags,
-artifacts, and evidence remain immutable.
+## Confirmed local causes and repair
 
-## Confirmed defects and evidence boundary
+The installed/source policy explicitly rejected Respec. The separate immutable
+Mercenary completion guard also rejected it, and a main-character respec clone
+could fail the different-main identity check. The repair preserves recruitment's
+finalization guard and adds a distinct scoped Respec lifecycle.
 
-The reported main-campaign mercenary failure had two parts:
+Exact installed Eddic 1.0 and Kingmaker 2.1.7b inspection established the selected
+original -> native rebuild source -> preview -> native serialization into the
+original entity path. Eddic retains Respec mode and rebuilds story companions
+from zero. Native recruitment-level story retraining does not reopen starting
+allocation. The native HandleLevelUpStart postfix supplies a fully bound owner
+after constructor-time state is incomplete.
 
-- at approximately 1152 by 720, the collapsed **Roll Stats** control used the
-  upper-right fallback instead of safe bottom-center ability geometry;
-- rolled values matched the creation preview but the hired unit retained its
-  original `10/12/8/12/10/10` base allocation.
+The initial assignment now reaches native action checks through the fresh state
+inside the exact first-level Commit invocation. Replay is verified without late
+rewrites. The exact native copy callback must complete before final recipient
+verification; the original entity's current descriptor is reread. The session
+closes before catch-up levels and subsequent native ability increases.
 
-No safe interactive pre-fix Kingmaker session was available during this mission,
-so those observations remain reporter-provided rather than independently
-reproduced. The configured installation was available for exact 2.1.7b
-reflection/IL inspection. No runtime values, screenshot, hired party unit, or
-save/reload result has been invented.
+A new restoration regression exposed an additional confirmed service defect:
+a pre-Roll allocation identical to the rolled array with a full budget was
+rejected as a hybrid. It now passes only with independently captured origin
+provenance and exact live values/budget/availability/ownership. The prior invalid
+hybrid regression remains protected.
 
-## Root cause and authoritative seam
+There was no safe interactive reproduction on DATA. The missing button remains
+Howie's reported observation; local source and installed binary contracts confirm
+the admission defect. Live UI appearance, skill navigation, provider retention,
+final party values, and persistence have not been inferred from the tests.
 
-Exact 2.1.7b IL proves this lifecycle:
+## Baseline and implementation evidence
 
-```text
-CreateCustomCompanion.RunAction
-  -> Player.CreateCustomCompanion(success callback, xp, importable)
-  -> HandleLevelUpStart(newCompanion.Descriptor, null, callback, CharGen)
-  -> LevelUpController.Start(...)
+The unchanged baseline passed the repository gate (8 cases), Python oracle
+(30 cases), deterministic C# runner (283 cases), exact native contracts, and
+Release compilation with zero warnings/errors. The initial build attempt failed
+because PATH resolved Python to the Windows Store alias. Selecting DATA's existing
+Python 3.12 directory in the process PATH resolved it; no prerequisite or global
+configuration was changed.
 
-LevelUpController.UpdatePreview
-  -> ApplyLevelup(Preview)
-       -> fresh LevelUpState and StatsDistribution
-       -> replay native ILevelUpAction instances on Preview
+The candidate adds 33 respec service cases (316 total), preserving the dice domain
+and existing runner. Installed-assembly checks cover eleven contract groups,
+including four actual-Harmony scope cases on owned test methods. They use DATA's
+UMM 0.33.0, Harmony12 1.2.0.1, and HarmonyLib 2.3.6.0 without replacing libraries.
+The scope tests run on desktop .NET, not Unity/Mono. Relevant source files and
+replay details are documented in `docs/ARCHITECTURE.md` and
+`docs/INTEGRATION-SEAMS.md`.
 
-LevelUpController.Commit
-  -> dispose Preview.Unit
-  -> ApplyLevelup(LevelUpController.Unit)
-       -> fresh LevelUpState and StatsDistribution
-       -> replay native ILevelUpAction instances on the stable source
-  -> SetupNewCharacher
-       -> native player companion ownership
-  -> success callback
-```
-
-The old implementation wrote and verified `StatsDistribution` plus the
-transient Preview descriptor. It did not add a native action representing the
-rolled assignment. On commit, Kingmaker discarded Preview and replayed actions
-against `LevelUpController.Unit`; the stable mercenary's original allocation
-therefore superseded the visual roll.
-
-The repair adds a postfix after `ApplyLevelup(Unit)` native replay and before
-first-level setup/callback. It applies the six verified base values only when
-the target is the exact active controller/source owner of an immutable
-`Mercenary` session and the fresh state independently passes first-level,
-`CharGen`, `IsEmployee`, and `IsCustomCompanion` checks. Preview calls, different
-controllers/sources, cancellation, owner loss, main-character creation, level
-up, respec, and other contexts are ignored.
-
-A `Commit()` postfix reads the same stable descriptor after the success callback
-and produces one final PASS or FAIL record with controller/source/preview/final
-identities and expected/observed arrays. It is idempotent and clears transient
-session state even on mismatch. Race modifiers remain native modifiers; only
-base values are written. No save-owned Dice Roller content is created.
-
-New-main-character creation uses the same native controller replay mechanics,
-but the repair's final write is restricted to `Mercenary`; the established main
-path is unchanged. Bag of Tricks is not part of the finalization seam. Its known
-Dice Roller interaction is the live allocator budget used for Point Buy
-round-trip, which still requires focused runtime confirmation.
-
-## Collapsed access-tab repair
-
-The upper-right defect came from treating active
-`m_RaceBonusContainer` as the only usable anchor and otherwise assigning fixed
-top/right anchors and offsets. The repair computes local Canvas geometry and
-always places the 140 by 34 tab above the 92-unit bottom-navigation inset plus an
-8-unit gap. Horizontal geometry is selected from:
-
-1. active usable racial-bonus container;
-2. allocator frame;
-3. allocator region;
-4. ability-phase root.
-
-The result is centered within the selected ability region and clamped to safe
-bounds. There is no upper-right fallback and the owned root remains non-graphic,
-so collapsed mode has only the tab's raycast footprint.
-
-## Implemented and automated evidence
-
-- Mercenary authoritative application and post-callback verification services.
-- Exact cached `LevelUpState.Mode`, private `ApplyLevelup(Unit)`, and `Commit()`
-  contracts plus native token-order validation.
-- Six narrow Harmony postfixes; patch methods still delegate immediately.
-- Bounded final PASS/FAIL diagnostics with expected and observed six-value base
-  arrays and object identities.
-- Pure bottom-center access-tab geometry shared by main and mercenary UI hosts.
-- 283 deterministic C# behavior cases and 30 Python oracle cases, including
-  preview-only false success, final mismatch, kind/owner isolation, same-owner
-  preview replacement without another roll, duplicate callbacks, cancellation,
-  ownership loss, post-callback verification, modifier separation, absent or
-  inactive preferred UI geometry, constrained bounds, bottom navigation, no
-  upper-right fallback, and all five required resolutions.
-- Standalone exact-contract verification of launch callbacks, preview replay,
-  authoritative replay, native companion insertion, and success callback order.
-
-## Supported boundary
-
-Only these exact first-level custom creation kinds may expose Roll Stats:
-
-1. a new campaign main character;
-2. player-initiated custom mercenary recruitment.
-
-Ordinary level-up, respec, existing companions, pets, animal companions,
-enemies, pregenerated characters, unresolved ownership, unknown modes, and a
-different unmarked player descriptor remain fail-closed.
+Native/Eddic selector ownership, negative locked/progression cases, preview
+replacement without RNG, modified-budget and previously rolled origins,
+pre-action authoritative staging, copy/overwrite detection, duplicate/reentered
+commits, cancellation, exceptions, source rollback, disable, and owner loss have
+service coverage. Existing layout/control regressions cover the reused panel;
+clickability and real Unity visibility still require observation.
 
 ## Qualification truth
 
-For version `0.1.2`:
+- Implemented: **Yes** for the native PC selector and inspected Eddic 1.0 path.
+- Source-qualified: **Yes** — repository validation, 316/316 C# cases, 30/30 Python cases.
+- Contract-qualified: **Yes** — exact native contracts plus eleven respec contract groups; four Harmony scope cases.
+- Build-qualified: **Yes** — Release, zero warnings/errors, installed UMM/Harmony references.
+- Package-qualified: **Yes** - deterministic 0.1.3 archive passed the six-file allowlist and hash gate.
+- Installed: **No** for this candidate.
+- Focused runtime test: **NOT RUN** â€” no authorized disposable fixture/guarded launch.
+- Runtime-qualified: **No**.
+- Compatibility-qualified: **No**.
+- Human visual acceptance: **NOT RUN**.
+- Release-authorized: **No**.
+- Publicly released: **No**.
 
-- Implemented: **Yes**.
-- Source-qualified: **Yes** — repository validation, 283/283 compiled C# cases,
-  and 30/30 Python oracle cases pass on the repair source.
-- Contract-qualified: **Yes** — exact Kingmaker 2.1.7b verification passes
-  against Assembly-CSharp MVID `07fa1e4d-8618-41b3-9b8d-faa17d3b26f7` and
-  SHA-256 `3b6450ffec440e296e586f71c711b195aed144b28d53e1cbb29406d18fef5afb`.
-- Build-qualified: **Yes** — Release build completes with zero warnings/errors.
-- Package-qualified: **Yes** — the deterministic six-file `0.1.2` package
-  validates against repository metadata and the package allowlist.
-- Installed: **Yes** — the repository-owned transactional installer deployed
-  the exact merged-main `0.1.2` artifact and verified DLL parity.
-- Focused runtime test: **Accepted by repository owner** — passed for the
-  repaired mercenary creation flow and corrected **Roll Stats** placement.
-- Runtime-qualified: **Yes** — limited to the focused 0.1.2 repair acceptance
-  described above; no broader runtime matrix is implied.
-- Compatibility-qualified: **No** — the focused Bag of Tricks completion and
-  save/reload case has not run.
-- Human visual acceptance: **Accepted by repository owner for corrected button
-  placement**; no screenshot was supplied for repository evidence.
-- Release-authorized: **Yes for source merge, local deployment, and public
-  `v0.1.2` publication through the guarded repository script**.
-- Publicly released: **Yes — `v0.1.2` is the next release, published from the
-  exact synchronized `main` commit with its qualified ZIP and checksum assets**.
+The candidate path is `artifacts/packages/KingmakerDiceRoller-0.1.3.zip`.
+Exact commit, dirty state, DLL/package hashes, contract reports and inventory are
+recorded in ignored artifacts by the final qualification commands. No installed
+parity or save/reload result is claimed. The installed profile, Steam state,
+Cloud, and saves remain untouched.
 
-Historical qualification is not transferable to this candidate and, after the
-reported defect, cannot qualify mercenary persistence or constrained-resolution
-tab placement for older bytes.
+## Remaining provider and runtime lanes
 
-The repository-owned collector wrote ignored evidence under
-`artifacts/runtime-evidence/20260823-231321`. Its only copied game log predates
-this installation and contains no repair finalization or access-anchor record;
-it is retained as an explicit negative evidence boundary, not a post-fix runtime
-test.
+See `docs/COMPATIBILITY.md` for the actual provider/configuration inventory and
+separate service/contract/live matrix. newman55 Respecialization was absent from
+the installed/test-available locations checked. Its exact launch modes,
+Original-score/legacy settings, replacement callback, and final mercenary
+recipient remain unresolved; no adapter was invented. Installed newman55 Cheat
+Menu is a different mod. No additional installed full-respec engine was found.
 
-## Broader unqualified matrix
-
-The owner acceptance closes the two defects addressed by `0.1.2`; it does not
-claim the broader five-resolution, Bag of Tricks, or save/exit/restart/reload
-matrices. Those remain optional future compatibility evidence under
-`docs/SMOKE-TEST.md` and do not block this authorized closure.
+All live lanes are **NOT RUN**: creation/recruitment regressions, native main and
+mercenary respec, native locked-base story negative control, Eddic main/mercenary/
+story/remote and NPC entry, Bag of Tricks/CotW, full profile, later progression,
+and save/reload including without Dice Roller. They require the specific guarded
+procedure in `docs/SMOKE-TEST.md` and an owner-nominated disposable fixture. The
+candidate's acceptance remains open until those relevant live outcomes exist.

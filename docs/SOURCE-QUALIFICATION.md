@@ -59,3 +59,19 @@ insertion path.
 Source and exact-build qualification cannot prove real Unity layout, click
 routing, display scaling, Harmony/mod-order behavior, save/reload, or optional
 mod interoperability. Those remain the human gates in `docs/SMOKE-TEST.md`.
+
+## 0.1.3 respec candidate
+
+The runner now contains 316 service/domain/layout cases, including 33 new respec
+cases. They reuse production policy, coordinator, application/restoration, session,
+and respec completion services with reflection/allocator boundaries. They cover
+three character categories, negative ownership/locked/progression cases, repeated
+preview generations without RNG, original budgets including previously rolled
+values, source-before-action staging, replay/copy mismatch, duplicate/reentered
+completion, catch-up isolation, cancellation, exceptions, disable, and owner loss.
+
+Installed-assembly checks are a separate Windows PowerShell lane. Eleven contract
+groups include native instruction order and four actual-Harmony scope cases
+(return/exception with Harmony12 alone and with HarmonyLib). They do not execute
+Unity, native respec gameplay, or a saved character. The smoke matrix is required
+before accepting the candidate's live UI, completion, or persistence.

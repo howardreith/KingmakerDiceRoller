@@ -169,14 +169,14 @@ def main():
     require(info['AssemblyName']=='KingmakerDiceRoller.dll','unexpected assembly name')
     require(info['EntryMethod']=='KingmakerDiceRoller.Main.Load','unexpected entry method')
     require(info['GameVersion']=='2.1.7','unexpected target game version')
-    require(info['Version']=='0.1.2','unexpected stable version')
+    require(info['Version']=='0.1.3','unexpected candidate version')
     product_metadata=(ROOT/'src/KingmakerDiceRoller/ProductMetadata.cs').read_text(encoding='utf-8')
     assembly_info=(ROOT/'src/KingmakerDiceRoller/Properties/AssemblyInfo.cs').read_text(encoding='utf-8')
-    require('0.1.2' in product_metadata and '0.1.2-' not in product_metadata,
+    require('0.1.3' in product_metadata and '0.1.3-' not in product_metadata,
             'runtime product version is inconsistent')
-    require('AssemblyVersion("0.1.2.0")' in assembly_info and
-            'AssemblyFileVersion("0.1.2.0")' in assembly_info and
-            'AssemblyInformationalVersion("0.1.2")' in assembly_info,
+    require('AssemblyVersion("0.1.3.0")' in assembly_info and
+            'AssemblyFileVersion("0.1.3.0")' in assembly_info and
+            'AssemblyInformationalVersion("0.1.3")' in assembly_info,
             'assembly version metadata is inconsistent')
     require(parse_umm_version('0.1.0-alpha.2') > parse_umm_version('0.1.0'),
             'UMM prerelease-ordering regression fixture is invalid')
@@ -244,6 +244,12 @@ def main():
     require('Priority.VeryLow' in controller,'patch priority must be explicit')
     for token in ['BlueprintScriptableObject','BlueprintBuff','BlueprintFeature','UnitPart','.AddFact(','SaveGame']:
         require(token not in stripped_src, f'save-owned custom content surface is forbidden: {token}')
+    require(controller.count('PatchOptional(optional,') == 5,
+            'respec integration must retain its five exact selector/start/commit/cancel/copy targets')
+    respec_service=(ROOT/'src/KingmakerDiceRoller/CharacterCreation/RespecLifecycleService.cs').read_text(encoding='utf-8')
+    require('BeforeReplay' in respec_service and 'ObserveCopyCompleted' in respec_service and
+            'ticket.InProgress()' in respec_service and 'ticket.Consumed = true' in respec_service,
+            'respec completion requires scoped single-use replay and native copy proof')
     ok('narrow Harmony patch surface')
 
     diagnostic=(ROOT/'src/KingmakerDiceRoller/Domain/DiagnosticArrays.cs').read_text(encoding='utf-8')
@@ -421,13 +427,13 @@ def main():
     for token in [
         'NoMainCharacterValuePermitsCandidate','DirectSameMainCharacterPermitsCandidate',
         'ControllerSourceMainCharacterPermitsOwnedPreview','DifferentMainCharacterIsRejected',
-        'UnresolvableMainCharacterFailsClosed','RespecRemainsRejectedWhenMainMatches',
+        'UnresolvableMainCharacterFailsClosed','RespecWithoutLaunchRejectedWhenMainMatches',
         'NonFirstLevelRemainsRejectedWhenMainMatches','PetCandidateRemainsRejected',
         'EnemyCandidateRemainsRejected','ControllerOwnershipRemainsMandatory',
         'DifferentMainCharacterCannotOpenSession','RebuiltStateReusesFixedAssignment',
         'DiagnosticRelationDistinguishesSameAndDifferent','ExactMercenaryContextIsAccepted',
         'MercenaryMarkerRequiresControllerOwnership','MercenaryMarkerRequiresPlayerFaction',
-        'MercenaryMarkerRejectsPet','MercenaryMarkerRejectsEnemy','MercenaryMarkerRejectsRespec',
+        'MercenaryMarkerRejectsPet','MercenaryMarkerRejectsEnemy','MercenaryMarkerAloneDoesNotAuthorizeRespec',
         'MercenaryMarkerRejectsPreGen','MercenaryMarkerRejectsUnknownMode',
         'MercenaryMarkerRejectsNonFirstLevel','MercenaryMarkerRequiresResolvedMainCharacter',
         'MercenaryEvidenceCannotAuthorizeAnotherController','MercenaryEvidenceCannotAuthorizeLaterBuild',
@@ -588,7 +594,7 @@ def main():
     ok('licensing and attribution')
 
     state=(ROOT/'PROJECT-STATE.md').read_text(encoding='utf-8')
-    require('`0.1.2`' in state,'current release version is missing from project state')
+    require('`0.1.3`' in state,'current candidate version is missing from project state')
     for label in ['Implemented','Source-qualified','Contract-qualified','Build-qualified',
                   'Package-qualified','Installed','Focused runtime test','Compatibility-qualified']:
         require(label in state, f'qualification label missing: {label}')

@@ -37,11 +37,16 @@ Harmony patches may not contain business logic.
 
 ## Safety
 
-- Fail closed outside exact supported first-level custom creation:
-  - a new campaign main character;
-  - player-initiated mercenary recruitment.
+- Fail closed outside exact supported starting-score workflows:
+  - first-level creation of a new campaign main character;
+  - player-initiated mercenary recruitment;
+  - player-selected respec with an editable six-score allocator, exact original /
+    rebuild / preview ownership, and a proven native/provider completion path.
 - A different established main-character descriptor is rejected unless the
-  independent exact custom-companion mercenary discriminator also passes.
+  independent exact mercenary discriminator or scoped respec ownership passes.
+- Locked-base retraining and later catch-up levels are not rolling contexts.
+  Close the starting-score respec session before subsequent ability increases.
+- Optional provider-contract failure must not disable qualified creation.
 - Never patch normal level-up behavior globally.
 - Do not patch `StatsDistribution.Add`, `Remove`, `CanAdd`, `CanRemove`, or cost methods.
 - Do not generate a new array because a preview or phase was rebuilt.

@@ -13,6 +13,7 @@ namespace KingmakerDiceRoller.Patches
         private const string HarmonyId = "howardreith.kingmakerdiceroller";
         private readonly IModLogger logger;
         private HarmonyInstance harmony;
+        private HarmonyInstance respecHarmony;
 
         public KingmakerPatchController(IModLogger logger)
         {
@@ -42,6 +43,7 @@ namespace KingmakerDiceRoller.Patches
                 PatchPostfix(candidate, contracts.LevelUpApplyLevelupMethod, nameof(KingmakerPatchBridge.LevelUpAppliedToAuthoritativeUnit));
                 PatchPostfix(candidate, contracts.LevelUpCommitMethod, nameof(KingmakerPatchBridge.LevelUpCommitCompleted));
                 harmony = candidate;
+                InstallOptionalRespec(contracts, coordinator);
             }
             catch
             {
@@ -51,12 +53,47 @@ namespace KingmakerDiceRoller.Patches
             }
         }
 
+        private void InstallOptionalRespec(KingmakerContracts contracts, CharacterCreationCoordinator coordinator)
+        {
+            HarmonyInstance optional = HarmonyInstance.Create(HarmonyId + ".respec");
+            try
+            {
+                NativeRespecContracts resolved = NativeRespecContracts.Resolve(contracts);
+                KingmakerPatchBridge.ConfigureRespec(new NativeRespecEntryService(resolved, coordinator));
+                PatchOptional(optional, resolved.SelectorConfirm, nameof(KingmakerPatchBridge.RespecSelectorConfirming), nameof(KingmakerPatchBridge.RespecSelectorConfirmed));
+                PatchOptional(optional, resolved.BuildStarted, null, nameof(KingmakerPatchBridge.RespecBuildStarted));
+                PatchOptional(optional, contracts.LevelUpCommitMethod, nameof(KingmakerPatchBridge.RespecCommitStarting), null);
+                PatchOptional(optional, resolved.Cancel, nameof(KingmakerPatchBridge.RespecBuildCanceling), null);
+                PatchOptional(optional, resolved.copyCallback, null, nameof(KingmakerPatchBridge.RespecCopyCompleted));
+                respecHarmony = optional;
+                logger.Info("Native/Eddic respec selector and original-recipient contracts resolved; live qualification remains separate.");
+            }
+            catch (Exception exception)
+            {
+                optional.UnpatchAll(HarmonyId + ".respec");
+                KingmakerPatchBridge.ConfigureRespec(null);
+                logger.Exception("Optional respec adapter disabled; creation remains available", exception);
+            }
+        }
+
+        private static void PatchOptional(HarmonyInstance instance, MethodBase original, string prefix, string postfix)
+        {
+            // No provider ordering constraint: observe completed native launch/replay and preserve other patches.
+            instance.Patch(original, Bridge(prefix), Bridge(postfix));
+        }
+        private static HarmonyMethod Bridge(string name)
+        {
+            return name == null ? null : new HarmonyMethod(typeof(KingmakerPatchBridge).GetMethod(name));
+        }
+
         public void Uninstall()
         {
             HarmonyInstance installed = harmony;
             harmony = null;
             try
             {
+                respecHarmony?.UnpatchAll(HarmonyId + ".respec");
+                respecHarmony = null;
                 installed?.UnpatchAll(HarmonyId);
             }
             finally

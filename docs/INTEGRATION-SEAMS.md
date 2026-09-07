@@ -84,8 +84,8 @@ described below.
 
 New-main-character creation supports exact `CharGen` and its previously
 qualified preview-time `LevelUp`. Mercenary creation supports only the observed
-`CharGen` value. `PreGen`, `Respec`, unknown modes, and non-first-level
-progression are rejected before a session can expose UI.
+`CharGen` value. Respec uses the separate scoped contract below. `PreGen`, unknown
+modes, and non-first-level progression remain rejected.
 
 ## Allocator model
 
@@ -264,3 +264,84 @@ immediately to the coordinator or panel host. Contract resolution proves the
 and action replay shape before installing any hook. Failure to resolve a target,
 custom-companion discriminator, finalization order, or UI recovery contract
 prevents partial Roll Mode integration.
+
+## Scoped native/Eddic respec (0.1.3 candidate)
+
+The optional `NativeRespecContracts` cache pins the inspected 2.1.7b MVID and
+exact member shapes. Failure removes only this adapter's patches. Eddic 1.0 is
+identified by loaded assembly MVID plus its live `Main.Enabled` field. Installation
+alone never establishes an active provider. No new patch ordering is imposed.
+
+Observed PC lifecycle:
+
+```text
+CharSelectWindow.OnButtonOk (shown selector, exact CurrentCharacter)
+  -> Player.RespecCompanion(original entity, provider/NPC success action)
+    -> CreateUnitVacuum -> newUnit (separate rebuild source)
+    -> native closure stores original unit, newUnit, Player, onSuccess
+    -> CharacterBuildController.HandleLevelUpStart(newUnit.Descriptor, null,
+         native copy callback, Respec)
+       -> LevelUpController.Start -> constructor -> state/preview
+       -> bind CharacterBuildController.LevelUpController -> Show
+```
+
+The selector prefix creates an exact-entity synchronous invocation scope; launch
+postfix admission consumes it. Constructor-time incomplete binding cannot become
+a permanent rejection. Unrelated constructors and nested pets cannot consume a
+selected respec. A thrown selector call expires its scope on stack unwind, even
+though Harmony12 has no finalizer API. The scope is tested on desktop .NET with
+DATA's Harmony12 alone and together with the installed HarmonyLib. Unity/Mono
+behavior remains a live gate.
+
+Admission additionally requires original party/remote ownership, a source at
+level zero, native `Respec`, `IsFirstLevel`, a separate owned preview, and an
+available six-score distribution. It never uses name, portrait, blueprint, point
+budget, or main-character flags to join original and clone. Eddic suspends the
+story companion's class-level floor and reapplies race through native actions;
+Dice Roller changes no identity/race/class phase flags. Without that change,
+native recruitment-level story builds do not reopen starting allocation.
+
+Commit uses a separate one-use ticket and immediately releases the active roll
+session. The fresh source `LevelUpState` constructor inside that exact Commit
+invocation receives the array and disabled point-buy distribution **before**
+`ILevelUpAction.Check/Apply`. This preserves native skill/feature checks that
+read ability values; preview reconstruction uses the same early staging for its
+owned generation. Explicit Roll/reassignment/Point Buy return invokes cached
+`LevelUpState.OnApplyAction()` to refresh native derived skill/spell limits.
+
+`ApplyLevelup` postfix verifies the source without rewriting it. Native Commit
+then performs first-level setup and invokes the cached native respec callback:
+
+```text
+newUnit.PreSave -> PrepareRespec -> JObject.FromObject(newUnit)
+  -> JsonConvert.PopulateObject(..., original unit)
+  -> PostLoad / native restoration -> success action
+  -> IUnitChangedAfterRespecHandler(original unit)
+```
+
+An exact callback postfix records completion. Commit postfix requires that
+observation plus matching source replay and the original entity's **current**
+descriptor values. Matching an obsolete source or coincidental preview alone
+cannot pass. The initial ticket expires before CharacterBuildController starts
+catch-up `HandleLevelUpStart(Unit)` in ordinary LevelUp mode. Native
+`SpendAttributePoint` later increments BaseValue normally. No initial-array
+write is permitted on those levels.
+
+`PrepareRespec` clears inventory/body references, not six ability BaseValues.
+Fixed racial effects remain native modifiers; `SelectRaceStat.Apply` adds a
+racial modifier rather than adding to BaseValue. Dice Roller writes no facts,
+unit parts, blueprints, save metadata, or provider retention settings.
+
+Cancel, loss of original/source ownership, provider disable, Dice disable, and
+exceptions close transient scopes. A failed source write restores only the exact
+captured source/state snapshot. Exceptions after native serialization may already
+have changed provider-owned data; Dice Roller reports failure and never attempts
+arbitrary live-character rollback. Eddic/native cancellation behavior itself is
+not rewritten.
+
+`Verify-RespecContracts.ps1` resolves production contracts and checks native IL
+instruction order; its evidence is separate from service fixtures and live Unity.
+newman55 replacement/Original-score/legacy-mode launch and recipient methods
+remain unresolved because its exact DLL was unavailable. No guessed adapter or
+Wrath API was added. Console `RetrainVm.Confirm` was identified but this candidate
+uses the existing PC ability-panel/selector path only.

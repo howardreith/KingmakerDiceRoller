@@ -10,6 +10,8 @@ namespace KingmakerDiceRoller.Patches
         private static CharacterCreationCoordinator coordinator;
         private static IModLogger logger;
         private static NativeRollPanelHost panel;
+        private static NativeRespecEntryService respec;
+        public static void ConfigureRespec(NativeRespecEntryService service) { respec = service; }
 
         public static void Configure(
             CharacterCreationCoordinator value,
@@ -23,9 +25,44 @@ namespace KingmakerDiceRoller.Patches
 
         public static void Clear()
         {
+            respec?.EndSelection();
+            respec = null;
             coordinator = null;
             panel = null;
             logger = null;
+        }
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        public static void RespecSelectorConfirming(object __instance)
+        {
+            try { respec?.BeginSelection(__instance); }
+            catch (Exception exception) { logger?.Exception("Respec selector prefix", exception); }
+        }
+        public static void RespecSelectorConfirmed()
+        {
+            try { respec?.EndSelection(); }
+            catch (Exception exception) { logger?.Exception("Respec selector postfix", exception); }
+        }
+        public static void RespecBuildStarted(object __0, object __2, object __3)
+        {
+            try { respec?.BuildStarted(__0, __2, __3); }
+            catch (Exception exception) { logger?.Exception("Respec launch postfix", exception); }
+        }
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        public static void RespecCommitStarting(object __instance)
+        {
+            try { respec?.BeginCommit(__instance); }
+            catch (Exception exception) { logger?.Exception("Respec commit prefix", exception); }
+        }
+        public static void RespecCopyCompleted(object __instance)
+        {
+            try { coordinator?.OnRespecCopyCompleted(__instance); }
+            catch (Exception exception) { logger?.Exception("Respec native copy postfix", exception); }
+        }
+        public static void RespecBuildCanceling(object __instance)
+        {
+            try { respec?.Cancel(__instance); }
+            catch (Exception exception) { logger?.Exception("Respec cancel prefix", exception); }
         }
 
         public static void LevelUpStateConstructed(object __instance, object __0, object __1)

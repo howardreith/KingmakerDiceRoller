@@ -116,13 +116,13 @@ namespace KingmakerDiceRoller.DomainTests
             AssertEx.True(decision.Reason.Contains("Enemies are excluded"));
         }
 
-        internal static void MercenaryMarkerRejectsRespec()
+        internal static void MercenaryMarkerAloneDoesNotAuthorizeRespec()
         {
             ContextHarness harness = CreateMercenaryHarness();
             harness.Mode = FakeMode.Respec;
             CharacterCreationContextDecision decision = harness.Evaluate();
             AssertEx.True(!decision.Accepted);
-            AssertEx.True(decision.Reason.Contains("Respecialization"));
+            AssertEx.True(decision.Reason.Contains("ownership/copy contract"));
         }
 
         internal static void MercenaryMarkerRejectsPreGen()
@@ -239,14 +239,14 @@ namespace KingmakerDiceRoller.DomainTests
             AssertEx.True(decision.Reason.Contains("fails closed"));
         }
 
-        internal static void RespecRemainsRejectedWhenMainMatches()
+        internal static void RespecWithoutLaunchRejectedWhenMainMatches()
         {
             ContextHarness harness = CreateValidHarness();
             harness.Mode = FakeMode.Respec;
             harness.Player.MainCharacter = harness.Candidate;
             CharacterCreationContextDecision decision = harness.Evaluate();
             AssertEx.True(!decision.Accepted);
-            AssertEx.True(decision.Reason.Contains("Respecialization"));
+            AssertEx.True(decision.Reason.Contains("ownership/copy contract"));
         }
 
         internal static void NonFirstLevelRemainsRejectedWhenMainMatches()

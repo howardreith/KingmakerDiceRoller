@@ -12,6 +12,7 @@ $project = Join-Path $root 'src\KingmakerDiceRoller\KingmakerDiceRoller.csproj'
 if ($LASTEXITCODE -ne 0) { throw "Production build failed with exit code $LASTEXITCODE." }
 $dll = Join-Path $root "artifacts\bin\$Configuration\KingmakerDiceRoller\KingmakerDiceRoller.dll"
 Assert-FileExists $dll 'Built mod DLL'
+& (Join-Path $PSScriptRoot 'Verify-RespecContracts.ps1') -DllPath $dll
 $git = Get-GitMetadata
 $contracts = Get-Content -LiteralPath (Join-Path $root 'artifacts\contracts\runtime-contracts.json') -Raw | ConvertFrom-Json
 $provenance = [ordered]@{
