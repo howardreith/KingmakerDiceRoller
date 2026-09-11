@@ -53,7 +53,26 @@ official (latest, non-prerelease) v0.1.5.
 
 ## Verified 0.1.5 publication
 
-Publication evidence is recorded below after the release is created.
+`v0.1.5` was published on 2026-09-11 at 20:33:03 UTC as the **official latest
+release** by rerunning the full qualification from clean, fully pushed `main`
+release commit `3117dac9606964442b0263ab8b86f72043897dc8` (13/13 repository
+gates, 30/30 Python cases, 336/336 C# cases, exact native contracts including
+the skills-page members, eleven respec contract groups, zero Release
+warnings/errors). GitHub reports `isDraft=false`, `isPrerelease=false`, title
+`Kingmaker Dice Roller v0.1.5`, and the latest-release endpoint returns
+`v0.1.5`. The annotated tag resolves to the release commit (= `origin/main`).
+Asset digests match the qualified local bytes:
+
+- ZIP SHA-256: `b0b33305274785d089fb0f148a1b9e3e2812967070b8d3a00fce4c2f6877741e`
+  (`KingmakerDiceRoller-0.1.5.zip`; the packaged README carries the finalized
+  release text, so the archive differs from the earlier local-only candidate
+  while the DLL is unchanged).
+- DLL SHA-256: `591ef6eeaa1d8074ab32f644657f0b6246120b55d637e51b1d26b5353cf042e7`.
+- `SHA256SUMS.txt` carries the same ZIP digest.
+
+`v0.1.4` remains available as the prior testing prerelease. The
+agent-executed interactive/save/provider matrix remains NOT RUN; the release
+standing rests on the owner's explicit instruction recorded above.
 
 ## 0.1.4 testing prerelease — rolled-stat build integrity
 

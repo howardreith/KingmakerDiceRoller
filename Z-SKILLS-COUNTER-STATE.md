@@ -81,14 +81,15 @@ This mission is **implemented/source-qualified; live acceptance pending**.
 
 ## Distinct local candidate
 
-Version bumped to `0.1.5` (the published `v0.1.4` assets are untouched).
-Final candidate rebuilt from clean commit `cc519c03` (dirty=false, branch
-`z/skills-counter-next-guard`): DLL SHA-256
-`591ef6eeaa1d8074ab32f644657f0b6246120b55d637e51b1d26b5353cf042e7`; package
-`artifacts/packages/KingmakerDiceRoller-0.1.5.zip` SHA-256
-`1a3291231ac80e4ad4a83c7cfdc01adbf02bdecb606f1697a3f5cdee83ec493c`
-(deterministic six-file allowlist, package-validated). No push, merge, tag,
-or release was performed for this mission.
+Version bumped to `0.1.5`. The delivered candidate (clean commit `cc519c03`,
+DLL SHA-256 `591ef6ee…`) was finalized and **published as the official latest
+release `v0.1.5`** on 2026-09-11 20:33 UTC from release commit `3117dac9`
+after the owner's explicit instruction (see above): `isDraft=false`,
+`isPrerelease=false`, latest endpoint returns `v0.1.5`, ZIP SHA-256
+`b0b33305274785d089fb0f148a1b9e3e2812967070b8d3a00fce4c2f6877741e` with the
+DLL unchanged. Branch `z/skills-counter-next-guard` was fast-forwarded into
+`main` and both were pushed. Full publication evidence lives in
+PROJECT-STATE.md and ignored artifacts.
 
 ## Next steps
 
