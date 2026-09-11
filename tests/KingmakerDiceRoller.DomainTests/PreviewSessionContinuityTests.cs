@@ -1427,6 +1427,7 @@ namespace KingmakerDiceRoller.DomainTests
             AssertEx.SequenceEqual(expected, environment.ReadDistribution(preview));
             AssertEx.SequenceEqual(expected, environment.ReadUnit(preview.Unit));
 
+            // A commit completion without its constructor/replay seam cannot claim authority.
             environment.BeginNativeMercenaryFinalization();
             coordinator.OnLevelUpCommitCompleted(environment.Controller);
 
@@ -1437,7 +1438,7 @@ namespace KingmakerDiceRoller.DomainTests
             AssertEx.Equal(0, diagnostics.FinalizationsVerified);
             AssertEx.Equal(1, diagnostics.FinalizationFailures);
             AssertEx.True(environment.Logger.Messages.Any(
-                message => message.Contains("without an authoritative mercenary assignment")));
+                message => message.Contains("no verified authoritative mercenary replay")));
         }
 
         internal static void MercenaryAssignmentReachesAuthoritativeFinalDescriptor()
@@ -1460,6 +1461,10 @@ namespace KingmakerDiceRoller.DomainTests
             int[] expected = session.Assignment.ToAssignedArray();
 
             FakeState finalState = environment.BeginNativeMercenaryFinalization();
+            coordinator.OnLevelUpStateConstructed(finalState, environment.Source, FakeMode.CharGen);
+            AssertEx.SequenceEqual(expected, environment.ReadUnit(environment.Source));
+            AssertEx.True(!finalState.StatsDistribution.Available);
+            environment.Controller.State = finalState;
             coordinator.OnLevelUpAppliedToAuthoritativeUnit(
                 environment.Controller,
                 environment.Source);
@@ -1497,7 +1502,9 @@ namespace KingmakerDiceRoller.DomainTests
                 diagnostics);
             AssertEx.True(coordinator.TryRoll(out string error), error);
             RollSession session = coordinator.ActiveSession;
-            environment.BeginNativeMercenaryFinalization();
+            FakeState finalState = environment.BeginNativeMercenaryFinalization();
+            coordinator.OnLevelUpStateConstructed(finalState, environment.Source, FakeMode.CharGen);
+            environment.Controller.State = finalState;
             coordinator.OnLevelUpAppliedToAuthoritativeUnit(
                 environment.Controller,
                 environment.Source);
@@ -1525,11 +1532,14 @@ namespace KingmakerDiceRoller.DomainTests
             AssertEx.True(coordinator.TryRoll(out string error), error);
             RollSession session = coordinator.ActiveSession;
             int[] original = environment.ReadUnit(environment.Source);
+            var diagnostics = new RuntimeDiagnostics();
+
+            // The authoritative postfix without its constructor seam performs no write, and
+            // the commit audit reports the mismatch instead of manufacturing a pass.
             environment.Controller.State = new FakeState(
                 environment.Source,
                 new FakeDistribution(10),
                 true);
-
             coordinator.OnLevelUpAppliedToAuthoritativeUnit(
                 environment.Controller,
                 environment.Source);
@@ -1538,7 +1548,7 @@ namespace KingmakerDiceRoller.DomainTests
             AssertEx.Equal(SupportedCharacterCreationKind.NewMainCharacter, session.CreationKind);
             AssertEx.SequenceEqual(original, environment.ReadUnit(environment.Source));
             AssertEx.True(!session.AuthoritativeFinalizationApplied);
-            AssertEx.True(ReferenceEquals(session, coordinator.ActiveSession));
+            AssertEx.Equal(null, coordinator.ActiveSession);
         }
 
         internal static void DifferentFinalizationOwnerCannotReceiveAssignment()
@@ -1554,19 +1564,27 @@ namespace KingmakerDiceRoller.DomainTests
                 out preview,
                 out campaignMain);
             AssertEx.True(coordinator.TryRoll(out string error), error);
-            int[] original = environment.ReadUnit(environment.Source);
+            RollSession session = coordinator.ActiveSession;
+            int[] expected = session.Assignment.ToAssignedArray();
             var otherDescriptor = FakeUnitDescriptor.Create(10, false, true);
             var otherController = new FakeLevelUpController { Unit = otherDescriptor };
-            environment.BeginNativeMercenaryFinalization();
+            FakeState commitState = environment.BeginNativeMercenaryFinalization();
+            coordinator.OnLevelUpStateConstructed(commitState, environment.Source, FakeMode.CharGen);
+            environment.Controller.State = commitState;
 
             coordinator.OnLevelUpAppliedToAuthoritativeUnit(otherController, otherDescriptor);
             coordinator.OnLevelUpAppliedToAuthoritativeUnit(
                 environment.Controller,
                 otherDescriptor);
 
-            AssertEx.SequenceEqual(original, environment.ReadUnit(environment.Source));
             AssertEx.SequenceEqual(Enumerable.Repeat(10, 6), environment.ReadUnit(otherDescriptor));
-            AssertEx.True(!coordinator.ActiveSession.AuthoritativeFinalizationApplied);
+            AssertEx.True(!session.AuthoritativeFinalizationApplied);
+            coordinator.OnLevelUpAppliedToAuthoritativeUnit(
+                environment.Controller,
+                environment.Source);
+            coordinator.OnLevelUpCommitCompleted(environment.Controller);
+            AssertEx.SequenceEqual(expected, environment.ReadUnit(environment.Source));
+            AssertEx.True(session.FinalizationVerified);
         }
 
         internal static void PreviewReplacementPreservesOneAssignmentThroughFinalization()
@@ -1599,11 +1617,7 @@ namespace KingmakerDiceRoller.DomainTests
             AssertEx.Equal(24, random.Calls);
             AssertEx.SequenceEqual(expected, environment.ReadUnit(previewB.Unit));
 
-            environment.BeginNativeMercenaryFinalization();
-            coordinator.OnLevelUpAppliedToAuthoritativeUnit(
-                environment.Controller,
-                environment.Source);
-            coordinator.OnLevelUpCommitCompleted(environment.Controller);
+            CommitNativeMercenary(environment, coordinator);
             AssertEx.SequenceEqual(expected, environment.ReadUnit(environment.Source));
         }
 
@@ -1622,8 +1636,9 @@ namespace KingmakerDiceRoller.DomainTests
                 out campaignMain,
                 diagnostics);
             AssertEx.True(coordinator.TryRoll(out string error), error);
-            environment.BeginNativeMercenaryFinalization();
-
+            FakeState commitState = environment.BeginNativeMercenaryFinalization();
+            coordinator.OnLevelUpStateConstructed(commitState, environment.Source, FakeMode.CharGen);
+            environment.Controller.State = commitState;
             coordinator.OnLevelUpAppliedToAuthoritativeUnit(
                 environment.Controller,
                 environment.Source);
@@ -1657,13 +1672,14 @@ namespace KingmakerDiceRoller.DomainTests
             AssertEx.True(coordinator.TryRoll(out string error), error);
             int[] expected = coordinator.ActiveSession.Assignment.ToAssignedArray();
             FakeLevelUpController acceptedController = environment.Controller;
-            environment.BeginNativeMercenaryFinalization();
+            FakeState commitState = environment.BeginNativeMercenaryFinalization();
+            coordinator.OnLevelUpStateConstructed(commitState, environment.Source, FakeMode.CharGen);
+            acceptedController.State = commitState;
             coordinator.OnLevelUpAppliedToAuthoritativeUnit(
                 acceptedController,
                 environment.Source);
 
             environment.CharacterBuild.LevelUpController = null;
-            acceptedController.State = null;
             coordinator.OnLevelUpCommitCompleted(acceptedController);
 
             AssertEx.SequenceEqual(expected, environment.ReadUnit(environment.Source));
@@ -1717,11 +1733,14 @@ namespace KingmakerDiceRoller.DomainTests
             AssertEx.True(coordinator.TryRoll(out string error), error);
             RollSession session = coordinator.ActiveSession;
             int[] original = environment.ReadUnit(environment.Source);
-            environment.BeginNativeMercenaryFinalization();
+            // Ownership is lost before native commit constructs its replay state.
             environment.CharacterBuild.LevelUpController = new FakeLevelUpController
             {
                 Unit = FakeUnitDescriptor.Create(10, false, true)
             };
+            FakeState commitState = environment.BeginNativeMercenaryFinalization();
+            coordinator.OnLevelUpStateConstructed(commitState, environment.Source, FakeMode.CharGen);
+            environment.Controller.State = commitState;
 
             coordinator.OnLevelUpAppliedToAuthoritativeUnit(
                 environment.Controller,
@@ -1754,12 +1773,7 @@ namespace KingmakerDiceRoller.DomainTests
             int[] expectedDisplayed = expectedBase
                 .Select((value, index) => value + modifiers[index])
                 .ToArray();
-            environment.BeginNativeMercenaryFinalization();
-
-            coordinator.OnLevelUpAppliedToAuthoritativeUnit(
-                environment.Controller,
-                environment.Source);
-            coordinator.OnLevelUpCommitCompleted(environment.Controller);
+            CommitNativeMercenary(environment, coordinator);
 
             AssertEx.SequenceEqual(expectedBase, environment.ReadUnit(environment.Source));
             AssertEx.SequenceEqual(expectedDisplayed, environment.Source.Stats.ReadDisplayedValues());
@@ -2064,6 +2078,24 @@ namespace KingmakerDiceRoller.DomainTests
                 out error), error);
         }
 
+        // Simulates native LevelUpController.Commit for a mercenary: the replay state is
+        // constructed on the stable source (constructor postfix stages the rolled scores),
+        // native assigns the state and replays actions, then setup/callback/commit postfix run.
+        private static void CommitNativeMercenary(
+            TestEnvironment environment,
+            CharacterCreationCoordinator coordinator,
+            System.Collections.IList survivingActions = null)
+        {
+            FakeState commitState = environment.BeginNativeMercenaryFinalization();
+            coordinator.OnLevelUpStateConstructed(commitState, environment.Source, FakeMode.CharGen);
+            environment.Controller.State = commitState;
+            coordinator.OnLevelUpAppliedToAuthoritativeUnit(
+                environment.Controller,
+                environment.Source,
+                survivingActions);
+            coordinator.OnLevelUpCommitCompleted(environment.Controller);
+        }
+
         private static void AssertMercenaryOwnerLossClearsSession()
         {
             TestEnvironment environment = TestEnvironment.Create();
@@ -2205,6 +2237,7 @@ namespace KingmakerDiceRoller.DomainTests
                 Logger = new FakeLogger();
                 NativeControls = new NativeAbilityControlService(Logger);
                 Application = new StatApplicationService(StatAccess, LivePreview, PreviewRefresh, Logger);
+                DerivedRefresh = new DerivedStateRefreshService();
                 Restore = new PointBuyRestoreService(StatAccess, LivePreview, PreviewRefresh, Logger);
                 Presentation = new AbilityPhasePresentationService(LivePreview, Logger, NativeControls);
                 Assignment = new StatAssignment(DiagnosticArrays.FixedPhaseTwoArray());
@@ -2219,6 +2252,7 @@ namespace KingmakerDiceRoller.DomainTests
             internal FakeLogger Logger { get; }
             internal NativeAbilityControlService NativeControls { get; }
             internal StatApplicationService Application { get; }
+            internal DerivedStateRefreshService DerivedRefresh { get; }
             internal PointBuyRestoreService Restore { get; }
             internal AbilityPhasePresentationService Presentation { get; }
             internal StatAssignment Assignment { get; }
@@ -2469,9 +2503,9 @@ namespace KingmakerDiceRoller.DomainTests
 
             internal FakeState BeginNativeMercenaryFinalization()
             {
-                var state = new FakeState(Source, new FakeDistribution(10), true);
-                Controller.State = state;
-                return state;
+                // Native Commit constructs the replay state on the stable source before
+                // assigning it to the controller, so the constructor postfix observes it first.
+                return new FakeState(Source, new FakeDistribution(10), true);
             }
 
             internal CharacterCreationCoordinator CreateCoordinator()
@@ -2501,6 +2535,7 @@ namespace KingmakerDiceRoller.DomainTests
                         StatAccess,
                         Sessions,
                         Application,
+                        DerivedRefresh,
                         Restore,
                         Presentation,
                         diagnostics,
@@ -2515,6 +2550,7 @@ namespace KingmakerDiceRoller.DomainTests
                     StatAccess,
                     Sessions,
                     Application,
+                    DerivedRefresh,
                     Restore,
                     Presentation,
                     diagnostics,
@@ -2543,6 +2579,14 @@ namespace KingmakerDiceRoller.DomainTests
                     typeof(FakeState).GetProperty("IsFirstLevel", instance),
                     typeof(FakeState).GetProperty("IsEmployee", instance),
                     typeof(FakeState).GetProperty("Mode", instance),
+                    typeof(FakeState).GetProperty("NextLevel", instance),
+                    typeof(FakeState).GetProperty("IntelligenceSkillPoints", instance),
+                    typeof(FakeState).GetMethod("OnApplyAction", instance),
+                    typeof(FakeLevelUpHelper).GetMethod("GetTotalIntelligenceSkillPoints",
+                        BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic),
+                    typeof(FakeUnitDescriptor).GetProperty("Progression", instance),
+                    typeof(FakeProgression).GetProperty("TotalIntelligenceSkillPoints", instance),
+                    typeof(FakeLevelUpController).GetProperty("LevelUpActions", instance),
                     typeof(FakeUnitHelper).GetMethod("IsCustomCompanion", staticFlags),
                     typeof(FakeUnitDescriptor).GetProperty("Stats", instance),
                     typeof(FakeStats).GetMethod("GetStat", instance),
@@ -2660,6 +2704,7 @@ namespace KingmakerDiceRoller.DomainTests
                 IsPlayerFaction = true;
                 Stats = new FakeStats(value);
                 Unit = new FakeUnitEntityData(this);
+                Progression = new FakeProgression();
             }
 
             public bool IsMainCharacter { get; set; }
@@ -2668,6 +2713,7 @@ namespace KingmakerDiceRoller.DomainTests
             public bool IsPlayersEnemy { get; set; }
             public bool IsCustomCompanion { get; set; }
             public FakeStats Stats { get; }
+            public FakeProgression Progression { get; }
             public FakeUnitEntityData Unit { get; }
 
             internal static FakeUnitDescriptor Create(
@@ -2748,6 +2794,7 @@ namespace KingmakerDiceRoller.DomainTests
                 StatsDistribution = distribution;
                 IsFirstLevel = isFirstLevel;
                 Mode = FakeMode.CharGen;
+                NextLevel = 1;
             }
 
             public FakeUnitDescriptor Unit { get; }
@@ -2755,6 +2802,48 @@ namespace KingmakerDiceRoller.DomainTests
             public bool IsFirstLevel { get; set; }
             public bool IsEmployee => Unit != null && Unit.IsCustomCompanion;
             public FakeMode Mode { get; set; }
+            public int NextLevel { get; set; }
+            public int IntelligenceSkillPoints { get; set; }
+            internal int OnApplyActionCalls { get; private set; }
+            internal bool ThrowOnApplyAction { get; set; }
+
+            public void OnApplyAction()
+            {
+                if (ThrowOnApplyAction)
+                {
+                    throw new InvalidOperationException("simulated native derived refresh failure");
+                }
+                OnApplyActionCalls++;
+            }
+        }
+
+        private sealed class FakeProgression
+        {
+            public int TotalIntelligenceSkillPoints { get; set; }
+        }
+
+        private static class FakeLevelUpHelper
+        {
+            public static int GetTotalIntelligenceSkillPoints(FakeUnitDescriptor unit, int level)
+            {
+                int total = 0;
+                for (int current = 1; current <= level; current++)
+                {
+                    total += GetIntelligenceSkillPoints(unit, current);
+                }
+                return total;
+            }
+
+            // Mirrors native LevelUpHelper.GetIntelligenceSkillPoints: permanent Intelligence
+            // without enhancement, /2 - 5, odd levels round the magnitude toward bonus.
+            private static int GetIntelligenceSkillPoints(FakeUnitDescriptor unit, int level)
+            {
+                FakeStat stat = unit.Stats.GetStat(3);
+                int raw = (stat.BaseValue + stat.Modifier) / 2 - 5;
+                int magnitude = Math.Abs(raw);
+                int sign = Math.Sign(raw);
+                return level % 2 == 1 ? (magnitude + 1) / 2 * sign : magnitude / 2 * sign;
+            }
         }
 
         private static class FakeUnitHelper
@@ -2771,6 +2860,8 @@ namespace KingmakerDiceRoller.DomainTests
             public FakeUnitDescriptor Unit { get; set; }
             public FakeUnitDescriptor Preview { get; set; }
             public bool m_RecalculatePreview;
+            public System.Collections.Generic.List<object> LevelUpActions { get; } =
+                new System.Collections.Generic.List<object>();
             internal Action OnUpdatePreview { get; set; }
             internal int UpdatePreviewCount { get; private set; }
 

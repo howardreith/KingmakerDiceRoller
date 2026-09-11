@@ -16,7 +16,7 @@ namespace KingmakerDiceRoller.Integration
         public MethodInfo PlayerRespec { get; private set; }
         internal PropertyInfo selected, descriptor, referenceValue;
         internal FieldInfo shown, callback, original, rebuild, playerField;
-        internal MethodInfo copyCallback, refreshDerived;
+        internal MethodInfo copyCallback;
         internal PropertyInfo party, remote;
         internal MemberInfo progression, level;
         internal KingmakerContracts Game { get; }
@@ -43,7 +43,6 @@ namespace KingmakerDiceRoller.Integration
                 parameters[1].ParameterType.FullName != "Newtonsoft.Json.Linq.JToken" || parameters[2].ParameterType != typeof(Action) ||
                 parameters[3].ParameterType != game.CharBuildModeType) throw new ContractResolutionException("Unexpected respec launch signature.");
             result.Cancel = RequireMethod(controller, "Cancel", Type.EmptyTypes, typeof(void));
-            result.refreshDerived = RequireMethod(game.LevelUpStateType, "OnApplyAction", Type.EmptyTypes, typeof(void));
             result.selected = selector.GetProperty("CurrentCharacter", Flags);
             result.shown = selector.GetField("m_IsShowed", Flags);
             result.descriptor = entity.GetProperty("Descriptor", Flags);

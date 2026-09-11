@@ -359,10 +359,20 @@ def main():
                   'FindTokenOffset(commit, onSuccess.MetadataToken)']:
         require(token in contracts, f'authoritative mercenary finalization contract missing: {token}')
     for token in ['SupportedCharacterCreationKind.Mercenary','session.OwnsStableOwner',
-                  'session.IsApplied','LevelUpControllerUnitMember','LevelUpStateModeMember',
-                  'IsCustomCompanionMethod','WriteUnitBaseValues','MarkAuthoritativeFinalizationApplied',
-                  'MarkFinalizationVerified']:
+                  'session.IsApplied','LevelUpStateUnitMember','LevelUpStateModeMember',
+                  'IsCustomCompanionMethod','WriteUnitBaseValues','DisablePointBuyAllocator',
+                  'TryBeginReplay','AfterReplay','MarkFinalizationVerified',
+                  'no corrective late write']:
         require(token in finalization, f'exact mercenary finalization guard missing: {token}')
+    require('MarkAuthoritativeFinalizationApplied' in coordinator,
+            'exact mercenary finalization guard missing: MarkAuthoritativeFinalizationApplied (coordinator seam)')
+    require('derivedRefresh.TryRefresh' in coordinator,
+            'coordinator must refresh native derived allowances for every supported creation kind')
+    require('OnApplyAction' in contracts and 'GetTotalIntelligenceSkillPoints' in contracts and
+            'TotalIntelligenceSkillPoints' in contracts,
+            'native derived-allowance contracts missing from the shared resolver')
+    require('TryRestore(' in (ROOT/'src/KingmakerDiceRoller/CharacterCreation/DerivedStateRefreshService.cs').read_text(encoding='utf-8'),
+            'the derived-state refresh must provide rollback of its semantic effect')
     require('OnLevelUpAppliedToAuthoritativeUnit' in coordinator and
             'OnLevelUpCommitCompleted' in coordinator and
             'Mercenary rolled-stat final verification' in coordinator,

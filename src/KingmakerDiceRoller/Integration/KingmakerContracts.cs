@@ -21,6 +21,13 @@ namespace KingmakerDiceRoller.Integration
             MemberInfo levelUpStateIsFirstLevelMember,
             MemberInfo levelUpStateIsEmployeeMember,
             MemberInfo levelUpStateModeMember,
+            MemberInfo levelUpStateNextLevelMember,
+            MemberInfo levelUpStateIntelligenceSkillPointsMember,
+            MethodInfo levelUpStateOnApplyActionMethod,
+            MethodInfo levelUpHelperGetTotalIntelligenceSkillPointsMethod,
+            MemberInfo unitDescriptorProgressionMember,
+            MemberInfo unitProgressionTotalIntelligenceSkillPointsMember,
+            MemberInfo levelUpControllerLevelUpActionsMember,
             MethodInfo unitHelperIsCustomCompanionMethod,
             MemberInfo unitStatsMember,
             MethodInfo unitStatsGetStatMethod,
@@ -74,6 +81,13 @@ namespace KingmakerDiceRoller.Integration
             LevelUpStateIsFirstLevelMember = levelUpStateIsFirstLevelMember;
             LevelUpStateIsEmployeeMember = levelUpStateIsEmployeeMember;
             LevelUpStateModeMember = levelUpStateModeMember;
+            LevelUpStateNextLevelMember = levelUpStateNextLevelMember;
+            LevelUpStateIntelligenceSkillPointsMember = levelUpStateIntelligenceSkillPointsMember;
+            LevelUpStateOnApplyActionMethod = levelUpStateOnApplyActionMethod;
+            LevelUpHelperGetTotalIntelligenceSkillPointsMethod = levelUpHelperGetTotalIntelligenceSkillPointsMethod;
+            UnitDescriptorProgressionMember = unitDescriptorProgressionMember;
+            UnitProgressionTotalIntelligenceSkillPointsMember = unitProgressionTotalIntelligenceSkillPointsMember;
+            LevelUpControllerLevelUpActionsMember = levelUpControllerLevelUpActionsMember;
             UnitHelperIsCustomCompanionMethod = unitHelperIsCustomCompanionMethod;
             UnitStatsMember = unitStatsMember;
             UnitStatsGetStatMethod = unitStatsGetStatMethod;
@@ -128,6 +142,13 @@ namespace KingmakerDiceRoller.Integration
         public MemberInfo LevelUpStateIsFirstLevelMember { get; }
         public MemberInfo LevelUpStateIsEmployeeMember { get; }
         public MemberInfo LevelUpStateModeMember { get; }
+        public MemberInfo LevelUpStateNextLevelMember { get; }
+        public MemberInfo LevelUpStateIntelligenceSkillPointsMember { get; }
+        public MethodInfo LevelUpStateOnApplyActionMethod { get; }
+        public MethodInfo LevelUpHelperGetTotalIntelligenceSkillPointsMethod { get; }
+        public MemberInfo UnitDescriptorProgressionMember { get; }
+        public MemberInfo UnitProgressionTotalIntelligenceSkillPointsMember { get; }
+        public MemberInfo LevelUpControllerLevelUpActionsMember { get; }
         public MethodInfo UnitHelperIsCustomCompanionMethod { get; }
         public MemberInfo UnitStatsMember { get; }
         public MethodInfo UnitStatsGetStatMethod { get; }

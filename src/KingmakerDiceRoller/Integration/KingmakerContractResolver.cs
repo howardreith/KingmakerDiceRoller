@@ -86,6 +86,8 @@ namespace KingmakerDiceRoller.Integration
             MemberInfo isFirstLevel = ReflectionAccess.RequireInstanceMember(levelUpStateType, "IsFirstLevel");
             MemberInfo isEmployee = ReflectionAccess.RequireInstanceMember(levelUpStateType, "IsEmployee");
             MemberInfo stateMode = ReflectionAccess.RequireInstanceMember(levelUpStateType, "Mode");
+            MemberInfo stateNextLevel = ReflectionAccess.RequireInstanceMember(levelUpStateType, "NextLevel");
+            MemberInfo intelligenceSkillPoints = ReflectionAccess.RequireInstanceMember(levelUpStateType, "IntelligenceSkillPoints");
             if (!unitDescriptorType.IsAssignableFrom(ReflectionAccess.GetMemberType(stateUnit)))
             {
                 throw new ContractResolutionException("LevelUpState.Unit is not a UnitDescriptor contract.");
@@ -106,6 +108,60 @@ namespace KingmakerDiceRoller.Integration
             {
                 throw new ContractResolutionException("LevelUpState.Mode is not the exact CharBuildMode enum.");
             }
+            if (ReflectionAccess.GetMemberType(stateNextLevel) != typeof(int))
+            {
+                throw new ContractResolutionException("LevelUpState.NextLevel is not an Int32 contract.");
+            }
+            if (ReflectionAccess.GetMemberType(intelligenceSkillPoints) != typeof(int) ||
+                !ReflectionAccess.CanWrite(intelligenceSkillPoints))
+            {
+                throw new ContractResolutionException(
+                    "LevelUpState.IntelligenceSkillPoints is not a writable Int32 contract.");
+            }
+
+            MethodInfo onApplyAction = levelUpStateType.GetMethod(
+                "OnApplyAction",
+                InstanceFlags,
+                null,
+                Type.EmptyTypes,
+                null);
+            if (onApplyAction == null || onApplyAction.ReturnType != typeof(void) || onApplyAction.IsStatic)
+            {
+                throw new ContractResolutionException(
+                    "Exact instance void LevelUpState.OnApplyAction() derived-state refresh was not found.");
+            }
+            evidence.Add(Describe(onApplyAction));
+
+            Type levelUpHelperType = RequireType(
+                gameAssembly,
+                "Kingmaker.UnitLogic.Class.LevelUp.Actions.LevelUpHelper");
+            MethodInfo getTotalIntelligenceSkillPoints = levelUpHelperType.GetMethod(
+                "GetTotalIntelligenceSkillPoints",
+                StaticFlags,
+                null,
+                new[] { unitDescriptorType, typeof(int) },
+                null);
+            if (getTotalIntelligenceSkillPoints == null ||
+                getTotalIntelligenceSkillPoints.ReturnType != typeof(int) ||
+                !getTotalIntelligenceSkillPoints.IsStatic)
+            {
+                throw new ContractResolutionException(
+                    "Exact static Int32 LevelUpHelper.GetTotalIntelligenceSkillPoints(UnitDescriptor, Int32) was not found.");
+            }
+            evidence.Add(Describe(getTotalIntelligenceSkillPoints));
+
+            MemberInfo unitProgression = ReflectionAccess.RequireInstanceMember(unitDescriptorType, "Progression");
+            Type progressionType = ReflectionAccess.GetMemberType(unitProgression);
+            MemberInfo progressionTotalIntelligenceSkillPoints = ReflectionAccess.RequireInstanceMember(
+                progressionType,
+                "TotalIntelligenceSkillPoints");
+            if (ReflectionAccess.GetMemberType(progressionTotalIntelligenceSkillPoints) != typeof(int) ||
+                !ReflectionAccess.CanWrite(progressionTotalIntelligenceSkillPoints))
+            {
+                throw new ContractResolutionException(
+                    progressionType.FullName + ".TotalIntelligenceSkillPoints is not a writable Int32 contract.");
+            }
+
             MethodInfo isCustomCompanion = unitHelperType.GetMethod(
                 "IsCustomCompanion",
                 StaticFlags,
@@ -243,6 +299,12 @@ namespace KingmakerDiceRoller.Integration
             Type levelUpActionType = RequireType(
                 gameAssembly,
                 "Kingmaker.UnitLogic.Class.LevelUp.Actions.ILevelUpAction");
+            MemberInfo controllerLevelUpActions = ReflectionAccess.RequireInstanceMember(controllerType, "LevelUpActions");
+            if (!typeof(System.Collections.IList).IsAssignableFrom(ReflectionAccess.GetMemberType(controllerLevelUpActions)))
+            {
+                throw new ContractResolutionException(
+                    "LevelUpController.LevelUpActions is not an IList-compatible replay inventory contract.");
+            }
             MethodInfo applyLevelup = controllerType.GetMethod(
                 "ApplyLevelup",
                 InstanceFlags,
@@ -433,6 +495,13 @@ namespace KingmakerDiceRoller.Integration
                 isFirstLevel,
                 isEmployee,
                 stateMode,
+                stateNextLevel,
+                intelligenceSkillPoints,
+                onApplyAction,
+                getTotalIntelligenceSkillPoints,
+                unitProgression,
+                progressionTotalIntelligenceSkillPoints,
+                controllerLevelUpActions,
                 isCustomCompanion,
                 unitStats,
                 getStat,

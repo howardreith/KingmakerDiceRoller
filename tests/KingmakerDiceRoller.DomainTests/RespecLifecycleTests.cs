@@ -306,13 +306,15 @@ namespace KingmakerDiceRoller.DomainTests
         }
         internal static void RespecDerivedStatsRefreshOnRollAndReturn()
         {
-            var f = new RespecFixture("story", false); int calls = 0;
-            f.Owner = new RespecOwnership(f.Environment.Controller, f.Environment.Source, f.Original.Unit,
-                new object(), "native boundary", () => true, () => f.Original, state => { calls++; });
+            var f = new RespecFixture("story", false);
             f.Coordinator.OnRespecBound(f.Owner); f.Roll();
-            AssertEx.Equal(1, calls);
+            AssertEx.Equal(1, f.Preview.OnApplyActionCalls);
+            AssertEx.Equal(
+                FakeLevelUpHelper.GetTotalIntelligenceSkillPoints(f.Preview.Unit, 1),
+                f.Preview.IntelligenceSkillPoints);
             AssertEx.True(f.Coordinator.TryRestorePointBuy(out string error), error);
-            AssertEx.Equal(2, calls);
+            AssertEx.Equal(2, f.Preview.OnApplyActionCalls);
+            AssertEx.Equal(0, f.Preview.IntelligenceSkillPoints); // restored 10s grant no points
         }
 
         internal static void RespecFailedSourceWriteRollsBackExactSnapshot()

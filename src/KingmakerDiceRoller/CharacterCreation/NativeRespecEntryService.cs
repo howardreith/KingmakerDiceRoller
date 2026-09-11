@@ -92,7 +92,7 @@ namespace KingmakerDiceRoller.CharacterCreation
                 () => (providerEnabled == null || Equals(providerEnabled.GetValue(null), wasEnabled)) &&
                     IsOwnedPlayerEntity(player, originalEntity) && ReferenceEquals(contracts.original.GetValue(target), originalEntity) &&
                     ReferenceEquals(contracts.rebuild.GetValue(target), sourceEntity) && Equals(contracts.callback.GetValue(controller), action),
-                () => contracts.descriptor.GetValue(originalEntity, null), stateToRefresh => contracts.refreshDerived.Invoke(stateToRefresh, null));
+                () => contracts.descriptor.GetValue(originalEntity, null));
         }
 
         private bool IsOwnedPlayerEntity(object player, object entity)

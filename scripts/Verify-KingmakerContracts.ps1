@@ -104,8 +104,37 @@ try {
     if ((Member-Type $firstLevel) -ne [bool]) { throw 'IsFirstLevel is not Boolean.' }
     $isEmployee = Require-Member $state 'IsEmployee'
     if ((Member-Type $isEmployee) -ne [bool]) { throw 'IsEmployee is not Boolean.' }
-    $stateMode = Require-Member $state 'Mode'
-    if ((Member-Type $stateMode) -ne $mode) { throw 'LevelUpState.Mode is not the exact CharBuildMode enum.' }
+$stateMode = Require-Member $state 'Mode'
+if ((Member-Type $stateMode) -ne $mode) { throw 'LevelUpState.Mode is not the exact CharBuildMode enum.' }
+$stateNextLevel = Require-Member $state 'NextLevel'
+if ((Member-Type $stateNextLevel) -ne [int]) {
+    throw 'LevelUpState.NextLevel is not an Int32 contract.'
+}
+$intelligenceSkillPoints = Require-Member $state 'IntelligenceSkillPoints'
+if ((Member-Type $intelligenceSkillPoints) -ne [int] -or -not (Member-IsWritable $intelligenceSkillPoints)) {
+    throw 'LevelUpState.IntelligenceSkillPoints is not a writable Int32 contract.'
+}
+$onApplyAction = $state.GetMethod('OnApplyAction',$flags,$null,[Type[]]@(),$null)
+if (-not $onApplyAction -or $onApplyAction.ReturnType -ne [void] -or $onApplyAction.IsStatic) {
+    throw 'Exact instance void LevelUpState.OnApplyAction() was not found.'
+}
+$levelUpHelper = Require-Type $assembly 'Kingmaker.UnitLogic.Class.LevelUp.Actions.LevelUpHelper'
+$getTotalIntelligenceSkillPoints = $levelUpHelper.GetMethod(
+    'GetTotalIntelligenceSkillPoints', $staticFlags, $null, [Type[]]@($unit,[int]), $null)
+if (-not $getTotalIntelligenceSkillPoints -or $getTotalIntelligenceSkillPoints.ReturnType -ne [int] -or -not $getTotalIntelligenceSkillPoints.IsStatic) {
+    throw 'Exact static Int32 LevelUpHelper.GetTotalIntelligenceSkillPoints(UnitDescriptor, Int32) was not found.'
+}
+$unitProgression = Require-Member $unit 'Progression'
+$progressionType = Member-Type $unitProgression
+$progressionTotalIntelligence = Require-Member $progressionType 'TotalIntelligenceSkillPoints'
+if ((Member-Type $progressionTotalIntelligence) -ne [int] -or -not (Member-IsWritable $progressionTotalIntelligence)) {
+    throw "$($progressionType.FullName).TotalIntelligenceSkillPoints is not a writable Int32 contract."
+}
+# The refresh transaction depends on OnApplyAction consuming the cached IntelligenceSkillPoints.
+$onApplyBytes = $onApplyAction.GetMethodBody().GetILAsByteArray()
+if ((Find-ByteSequenceOffset $onApplyBytes ([BitConverter]::GetBytes($intelligenceSkillPoints.MetadataToken))) -lt 0) {
+    throw 'LevelUpState.OnApplyAction no longer reads the cached IntelligenceSkillPoints allowance.'
+}
     $isCustomCompanion = $unitHelper.GetMethod(
         'IsCustomCompanion',
         $staticFlags,
@@ -180,8 +209,12 @@ try {
     $update = $controller.GetMethod('UpdatePreview',$flags,$null,[Type[]]@(),$null)
     if (-not $recalculate -or $recalculate.FieldType -ne [bool] -or -not $update -or $update.ReturnType -ne [void]) { throw 'Exact preview refresh contract is unavailable.' }
 
-    $levelUpAction = Require-Type $assembly 'Kingmaker.UnitLogic.Class.LevelUp.Actions.ILevelUpAction'
-    $applyLevelup = $controller.GetMethod('ApplyLevelup',$flags,$null,[Type[]]@($unit),$null)
+$levelUpAction = Require-Type $assembly 'Kingmaker.UnitLogic.Class.LevelUp.Actions.ILevelUpAction'
+$controllerLevelUpActions = Require-Member $controller 'LevelUpActions'
+if (-not [System.Collections.IList].IsAssignableFrom((Member-Type $controllerLevelUpActions))) {
+    throw 'LevelUpController.LevelUpActions is not an IList-compatible replay inventory contract.'
+}
+$applyLevelup = $controller.GetMethod('ApplyLevelup',$flags,$null,[Type[]]@($unit),$null)
     $commit = $controller.GetMethod('Commit',$flags,$null,[Type[]]@(),$null)
     $setupNewCharacter = $controller.GetMethod('SetupNewCharacher',$flags,$null,[Type[]]@(),$null)
     $applyAction = $levelUpAction.GetMethod('Apply',$flags,$null,[Type[]]@($state,$unit),$null)
@@ -360,6 +393,12 @@ try {
         assembly_mvid = $assembly.ManifestModule.ModuleVersionId.ToString('D')
         signatures = @(
             $constructor.ToString(), $start.ToString(), $complete.ToString(),
+            "$($state.FullName).NextLevel",
+            "$($state.FullName).IntelligenceSkillPoints",
+            "$($state.FullName).OnApplyAction()",
+            "$($levelUpHelper.FullName).GetTotalIntelligenceSkillPoints(UnitDescriptor,Int32)",
+            "$($progressionType.FullName).TotalIntelligenceSkillPoints",
+            "$($controller.FullName).LevelUpActions",
             "$($state.FullName).IsEmployee",
             "$($unitHelper.FullName).IsCustomCompanion($($unit.FullName))",
             "Game.Instance.UI.CharacterBuildController.LevelUpController -> $($controller.FullName)",

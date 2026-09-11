@@ -8,10 +8,9 @@ namespace KingmakerDiceRoller.CharacterCreation
     {
         private readonly Func<bool> ownerIsCurrent;
         private readonly Func<object> finalDescriptor;
-        private readonly Action<object> refreshDerived;
 
         public RespecOwnership(object controller, object source, object originalEntity,
-            object callback, string provider, Func<bool> ownerIsCurrent, Func<object> finalDescriptor, Action<object> refreshDerived = null)
+            object callback, string provider, Func<bool> ownerIsCurrent, Func<object> finalDescriptor)
         {
             Controller = controller ?? throw new ArgumentNullException(nameof(controller));
             Source = source ?? throw new ArgumentNullException(nameof(source));
@@ -20,7 +19,6 @@ namespace KingmakerDiceRoller.CharacterCreation
             Provider = provider ?? throw new ArgumentNullException(nameof(provider));
             this.ownerIsCurrent = ownerIsCurrent ?? throw new ArgumentNullException(nameof(ownerIsCurrent));
             this.finalDescriptor = finalDescriptor ?? throw new ArgumentNullException(nameof(finalDescriptor));
-            this.refreshDerived = refreshDerived;
         }
 
         public object Controller { get; }
@@ -34,7 +32,6 @@ namespace KingmakerDiceRoller.CharacterCreation
         public object ReadFinalDescriptor() => IsCurrent ? finalDescriptor() : null;
         public bool Owns(object controller, object source) => IsCurrent &&
             ReferenceEquals(Controller, controller) && ReferenceEquals(Source, source);
-        public void RefreshDerivedStats(object state) { if (IsCurrent) refreshDerived?.Invoke(state); }
         public void Close() { Closed = true; }
     }
 }

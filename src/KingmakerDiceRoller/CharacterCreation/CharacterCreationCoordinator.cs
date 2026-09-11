@@ -14,9 +14,11 @@ namespace KingmakerDiceRoller.CharacterCreation
         private readonly KingmakerStatAccess statAccess;
         private readonly RollSessionManager sessions;
         private readonly StatApplicationService application;
+        private readonly DerivedStateRefreshService derivedRefresh;
         private readonly MercenaryFinalizationService mercenaryFinalization;
         private readonly RespecLifecycleService respec;
         public RespecLifecycleService Respec => respec;
+        public MercenaryFinalizationService MercenaryFinalization => mercenaryFinalization;
         private readonly PointBuyRestoreService pointBuyRestore;
         private readonly AbilityPhasePresentationService pointBuyPresentation;
         private readonly RuntimeDiagnostics diagnostics;
@@ -32,6 +34,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             KingmakerStatAccess statAccess,
             RollSessionManager sessions,
             StatApplicationService application,
+            DerivedStateRefreshService derivedRefresh,
             PointBuyRestoreService pointBuyRestore,
             AbilityPhasePresentationService pointBuyPresentation,
             RuntimeDiagnostics diagnostics,
@@ -45,6 +48,7 @@ namespace KingmakerDiceRoller.CharacterCreation
                 statAccess,
                 sessions,
                 application,
+                derivedRefresh,
                 pointBuyRestore,
                 pointBuyPresentation,
                 diagnostics,
@@ -68,6 +72,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             KingmakerStatAccess statAccess,
             RollSessionManager sessions,
             StatApplicationService application,
+            DerivedStateRefreshService derivedRefresh,
             PointBuyRestoreService pointBuyRestore,
             AbilityPhasePresentationService pointBuyPresentation,
             RuntimeDiagnostics diagnostics,
@@ -82,6 +87,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             this.statAccess = statAccess;
             this.sessions = sessions;
             this.application = application;
+            this.derivedRefresh = derivedRefresh ?? throw new ArgumentNullException(nameof(derivedRefresh));
             mercenaryFinalization = new MercenaryFinalizationService(statAccess);
             respec = new RespecLifecycleService(statAccess);
             this.pointBuyRestore = pointBuyRestore;
@@ -118,9 +124,10 @@ namespace KingmakerDiceRoller.CharacterCreation
         {
             KingmakerContracts contracts = contractsProvider();
             if (contracts == null) return;
-            // The one-use authoritative ticket applies before native action checks, while
+            // The one-use authoritative tickets apply before native action checks, while
             // first admission waits for HandleLevelUpStart to finish binding the controller.
             respec.BeforeReplay(state, unit, contracts);
+            TryBeginMercenaryCommitReplay(state, unit, contracts);
             CharacterCreationContextDecision context = contextPolicy.Evaluate(state, unit, mode, contracts,
                 respec.Active, sessions.Active != null && (sessions.Active.IsRollMode || sessions.Active.IsRestoringPointBuy));
             if (!context.Accepted)
@@ -187,14 +194,48 @@ namespace KingmakerDiceRoller.CharacterCreation
             string error;
             if (application.TryStageCurrentGeneration(session, contracts, out error))
             {
+                bool stagedOnAuthoritativeSource = ReferenceEquals(session.Unit, session.StableOwner);
                 RecordEvent(
-                    "Staged the explicit rolled assignment on the accepted preview; awaiting live controller verification. " +
+                    (stagedOnAuthoritativeSource
+                        ? "Staged the explicit rolled assignment on the authoritative stable owner before native action replay. "
+                        : "Staged the explicit rolled assignment on the accepted preview; awaiting live controller verification. ") +
                     BuildSessionFacts(session));
-                diagnostics.SetStatus("Rolled assignment is staged; awaiting live controller verification.");
+                if (!stagedOnAuthoritativeSource)
+                {
+                    diagnostics.SetStatus("Rolled assignment is staged; awaiting live controller verification.");
+                }
             }
             else
             {
                 FailApplication(session, "Rolled-array staging failed closed: " + error);
+            }
+        }
+
+        private void TryBeginMercenaryCommitReplay(object state, object unit, KingmakerContracts contracts)
+        {
+            RollSession session = sessions.Active;
+            if (session == null || session.CreationKind != SupportedCharacterCreationKind.Mercenary)
+            {
+                return;
+            }
+            object activeController;
+            if (!contracts.TryGetLevelUpController(out activeController) ||
+                !ReferenceEquals(activeController, session.Controller))
+            {
+                return;
+            }
+            string error;
+            if (mercenaryFinalization.TryBeginReplay(session, session.Controller, state, unit, contracts, out error))
+            {
+                RecordEvent(
+                    "Staged the verified rolled assignment on the exact mercenary stable owner before native commit replay. " +
+                    BuildSessionFacts(session));
+                return;
+            }
+            if (error != null)
+            {
+                diagnostics.FinalizationFailed("Mercenary pre-replay staging failed: " + error);
+                logger.Error("Mercenary pre-replay staging failed: " + error);
             }
         }
 
@@ -227,6 +268,7 @@ namespace KingmakerDiceRoller.CharacterCreation
         public void OnBuildCanceled(object controller)
         {
             respec.Abort(controller, "Canceled or interrupted native build.");
+            mercenaryFinalization.Abort(controller, "Canceled or interrupted native build.", contractsProvider());
             RollSession session = sessions.Active;
             if (session != null && session.CreationKind == SupportedCharacterCreationKind.Respec && ReferenceEquals(session.Controller, controller))
             { session.Lifecycle.Abandon(); sessions.Clear(session); }
@@ -276,9 +318,11 @@ namespace KingmakerDiceRoller.CharacterCreation
 
         public void OnLevelUpAppliedToAuthoritativeUnit(
             object controller,
-            object finalDescriptor)
+            object finalDescriptor,
+            System.Collections.IList survivingActions = null)
         {
-            if (respec.HasPendingCommit) respec.AfterReplay(controller, finalDescriptor, contractsProvider());
+            KingmakerContracts contracts = contractsProvider();
+            if (respec.HasPendingCommit) respec.AfterReplay(controller, finalDescriptor, contracts);
             if (respec.Active != null) ObserveRespecPreview(controller);
             RollSession session = sessions.Active;
             if (session == null ||
@@ -289,27 +333,26 @@ namespace KingmakerDiceRoller.CharacterCreation
                 return;
             }
 
-            KingmakerContracts contracts = contractsProvider();
-            MercenaryFinalizationObservation observation;
-            string error;
-            if (mercenaryFinalization.TryApplyAuthoritativeAssignment(
-                session,
-                controller,
-                finalDescriptor,
-                contracts,
-                out observation,
-                out error))
+            if (mercenaryFinalization.HasPendingCommit)
             {
-                return;
-            }
-
-            session.MarkFinalizationFailed();
-            string detail = "Mercenary authoritative assignment failed before the native success callback: " +
-                observation.BuildFacts();
-            diagnostics.SetStatus(detail);
-            if (diagnostics.Event("FINALIZATION APPLY FAILURE " + detail))
-            {
-                logger.Error(detail);
+                bool replayVerified = mercenaryFinalization.AfterReplay(
+                    controller,
+                    finalDescriptor,
+                    survivingActions,
+                    contracts);
+                if (replayVerified)
+                {
+                    session.MarkAuthoritativeFinalizationApplied(controller, finalDescriptor);
+                    return;
+                }
+                session.MarkFinalizationFailed();
+                string stagingFailure = "Mercenary authoritative replay did not retain the staged rolled assignment. " +
+                    BuildSessionFacts(session);
+                diagnostics.SetStatus(stagingFailure);
+                if (diagnostics.Event("REPLAY FAIL " + stagingFailure))
+                {
+                    logger.Error(stagingFailure);
+                }
             }
         }
 
@@ -317,22 +360,38 @@ namespace KingmakerDiceRoller.CharacterCreation
 
         public void OnLevelUpCommitCompleted(object controller)
         {
-            if (respec.Complete(controller, contractsProvider()))
+            KingmakerContracts contracts = contractsProvider();
+            if (respec.Complete(controller, contracts))
             {
                 diagnostics.SetStatus(respec.LastResult);
                 if (respec.LastPassed == true) { diagnostics.FinalizationVerified(respec.LastResult); logger.Info(respec.LastResult); }
                 else { diagnostics.FinalizationFailed(respec.LastResult); logger.Error(respec.LastResult); }
             }
+
             RollSession session = sessions.Active;
-            if (session == null ||
-                session.CreationKind != SupportedCharacterCreationKind.Mercenary ||
-                !ReferenceEquals(session.Controller, controller) ||
-                !session.IsRollMode)
+            if (session == null || !ReferenceEquals(session.Controller, controller))
             {
+                mercenaryFinalization.Complete(controller, contracts);
                 return;
             }
+            if (session.CreationKind == SupportedCharacterCreationKind.Mercenary && session.IsRollMode)
+            {
+                CompleteMercenaryCommit(session, controller, contracts);
+                return;
+            }
+            if (session.CreationKind == SupportedCharacterCreationKind.NewMainCharacter && session.IsRollMode)
+            {
+                CompleteNewMainCommit(session, controller, contracts);
+                return;
+            }
+            mercenaryFinalization.Complete(controller, contracts);
+        }
 
-            KingmakerContracts contracts = contractsProvider();
+        private void CompleteMercenaryCommit(
+            RollSession session,
+            object controller,
+            KingmakerContracts contracts)
+        {
             MercenaryFinalizationObservation observation;
             string error;
             bool passed = mercenaryFinalization.TryVerifyAfterSuccessCallback(
@@ -342,6 +401,7 @@ namespace KingmakerDiceRoller.CharacterCreation
                 out observation,
                 out error);
             if (!passed) session.MarkFinalizationFailed();
+            mercenaryFinalization.Complete(controller, contracts);
 
             try
             {
@@ -367,15 +427,71 @@ namespace KingmakerDiceRoller.CharacterCreation
             }
         }
 
+        private void CompleteNewMainCommit(
+            RollSession session,
+            object controller,
+            KingmakerContracts contracts)
+        {
+            // The commit-time constructor rebind stages the verified assignment on the stable
+            // owner before native replay consumes it; this seam only verifies and closes.
+            int[] expected = session.Assignment == null ? null : session.Assignment.ToAssignedArray();
+            bool passed = false;
+            string detail;
+            try
+            {
+                int[] observed = expected == null
+                    ? null
+                    : statAccess.ReadUnitBaseValues(session.StableOwner, contracts);
+                passed = expected != null && observed != null && expected.SequenceEqual(observed);
+                detail = "New-main rolled-stat final verification: passed=" + BooleanText(passed) +
+                    ", creationKind=" + session.CreationKind +
+                    ", expectedBase=[" + DescribeValues(expected) + "]" +
+                    ", observedFinalBase=[" + DescribeValues(observed) + "]" +
+                    ", " + BuildSessionFacts(session);
+            }
+            catch (Exception exception)
+            {
+                detail = "New-main rolled-stat final verification failed with " +
+                    exception.GetType().Name + ": " + exception.Message + " " + BuildSessionFacts(session);
+            }
+
+            try
+            {
+                session.Complete();
+            }
+            finally
+            {
+                sessions.Clear(session);
+            }
+
+            if (passed)
+            {
+                diagnostics.FinalizationVerified(detail);
+                diagnostics.SetStatus("The completed main character retained the verified rolled base values.");
+                logger.Info(detail);
+            }
+            else
+            {
+                diagnostics.FinalizationFailed(detail);
+                diagnostics.SetStatus(detail);
+                logger.Error(detail);
+            }
+        }
+
         public void Update(float deltaTime)
         {
+            KingmakerContracts contracts = contractsProvider();
             if (respec.ExpireInterruptedCommit())
             { diagnostics.FinalizationFailed(respec.LastResult); logger.Error(respec.LastResult); }
+            if (mercenaryFinalization.ExpireInterruptedCommit(contracts))
+            {
+                diagnostics.FinalizationFailed("Mercenary commit interrupted before completion; the exact pre-commit state was restored and no late writes were made.");
+                logger.Error("Mercenary commit interrupted before completion; the exact pre-commit state was restored and no late writes were made.");
+            }
             if (respec.Active != null && !respec.Active.IsCurrent)
                 OnBuildCanceled(respec.Active.Controller);
             RollSession session = sessions.Active;
             if (session == null) return;
-            KingmakerContracts contracts = contractsProvider();
             if (contracts == null) return;
 
             object currentController;
@@ -426,13 +542,15 @@ namespace KingmakerDiceRoller.CharacterCreation
             }
 
             // ApplyLevelup replays Kingmaker actions after the LevelUpState constructor postfix.
-            // If that replay overwrote the staged values, restage this already-live generation once.
+            // If that replay overwrote the staged values, restage this already-live generation once
+            // and redo the native derived allowances so checks and counters agree again.
             if (session.ApplicationAttempts < RollSession.MaximumApplicationAttemptsPerGeneration)
             {
                 RecordEvent(
                     "The live replacement overwrote its constructor-stage values; performing one bounded live restage. " +
                     live.BuildFacts(session, application.RefreshInProgress));
                 if (application.TryStageCurrentGeneration(session, contracts, out error) &&
+                    RefreshDerivedAllowances(session, contracts, "bounded restage", out DerivedAllowanceSnapshot ignoredSnapshot) &&
                     application.TryMarkLiveVerified(session, contracts, out live, out error))
                 {
                     CompleteApplication(session, live);
@@ -655,10 +773,21 @@ namespace KingmakerDiceRoller.CharacterCreation
                 return false;
             }
 
-            if (session.CreationKind == SupportedCharacterCreationKind.Respec)
+            // The restored point-buy scores must also drive the live derived allowances; a
+            // failed refresh is reported instead of claiming a coherent Return to Point Buy.
+            DerivedAllowanceSnapshot derivedPrevious;
+            if (!RefreshDerivedAllowances(session, contracts, "Return to Point Buy", out derivedPrevious))
             {
-                try { respec.Active.RefreshDerivedStats(session.State); }
-                catch (Exception exception) { logger.Exception("Refresh native respec derived stats after exact Point Buy restore", exception); }
+                if (derivedPrevious != null)
+                {
+                    RestoreDerivedAllowances(session, contracts, derivedPrevious, "Return to Point Buy");
+                }
+                error = "Point-buy restoration verified, but the native derived allowances did not refresh: " +
+                    "restoration=" + restored.BuildFacts(session, application.RefreshInProgress) + " " +
+                    BuildSessionFacts(session);
+                diagnostics.SetStatus(error);
+                RecordEvent("FAIL " + error);
+                return false;
             }
             PointBuyPresentationObservation presentation;
             string presentationError;
@@ -700,6 +829,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             RollSession session = sessions.Active;
             if (session == null)
             {
+                mercenaryFinalization.Abort(null, "Disabled or unloaded.", contractsProvider());
                 error = null;
                 return true;
             }
@@ -721,6 +851,7 @@ namespace KingmakerDiceRoller.CharacterCreation
 
             if (session != null) sessions.Clear(session);
             respec.Abort(null, "Disabled or unloaded.");
+            mercenaryFinalization.Abort(null, "Disabled or unloaded.", contractsProvider());
             error = null;
             return true;
         }
@@ -798,14 +929,18 @@ namespace KingmakerDiceRoller.CharacterCreation
 
             LivePreviewObservation live = null;
             RollPresentationObservation presentation = null;
+            DerivedAllowanceSnapshot derivedPrevious = null;
             try
             {
                 if (!application.TryStageCurrentGeneration(session, contracts, out error))
                 {
                     throw new InvalidOperationException(error);
                 }
-                if (session.CreationKind == SupportedCharacterCreationKind.Respec)
-                    respec.Active.RefreshDerivedStats(session.State);
+                if (!RefreshDerivedAllowances(session, contracts, commandName, out derivedPrevious))
+                {
+                    throw new InvalidOperationException(
+                        "The native derived allowances (skill points/spell slots) did not refresh from the staged scores.");
+                }
                 if (!application.TryMarkLiveVerified(session, contracts, out live, out error))
                 {
                     throw new InvalidOperationException(error);
@@ -846,6 +981,8 @@ namespace KingmakerDiceRoller.CharacterCreation
                     {
                         throw new InvalidOperationException("The command rollback did not verify on the current live preview.");
                     }
+                    // Rollback covers the semantic effect: derived allowances too, not only six numbers.
+                    RestoreDerivedAllowances(session, contracts, derivedPrevious, commandName);
                     session.AbortPendingRoll();
                     string ignored;
                     pointBuyPresentation.TryRefreshCurrentAbilityPhase(contracts, out ignored);
@@ -861,6 +998,38 @@ namespace KingmakerDiceRoller.CharacterCreation
                 RecordEvent("FAIL " + error + " rollbackVerified=" + BooleanText(rollbackVerified) + ".");
                 return false;
             }
+        }
+
+        private bool RefreshDerivedAllowances(
+            RollSession session,
+            KingmakerContracts contracts,
+            string commandName,
+            out DerivedAllowanceSnapshot previous)
+        {
+            int granted;
+            string refreshError;
+            if (derivedRefresh.TryRefresh(session.State, session.Unit, contracts, out previous, out granted, out refreshError))
+            {
+                RecordEvent(
+                    "Refreshed native derived allowances from the staged scores via LevelUpState.OnApplyAction; " +
+                    "intelligenceSkillPoints=" + granted + " (" + commandName + ").");
+                return true;
+            }
+            RecordEvent("FAIL Native derived-allowance refresh failed during " + commandName + ": " + refreshError);
+            logger.Error("Native derived-allowance refresh failed during " + commandName + ": " + refreshError);
+            return false;
+        }
+
+        private void RestoreDerivedAllowances(
+            RollSession session,
+            KingmakerContracts contracts,
+            DerivedAllowanceSnapshot previous,
+            string commandName)
+        {
+            if (previous == null) return;
+            string restoreError;
+            if (derivedRefresh.TryRestore(previous, session.State, session.Unit, contracts, out restoreError)) return;
+            logger.Exception(commandName + " derived-allowance rollback", new InvalidOperationException(restoreError));
         }
 
         private bool HasCurrentLiveBinding(RollSession session, KingmakerContracts contracts)
@@ -969,6 +1138,11 @@ namespace KingmakerDiceRoller.CharacterCreation
         private static string BooleanText(bool value)
         {
             return value ? "true" : "false";
+        }
+
+        private static string DescribeValues(int[] values)
+        {
+            return values == null ? "unavailable" : string.Join(",", values);
         }
     }
 }

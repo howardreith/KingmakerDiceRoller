@@ -89,9 +89,12 @@ namespace KingmakerDiceRoller.Patches
             catch (Exception exception) { logger?.Exception("Ability allocator FillData postfix", exception); }
         }
 
-        public static void LevelUpAppliedToAuthoritativeUnit(object __instance, object __0)
+        public static void LevelUpAppliedToAuthoritativeUnit(
+            object __instance,
+            object __0,
+            object __result)
         {
-            try { coordinator?.OnLevelUpAppliedToAuthoritativeUnit(__instance, __0); }
+            try { coordinator?.OnLevelUpAppliedToAuthoritativeUnit(__instance, __0, __result as System.Collections.IList); }
             catch (Exception exception) { logger?.Exception("LevelUpController.ApplyLevelup postfix", exception); }
         }
 

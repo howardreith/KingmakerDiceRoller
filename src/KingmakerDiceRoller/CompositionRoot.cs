@@ -36,6 +36,7 @@ namespace KingmakerDiceRoller
             var sessions = new RollSessionManager();
             var nativeControls = new NativeAbilityControlService(logger);
             var application = new StatApplicationService(statAccess, livePreview, preview, logger);
+            var derivedRefresh = new DerivedStateRefreshService();
             var restore = new PointBuyRestoreService(statAccess, livePreview, preview, logger);
             var presentation = new AbilityPhasePresentationService(livePreview, logger, nativeControls);
             var workflow = new CharacterRollWorkflow(
@@ -57,6 +58,7 @@ namespace KingmakerDiceRoller
                 statAccess,
                 sessions,
                 application,
+                derivedRefresh,
                 restore,
                 presentation,
                 diagnostics,

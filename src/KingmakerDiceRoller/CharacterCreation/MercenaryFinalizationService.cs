@@ -1,81 +1,158 @@
 using System;
+using System.Collections;
 using System.Runtime.CompilerServices;
 using KingmakerDiceRoller.Integration;
 
 namespace KingmakerDiceRoller.CharacterCreation
 {
+    // Native Commit() replays every ILevelUpAction against the stable mercenary source
+    // (LevelUpController.Unit) inside ApplyLevelup. Exact 2.1.7b IL proves LevelUpState is
+    // constructed on that source only inside Commit; UpdatePreview only ever constructs on a
+    // preview clone. The one-use commit ticket therefore stages the verified rolled assignment
+    // on the fresh commit state before native Check/Apply consume ability values, then verifies
+    // the replay instead of correcting six numbers after choices were already validated
+    // against different scores.
     public sealed class MercenaryFinalizationService
     {
         private readonly KingmakerStatAccess statAccess;
+        private CommitTicket pending;
+        public bool HasPendingCommit => pending != null;
 
         public MercenaryFinalizationService(KingmakerStatAccess statAccess)
         {
             this.statAccess = statAccess ?? throw new ArgumentNullException(nameof(statAccess));
         }
 
-        public bool TryApplyAuthoritativeAssignment(
+        public bool TryBeginReplay(
             RollSession session,
             object controller,
-            object finalDescriptor,
+            object state,
+            object unit,
             KingmakerContracts contracts,
-            out MercenaryFinalizationObservation observation,
             out string error)
         {
-            FinalizationContext context;
-            if (!TryResolveExactContext(
-                session,
-                controller,
-                finalDescriptor,
-                contracts,
-                true,
-                out context,
-                out error))
+            error = null;
+            if (session == null || controller == null || state == null || unit == null || contracts == null)
             {
-                observation = BuildFailure(session, context, error);
                 return false;
             }
-            if (!session.IsApplied || session.Assignment == null)
+            if (session.CreationKind != SupportedCharacterCreationKind.Mercenary ||
+                !session.IsRollMode || !session.IsApplied || session.Assignment == null ||
+                !session.OwnsStableOwner(controller, unit))
             {
-                error = "The mercenary assignment was not verified on the current preview generation.";
-                observation = BuildFailure(session, context, error);
                 return false;
             }
-            if (session.FinalizationDescriptor != null &&
-                !ReferenceEquals(session.FinalizationDescriptor, finalDescriptor))
+            // Only the commit replay constructs a state on the stable source; every preview
+            // generation (including this session's own) is a different unit.
+            if (session.OwnsState(state) || session.OwnsUnit(unit))
             {
-                error = "A different final descriptor was already observed for this session.";
-                observation = BuildFailure(session, context, error);
                 return false;
             }
 
-            int[] expected = session.Assignment.ToAssignedArray();
+            if (pending != null)
+            {
+                if (ReferenceEquals(pending.Owner, session.Controller))
+                {
+                    Abort(controller, "A new native Commit superseded an incomplete mercenary commit ticket.");
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
             try
             {
-                int[] before = statAccess.ReadUnitBaseValues(finalDescriptor, contracts);
-                if (!SequenceEquals(before, expected))
+                object stateUnit = ReflectionAccess.Read(contracts.LevelUpStateUnitMember, state);
+                object firstLevel = ReflectionAccess.Read(contracts.LevelUpStateIsFirstLevelMember, state);
+                object employee = ReflectionAccess.Read(contracts.LevelUpStateIsEmployeeMember, state);
+                object mode = ReflectionAccess.Read(contracts.LevelUpStateModeMember, state);
+                object stableCustom = contracts.UnitHelperIsCustomCompanionMethod.Invoke(null, new[] { unit });
+                if (!ReferenceEquals(stateUnit, unit) ||
+                    !(firstLevel is bool) || !(bool)firstLevel ||
+                    !(employee is bool) || !(bool)employee ||
+                    !(stableCustom is bool) || !(bool)stableCustom ||
+                    mode == null || !string.Equals(mode.ToString(), "CharGen", StringComparison.Ordinal))
                 {
-                    statAccess.WriteUnitBaseValues(finalDescriptor, expected, contracts);
-                }
-                int[] observed = statAccess.ReadUnitBaseValues(finalDescriptor, contracts);
-                if (!SequenceEquals(observed, expected))
-                {
-                    error = "The authoritative descriptor did not retain the expected base values after the finalization write.";
-                    observation = BuildObservation(context, expected, observed, false, error);
                     return false;
                 }
 
-                session.MarkAuthoritativeFinalizationApplied(controller, finalDescriptor);
-                observation = BuildObservation(context, expected, observed, true, null);
+                object distribution = ReflectionAccess.Read(contracts.LevelUpStateDistributionMember, state);
+                int[] expected = session.Assignment.ToAssignedArray();
+                GenerationRollbackSnapshot before = GenerationRollbackSnapshot.Capture(
+                    1,
+                    distribution,
+                    unit,
+                    contracts,
+                    statAccess);
+                var ticket = new CommitTicket
+                {
+                    Owner = session.Controller,
+                    StableOwner = session.StableOwner,
+                    Distribution = distribution,
+                    Rollback = before,
+                    Expected = expected,
+                    PreReplayActions = ReadActionInventory(controller, contracts)
+                };
+                statAccess.WriteDistributionValues(distribution, expected, contracts);
+                statAccess.WriteUnitBaseValues(unit, expected, contracts);
+                statAccess.DisablePointBuyAllocator(distribution, contracts);
+                if (!SequenceEquals(expected, statAccess.ReadUnitBaseValues(unit, contracts)) ||
+                    statAccess.ReadDistributionAvailable(distribution, contracts))
+                {
+                    throw new InvalidOperationException(
+                        "The staged authoritative replay state did not retain the rolled assignment.");
+                }
+                pending = ticket;
                 error = null;
                 return true;
             }
             catch (Exception exception)
             {
-                error = "Authoritative base-value application failed with " +
-                    exception.GetType().Name + ": " + exception.Message;
-                observation = BuildFailure(session, context, error);
+                error = "Authoritative mercenary pre-replay staging failed: " + exception.Message;
                 return false;
             }
+        }
+
+        public bool AfterReplay(
+            object controller,
+            object target,
+            IList survivingActions,
+            KingmakerContracts contracts)
+        {
+            CommitTicket ticket = pending;
+            if (ticket == null || !ReferenceEquals(ticket.Owner, controller) ||
+                !ReferenceEquals(ticket.StableOwner, target))
+            {
+                return false;
+            }
+            try
+            {
+                ticket.Applied = SequenceEquals(
+                    ticket.Expected,
+                    statAccess.ReadUnitBaseValues(target, contracts));
+            }
+            catch (Exception exception)
+            {
+                ticket.Applied = false;
+                ticket.Failure = exception.Message;
+            }
+            if (!ticket.Applied)
+            {
+                ticket.Failure = "Native replay overwrote the staged starting assignment; no corrective late write was made.";
+                return false;
+            }
+            if (survivingActions != null && ticket.PreReplayActions != null)
+            {
+                int survivors = survivingActions.Count;
+                int recorded = ticket.PreReplayActions.Length;
+                if (survivors < recorded)
+                {
+                    ticket.Failure = recorded - survivors + " of " + recorded +
+                        " recorded level-up actions failed native replay checks under the rolled scores and were not applied.";
+                }
+            }
+            return true;
         }
 
         public bool TryVerifyAfterSuccessCallback(
@@ -101,9 +178,16 @@ namespace KingmakerDiceRoller.CharacterCreation
                 observation = BuildFailure(session, context, error);
                 return false;
             }
-            if (!session.AuthoritativeFinalizationApplied)
+            CommitTicket ticket = pending;
+            if (ticket == null || !ReferenceEquals(ticket.Owner, controller))
             {
-                error = "The native finalization replay completed without an authoritative mercenary assignment.";
+                error = "The native completion had no verified authoritative mercenary replay.";
+                observation = BuildFailure(session, context, error);
+                return false;
+            }
+            if (!ticket.Applied)
+            {
+                error = ticket.Failure ?? "Native replay did not retain the staged starting assignment.";
                 observation = BuildFailure(session, context, error);
                 return false;
             }
@@ -121,9 +205,15 @@ namespace KingmakerDiceRoller.CharacterCreation
             try
             {
                 int[] observed = statAccess.ReadUnitBaseValues(context.FinalDescriptor, contracts);
-                if (!SequenceEquals(observed, expected))
+                if (!SequenceEquals(expected, observed))
                 {
                     error = "The stable descriptor no longer matches the rolled assignment after the native success callback.";
+                    observation = BuildObservation(context, expected, observed, false, error);
+                    return false;
+                }
+                if (ticket.Failure != null)
+                {
+                    error = ticket.Failure;
                     observation = BuildObservation(context, expected, observed, false, error);
                     return false;
                 }
@@ -139,6 +229,87 @@ namespace KingmakerDiceRoller.CharacterCreation
                     exception.GetType().Name + ": " + exception.Message;
                 observation = BuildFailure(session, context, error);
                 return false;
+            }
+        }
+
+        public bool Complete(object controller, KingmakerContracts contracts)
+        {
+            CommitTicket ticket = pending;
+            if (ticket == null || !ReferenceEquals(ticket.Owner, controller)) return false;
+            // SetupNewCharacher and the success callback have already consumed the source.
+            // A replay mismatch is reported as a failure; no post-commit corrective write.
+            pending = null;
+            return true;
+        }
+
+        public bool ExpireInterruptedCommit(KingmakerContracts contracts)
+        {
+            if (pending == null) return false;
+            CommitTicket ticket = pending;
+            Abort(
+                ticket.Owner,
+                "Native Commit exited without its completion postfix (exception/interruption); no late writes permitted.",
+                contracts);
+            return true;
+        }
+
+        public void Abort(object controller, string reason)
+        {
+            Abort(controller, reason, null);
+        }
+
+        public void Abort(object controller, string reason, KingmakerContracts contracts)
+        {
+            CommitTicket ticket = pending;
+            if (ticket == null) return;
+            if (controller != null && !ReferenceEquals(ticket.Owner, controller)) return;
+            pending = null;
+            // The commit never reached its completion postfix, so the source was not inserted;
+            // restore the exact captured pre-commit state so a failed commit cannot leak the
+            // staged rolled assignment into a character whose actions were validated without it.
+            if (ticket.Rollback != null && contracts != null)
+            {
+                try
+                {
+                    ticket.Rollback.Restore(ticket.Distribution, ticket.StableOwner, contracts, statAccess);
+                }
+                catch
+                {
+                    // Reflection or ownership already failed; the diagnostic failure below
+                    // preserves the evidence.
+                }
+            }
+            ticket.Failure = ticket.Failure ?? reason;
+        }
+
+        private static bool SequenceEquals(int[] left, int[] right)
+        {
+            if (left == null || right == null || left.Length != right.Length) return false;
+            for (int index = 0; index < left.Length; index++)
+            {
+                if (left[index] != right[index]) return false;
+            }
+            return true;
+        }
+
+        private static string[] ReadActionInventory(object controller, KingmakerContracts contracts)
+        {
+            try
+            {
+                object actions = ReflectionAccess.Read(contracts.LevelUpControllerLevelUpActionsMember, controller);
+                var list = actions as IList;
+                if (list == null) return null;
+                var names = new string[list.Count];
+                for (int index = 0; index < list.Count; index++)
+                {
+                    object action = list[index];
+                    names[index] = action == null ? "null" : action.GetType().Name;
+                }
+                return names;
+            }
+            catch
+            {
+                return null;
             }
         }
 
@@ -199,43 +370,6 @@ namespace KingmakerDiceRoller.CharacterCreation
                     error = "LevelUpController.Unit is not the accepted stable mercenary descriptor.";
                     return false;
                 }
-                if (requireActiveController &&
-                    (context.State == null ||
-                     !contracts.LevelUpStateType.IsInstanceOfType(context.State)))
-                {
-                    error = "The native finalization LevelUpState is unavailable.";
-                    return false;
-                }
-
-                if (requireActiveController)
-                {
-                    object stateUnit = ReflectionAccess.Read(
-                        contracts.LevelUpStateUnitMember,
-                        context.State);
-                    object firstLevel = ReflectionAccess.Read(
-                        contracts.LevelUpStateIsFirstLevelMember,
-                        context.State);
-                    object employee = ReflectionAccess.Read(
-                        contracts.LevelUpStateIsEmployeeMember,
-                        context.State);
-                    object mode = ReflectionAccess.Read(
-                        contracts.LevelUpStateModeMember,
-                        context.State);
-                    object stableCustom = contracts.UnitHelperIsCustomCompanionMethod.Invoke(
-                        null,
-                        new[] { context.SourceDescriptor });
-                    if (!ReferenceEquals(stateUnit, finalDescriptor) ||
-                        !(firstLevel is bool) || !(bool)firstLevel ||
-                        !(employee is bool) || !(bool)employee ||
-                        !(stableCustom is bool) || !(bool)stableCustom ||
-                        mode == null ||
-                        !string.Equals(mode.ToString(), "CharGen", StringComparison.Ordinal) ||
-                        Convert.ToInt32(mode) != 1)
-                    {
-                        error = "The authoritative target failed exact first-level CharGen custom-mercenary verification.";
-                        return false;
-                    }
-                }
             }
             catch (Exception exception)
             {
@@ -285,14 +419,16 @@ namespace KingmakerDiceRoller.CharacterCreation
                 RuntimeHelpers.GetHashCode(value).ToString("x8");
         }
 
-        private static bool SequenceEquals(int[] left, int[] right)
+        private sealed class CommitTicket
         {
-            if (left == null || right == null || left.Length != right.Length) return false;
-            for (int index = 0; index < left.Length; index++)
-            {
-                if (left[index] != right[index]) return false;
-            }
-            return true;
+            internal object Owner;
+            internal object StableOwner;
+            internal object Distribution;
+            internal GenerationRollbackSnapshot Rollback;
+            internal int[] Expected;
+            internal string[] PreReplayActions;
+            internal bool Applied;
+            internal string Failure;
         }
 
         private sealed class FinalizationContext
