@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.1.4 - rolled-stat build integrity (local candidate, NOT published)
+
+- Repaired three IL-confirmed rolled-stat integrity defects: stale native
+  derived allowances after staging, the mercenary authoritative commit
+  replaying actions against pre-roll scores before a late correction, and
+  unverified new-main completion.
+- Added one shared derived-state transaction (`DerivedStateRefreshService`) that
+  redoes the native `ApplySkillPoints` bookkeeping and invokes
+  `LevelUpState.OnApplyAction` for every supported creation kind on Roll,
+  Reroll, reassignment, History, Recall, bounded restage, and Return to Point
+  Buy, with snapshot rollback of its semantic effect. Skill-point and
+  bonus-spell allowances now agree with the staged scores at selection time.
+- Replaced the mercenary late-stat correction with a one-use pre-replay commit
+  ticket: the verified assignment is staged on the exact stable owner before
+  native `Check/Apply` consume ability values, the replay is verified without
+  corrective late writes, dropped native actions are reported as definitive
+  failures, and an interrupted commit restores the exact pre-commit state.
+- Added a new-main final-recipient audit at the commit postfix and closed the
+  post-commit session leak.
+- Expanded shared contracts and installed-assembly verification with the
+  derived-allowance members (`OnApplyAction`, `IntelligenceSkillPoints`,
+  `GetTotalIntelligenceSkillPoints`, progression totals, action inventory).
+- Added twelve deterministic build-integrity regressions (328 total).
+- Interactive, save/reload, and provider-matrix lanes remain NOT RUN pending an
+  authorized disposable fixture; see `Z-ROLLED-STAT-INTEGRITY-STATE.md`.
+
+
 ## 0.1.3 - native/Eddic respec compatibility
 
 - Add scoped native/Eddic six-starting-score respec integration with exact

@@ -1,5 +1,26 @@
 # Project state
 
+## Current mission: rolled-stat build integrity (in progress)
+
+Branch `z/rolled-stat-build-integrity` (baseline: released 0.1.3 `main` at
+`f4eba6d`) repairs the reported rolled-stat build-integrity defects. Exact
+2.1.7b IL inspection confirmed three divergences: stale native derived
+allowances after staging (skill points/spell slots cached from the pre-roll
+Intelligence), the mercenary authoritative Commit replaying actions against
+pre-roll source scores before a late six-value correction (dropping
+selections), and unverified new-main completion. The repair adds a shared
+`DerivedStateRefreshService` transaction for every supported creation kind and
+replaces the mercenary late correction with a one-use pre-replay commit ticket
+plus final-recipient audits. Details, evidence, and the open live lanes are in
+`Z-ROLLED-STAT-INTEGRITY-STATE.md` and `docs/CHARACTER-BUILD-INTEGRITY.md`.
+Qualification so far: 328/328 deterministic cases, 13/13 repository gates,
+30/30 Python oracle, exact native contracts (including the new
+derived-allowance members), 11 respec assembly checks, Release build with zero
+warnings/errors. The local candidate version is `0.1.4` (NOT published; no
+release, push, or deployment is authorized from this mission). Interactive,
+save/reload, and compatibility lanes remain NOT RUN pending an authorized
+fixture.
+
 ## Current 0.1.3 official release
 
 Version `0.1.3` was initially published as a testing prerelease on 2026-09-07

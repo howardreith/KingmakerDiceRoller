@@ -50,6 +50,10 @@ Harmony patches may not contain business logic.
 - Never patch normal level-up behavior globally.
 - Do not patch `StatsDistribution.Add`, `Remove`, `CanAdd`, `CanRemove`, or cost methods.
 - Do not generate a new array because a preview or phase was rebuilt.
+- Staged scores must also refresh the native derived allowances
+  (`LevelUpState.OnApplyAction` bookkeeping) for every supported creation kind;
+  see `docs/CHARACTER-BUILD-INTEGRITY.md` before changing anything that touches
+  starting scores or the authoritative replay.
 - Returning to point buy must invoke the observed allocator budget and allow
   other mods' normal point-buy patches to run.
 - No game binaries, saves, logs, local paths, or extracted assets in Git.

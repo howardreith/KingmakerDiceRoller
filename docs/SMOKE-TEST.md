@@ -279,3 +279,39 @@ results.
     profile/Cloud changes transactionally, and reverify protected manifests.
     Separate any provider baseline defect from Dice-added effects. Report the
     first failed invariant and the exact candidate hash.
+
+## K. Rolled-stat build-integrity matrix (NOT RUN)
+
+Guarded exactly like section J; same authorization requirements. These lanes
+verify the shared derived-allowance refresh and the pre-replay commit
+integration from `docs/CHARACTER-BUILD-INTEGRITY.md`.
+
+1. New-main noncaster: roll, then on the Skills page confirm the skill-point
+   counter equals the native allowance for the rolled Intelligence (compare
+   with an identical point-buy allocation as control when representable).
+   Allocate all ranks, navigate Back/Next, and complete; the final character's
+   ranks must match the allocation actually made.
+2. New-main/mercenary qualifying Intelligence caster: roll with a high casting
+   score, select every offered starting spell including the final bonus-slot
+   picks, complete, and verify each selected spell identity exists in the
+   final spellbook. Any FINAL FAIL record naming dropped actions is a defect.
+3. Intelligence decrease after allocation: roll an INT-lowering array after
+   spending ranks, confirm the allowance display follows the new score, and
+   that native gating (not silent truncation) resolves any excess before
+   completion.
+4. Feat prerequisites across ability scores (for example an INT-13 or DEX-15
+   prerequisite feat): confirm eligibility tracks the rolled score, selected
+   results persist, and invalid choices are corrected through native UI.
+5. Return to Point Buy after rolling: confirm the allowance returns to the
+   point-buy Intelligence, then change race/class (one genuine preview
+   rebuild) and confirm the restored point-buy allocation survives the
+   rebuild with its exact remaining/total budget.
+6. Mercenary completion: watch for the one-line mercenary final verification
+   record; it must be a PASS with the expected/observed base arrays equal and
+   no dropped-action failure. Repeat with a reroll and a history recall.
+7. The previously reported trait-provider scenario: confirm the feat/trait
+   page populates after rolling and valid selections persist; if it still
+   fails, capture the provider's own log and report it as a separate
+   provider defect with reproduction steps.
+8. Save/exit/reload and reload-without-Dice-Roller lanes from section J
+   remain the persistence gates for this matrix.

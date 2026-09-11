@@ -90,16 +90,28 @@ participates in classification.
 restoration, and native page synchronization. Success is never inferred from a
 detached object.
 
+`DerivedStateRefreshService` owns the shared derived-state transaction for every
+supported starting-score context. Exact 2.1.7b IL proves `LevelUpState` caches
+`IntelligenceSkillPoints` (written only by the `ApplySkillPoints` action) and
+`OnApplyAction()` recomputes `TotalSkillPoints` plus per-spellbook
+`UpdateMaxLevelSpells` from those caches. After staging or restoring scores, the
+service redoes the native bookkeeping against the live unit and invokes
+`OnApplyAction()`, so UI allowances and authoritative replay agree. It captures
+its previous values so command rollback covers this semantic effect too. See
+`docs/CHARACTER-BUILD-INTEGRITY.md` for the verified lifecycle and rules.
+
 `MercenaryFinalizationService` is a separate reflection-backed lifecycle
-service. Exact 2.1.7b IL proves that `LevelUpController.Commit()` discards the
-transient preview, calls `ApplyLevelup(LevelUpController.Unit)`, runs
-`SetupNewCharacher()`, and then invokes its success callback. `ApplyLevelup`
-constructs a fresh state and replays native actions; preview-only rolled writes
-are therefore not authoritative. After native replay, the service applies the
-verified six base values only to the exact active first-level `CharGen`
-mercenary stable owner. A post-callback verifier reads the same descriptor and
-produces one final PASS/FAIL result. It never handles `NewMainCharacter` or an
-unsupported context and never writes modifiers.
+service. Exact 2.1.7b IL proves that `LevelUpState` is constructed on the stable
+controller source only inside `Commit` (`UpdatePreview` only ever constructs on
+a fresh preview clone), so a one-use commit ticket stages the verified rolled
+assignment on that exact state before native action checks consume ability
+values. The `ApplyLevelup` postfix verifies the replay without corrective late
+writes and reports recorded actions dropped by native checks; the `Commit`
+postfix verifies the final recipient and closes the session. Interruption
+restores the exact captured pre-commit state. The new-main commit seam stages
+through the same-owner rebind before replay and audits the final recipient at
+the `Commit` postfix. Neither path handles `Respec`, and neither writes
+modifiers.
 
 ### Native UI
 
@@ -152,7 +164,8 @@ Six narrow postfixes delegate immediately:
 - `StatsDistribution.Start(int)`;
 - `StatsDistribution.IsComplete()`;
 - `CharBAbilityScoresAllocator.FillData()`;
-- `LevelUpController.ApplyLevelup(UnitDescriptor)`;
+- `LevelUpController.ApplyLevelup(UnitDescriptor)` (captures the surviving
+  action list for dropped-selection evidence);
 - `LevelUpController.Commit()`.
 
 No patch contains business logic. Add/remove/cost methods, global progression,
@@ -178,9 +191,10 @@ or malformed entries are isolated and skipped.
 - A valid recovery path must exist before Roll Mode is entered.
 - Race modifiers are not copied into raw arrays or point-buy origins.
 - A matching transient distribution/preview cannot qualify mercenary
-  completion; the exact stable descriptor must be applied and verified.
-- Mercenary finalization applies only after native replay to the immutable
-  mercenary kind and exact accepted controller/source owner.
+  completion; the exact stable descriptor must be verified through the
+  pre-replay commit ticket.
+- Mercenary completion stages before native replay and never corrects six base
+  values after checks have already consumed different scores.
 - Preview/UI rebuilds do not consume random values.
 - Main-character and mercenary creation kinds cannot cross-rebind.
 - A different main-character identity cannot authorize an unmarked build.
@@ -194,13 +208,15 @@ qualifies the selected original, native callback, rebuild source, current provid
 and party/remote membership. `RespecOwnership` carries those immutable identities;
 `RespecLifecycleService` owns the first-level commit ticket and post-copy checks.
 Harmony bridges delegate to these services. The pure dice domain is unchanged.
+The shared derived-state refresh is not respec-specific: it runs for every
+supported creation kind from the coordinator.
 
 Respec is admitted only when starting allocation is editable. Sessions remain
 PointBuy-first and preserve their assignment/origin across owned preview
 replacement. The ticket stages before native first-level action checks, verifies
 replay, observes the exact copy callback, rereads the original entity's current
-descriptor, and closes before ordinary catch-up. The recruitment-only finalization
-service and its immutable Mercenary guard are retained.
+descriptor, and closes before ordinary catch-up. The recruitment-only
+finalization seam and its immutable Mercenary guard are retained.
 
 The point-buy hybrid check accepts coincidentally identical rolled/origin values
 only when independent pre-Roll provenance and all live origin fields match.

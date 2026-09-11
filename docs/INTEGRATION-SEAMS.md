@@ -105,6 +105,30 @@ Remove, CanAdd, CanRemove, or cost methods. The origin also captures the exact
 current base allocation, remaining/total points, allocator availability, and
 preview values immediately before Roll or Recall. Reroll does not recapture it.
 
+## Derived-allowance model
+
+Exact IL establishes the caches that make ability scores drive allowances:
+
+```text
+LevelUpState.NextLevel                                            (read)
+LevelUpState.IntelligenceSkillPoints                              (read/write)
+LevelUpState.OnApplyAction()                                      (invoke)
+LevelUpHelper.GetTotalIntelligenceSkillPoints(UnitDescriptor,Int32) static
+UnitDescriptor.Progression
+UnitProgressionData.TotalIntelligenceSkillPoints                  (read/write)
+LevelUpController.LevelUpActions                                  (read-only inventory)
+```
+
+`OnApplyAction` recomputes `TotalSkillPoints` from the cached
+`IntelligenceSkillPoints` and calls `UpdateMaxLevelSpells` per spellbook;
+`IntelligenceSkillPoints` itself is written only by the `ApplySkillPoints`
+action reading the live Intelligence. The shared `DerivedStateRefreshService`
+replays that exact bookkeeping (baseline recovered from the progression delta)
+and then invokes `OnApplyAction`, so staged scores and validated allowances
+agree without rebuilding the preview or touching the action list. Contract
+verification requires these member shapes (and that `OnApplyAction` reads the
+cached allowance) before any patch is installed.
+
 ## Preview lifecycle
 
 ```text
@@ -144,32 +168,45 @@ and replayed actions against `LevelUpController.Unit`, the stable mercenary's
 original allocation became authoritative. That is the exact point at which the
 rolled preview was superseded.
 
-The repair uses a postfix on private `ApplyLevelup(UnitDescriptor)` after all
-native actions have replayed and before `SetupNewCharacher` or the success
-callback. It writes only six `BaseValue` fields and only when all of these still
-hold:
+The repair uses the constructor postfix on `ApplyLevelup`'s fresh
+`LevelUpState(target, prior mode)`. Exact IL proves `LevelUpState` is
+constructed on the stable controller source only inside `Commit`
+(`UpdatePreview` constructs only on fresh preview clones, and the
+`LevelUpController` constructor constructs on the initial preview), so a
+one-use commit ticket recognizes the authoritative replay state uniquely. All
+of these must still hold when the ticket stages:
 
 ```text
 session.CreationKind == Mercenary (immutable)
 controller == session.Controller == active LevelUpController
-target == session.StableOwner == LevelUpController.Unit == LevelUpState.Unit
+target == session.StableOwner == LevelUpState.Unit == LevelUpController.Unit
 mode == CharGen (numeric 1)
 IsFirstLevel == true
 IsEmployee == true
 UnitHelper.IsCustomCompanion(target) == true
-current preview generation already verified the exact assignment
+session verified Roll Mode with an applied assignment
+the constructed state is not the session's own preview generation
 ```
 
-Preview-target calls to the same method are ignored. New-main-character
-creation shares Kingmaker's native `Commit`/replay mechanics, but this repair is
-not applied to its distinct creation kind; its existing path remains unchanged.
+Staging writes the six distribution values and unit base values and disables
+point buy **before** the native action loop runs, so every `ILevelUpAction`
+Check/Apply, `ApplySkillPoints` recomputation, and `OnApplyAction` derived
+allowance consumes the rolled scores. Preview-target calls to the same method
+are ignored. New-main-character creation shares Kingmaker's native
+`Commit`/replay mechanics through the same-owner rebind path, which stages on
+the source identically; its `Commit` postfix audits the final recipient and
+closes the session.
 
-A postfix on `Commit()` runs after the supplied success callback and reads that
-same stable descriptor. It emits exactly one final PASS record only when all six
-base values match. A mismatch emits a final FAIL record and the transient
-session is still cleared; no session is retained to conceal an incomplete
-commit. Duplicate observations are idempotent. Cancellation or loss of exact
-ownership before the authoritative write cannot trigger a late commit.
+A postfix on `ApplyLevelup(UnitDescriptor)` receives the surviving action list
+(`__result`). It verifies the source still holds the staged assignment — a
+mismatch is a failure with **no corrective late write** — and reports how many
+recorded actions native dropped. A postfix on `Commit()` runs after the supplied
+success callback, reads that same stable descriptor, verifies the ticket's
+replay and dropped-action evidence, and emits exactly one final PASS/FAIL
+record. Duplicate observations are idempotent. Cancellation, owner loss,
+disable, a superseding Commit, or an exception between construction and
+completion expires the ticket and restores the exact captured pre-commit state;
+no late write can occur.
 
 Race and heritage modifiers are never copied into the six base values. No
 custom persistence is needed: after native companion insertion, ordinary
