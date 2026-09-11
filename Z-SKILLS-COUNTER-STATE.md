@@ -78,9 +78,13 @@ This mission is **implemented/source-qualified; live acceptance pending**.
 ## Distinct local candidate
 
 Version bumped to `0.1.5` (the published `v0.1.4` assets are untouched).
-Candidate package `artifacts/packages/KingmakerDiceRoller-0.1.5.zip` with
-hashes recorded in ignored artifacts; no push, merge, tag, or release was
-performed for this mission.
+Final candidate rebuilt from clean commit `cc519c03` (dirty=false, branch
+`z/skills-counter-next-guard`): DLL SHA-256
+`591ef6eeaa1d8074ab32f644657f0b6246120b55d637e51b1d26b5353cf042e7`; package
+`artifacts/packages/KingmakerDiceRoller-0.1.5.zip` SHA-256
+`1a3291231ac80e4ad4a83c7cfdc01adbf02bdecb606f1697a3f5cdee83ec493c`
+(deterministic six-file allowlist, package-validated). No push, merge, tag,
+or release was performed for this mission.
 
 ## Next steps
 
