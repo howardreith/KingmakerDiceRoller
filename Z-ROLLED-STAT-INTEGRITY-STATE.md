@@ -79,7 +79,28 @@ Remaining hypotheses (not confirmed without live runs):
   lifecycle (pre-replay guards, shared refresh presence, derived-allowance
   contracts).
 
-## Tests and evidence status
+## Final candidate and publication
+
+Final candidate (rebuilt from clean commit `748350bf`, dirty=false, merged
+fast-forward into `main` and pushed): DLL SHA-256
+`68467b41eea8aa0c959457de4de71d52ea053dd7a5558a15069e28e160172e13`;
+package `KingmakerDiceRoller-0.1.4.zip` SHA-256
+`19dc3b383ff16bffe8f022049032a5dbabc05756b92309255fde7d340ed9cf76`
+(deterministic six-file allowlist, package-validated). Full provenance in
+ignored `artifacts/build-provenance.json` and
+`artifacts/packages/package-manifest.json`.
+
+**Published as a testing prerelease** on 2026-09-11 after the owner instructed
+"finalize, merge, push to remote, and cut a new release": release
+`v0.1.4` (`isPrerelease=true`, not latest), annotated tag at release commit
+`748350bf`, ZIP and `SHA256SUMS.txt` assets with digests matching the
+qualified bytes. Because the interactive/save/provider lanes were never
+executed, the qualification truth records `Runtime-qualified: No` and the
+publication gate permitted only the testing-prerelease path; `v0.1.3` remains
+the latest official release. Official promotion is metadata-only and awaits
+the owner's in-play confirmation of the 0.1.4 workflow.
+
+## Test and evidence status
 
 - Deterministic runner: **328/328** (316 baseline + 12 new build-integrity
   regressions; respec derived-stats test reworked to the shared service).
@@ -122,12 +143,13 @@ without Dice Roller, and full-profile passes. This mission is therefore
 
 ## Next steps
 
-1. Owner-authorized live smoke test per `docs/SMOKE-TEST.md` on a disposable
+1. Owner live smoke test per `docs/SMOKE-TEST.md` section K on a disposable
    fixture; capture the FINAL PASS/FAIL records and allowance displays for
    new-main, mercenary, and respec lanes.
 2. Save/exit/restart/reload verification, including loading without Dice
    Roller.
 3. Provider-matrix runs (Bag of Tricks budgets, Call of the Wild, the actual
    trait provider used in the report) in fresh processes.
-4. On live acceptance: version bump, release-notes entry, owner-authorized
-   publication (not authorized by this mission).
+4. After owner in-play confirmation: metadata-only promotion of `v0.1.4` to
+   official/latest (reuse the published package bytes; the publication gate
+   then requires `Runtime-qualified: Yes` backed by the confirmation).

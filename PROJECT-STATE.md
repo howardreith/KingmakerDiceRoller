@@ -52,11 +52,25 @@ owner's in-play confirmation.
 
 ## Verified 0.1.4 publication
 
-Recorded after publication: `v0.1.4` created from clean, fully pushed `main`
-with the annotated tag resolving to the release commit; ZIP and
-`SHA256SUMS.txt` assets verified against the qualified local bytes; draft and
-prerelease flags and latest-release endpoint recorded in ignored artifacts.
-`v0.1.3` remains the latest official release until promotion.
+`v0.1.4` was published on 2026-09-11 at 19:16:31 UTC by rerunning the full
+qualification from clean, fully pushed `main` (13/13 repository gates, 30/30
+Python cases, 328/328 C# cases, exact native contracts including the new
+derived-allowance members, eleven respec contract groups, zero Release
+warnings/errors). GitHub reports `isDraft=false`, `isPrerelease=true`, title
+`Kingmaker Dice Roller v0.1.4 (testing prerelease)`, and the latest-release
+endpoint still returns `v0.1.3`. The annotated tag resolves to release commit
+`748350bf9317ef8cb96803a7dbaf33e08fc6166f` (= `origin/main`). Asset digests
+match the qualified local bytes:
+
+- ZIP SHA-256: `19dc3b383ff16bffe8f022049032a5dbabc05756b92309255fde7d340ed9cf76`
+  (`KingmakerDiceRoller-0.1.4.zip`).
+- DLL SHA-256: `68467b41eea8aa0c959457de4de71d52ea053dd7a5558a15069e28e160172e13`.
+- `SHA256SUMS.txt` carries the same ZIP digest.
+
+Official promotion is a metadata-only change that reuses these exact package
+bytes and awaits the owner's in-play confirmation; until then `v0.1.3` remains
+the latest official release and the runtime/compatibility lanes below stay
+NOT RUN.
 
 ## Current 0.1.3 official release
 
