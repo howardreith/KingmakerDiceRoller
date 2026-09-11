@@ -86,8 +86,14 @@ Remaining hypotheses (not confirmed without live runs):
 - Repository validation 13/13; Python oracle 30/30; exact native contracts
   (incl. new derived-allowance checks) PASS against the installed assembly;
   respec installed-assembly checks 11 PASS; Release build zero warnings/errors.
-- Candidate DLL SHA-256 `e96d3389075c5bcafa277fc41598727bca2ee4cc98473a8cb8b55af06dffdc0a`
-  (see `artifacts/build-provenance.json`).
+- Final candidate (rebuilt from clean commit `06da5091`, dirty=false, branch
+  `z/rolled-stat-build-integrity`): DLL SHA-256
+  `68467b41eea8aa0c959457de4de71d52ea053dd7a5558a15069e28e160172e13`;
+  package `artifacts/packages/KingmakerDiceRoller-0.1.4.zip` SHA-256
+  `235d6fb5665d173c06588ec3da2cbf10794ee7c97b21ee94a5d4315071a32437`
+  (deterministic six-file allowlist, package-validated). Full provenance in
+  ignored `artifacts/build-provenance.json` and
+  `artifacts/packages/package-manifest.json`.
 
 ### Live lanes — NOT RUN
 
