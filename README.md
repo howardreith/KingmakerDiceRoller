@@ -1,12 +1,12 @@
 # Kingmaker Dice Roller
 
-**Current candidate:** `0.1.5` (local). Completes the skills-page integration:
+**Latest official release:** `0.1.5`. Completes the skills-page integration:
 the native red skill-points badge and phase-completion state are refreshed after
 every rolled-assignment change (including on drawer close), and forward
 navigation out of Skills is genuinely blocked while the native skill allocation
 is invalid. Service tests, exact assembly contracts, and builds pass; the
-detailed live matrix is pending. The latest published release is the `0.1.4`
-testing prerelease; `0.1.3` remains the latest official release.
+detailed live matrix is pending. Released officially at the owner's direction
+after the `0.1.4` testing prerelease was played in-game.
 
 Kingmaker Dice Roller is a standalone Unity Mod Manager mod for Pathfinder:
 Kingmaker 2.1.7b. It adds an explicit rolled-ability workflow to the native
@@ -95,15 +95,15 @@ Roll or Recall and restored exactly; neither 20 nor 25 is hard-coded.
 
 ## Installation
 
-Download **KingmakerDiceRoller-0.1.4.zip** from the
-[v0.1.4 release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.4),
+Download **KingmakerDiceRoller-0.1.5.zip** from the
+[v0.1.5 release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.5),
 then drag that ZIP into Unity Mod Manager's Mods tab for Pathfinder: Kingmaker.
-Confirm UMM displays version **0.1.4**. Keep the installed UMM/Harmony libraries;
+Confirm UMM displays version **0.1.5**. Keep the installed UMM/Harmony libraries;
 no loader downgrade is required. GitHub's Source code archives are not mod packages.
 
-Version `0.1.4` is a **testing prerelease** of the rolled-stat build-integrity
-repair. The latest official release remains `0.1.3` until the owner confirms
-the `0.1.4` workflow in play; promotion will change release metadata only.
+Version `0.1.5` is the latest official release. It includes the rolled-stat
+build-integrity repair and the skills-counter/forward-navigation fix; `v0.1.4`
+remains available as the prior testing prerelease.
 
 The archive contains one `KingmakerDiceRoller` directory with exactly six
 allowlisted files and does not bundle development artifacts or game assemblies.

@@ -42,6 +42,12 @@ Python cases pass. Exact Kingmaker 2.1.7b contracts — including the new
 skills-page refresh/transition members — were verified against the installed
 assembly. Release compilation and package validation pass.
 
-**Local candidate only.** Interactive gameplay, save/reload, and
-provider-matrix lanes remain NOT RUN (`docs/SMOKE-TEST.md`, sections K and L);
-no publication or promotion of this build is implied.
+**Official release.** After the 0.1.4 testing prerelease was played and the
+remaining skills-badge defects were reported and fixed, Howie instructed:
+"Please commit, merge, push, and do a release. And make it an actual release,
+not a test pre-release like the last one. We can make it 0.1.5 it's fine. No
+one else is using this mod yet." `v0.1.5` is therefore published as the
+official latest release at the owner's direction. The agent-executed
+interactive/save/provider matrix remains separately recorded as NOT RUN
+(`docs/SMOKE-TEST.md`, sections K and L); `v0.1.4` remains available as the
+prior testing prerelease.

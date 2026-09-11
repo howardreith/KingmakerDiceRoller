@@ -2,8 +2,12 @@
 
 Resumable mission record. Baseline: clean `main` at `f9f7cf31` (v0.1.4 testing
 prerelease, release commit `748350bf`), mission branch `z/skills-counter-next-guard`.
-This mission is **local only**: no push, merge, tag, publication, or promotion
-is authorized for its candidate.
+The mission itself was authorized as **local only**. After delivery, on
+2026-09-11 Howie separately instructed: "Please commit, merge, push, and do a
+release. And make it an actual release, not a test pre-release like the last
+one. We can make it 0.1.5 it's fine. No one else is using this mod yet."
+That instruction is the owner authorization for the official v0.1.5 release
+recorded in PROJECT-STATE.md.
 
 ## Confirmed causes (IL-verified against the installed assembly)
 
@@ -90,6 +94,6 @@ or release was performed for this mission.
 
 1. Owner-authorized live run of smoke-test sections K and L on a disposable
    fixture using the 0.1.5 candidate.
-2. On acceptance: publish `v0.1.5` per the repository release procedure
-   (testing prerelease first unless runtime lanes were executed; official
-   promotion always requires owner confirmation).
+2. Publication: authorized directly as an official release by the owner's
+   2026-09-11 instruction (recorded above and in PROJECT-STATE.md); executed
+   per the repository release procedure.

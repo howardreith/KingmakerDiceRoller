@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.5 - skills-counter refresh and forward-navigation guard (local candidate)
+## 0.1.5 - skills-counter refresh and forward-navigation guard
 
 - Confirmed two follow-up defects by IL inspection: the native skills page caches its
   presentation (the red remaining-points badge repaints only through
@@ -29,7 +29,8 @@
   SetupUI->DefinePhases ordering).
 - Added eight deterministic skills-navigation regressions (336 total).
 - Interactive, save/reload, and provider-matrix lanes remain NOT RUN pending an
-  authorized disposable fixture; this is a local candidate only.
+  authorized disposable fixture; released officially at the owner's explicit
+  direction after the 0.1.4 prerelease was played in-game.
 
 
 ## 0.1.4 - rolled-stat build integrity (testing prerelease)

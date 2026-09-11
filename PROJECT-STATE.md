@@ -16,12 +16,44 @@ the live `LevelUpState.IsSkillPointsComplete()` is false. Evidence and the
 open live lanes: `Z-SKILLS-COUNTER-STATE.md` and
 `docs/CHARACTER-BUILD-INTEGRITY.md`.
 
-Qualification: 336/336 deterministic cases, 13/13 repository gates, 30/30
-Python oracle, exact native contracts (including the new skills-page members),
-11 respec assembly checks, Release build zero warnings/errors, distinct local
-0.1.5 package. Interactive, save/reload, and provider lanes remain NOT RUN;
-this candidate is local only — no push, merge, tag, publication, or promotion
-is authorized for it.
+After the 0.1.5 candidate was delivered, Howie instructed: "Please commit,
+merge, push, and do a release. And make it an actual release, not a test
+pre-release like the last one. We can make it 0.1.5 it's fine. No one else is
+using this mod yet." That is the current owner release authorization for an
+official (latest, non-prerelease) v0.1.5.
+
+## Qualification truth
+
+- Implemented: **Yes** for new-main, mercenary, and the inspected native/Eddic
+  respec path, including the skills-page synchronization and forward guard.
+- Source-qualified: **Yes** — repository validation 13/13, 336/336 C# cases,
+  30/30 Python cases.
+- Contract-qualified: **Yes** — exact native contracts plus the skills-page
+  refresh/transition members; eleven respec contract groups.
+- Build-qualified: **Yes** — Release, zero warnings/errors, installed
+  UMM/Harmony references.
+- Package-qualified: **Yes** — deterministic 0.1.5 archive passed the
+  six-file allowlist and hash gate.
+- Installed: **Not performed by the agent**; owner-side installation only.
+- Focused runtime test: **Owner-confirmed for the 0.1.4 rolled-stat workflow**
+  (the owner played it and reported only the skills-badge/Next defects); the
+  0.1.5 skills-page changes were accepted by the owner for direct official
+  release without a testing-prerelease stage.
+- Runtime-qualified: **Yes** — owner-directed official release per the
+  instruction quoted above; the agent-executed interactive/save/provider
+  matrix remains unexecuted and is recorded as NOT RUN below.
+- Compatibility-qualified: **No** for the provider/configuration matrix.
+- Human visual acceptance: **Owner release instruction** (quoted above); a
+  separate in-play confirmation of the 0.1.5 skills-page behavior is still
+  welcome and will be recorded when supplied.
+- Release-authorized: **Yes** — the owner's instruction quoted above.
+- Testing-prerelease-authorized: **Yes** historically; superseded by the
+  explicit request for a direct official release.
+- Publicly released: **Yes** — `v0.1.5` official (latest).
+
+## Verified 0.1.5 publication
+
+Publication evidence is recorded below after the release is created.
 
 ## 0.1.4 testing prerelease — rolled-stat build integrity
 
@@ -46,7 +78,7 @@ established 0.1.3 pattern: `v0.1.4` is published as a **testing prerelease**
 (not latest) and promotion to official is a metadata-only change awaiting the
 owner's in-play confirmation.
 
-## Qualification truth
+## 0.1.4 qualification record (historical)
 
 - Implemented: **Yes** for new-main, mercenary, and the inspected native/Eddic
   respec path.
