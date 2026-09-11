@@ -1,9 +1,10 @@
 # Project state
 
-## Current mission: rolled-stat build integrity (in progress)
+## Current 0.1.4 testing prerelease — rolled-stat build integrity
 
-Branch `z/rolled-stat-build-integrity` (baseline: released 0.1.3 `main` at
-`f4eba6d`) repairs the reported rolled-stat build-integrity defects. Exact
+Current candidate version: `0.1.4`. Branch `z/rolled-stat-build-integrity`
+(baseline: released 0.1.3 `main` at `f4eba6d`) repaired the reported
+rolled-stat build-integrity defects. Exact
 2.1.7b IL inspection confirmed three divergences: stale native derived
 allowances after staging (skill points/spell slots cached from the pre-roll
 Intelligence), the mercenary authoritative Commit replaying actions against
@@ -11,15 +12,51 @@ pre-roll source scores before a late six-value correction (dropping
 selections), and unverified new-main completion. The repair adds a shared
 `DerivedStateRefreshService` transaction for every supported creation kind and
 replaces the mercenary late correction with a one-use pre-replay commit ticket
-plus final-recipient audits. Details, evidence, and the open live lanes are in
+plus a new-main final-recipient audit. Details and evidence are in
 `Z-ROLLED-STAT-INTEGRITY-STATE.md` and `docs/CHARACTER-BUILD-INTEGRITY.md`.
-Qualification so far: 328/328 deterministic cases, 13/13 repository gates,
-30/30 Python oracle, exact native contracts (including the new
-derived-allowance members), 11 respec assembly checks, Release build with zero
-warnings/errors. The local candidate version is `0.1.4` (NOT published; no
-release, push, or deployment is authorized from this mission). Interactive,
-save/reload, and compatibility lanes remain NOT RUN pending an authorized
-fixture.
+
+On 2026-09-11, after reviewing the delivered mission, Howie instructed:
+"Please finalize, merge, push to remote, and cut a new release." That is the
+current owner release authorization. Because the interactive/save/provider
+lanes were never executed by the agent, the publication follows the
+established 0.1.3 pattern: `v0.1.4` is published as a **testing prerelease**
+(not latest) and promotion to official is a metadata-only change awaiting the
+owner's in-play confirmation.
+
+## Qualification truth
+
+- Implemented: **Yes** for new-main, mercenary, and the inspected native/Eddic
+  respec path.
+- Source-qualified: **Yes** — repository validation 13/13, 328/328 C# cases,
+  30/30 Python cases.
+- Contract-qualified: **Yes** — exact native contracts plus the new
+  derived-allowance members; eleven respec contract groups.
+- Build-qualified: **Yes** — Release, zero warnings/errors, installed
+  UMM/Harmony references.
+- Package-qualified: **Yes** — deterministic 0.1.4 archive passed the
+  six-file allowlist and hash gate.
+- Installed: **Not performed by the agent**; owner-side installation only.
+- Focused runtime test: **NOT RUN** — no game launch, save operation, or
+  desktop control was authorized during development.
+- Runtime-qualified: **No** — interactive, final-character, and persistence
+  evidence is absent by design until the guarded section K procedure runs.
+- Compatibility-qualified: **No** for the provider/configuration matrix.
+- Human visual acceptance: **Pending** — owner confirmation of this prerelease
+  in play.
+- Release-authorized: **Yes** — the owner's 2026-09-11 instruction quoted
+  above.
+- Testing-prerelease-authorized: **Yes** — same instruction; prerelease chosen
+  because runtime lanes are unexecuted.
+- Publicly released: **Yes** — `v0.1.4` testing prerelease (not latest);
+  official promotion pending owner in-play confirmation.
+
+## Verified 0.1.4 publication
+
+Recorded after publication: `v0.1.4` created from clean, fully pushed `main`
+with the annotated tag resolving to the release commit; ZIP and
+`SHA256SUMS.txt` assets verified against the qualified local bytes; draft and
+prerelease flags and latest-release endpoint recorded in ignored artifacts.
+`v0.1.3` remains the latest official release until promotion.
 
 ## Current 0.1.3 official release
 
@@ -99,7 +136,7 @@ commits, cancellation, exceptions, source rollback, disable, and owner loss have
 service coverage. Existing layout/control regressions cover the reused panel;
 the owner supplied overall workflow acceptance without a per-control visual record.
 
-## Qualification truth
+## 0.1.3 qualification record (historical)
 
 - Implemented: **Yes** for the native PC selector and inspected Eddic 1.0 path.
 - Source-qualified: **Yes** — repository validation, 316/316 C# cases, 30/30 Python cases.

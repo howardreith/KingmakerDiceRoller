@@ -163,7 +163,7 @@ try {
     $tag = "v$version"
     $isPrerelease = $TestingPrerelease -or $version.Contains('-')
     $title = "$displayName $tag"
-    if ($TestingPrerelease) { $title += ' (respec testing)' }
+    if ($TestingPrerelease) { $title += ' (testing prerelease)' }
     $existingRelease = $null
 
     if (Test-NativeCommand -FilePath 'gh' -Arguments @(

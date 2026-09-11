@@ -1,8 +1,11 @@
 # Kingmaker Dice Roller
 
-**Latest official release:** `0.1.3`. Adds scoped native/Eddic starting-score
-respec integration. Howie confirmed the released workflow works and authorized
-official release. Service tests, exact assembly contracts, and builds pass.
+**Current testing prerelease:** `0.1.4`. Repairs rolled-stat character-build
+integrity: staged scores now refresh the native skill-point/spell allowances,
+and the authoritative mercenary commit consumes the rolled scores before native
+checks validate selections. Service tests, exact assembly contracts, and builds
+pass; the detailed live matrix is pending, so `0.1.3` remains the latest
+official release until the owner confirms `0.1.4` in play.
 
 Kingmaker Dice Roller is a standalone Unity Mod Manager mod for Pathfinder:
 Kingmaker 2.1.7b. It adds an explicit rolled-ability workflow to the native
@@ -91,27 +94,28 @@ Roll or Recall and restored exactly; neither 20 nor 25 is hard-coded.
 
 ## Installation
 
-Download **KingmakerDiceRoller-0.1.3.zip** from the
-[0.1.3 release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.3),
+Download **KingmakerDiceRoller-0.1.4.zip** from the
+[v0.1.4 release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.4),
 then drag that ZIP into Unity Mod Manager's Mods tab for Pathfinder: Kingmaker.
-Confirm UMM displays version **0.1.3**. Keep the installed UMM/Harmony libraries;
+Confirm UMM displays version **0.1.4**. Keep the installed UMM/Harmony libraries;
 no loader downgrade is required. GitHub's Source code archives are not mod packages.
 
-Version `0.1.3` is the latest official release. It uses the same ZIP and DLL as
-the owner-confirmed prerelease; the archive's original testing README is retained
-to preserve those published bytes.
+Version `0.1.4` is a **testing prerelease** of the rolled-stat build-integrity
+repair. The latest official release remains `0.1.3` until the owner confirms
+the `0.1.4` workflow in play; promotion will change release metadata only.
 
 The archive contains one `KingmakerDiceRoller` directory with exactly six
 allowlisted files and does not bundle development artifacts or game assemblies.
 
 ## Qualification
 
-The release has deterministic service coverage and exact-contract checks against
-Kingmaker 2.1.7b, including native replay/copy order and installed Harmony scope
-behavior. Howie's confirmation of the released 0.1.3 workflow supplies the human
-release sign-off. Individual provider/character cases and save/reload results were
-not specified in that confirmation, so the detailed matrix remains separately
-unverified. See `PROJECT-STATE.md` and `docs/SMOKE-TEST.md` for its scope.
+The candidate has deterministic service coverage (328 cases) and exact-contract
+checks against Kingmaker 2.1.7b, including the native derived-allowance
+members, replay/copy order, and installed Harmony scope behavior. Interactive
+gameplay, save/reload, and provider-matrix lanes were **not executed** by the
+agent; they are recorded as NOT RUN in `PROJECT-STATE.md` and
+`docs/SMOKE-TEST.md` section K. See `docs/CHARACTER-BUILD-INTEGRITY.md` for
+the verified native lifecycle behind the repair.
 
 The project does not claim an exhaustive compatibility matrix. Bag of Tricks
 and Call of the Wild are detected but never modified. Bag of Tricks budgets are
