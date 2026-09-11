@@ -16,6 +16,11 @@ namespace KingmakerDiceRoller.CharacterCreation
         public RollSession ActiveSession => target.ActiveSession;
         public bool CanAttachNativePanel => target.CanAttachNativePanel;
 
+        public void NotifyDrawerClosed()
+        {
+            target.OnRollDrawerClosed();
+        }
+
         public bool Execute(
             RollUiCommand command,
             AbilityScore ability,

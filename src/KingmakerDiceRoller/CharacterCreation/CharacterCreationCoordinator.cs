@@ -15,6 +15,7 @@ namespace KingmakerDiceRoller.CharacterCreation
         private readonly RollSessionManager sessions;
         private readonly StatApplicationService application;
         private readonly DerivedStateRefreshService derivedRefresh;
+        private readonly SkillsPhaseSynchronizationService skillsSync;
         private readonly MercenaryFinalizationService mercenaryFinalization;
         private readonly RespecLifecycleService respec;
         public RespecLifecycleService Respec => respec;
@@ -35,6 +36,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             RollSessionManager sessions,
             StatApplicationService application,
             DerivedStateRefreshService derivedRefresh,
+            SkillsPhaseSynchronizationService skillsSync,
             PointBuyRestoreService pointBuyRestore,
             AbilityPhasePresentationService pointBuyPresentation,
             RuntimeDiagnostics diagnostics,
@@ -49,6 +51,7 @@ namespace KingmakerDiceRoller.CharacterCreation
                 sessions,
                 application,
                 derivedRefresh,
+                skillsSync,
                 pointBuyRestore,
                 pointBuyPresentation,
                 diagnostics,
@@ -73,6 +76,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             RollSessionManager sessions,
             StatApplicationService application,
             DerivedStateRefreshService derivedRefresh,
+            SkillsPhaseSynchronizationService skillsSync,
             PointBuyRestoreService pointBuyRestore,
             AbilityPhasePresentationService pointBuyPresentation,
             RuntimeDiagnostics diagnostics,
@@ -88,6 +92,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             this.sessions = sessions;
             this.application = application;
             this.derivedRefresh = derivedRefresh ?? throw new ArgumentNullException(nameof(derivedRefresh));
+            this.skillsSync = skillsSync ?? throw new ArgumentNullException(nameof(skillsSync));
             mercenaryFinalization = new MercenaryFinalizationService(statAccess);
             respec = new RespecLifecycleService(statAccess);
             this.pointBuyRestore = pointBuyRestore;
@@ -316,6 +321,111 @@ namespace KingmakerDiceRoller.CharacterCreation
             }
         }
 
+        // Exact 2.1.7b IL proves every forward phase route funnels through
+        // CharacterBuildController.SetPhase(Type); this guard may only veto, never permit.
+        public bool AllowForwardPhaseTransition(object characterBuildController, int targetPhaseValue)
+        {
+            try
+            {
+                KingmakerContracts contracts = contractsProvider();
+                RollSession session = sessions.Active;
+                if (contracts == null || session == null || session.IsRestoringPointBuy) return true;
+                object boundController = ReflectionAccess.Read(
+                    contracts.CharacterBuildLevelUpControllerMember,
+                    characterBuildController);
+                if (!ReferenceEquals(boundController, session.Controller)) return true;
+
+                object currentPhase = ReflectionAccess.Read(
+                    contracts.CharacterBuildCurrentPhaseMember,
+                    characterBuildController);
+                if (currentPhase == null) return true;
+                int skillsPhaseValue;
+                try { skillsPhaseValue = Convert.ToInt32(contracts.SkillsPhaseValue); }
+                catch { return true; }
+                int currentPhaseValue = Convert.ToInt32(currentPhase);
+                // Veto only forward movement beyond Skills (Next or a later-phase jump);
+                // Back and same-phase navigation always stay available.
+                if (targetPhaseValue <= skillsPhaseValue || currentPhaseValue > skillsPhaseValue) return true;
+
+                object state = ReflectionAccess.Read(contracts.LevelUpControllerStateMember, session.Controller);
+                if (state == null) return true;
+                object complete = contracts.LevelUpStateIsSkillPointsCompleteMethod.Invoke(state, null);
+                if (!(complete is bool)) return true;
+                if ((bool)complete) return true;
+
+                // Veto: the live native model says the Skills allocation is invalid. Refresh
+                // the stale presentation, show the native attention marks, and explain why.
+                int remaining = ReadSkillPointsRemaining(state, contracts);
+                SynchronizeSkillsPresentation(session, "blocked forward transition");
+                object skillsPhase = ReflectionAccess.Read(
+                    contracts.CharacterBuildSkillsPhaseMember,
+                    characterBuildController);
+                if (skillsPhase != null)
+                {
+                    try { contracts.SkillsPhaseBlinkMarksMethod.Invoke(skillsPhase, null); }
+                    catch (Exception blinkException)
+                    {
+                        logger.Exception("Blink native skills marks after a blocked transition", blinkException);
+                    }
+                }
+                string reason = remaining > 0
+                    ? "Spend " + remaining + " remaining skill point(s) on Skills before continuing."
+                    : remaining < 0
+                        ? "Remove " + (-remaining) + " excess skill rank(s) on Skills before continuing."
+                        : "Resolve the skill allocation on Skills before continuing.";
+                diagnostics.SetStatus(reason);
+                if (diagnostics.Event("BLOCKED FORWARD " + reason + " " + BuildSessionFacts(session)))
+                {
+                    logger.Info("Blocked an invalid forward phase transition out of Skills. " + reason);
+                }
+                return false;
+            }
+            catch (Exception exception)
+            {
+                logger.Exception("Forward phase-transition guard", exception);
+                return true;
+            }
+        }
+
+        public void OnRollDrawerClosed()
+        {
+            RollSession session = sessions.Active;
+            if (session == null) return;
+            SynchronizeSkillsPresentation(session, "roll drawer close");
+        }
+
+        private void SynchronizeSkillsPresentation(RollSession session, string context)
+        {
+            if (session == null) return;
+            if (!skillsSync.IsSynchronizationPending(session)) return;
+            int revision;
+            string error;
+            if (skillsSync.TrySynchronize(session, contractsProvider(), out revision, out error))
+            {
+                RecordEvent(
+                    "Synchronized the native skills page (remaining-points badge, phase completion, navigation) via " +
+                    SkillsPhaseSynchronizationService.NativeRefreshPath + "; revision=" + revision +
+                    " (" + context + ").");
+                return;
+            }
+            string detail = "The native skills page did not refresh after " + context + ": " + error;
+            diagnostics.SetStatus(detail);
+            if (diagnostics.Event("FAIL " + detail)) logger.Error(detail);
+        }
+
+        private static int ReadSkillPointsRemaining(object state, KingmakerContracts contracts)
+        {
+            try
+            {
+                object value = ReflectionAccess.Read(contracts.LevelUpStateSkillPointsRemainingMember, state);
+                return value is int ? (int)value : 0;
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+
         public void OnLevelUpAppliedToAuthoritativeUnit(
             object controller,
             object finalDescriptor,
@@ -519,6 +629,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             }
 
             session = sessions.Active;
+            SynchronizeSkillsPresentation(sessions.Active, "update");
             if (session == null ||
                 (!session.IsRollMode && !session.IsEnteringRollMode) ||
                 session.IsApplied ||
@@ -817,6 +928,7 @@ namespace KingmakerDiceRoller.CharacterCreation
                 diagnostics.SetStatus(detail);
                 logger.Warning(detail);
             }
+            SynchronizeSkillsPresentation(session, "Return to Point Buy");
             error = null;
             return true;
         }
@@ -864,6 +976,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             diagnostics.Applied(detail);
             diagnostics.SetStatus("Roll Mode is active on the verified live new-character preview.");
             logger.Info("Rolled-array application verified against the live controller preview. " + detail);
+            SynchronizeSkillsPresentation(session, "verified live generation");
         }
 
         private void FailApplication(RollSession session, string detail)
@@ -960,6 +1073,7 @@ namespace KingmakerDiceRoller.CharacterCreation
                 diagnostics.Applied(commandName + " committed after live model, allocator, controls, and presentation verification. " + facts);
                 diagnostics.SetStatus("Roll Mode is active; the rolled array owns the verified live ability preview.");
                 logger.Info(commandName + " committed transactionally. " + facts);
+                SynchronizeSkillsPresentation(session, commandName);
                 error = null;
                 return true;
             }

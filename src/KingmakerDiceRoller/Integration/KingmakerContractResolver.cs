@@ -382,6 +382,81 @@ namespace KingmakerDiceRoller.Integration
             {
                 throw new ContractResolutionException("CharacterBuildController.Skills has an unexpected type.");
             }
+
+            // Skills-page presentation and forward-navigation contracts. Exact 2.1.7b IL proves
+            // the phase-unlock cache is recomputed only by DefinePhases inside SetupUI, every
+            // forward route funnels through SetPhase(Type), and the live completion predicate
+            // is LevelUpState.IsSkillPointsComplete.
+            Type charBPhaseType = skillsPhaseType.BaseType;
+            if (charBPhaseType == null ||
+                !string.Equals(charBPhaseType.FullName, "Kingmaker.UI.LevelUp.Phase.CharBPhase", StringComparison.Ordinal))
+            {
+                throw new ContractResolutionException("CharBPhaseSkills does not derive from CharBPhase.");
+            }
+            MethodInfo isSkillPointsComplete = levelUpStateType.GetMethod(
+                "IsSkillPointsComplete",
+                InstanceFlags,
+                null,
+                Type.EmptyTypes,
+                null);
+            if (isSkillPointsComplete == null || isSkillPointsComplete.ReturnType != typeof(bool) || isSkillPointsComplete.IsStatic)
+            {
+                throw new ContractResolutionException(
+                    "Exact instance Boolean LevelUpState.IsSkillPointsComplete() was not found.");
+            }
+            evidence.Add(Describe(isSkillPointsComplete));
+            MemberInfo skillPointsRemaining = ReflectionAccess.RequireInstanceMember(
+                levelUpStateType,
+                "SkillPointsRemaining");
+            if (ReflectionAccess.GetMemberType(skillPointsRemaining) != typeof(int))
+            {
+                throw new ContractResolutionException("LevelUpState.SkillPointsRemaining is not an Int32 contract.");
+            }
+            MethodInfo defineAvailibleData = characterBuildControllerType.GetMethod(
+                "DefineAvailibleData",
+                InstanceFlags,
+                null,
+                Type.EmptyTypes,
+                null);
+            MethodInfo setupUi = characterBuildControllerType.GetMethod(
+                "SetupUI",
+                InstanceFlags,
+                null,
+                Type.EmptyTypes,
+                null);
+            // SetPhase is compiled with the enum's underlying Int32 parameter; values are
+            // CharBPhase.Type enums at runtime. Inject as object and convert at the seam.
+            MethodInfo setPhase = characterBuildControllerType.GetMethod(
+                "SetPhase",
+                InstanceFlags,
+                null,
+                new[] { typeof(int) },
+                null);
+            if (defineAvailibleData == null || defineAvailibleData.ReturnType != typeof(void) ||
+                setupUi == null || setupUi.ReturnType != typeof(void) ||
+                setPhase == null || setPhase.ReturnType != typeof(void) || !setPhase.IsPublic)
+            {
+                throw new ContractResolutionException(
+                    "Exact skills-page refresh and forward-transition contracts were not found.");
+            }
+            evidence.Add(Describe(defineAvailibleData));
+            evidence.Add(Describe(setupUi));
+            evidence.Add(Describe(setPhase));
+            FieldInfo phaseIsDirty = charBPhaseType.GetField("IsDirty", InstanceFlags);
+            if (phaseIsDirty == null || phaseIsDirty.FieldType != typeof(bool))
+            {
+                throw new ContractResolutionException("CharBPhase.IsDirty is not an exact Boolean field.");
+            }
+            MethodInfo blinkMarks = skillsPhaseType.GetMethod(
+                "BlinkMarks",
+                InstanceFlags,
+                null,
+                Type.EmptyTypes,
+                null);
+            if (blinkMarks == null || blinkMarks.ReturnType != typeof(void))
+            {
+                throw new ContractResolutionException("CharBPhaseSkills.BlinkMarks() was not found.");
+            }
             MemberInfo abilityAllocator = ReflectionAccess.RequireInstanceMember(skillsPhaseType, "AbilityScoresAllocator");
             if (ReflectionAccess.GetMemberType(abilityAllocator) != abilityAllocatorType)
             {
@@ -502,6 +577,13 @@ namespace KingmakerDiceRoller.Integration
                 unitProgression,
                 progressionTotalIntelligenceSkillPoints,
                 controllerLevelUpActions,
+                isSkillPointsComplete,
+                skillPointsRemaining,
+                defineAvailibleData,
+                setupUi,
+                setPhase,
+                phaseIsDirty,
+                blinkMarks,
                 isCustomCompanion,
                 unitStats,
                 getStat,

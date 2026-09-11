@@ -19,6 +19,7 @@ namespace KingmakerDiceRoller.CharacterCreation
         bool TryRecallSelectedSaved(out string error);
         bool DeleteSelectedSaved();
         bool TryRestorePointBuy(out string error);
+        void OnRollDrawerClosed();
         void SetPreset(DiceRollPreset preset);
         void SetLowScorePolicy(LowScorePolicy policy);
         void SetMinimumScore(int minimum);

@@ -1,6 +1,29 @@
 # Project state
 
-## Current 0.1.4 testing prerelease — rolled-stat build integrity
+## Current 0.1.5 local candidate — skills-counter and forward-navigation integrity
+
+Current candidate version: `0.1.5` on branch `z/skills-counter-next-guard`
+(baseline: `main` at `f9f7cf31`). IL inspection of the installed assembly
+confirmed the two follow-up defects: the native red skill-points badge repaints
+only through the dirty Skills phase, and the phase-unlock cache gating every
+forward route is recomputed only inside `SetupUI` — so a changed rolled
+assignment left a stale badge and allowed leaving Skills with an invalid skill
+allocation, yielding an empty feats/traits page. The repair adds a bounded,
+idempotent native skills-page refresh after every relevant change (including
+drawer close) and a veto-only prefix on `CharacterBuildController.SetPhase`
+(the single forward funnel) that blocks forward movement beyond Skills while
+the live `LevelUpState.IsSkillPointsComplete()` is false. Evidence and the
+open live lanes: `Z-SKILLS-COUNTER-STATE.md` and
+`docs/CHARACTER-BUILD-INTEGRITY.md`.
+
+Qualification: 336/336 deterministic cases, 13/13 repository gates, 30/30
+Python oracle, exact native contracts (including the new skills-page members),
+11 respec assembly checks, Release build zero warnings/errors, distinct local
+0.1.5 package. Interactive, save/reload, and provider lanes remain NOT RUN;
+this candidate is local only — no push, merge, tag, publication, or promotion
+is authorized for it.
+
+## 0.1.4 testing prerelease — rolled-stat build integrity
 
 Current candidate version: `0.1.4`. Branch `z/rolled-stat-build-integrity`
 (baseline: released 0.1.3 `main` at `f4eba6d`) repaired the reported

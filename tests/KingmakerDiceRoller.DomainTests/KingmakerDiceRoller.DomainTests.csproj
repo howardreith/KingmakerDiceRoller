@@ -26,6 +26,7 @@
     <Compile Include="CollapsedAccessTabLayoutTests.cs" />
     <Compile Include="PreviewSessionContinuityTests.cs" />
     <Compile Include="BuildIntegrityTests.cs" />
+    <Compile Include="SkillsNavigationTests.cs" />
     <Compile Include="ProductWorkflowTests.cs" />
     <Compile Include="NativePanelLifecycleTests.cs" />
     <Compile Include="NativePanelUsabilityTests.cs" />
@@ -42,6 +43,7 @@
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\CharacterCreationContextPolicy.cs"><Link>CharacterCreation\CharacterCreationContextPolicy.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\CharacterCreationCoordinator.cs"><Link>CharacterCreation\CharacterCreationCoordinator.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\DerivedStateRefreshService.cs"><Link>CharacterCreation\DerivedStateRefreshService.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\SkillsPhaseSynchronizationService.cs"><Link>CharacterCreation\SkillsPhaseSynchronizationService.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\CollapsedAccessTabLayout.cs"><Link>CharacterCreation\CollapsedAccessTabLayout.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\IRollUiCommandTarget.cs"><Link>CharacterCreation\IRollUiCommandTarget.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\CharacterRollWorkflow.cs"><Link>CharacterCreation\CharacterRollWorkflow.cs</Link></Compile>

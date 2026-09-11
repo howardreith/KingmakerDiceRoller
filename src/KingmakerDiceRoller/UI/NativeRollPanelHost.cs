@@ -397,6 +397,7 @@ namespace KingmakerDiceRoller.UI
                 () =>
                 {
                     panelState.Close();
+                    commands.NotifyDrawerClosed();
                     ApplySurfaceState();
                 },
                 layout.CloseButtonHeight);

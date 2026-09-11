@@ -401,6 +401,9 @@ namespace KingmakerDiceRoller.DomainTests
 
         private sealed class FakeTarget : IRollUiCommandTarget
         {
+            public int DrawerClosedNotifications;
+            public void OnRollDrawerClosed() { DrawerClosedNotifications++; }
+
             internal FakeTarget(RollUiSnapshot snapshot) { UiSnapshot = snapshot; }
             public RollUiSnapshot UiSnapshot { get; private set; }
             public RollSession ActiveSession => null;

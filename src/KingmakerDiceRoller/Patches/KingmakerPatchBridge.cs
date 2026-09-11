@@ -98,6 +98,25 @@ namespace KingmakerDiceRoller.Patches
             catch (Exception exception) { logger?.Exception("LevelUpController.ApplyLevelup postfix", exception); }
         }
 
+        // May only veto: returning false skips native SetPhase. It never permits a
+        // transition native rules would reject.
+        public static bool CharacterBuildSetPhaseStarting(object __instance, object __0)
+        {
+            try
+            {
+                if (coordinator == null) return true;
+                int target;
+                try { target = Convert.ToInt32(__0); }
+                catch { return true; }
+                return coordinator.AllowForwardPhaseTransition(__instance, target);
+            }
+            catch (Exception exception)
+            {
+                logger?.Exception("CharacterBuildController.SetPhase prefix", exception);
+                return true;
+            }
+        }
+
         public static void LevelUpCommitCompleted(object __instance)
         {
             try { coordinator?.OnLevelUpCommitCompleted(__instance); }

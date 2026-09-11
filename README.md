@@ -1,11 +1,12 @@
 # Kingmaker Dice Roller
 
-**Current testing prerelease:** `0.1.4`. Repairs rolled-stat character-build
-integrity: staged scores now refresh the native skill-point/spell allowances,
-and the authoritative mercenary commit consumes the rolled scores before native
-checks validate selections. Service tests, exact assembly contracts, and builds
-pass; the detailed live matrix is pending, so `0.1.3` remains the latest
-official release until the owner confirms `0.1.4` in play.
+**Current candidate:** `0.1.5` (local). Completes the skills-page integration:
+the native red skill-points badge and phase-completion state are refreshed after
+every rolled-assignment change (including on drawer close), and forward
+navigation out of Skills is genuinely blocked while the native skill allocation
+is invalid. Service tests, exact assembly contracts, and builds pass; the
+detailed live matrix is pending. The latest published release is the `0.1.4`
+testing prerelease; `0.1.3` remains the latest official release.
 
 Kingmaker Dice Roller is a standalone Unity Mod Manager mod for Pathfinder:
 Kingmaker 2.1.7b. It adds an explicit rolled-ability workflow to the native

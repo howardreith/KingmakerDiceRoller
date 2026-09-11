@@ -339,8 +339,58 @@ $applyLevelup = $controller.GetMethod('ApplyLevelup',$flags,$null,[Type[]]@($uni
     }
     $skillsValue = [Enum]::Parse($phaseKind, 'Skills', $false)
     if ($skillsValue.ToString() -ne 'Skills') { throw 'CharBPhase.Type.Skills was not found.' }
+    if ([int]$skillsValue -ne 5) { throw 'CharBPhase.Type.Skills is not exact value 5.' }
     $skillsMember = Require-Member $characterBuild 'Skills'
     if ((Member-Type $skillsMember) -ne $skillsPhase) { throw 'CharacterBuildController.Skills has an unexpected type.' }
+
+    # Skills-page presentation and forward-navigation contracts.
+    $isSkillPointsComplete = $state.GetMethod('IsSkillPointsComplete',$flags,$null,[Type[]]@(),$null)
+    if (-not $isSkillPointsComplete -or $isSkillPointsComplete.ReturnType -ne [bool] -or $isSkillPointsComplete.IsStatic) {
+        throw 'Exact instance Boolean LevelUpState.IsSkillPointsComplete() was not found.'
+    }
+    $skillPointsRemaining = Require-Member $state 'SkillPointsRemaining'
+    if ((Member-Type $skillPointsRemaining) -ne [int]) {
+        throw 'LevelUpState.SkillPointsRemaining is not an Int32 contract.'
+    }
+    # IsSkillPointsComplete is the live gating predicate: overspend fails, exact spend passes,
+    # and unspent points pass only when every skill rank is already at the level cap.
+    $skillCompleteBytes = $isSkillPointsComplete.GetMethodBody().GetILAsByteArray()
+    if ((Find-ByteSequenceOffset $skillCompleteBytes ([BitConverter]::GetBytes($state.GetField('SpentSkillPoints',$flags).MetadataToken))) -lt 0 -or
+        (Find-ByteSequenceOffset $skillCompleteBytes ([BitConverter]::GetBytes($state.GetField('TotalSkillPoints',$flags).MetadataToken))) -lt 0) {
+        throw 'LevelUpState.IsSkillPointsComplete no longer reads the live spent/total skill-point fields.'
+    }
+    $defineAvailibleData = $characterBuild.GetMethod('DefineAvailibleData',$flags,$null,[Type[]]@(),$null)
+    $setupUiMethod = $characterBuild.GetMethod('SetupUI',$flags,$null,[Type[]]@(),$null)
+    $setPhaseMethod = $characterBuild.GetMethod('SetPhase',$flags,$null,[Type[]]@([int]),$null)
+    if (-not $defineAvailibleData -or $defineAvailibleData.ReturnType -ne [void] -or
+        -not $setupUiMethod -or $setupUiMethod.ReturnType -ne [void] -or
+        -not $setPhaseMethod -or $setPhaseMethod.ReturnType -ne [void] -or -not $setPhaseMethod.IsPublic) {
+        throw 'Exact skills-page refresh and forward-transition contracts were not found.'
+    }
+    $charBPhase = $skillsPhase.BaseType
+    if (-not $charBPhase -or $charBPhase.FullName -ne 'Kingmaker.UI.LevelUp.Phase.CharBPhase') {
+        throw 'CharBPhaseSkills does not derive from CharBPhase.'
+    }
+    $phaseIsDirty = $charBPhase.GetField('IsDirty',$flags)
+    if (-not $phaseIsDirty -or $phaseIsDirty.FieldType -ne [bool]) {
+        throw 'CharBPhase.IsDirty is not an exact Boolean field.'
+    }
+    $blinkMarks = $skillsPhase.GetMethod('BlinkMarks',$flags,$null,[Type[]]@(),$null)
+    if (-not $blinkMarks -or $blinkMarks.ReturnType -ne [void]) {
+        throw 'CharBPhaseSkills.BlinkMarks() was not found.'
+    }
+    # Every forward route funnels through SetPhase; the phase-unlock cache is recomputed
+    # only by DefinePhases, which is called only by SetupUI.
+    $definePhases = $characterBuild.GetMethod('DefinePhases',$flags,$null,[Type[]]@(),$null)
+    if (-not $definePhases) { throw 'CharacterBuildController.DefinePhases() was not found.' }
+    $setPhaseBytes = $setPhaseMethod.GetMethodBody().GetILAsByteArray()
+    if ((Find-ByteSequenceOffset $setPhaseBytes ([BitConverter]::GetBytes(($charBPhase.GetField('IsUnlocked',$flags)).MetadataToken))) -lt 0) {
+        throw 'CharacterBuildController.SetPhase no longer enforces the phase-unlock cache.'
+    }
+    $setupUiBytes = $setupUiMethod.GetMethodBody().GetILAsByteArray()
+    if ((Find-ByteSequenceOffset $setupUiBytes ([BitConverter]::GetBytes($definePhases.MetadataToken))) -lt 0) {
+        throw 'CharacterBuildController.SetupUI no longer recomputes phase unlocks through DefinePhases.'
+    }
     $abilityAllocatorMember = Require-Member $skillsPhase 'AbilityScoresAllocator'
     if ((Member-Type $abilityAllocatorMember) -ne $abilityAllocator) { throw 'CharBPhaseSkills.AbilityScoresAllocator has an unexpected type.' }
     $fillAbilityData = $abilityAllocator.GetMethod('FillData',$flags,$null,[Type[]]@(),$null)

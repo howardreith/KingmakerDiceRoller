@@ -37,6 +37,7 @@ namespace KingmakerDiceRoller
             var nativeControls = new NativeAbilityControlService(logger);
             var application = new StatApplicationService(statAccess, livePreview, preview, logger);
             var derivedRefresh = new DerivedStateRefreshService();
+            var skillsSync = new SkillsPhaseSynchronizationService(logger);
             var restore = new PointBuyRestoreService(statAccess, livePreview, preview, logger);
             var presentation = new AbilityPhasePresentationService(livePreview, logger, nativeControls);
             var workflow = new CharacterRollWorkflow(
@@ -59,6 +60,7 @@ namespace KingmakerDiceRoller
                 sessions,
                 application,
                 derivedRefresh,
+                skillsSync,
                 restore,
                 presentation,
                 diagnostics,

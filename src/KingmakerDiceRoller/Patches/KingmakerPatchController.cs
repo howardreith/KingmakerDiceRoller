@@ -42,6 +42,7 @@ namespace KingmakerDiceRoller.Patches
                 PatchPostfix(candidate, contracts.AbilityAllocatorFillDataMethod, nameof(KingmakerPatchBridge.AbilityAllocatorFilled));
                 PatchPostfix(candidate, contracts.LevelUpApplyLevelupMethod, nameof(KingmakerPatchBridge.LevelUpAppliedToAuthoritativeUnit));
                 PatchPostfix(candidate, contracts.LevelUpCommitMethod, nameof(KingmakerPatchBridge.LevelUpCommitCompleted));
+                PatchPrefix(candidate, contracts.CharacterBuildSetPhaseMethod, nameof(KingmakerPatchBridge.CharacterBuildSetPhaseStarting));
                 harmony = candidate;
                 InstallOptionalRespec(contracts, coordinator);
             }
@@ -100,6 +101,14 @@ namespace KingmakerDiceRoller.Patches
             {
                 KingmakerPatchBridge.Clear();
             }
+        }
+
+        private static void PatchPrefix(HarmonyInstance instance, MethodBase original, string bridgeMethodName)
+        {
+            MethodInfo bridge = typeof(KingmakerPatchBridge).GetMethod(bridgeMethodName, BindingFlags.Public | BindingFlags.Static);
+            if (bridge == null) throw new MissingMethodException(typeof(KingmakerPatchBridge).FullName, bridgeMethodName);
+            var prefix = new HarmonyMethod(bridge) { prioritiy = Priority.VeryLow };
+            instance.Patch(original, prefix, null);
         }
 
         private static void PatchPostfix(HarmonyInstance instance, MethodBase original, string bridgeMethodName)

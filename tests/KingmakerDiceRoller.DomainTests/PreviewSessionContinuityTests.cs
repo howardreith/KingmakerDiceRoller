@@ -2238,6 +2238,7 @@ namespace KingmakerDiceRoller.DomainTests
                 NativeControls = new NativeAbilityControlService(Logger);
                 Application = new StatApplicationService(StatAccess, LivePreview, PreviewRefresh, Logger);
                 DerivedRefresh = new DerivedStateRefreshService();
+                SkillsSync = new SkillsPhaseSynchronizationService(Logger);
                 Restore = new PointBuyRestoreService(StatAccess, LivePreview, PreviewRefresh, Logger);
                 Presentation = new AbilityPhasePresentationService(LivePreview, Logger, NativeControls);
                 Assignment = new StatAssignment(DiagnosticArrays.FixedPhaseTwoArray());
@@ -2253,6 +2254,7 @@ namespace KingmakerDiceRoller.DomainTests
             internal NativeAbilityControlService NativeControls { get; }
             internal StatApplicationService Application { get; }
             internal DerivedStateRefreshService DerivedRefresh { get; }
+        internal SkillsPhaseSynchronizationService SkillsSync { get; }
             internal PointBuyRestoreService Restore { get; }
             internal AbilityPhasePresentationService Presentation { get; }
             internal StatAssignment Assignment { get; }
@@ -2536,6 +2538,7 @@ namespace KingmakerDiceRoller.DomainTests
                         Sessions,
                         Application,
                         DerivedRefresh,
+                        SkillsSync,
                         Restore,
                         Presentation,
                         diagnostics,
@@ -2551,6 +2554,7 @@ namespace KingmakerDiceRoller.DomainTests
                     Sessions,
                     Application,
                     DerivedRefresh,
+                    SkillsSync,
                     Restore,
                     Presentation,
                     diagnostics,
@@ -2587,6 +2591,13 @@ namespace KingmakerDiceRoller.DomainTests
                     typeof(FakeUnitDescriptor).GetProperty("Progression", instance),
                     typeof(FakeProgression).GetProperty("TotalIntelligenceSkillPoints", instance),
                     typeof(FakeLevelUpController).GetProperty("LevelUpActions", instance),
+                    typeof(FakeState).GetMethod("IsSkillPointsComplete", instance),
+                    typeof(FakeState).GetProperty("SkillPointsRemaining", instance),
+                    typeof(FakeCharacterBuildController).GetMethod("DefineAvailibleData", instance),
+                    typeof(FakeCharacterBuildController).GetMethod("SetupUI", instance),
+                    typeof(FakeCharacterBuildController).GetMethod("SetPhase", instance),
+                    typeof(FakeAbilityPhase).GetField("IsDirty", instance),
+                    typeof(FakeAbilityPhase).GetMethod("BlinkMarks", instance),
                     typeof(FakeUnitHelper).GetMethod("IsCustomCompanion", staticFlags),
                     typeof(FakeUnitDescriptor).GetProperty("Stats", instance),
                     typeof(FakeStats).GetMethod("GetStat", instance),
@@ -2804,8 +2815,15 @@ namespace KingmakerDiceRoller.DomainTests
             public FakeMode Mode { get; set; }
             public int NextLevel { get; set; }
             public int IntelligenceSkillPoints { get; set; }
+            public int ClassSkillPoints { get; set; }
+            public int ExtraSkillPoints { get; set; }
+            public int TotalSkillPoints { get; set; }
+            public int SpentSkillPoints { get; set; }
+            internal bool AllSkillRanksCapped { get; set; }
             internal int OnApplyActionCalls { get; private set; }
             internal bool ThrowOnApplyAction { get; set; }
+
+            public int SkillPointsRemaining => TotalSkillPoints - SpentSkillPoints;
 
             public void OnApplyAction()
             {
@@ -2814,6 +2832,16 @@ namespace KingmakerDiceRoller.DomainTests
                     throw new InvalidOperationException("simulated native derived refresh failure");
                 }
                 OnApplyActionCalls++;
+                // Mirrors native OnApplyAction: TotalSkillPoints from the cached allowance,
+                // class points, and extras, with the native minimum of one.
+                TotalSkillPoints = Math.Max(IntelligenceSkillPoints + ClassSkillPoints, 1) + ExtraSkillPoints;
+            }
+
+            public bool IsSkillPointsComplete()
+            {
+                if (SpentSkillPoints > TotalSkillPoints) return false;
+                if (SpentSkillPoints == TotalSkillPoints) return true;
+                return AllSkillRanksCapped;
             }
         }
 
@@ -2887,11 +2915,63 @@ namespace KingmakerDiceRoller.DomainTests
             public FakeLevelUpController LevelUpController { get; set; }
             public FakePhaseType? CurrentPhase { get; set; }
             public FakeAbilityPhase Skills { get; set; }
+            internal int DefineAvailibleDataCalls { get; private set; }
+            internal int SetupUiCalls { get; private set; }
+
+            public void DefineAvailibleData()
+            {
+                DefineAvailibleDataCalls++;
+            }
+
+            public void SetupUI()
+            {
+                SetupUiCalls++;
+                // Mirrors native UpdateData: only the selected, available, unlocked, dirty
+                // phase fills, and the fill clears the dirty flag.
+                if (Skills != null &&
+                    LevelUpController != null &&
+                    LevelUpController.State != null &&
+                    CurrentPhase == FakePhaseType.Skills &&
+                    Skills.IsDirty)
+                {
+                    Skills.IsDirty = false;
+                    Skills.SkillsAllocator.FillLevelUpData();
+                }
+            }
+
+            public void SetPhase(int phase)
+            {
+            }
         }
 
         private sealed class FakeAbilityPhase
         {
+            public bool IsDirty;
             public FakeAbilityScoresAllocator AbilityScoresAllocator { get; set; }
+            internal FakeSkillsAllocator SkillsAllocator { get; } = new FakeSkillsAllocator();
+            internal int BlinkMarksCalls { get; private set; }
+
+            public void BlinkMarks()
+            {
+                BlinkMarksCalls++;
+            }
+        }
+
+        // Models CharBSkillsAllocator: the red remaining-points badge is repainted only by
+        // FillLevelUpData, which SetupUI reaches through the dirty Skills phase.
+        private sealed class FakeSkillsAllocator
+        {
+            internal int FillLevelUpDataCalls { get; private set; }
+            internal int DisplayedRemainingPoints { get; private set; } = int.MinValue;
+            internal FakeState BoundState { get; private set; }
+
+            public void FillLevelUpData()
+            {
+                FillLevelUpDataCalls++;
+                FakeLevelUpController controller = FakeGame.Instance.UI.CharacterBuildController.LevelUpController;
+                BoundState = controller.State;
+                DisplayedRemainingPoints = controller.State.SkillPointsRemaining;
+            }
         }
 
         private sealed class FakeAbilityScoresAllocator

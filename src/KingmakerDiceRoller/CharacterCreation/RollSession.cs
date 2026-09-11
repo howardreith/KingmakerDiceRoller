@@ -52,6 +52,10 @@ namespace KingmakerDiceRoller.CharacterCreation
         public RollSessionLifecycle Lifecycle { get; }
         public RollHistory History { get; }
         public int Generation { get; private set; }
+        // Bumped on every change that can alter the native skill allowance or allocation
+        // inputs (including rollbacks and point-buy transitions). Rerolls share a preview
+        // generation, so the UI sync keys on this revision, not the generation.
+        public int AssignmentRevision { get; private set; }
         public int ApplicationAttempts { get; private set; }
         public int StagedGeneration { get; private set; }
         public int VerifiedGeneration { get; private set; }
@@ -103,6 +107,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             pendingAssignment = assignment ?? throw new ArgumentNullException(nameof(assignment));
             pendingEntryFromPointBuy = true;
             pendingPriorRollWasVerified = false;
+            AssignmentRevision++;
             Lifecycle.BeginRollMode();
             ResetApplicationTracking();
         }
@@ -113,6 +118,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             pendingPriorRollWasVerified = IsApplied;
             pendingAssignment = assignment ?? throw new ArgumentNullException(nameof(assignment));
             pendingEntryFromPointBuy = false;
+            AssignmentRevision++;
             ResetApplicationTracking();
         }
 
@@ -132,6 +138,7 @@ namespace KingmakerDiceRoller.CharacterCreation
 
         public void AbortPendingRoll()
         {
+            AssignmentRevision++;
             bool restorePriorVerifiedRoll = !pendingEntryFromPointBuy && pendingPriorRollWasVerified;
             if (pendingEntryFromPointBuy)
             {
@@ -206,6 +213,7 @@ namespace KingmakerDiceRoller.CharacterCreation
         public void MarkPointBuyRollbackVerified(int generation)
         {
             RequireCurrentGeneration(generation);
+            AssignmentRevision++;
             if (!IsRestoringPointBuy)
             {
                 throw new InvalidOperationException("Only a restoring session can complete a rollback to Roll mode.");
@@ -218,6 +226,7 @@ namespace KingmakerDiceRoller.CharacterCreation
         public void MarkPointBuyRestored(int generation)
         {
             RequireCurrentGeneration(generation);
+            AssignmentRevision++;
             Lifecycle.MarkPointBuyRestored();
             pendingAssignment = null;
             pendingEntryFromPointBuy = false;
@@ -304,6 +313,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             GenerationRollback = generationRollback;
             PendingReplacementObserved = pendingReplacementObserved;
             Generation = nextGeneration;
+            AssignmentRevision++;
             StatAssignment current = AssignmentForApplication;
             CandidateBaselineContaminated = current != null &&
                 generationRollback.MatchesAssignment(current.ToAssignedArray());

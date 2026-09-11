@@ -148,6 +148,47 @@ Starting-score authority closes at completion for every kind: later ordinary
 level-ups (including native `SpendAttributePoint` at levels 4 and 8) construct
 non-first-level states that never receive staging.
 
+## Skills-page presentation and forward navigation
+
+The Skills page caches its presentation. Exact IL establishes:
+
+- The red remaining-points badge is repainted only by
+  `CharBSkillsAllocator.FillLevelUpData()`, reached through
+  `CharBPhaseSkills.FillData` when the phase is selected, available, unlocked,
+  and **dirty** (`CharBPhase.UpdateData` clears the dirty flag as it fills).
+- The per-phase `IsUnlocked` cache — what `ToNextPhase` and `SetPhase` actually
+  enforce — is recomputed only by `DefinePhases`, which runs only inside
+  `SetupUI`. Every forward route (Next button, keyboard/gamepad submit, the
+  phase menu, `OnShow`) funnels through `SetPhase(CharBPhase.Type)`.
+- `LevelUpState.IsSkillPointsComplete()` is the live completion predicate:
+  overspending fails, an exact spend passes, and unspent points pass only when
+  every skill rank is already at the level cap (a genuine native exception —
+  preserved, not replaced by a blanket remaining==0 rule).
+
+`SkillsPhaseSynchronizationService` therefore replays the exact native
+skill-click refresh (`DefineAvailibleData` + `Skills.IsDirty = true` +
+`SetupUI`) after every relevant change: Roll, Reroll, reassignment, History,
+Recall, Return to Point Buy, verified preview replacement, bounded restage,
+failed-command rollback, and drawer close (the Close callback routes through
+the command layer, never reflects directly). Synchronization is keyed on the
+session's assignment revision — rerolls share a preview generation, so the
+generation alone is not a dirty signal — and is bounded to one native refresh
+per revision and idempotent, so repeated open/close without changes is a
+no-op. It never rerolls, allocates or refunds points, rebuilds the preview, or
+clears selections; `DefineAvailibleData` rebuilds the feature-selection UI
+from the live model exactly as a native click does.
+
+Because a stale enabled button must not authorize leaving an invalid phase,
+`CharacterBuildController.SetPhase` carries a veto-only prefix (the single
+forward funnel). While an owned session is active, any forward target beyond
+Skills (`target > Skills`, `current <= Skills`) is blocked when the live
+`IsSkillPointsComplete()` is false; the handler synchronizes the page, shows
+the native `BlinkMarks`, and reports the exact unspent/excess amount. Back and
+same-phase navigation always pass; the guard can only veto, never permit; with
+no owned session it is inert; and disable/cancel/owner loss remove it with the
+session. Zero displayed points alone never forces success — native
+requirements still govern every other phase.
+
 ## Selection reconciliation rules
 
 - The shared refresh makes the live allowances agree with the staged scores at
@@ -205,6 +246,17 @@ green (runner: `scripts/Test-Domain.ps1`):
   cannot reintroduce stale caches.
 - `RespecDerivedStatsRefreshOnRollAndReturn` — the respec path shares the same
   transaction (no optional-adapter dependency).
+- `SpentBudgetRerollRefreshesBadgeAndBlocksNext`,
+  `OverspendAfterLowerIntelligenceBlocksForward`,
+  `RepeatedDrawerCloseWithoutChangesIsHarmless`,
+  `ForwardGuardIsScopedToOwnedSessionAndSkillsPhase`,
+  `RerollWithIdenticalScoresStillSynchronizesExactlyOnce`,
+  `DrawerCloseSettlesSynchronizationAfterFailedCommand`,
+  `PreviewReplacementSynchronizesSkillsPage`, and
+  `PointBuyReturnSynchronizesSkillsPageForPointBuyBudget` — the skills badge,
+  navigation veto, scoping, boundedness, and drawer-close guarantees. A refresh
+  counter alone is never the assertion: the displayed badge value and the
+  allow/block decisions are.
 
 Installed-assembly gates: `scripts/Verify-KingmakerContracts.ps1` proves the
 derived-allowance members (including that `OnApplyAction` reads the cached

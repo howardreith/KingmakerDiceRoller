@@ -315,3 +315,30 @@ integration from `docs/CHARACTER-BUILD-INTEGRITY.md`.
    provider defect with reproduction steps.
 8. Save/exit/reload and reload-without-Dice-Roller lanes from section J
    remain the persistence gates for this matrix.
+
+## L. Skills badge and forward-navigation matrix (NOT RUN)
+
+Guarded exactly like section J; same authorization requirements. These lanes
+verify the skills-page synchronization and the SetPhase veto.
+
+1. Owner reproduction: recall/assign Intelligence 10, spend the whole budget
+   until the badge reads 0, reopen the drawer, apply an Intelligence 16 array,
+   close the drawer, and touch nothing else. The badge must already show the
+   true remaining amount; immediate Next must stay on Skills with the native
+   attention marks and a spend/remove reason.
+2. Spend the newly available points through normal controls: the badge and
+   Next update immediately, and the following feats/traits page is populated
+   and functional; complete the character and verify ranks/feats/spells.
+3. Reverse: spend the larger budget, then apply a lower-Intelligence array.
+   Overspending must be visible (negative remainder), Next must be blocked,
+   and removing the excess through normal controls must restore progression.
+4. Repeated open/close without changes, multiple changes on one preview,
+   unchanged-budget score changes, and Close/Next in immediate succession: no
+   stale state, duplicate grants, extra RNG, or refresh loop.
+5. Try every supported forward route (mouse, keyboard submit, gamepad, any
+   visible later-phase control): none may bypass the veto while invalid. Back
+   and correction controls must remain usable throughout.
+6. Reassignment, History, Recall, partial Return to Point Buy, and Back/Next
+   across race/class changes: counters and navigation stay coherent with the
+   current owner and allocation, including the respected native edge case of
+   unspent points with every skill rank at its cap.

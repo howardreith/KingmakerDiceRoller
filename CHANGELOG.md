@@ -1,6 +1,38 @@
 # Changelog
 
-## 0.1.4 - rolled-stat build integrity (local candidate, NOT published)
+## 0.1.5 - skills-counter refresh and forward-navigation guard (local candidate)
+
+- Confirmed two follow-up defects by IL inspection: the native skills page caches its
+  presentation (the red remaining-points badge repaints only through
+  `CharBSkillsAllocator.FillLevelUpData` via the dirty Skills phase, and the phase-unlock
+  cache that gates every forward transition is recomputed only by `DefinePhases` inside
+  `SetupUI`), so a changed rolled assignment left a stale badge and a stale-completion
+  Next that permitted leaving Skills with an invalid allocation (producing an empty
+  feats/traits page).
+- Added `SkillsPhaseSynchronizationService`: after Roll, Reroll, reassignment, History,
+  Recall, Return to Point Buy, verified preview replacement, bounded restage, failed-
+  command rollback, and on drawer close, it replays the exact native skill-click refresh
+  (`DefineAvailibleData` + `Skills.IsDirty` + `SetupUI`) so the badge, skill rows, phase
+  completion, unlock chain, and feature-selection sections agree with the live model.
+  Synchronization is keyed on a new per-session assignment revision (rerolls share a
+  preview generation), bounded to once per revision, and idempotent; repeated open/close
+  without changes is a no-op.
+- Added a veto-only prefix on `CharacterBuildController.SetPhase` — the single native
+  funnel for Next, keyboard/gamepad submit, and later-phase jumps. While an owned session
+  is active, forward movement beyond Skills is blocked whenever the live native predicate
+  `LevelUpState.IsSkillPointsComplete()` is false (overspent or unspent budget), showing
+  the native BlinkMarks and an actionable reason; Back and same-phase navigation always
+  remain available, and the guard can never turn a native rejection into permission.
+- Expanded shared contracts and installed-assembly verification for the skills-page
+  members (live completion predicate reading spent/total fields, refresh/transition
+  methods, dirty flag, attention marks, Skills==5, SetPhase unlock enforcement, and
+  SetupUI->DefinePhases ordering).
+- Added eight deterministic skills-navigation regressions (336 total).
+- Interactive, save/reload, and provider-matrix lanes remain NOT RUN pending an
+  authorized disposable fixture; this is a local candidate only.
+
+
+## 0.1.4 - rolled-stat build integrity (testing prerelease)
 
 - Repaired three IL-confirmed rolled-stat integrity defects: stale native
   derived allowances after staging, the mercenary authoritative commit

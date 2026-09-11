@@ -28,6 +28,13 @@ namespace KingmakerDiceRoller.Integration
             MemberInfo unitDescriptorProgressionMember,
             MemberInfo unitProgressionTotalIntelligenceSkillPointsMember,
             MemberInfo levelUpControllerLevelUpActionsMember,
+            MethodInfo levelUpStateIsSkillPointsCompleteMethod,
+            MemberInfo levelUpStateSkillPointsRemainingMember,
+            MethodInfo characterBuildDefineAvailibleDataMethod,
+            MethodInfo characterBuildSetupUiMethod,
+            MethodInfo characterBuildSetPhaseMethod,
+            FieldInfo charBPhaseIsDirtyField,
+            MethodInfo skillsPhaseBlinkMarksMethod,
             MethodInfo unitHelperIsCustomCompanionMethod,
             MemberInfo unitStatsMember,
             MethodInfo unitStatsGetStatMethod,
@@ -88,6 +95,13 @@ namespace KingmakerDiceRoller.Integration
             UnitDescriptorProgressionMember = unitDescriptorProgressionMember;
             UnitProgressionTotalIntelligenceSkillPointsMember = unitProgressionTotalIntelligenceSkillPointsMember;
             LevelUpControllerLevelUpActionsMember = levelUpControllerLevelUpActionsMember;
+            LevelUpStateIsSkillPointsCompleteMethod = levelUpStateIsSkillPointsCompleteMethod;
+            LevelUpStateSkillPointsRemainingMember = levelUpStateSkillPointsRemainingMember;
+            CharacterBuildDefineAvailibleDataMethod = characterBuildDefineAvailibleDataMethod;
+            CharacterBuildSetupUiMethod = characterBuildSetupUiMethod;
+            CharacterBuildSetPhaseMethod = characterBuildSetPhaseMethod;
+            CharBPhaseIsDirtyField = charBPhaseIsDirtyField;
+            SkillsPhaseBlinkMarksMethod = skillsPhaseBlinkMarksMethod;
             UnitHelperIsCustomCompanionMethod = unitHelperIsCustomCompanionMethod;
             UnitStatsMember = unitStatsMember;
             UnitStatsGetStatMethod = unitStatsGetStatMethod;
@@ -149,6 +163,13 @@ namespace KingmakerDiceRoller.Integration
         public MemberInfo UnitDescriptorProgressionMember { get; }
         public MemberInfo UnitProgressionTotalIntelligenceSkillPointsMember { get; }
         public MemberInfo LevelUpControllerLevelUpActionsMember { get; }
+        public MethodInfo LevelUpStateIsSkillPointsCompleteMethod { get; }
+        public MemberInfo LevelUpStateSkillPointsRemainingMember { get; }
+        public MethodInfo CharacterBuildDefineAvailibleDataMethod { get; }
+        public MethodInfo CharacterBuildSetupUiMethod { get; }
+        public MethodInfo CharacterBuildSetPhaseMethod { get; }
+        public FieldInfo CharBPhaseIsDirtyField { get; }
+        public MethodInfo SkillsPhaseBlinkMarksMethod { get; }
         public MethodInfo UnitHelperIsCustomCompanionMethod { get; }
         public MemberInfo UnitStatsMember { get; }
         public MethodInfo UnitStatsGetStatMethod { get; }
