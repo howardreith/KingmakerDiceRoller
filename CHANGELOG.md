@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.7 - native theme activation repair (review candidate)
+## 0.1.7 - native theme activation repair
 
 - Resolve the native action label's literal `Next/Complete text` child without
   interpreting its slash as a hierarchy separator; diagnose missing, ambiguous
@@ -14,7 +14,10 @@
   regressions, extended native IL checks, and a temporary guarded Unity probe.
 - Preserve existing artwork, layout, click route, score application, Point Buy
   restoration, skill-counter synchronization and forward-navigation guards.
-  See the activation handoff for separate candidate qualification and live lanes.
+- Official release at the owner's explicit direction. Source/build/package checks
+  pass; native themed-path, rendered interactions, audio and runtime/compatibility
+  acceptance remain NOT RUN. The guarded startup attempt was restored cleanly.
+  See the activation handoff for exact qualification and artifact evidence.
 
 ## 0.1.6 - native book UI
 

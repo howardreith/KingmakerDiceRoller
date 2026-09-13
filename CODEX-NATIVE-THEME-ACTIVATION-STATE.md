@@ -14,8 +14,11 @@ The historical release is official/latest by owner instruction, despite the
 original testing-prerelease description. Its ZIP hash is
 `6e81dde5773b1d23706f57ed96f1f738a28a9cabc955295d5625a21a8911d1f1`.
 
-The new repair is version `0.1.7`, for branch push and review PR only. Merge,
-tag and public release are outside this mission. The owner explicitly
+The repair is version `0.1.7`. The initial branch/review-only publication scope
+was superseded on 2026-09-13 by the owner's explicit request: "Could you please
+merge, push, and release this as a new release? Make it an actual release, not
+a test. Thank you." Official/latest publication is now authorized, with the
+unrun checks disclosed and without claiming runtime qualification. The owner also
 authorized this machine's Kingmaker/Steam installation for disposable runtime
 testing. No valued campaign saves may be loaded or modified.
 
@@ -65,6 +68,21 @@ third-party notices and upstream license. It excludes the probe, extracted
 assets, game libraries, settings, logs and saves. Framework .NET 4.7.2,
 C# 7.3, Harmony12 and UMM dependencies are unchanged.
 
+## Official 0.1.7 publication preparation
+
+PR #2 contains the repair and release documentation. The official package will
+be rebuilt from its clean, fully pushed main merge commit. Its DLL must match
+the review candidate hash above. The ZIP will differ because its packaged
+README now describes the official release and discloses the runtime blocker.
+Keep the original review candidate immutable. The release page will identify
+the exact merged source commit and new ZIP checksum.
+
+The existing publisher prepares a draft with qualified assets and an annotated
+tag; after asset verification, the owner-authorized publication sets draft and
+prerelease false and marks latest. No `-ConfirmRuntimeQualified` assertion or
+weakening of the general publication gate is used. No additional installation,
+game launch or save access is needed to publish this release.
+
 ## Separate qualification statuses
 
 | Status | Result and evidence |
@@ -81,7 +99,7 @@ C# 7.3, Harmony12 and UMM dependencies are unchanged.
 | Runtime qualified | **NO** — character-creation interaction/skill/navigation/finalization lanes unrun |
 | Compatibility qualified | **NO** — no mercenary/respec disposable campaign fixture or focused provider matrix |
 | Human visual acceptance | **NOT RUN** |
-| Release authorized / published | **NO / NO** — branch and review PR only; v0.1.6 remains untouched |
+| Release authorized / published | **YES / pending** — official/latest requested; runtime statuses remain unchanged |
 
 Deterministic tests execute the shipped lookup, resolver, capabilities,
 recovery and binding logic through an opaque node adapter. They do not host

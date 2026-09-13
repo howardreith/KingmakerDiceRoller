@@ -1,15 +1,23 @@
 # Project state
 
-## Current 0.1.7 native-theme activation repair candidate
+## Current 0.1.7 native-theme activation release preparation
 
-Candidate version `0.1.7`; branch `codex/native-theme-activation-repair`, based on
+Version `0.1.7`; branch `codex/native-theme-activation-repair`, based on
 `9b69751983a6bc80d1e73999d3fbba3e3e7f8927`. Historical `77d16ef` is an ancestor;
 `v0.1.6` peels to `7662a4239512edd9be7a8d3c3ca511a1d9ce763a`. Both the release
 ZIP's DLL and the installed pre-repair DLL match
 `e2803d3f70ac168d52de27a075b36e6562c7209e709d02c62485f7ded0b13092`.
 No reset or downgrade was performed. The owner reported the literal-name donor
-failure and authorized this focused repair, branch push and review PR; merge,
-tag and public release are not authorized for this candidate.
+failure and initially authorized a repair branch and review PR. On 2026-09-13,
+after the candidate handoff, the owner instructed: "Could you please merge,
+push, and release this as a new release? Make it an actual release, not a test.
+Thank you." This explicitly authorizes merging PR #2, pushing main, tagging
+v0.1.7 and publishing an official/latest release with the unrun checks disclosed.
+It supersedes the earlier repair-only publication restriction, without claiming
+runtime qualification. The existing draft-build/package workflow will prepare
+reviewable assets; official publication uses the owner's instruction rather
+than asserting `-ConfirmRuntimeQualified`. The general qualification gate and
+its tests remain unchanged.
 
 The owner additionally authorized this machine's Kingmaker/Steam installation
 for disposable runtime verification. Preserve and restore the existing Dice
@@ -38,11 +46,12 @@ been supplied. Prior release permissions below are historical.
 - Compatibility-qualified: **No** — mercenary/respec fixtures unavailable.
 - Human visual acceptance: **NOT RUN**.
 - Audio-qualified: **NOT RUN**.
-- Release-authorized: **No** — repair branch and PR only.
-- Testing-prerelease-authorized: **No**.
-- Publicly released: **No** — historical v0.1.6 remains the public release.
+- Release-authorized: **Yes** — explicit owner instruction above; official/latest.
+- Testing-prerelease-authorized: **No** — the owner requested an actual release.
+- Publicly released: **No** yet — preparing v0.1.7 official/latest; no new
+  runtime evidence is implied by publication.
 
-## Current 0.1.6 native book UI release
+## Historical 0.1.6 native book UI release
 
 Version `0.1.6`; implementation branch `codex/native-book-ui-reskin`.
 Baseline `504b5ae53600be99a01f437b35ed57cdff6c3535`. Presentation-only
