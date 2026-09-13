@@ -3,17 +3,27 @@
 ## Release follow-up
 
 On 2026-09-13 the owner authorized committing, merging to the default branch,
-pushing and cutting a release. Release preparation uses 0.1.6 as a testing
-prerelease while live visual, audio, runtime and compatibility lanes remain
-NOT RUN. Current authorization and publication status are in `PROJECT-STATE.md`.
-No game installation, desktop control or save modification is included.
+pushing and cutting a release. The mission branch was fast-forward merged into
+main and both branches pushed. [v0.1.6](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.6)
+is published as a testing prerelease; latest official remains v0.1.5. Live visual,
+audio, runtime and compatibility lanes remain NOT RUN. No game installation,
+desktop control or save modification occurred.
+
+Release source: `7662a4239512edd9be7a8d3c3ca511a1d9ce763a`.
+ZIP SHA-256: `6e81dde5773b1d23706f57ed96f1f738a28a9cabc955295d5625a21a8911d1f1`.
+DLL SHA-256: `e2803d3f70ac168d52de27a075b36e6562c7209e709d02c62485f7ded0b13092`.
+The full qualification passed again at that clean, pushed main commit and the
+published assets were downloaded and independently audited. Exact tag/asset IDs,
+qualification statuses and publication time are in `PROJECT-STATE.md`; local
+reports and downloaded assets are in ignored `artifacts/release-0.1.6/`.
 
 The local mission handoff below is preserved as historical evidence. Its final
 clean source is `bc01fde7e5e37471ea95d793e1fe5891bf6e979c`; the exact candidate
 and its reports remain under ignored `artifacts/candidates/` at that source ID.
-Release preparation updates documentation only. The release ZIP includes the
-updated README, so its ZIP hash may differ from the historical candidate while
-the compiled DLL must remain identical.
+Release preparation changed documentation only. The release ZIP includes the
+updated README, so its ZIP hash differs from the historical candidate. The
+compiled DLL was verified identical. The publication record is a later
+documentation commit and does not retarget the tag or replace published assets.
 
 ## Original local mission handoff
 

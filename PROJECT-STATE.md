@@ -23,10 +23,10 @@ Installation, desktop/game testing and save modification remain unauthorized.
 - Contract-qualified: **Yes** — existing Kingmaker contracts, 11 respec groups,
   16 installed/candidate UI IL checks; exact donors inspected in both PC scenes.
 - Build-qualified: **Yes** — Release, zero warnings/errors.
-- Package-qualified: **Yes** — clean-commit six-file candidate archive; all
-  entries independently matched to inputs and DLL hashes agreed. The release
-  publisher repeats qualification and packaging from clean, pushed main;
-  release preparation changes documentation only. Historical candidate
+- Package-qualified: **Yes** — release rebuilt from clean, pushed main and
+  validated against the six-file allowlist. Downloaded GitHub ZIP/checksum match
+  local bytes and GitHub asset digests; all entries match source/build inputs.
+  Released DLL matches the original candidate exactly. Historical candidate
   provenance remains under ignored `artifacts/candidates/<clean-commit>/`.
 - Installed: **No** — no active/test game installation by this mission.
 - Focused runtime test: **NOT RUN** — guarded disposable workflow not authorized.
@@ -38,8 +38,46 @@ Installation, desktop/game testing and save modification remain unauthorized.
 - Release-authorized: **Yes** — owner's 2026-09-13 instruction quoted above.
 - Testing-prerelease-authorized: **Yes** — publication under that instruction,
   using the existing testing path and disclosing all unrun acceptance lanes.
-- Publicly released: **No** — prepared for publication; record the verified
-  tag, release source commit, asset hashes and URL after publication.
+- Publicly released: **Yes** — `v0.1.6` testing prerelease, not latest;
+  verified publication and exact hashes below. Latest official remains `v0.1.5`.
+
+
+## Verified 0.1.6 publication
+
+[v0.1.6](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.6) was published on
+2026-09-13 at 12:56:46 UTC as a **testing prerelease**, not a draft or the latest
+official release. Release ID `387900346`. Implementation and release
+preparation were fast-forward merged from `codex/native-book-ui-reskin` into
+`main`, then both branches were pushed. The guarded publisher reran the complete
+offline qualification from clean, fully pushed main at release commit
+`7662a4239512edd9be7a8d3c3ca511a1d9ce763a`. Annotated tag `v0.1.6` is
+`4016542b39111fada3e777962d55d40e4092f3d0` and peels to that commit.
+
+All 347 C# cases, 30 Python cases, 13 release-gate tests, 18 source-validation
+groups, existing native contracts, 11 respec groups and 16 UI IL checks passed.
+Release build: zero warnings/errors. Visual, audio, interactive workflow,
+finalization/save and compatibility acceptance remain **NOT RUN**.
+
+- ZIP: `KingmakerDiceRoller-0.1.6.zip`, 113,947 bytes,
+  GitHub asset `561218651`.
+- ZIP SHA-256: `6e81dde5773b1d23706f57ed96f1f738a28a9cabc955295d5625a21a8911d1f1`.
+- DLL SHA-256: `e2803d3f70ac168d52de27a075b36e6562c7209e709d02c62485f7ded0b13092`.
+- Checksum asset: `SHA256SUMS.txt`, 97 bytes, GitHub asset `561218652`;
+  SHA-256 `bd83cfa1b9888ddf312d8ba757ea7ab8032246940cd86d092e53907092fa761f`.
+
+The published ZIP and checksum were downloaded and compared byte-for-byte with
+the locally qualified files and GitHub SHA-256 digests. Every one of the six ZIP
+entries matched its source/build input; Info version is 0.1.6 and the DLL is
+identical to the original local candidate. The ZIP differs because its README
+now describes the release. Historical candidate files and the v0.1.5 ZIP remain
+unchanged; GitHub's latest-release response still identifies v0.1.5.
+
+Evidence remains under ignored `artifacts/release-0.1.6/`: `publication.txt`,
+`github-release.json`, `github-latest.json`, `independent-publication-audit.json`,
+copied build/package/contract reports and the downloaded assets. This publication
+record is a later documentation commit; the release tag and asset bytes remain
+fixed at the release commit above. No PR, installation, game/desktop session,
+other-mod change or save modification was performed.
 
 
 ## Historical 0.1.5 candidate — skills-counter and forward-navigation integrity
