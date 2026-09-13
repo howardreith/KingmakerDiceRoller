@@ -16,9 +16,10 @@ remaining gates: `docs/NATIVE-UI-STYLE.md`, `CODEX-NATIVE-UI-RESKIN-STATE.md`.
 - Contract-qualified: **Yes** — existing Kingmaker contracts, 11 respec groups,
   16 installed/candidate UI IL checks; exact donors inspected in both PC scenes.
 - Build-qualified: **Yes** — Release, zero warnings/errors.
-- Package-qualified: **Pending final clean build** — candidate-only six-file
-  archive; the exact final manifest and hashes are recorded under ignored
-  `artifacts/candidates/<clean-commit>/` after qualification.
+- Package-qualified: **Yes** — clean-commit candidate-only six-file archive;
+  all entries independently matched to inputs and DLL hashes agreed. Exact
+  final source identity, manifest and handoff are recorded under ignored
+  `artifacts/candidates/<clean-commit>/`. This remains an unreleased candidate.
 - Installed: **No** — no active/test game installation by this mission.
 - Focused runtime test: **NOT RUN** — guarded disposable workflow not authorized.
 - Runtime-qualified: **No** — interactions, workflow/finalization/save regressions NOT RUN.

@@ -5,8 +5,8 @@ Actual clean baseline: `504b5ae53600be99a01f437b35ed57cdff6c3535`
 (main and locally recorded origin/main). Existing checkout and worktrees were
 inspected; no unknown work/reset, remote fetch or other-mod edits.
 First slice commit: `ba0d075250f28fd2fa8a997e637537f2f9fb29f9`.
-The full implementation follows that source-qualified paper/title/Close/opener
-slice. Exact final source head is recorded by the ignored clean-build candidate
+Full implementation commit: `938feb34366df3d708e15ab6ca4ea04a812c2317`,
+following that source-qualified paper/title/Close/opener slice. Exact final source head is recorded by the ignored clean-build candidate
 manifest; tracked documentation cannot contain its own commit hash.
 
 ## Completed implementation
@@ -44,18 +44,33 @@ long errors, theme fallback, real session/RNG/assignment preservation, all six
 requested resolutions and constrained geometry. Existing lifecycle, restoration,
 roll/history/saved, skills and forward-guard cases remain in the runner.
 
-Final package qualification is pending the clean implementation commit. Next
-safe action: commit, run `Qualify.ps1 -Build -Package -Candidate`, verify all six
-archive entries and exact DLL/ZIP/metadata hashes, then record the handoff.
-Final reports belong in `artifacts/candidates/<full-clean-commit>/` with a concise
-local `HANDOFF.md`; the qualification log is in `artifacts/native-ui-reskin/`.
+Clean implementation qualification passed at `938feb34366df3d708e15ab6ca4ea04a812c2317`:
+`artifacts/native-ui-reskin/clean-qualification-938feb3.txt`. Its candidate archive
+and six entries were independently checked against source/build inputs; metadata
+is 0.1.6 / assembly 0.1.6.0, and copied, packaged and built DLL hashes agree.
+The native contract report records 40 signatures plus existing IL assertions;
+the separate respec/UI counts above are checked independently.
+
+Qualified candidate bytes:
+
+- ZIP SHA-256: `04f518847f0a9a02d25db8be3a705ef6ec39c5dc85c32aa8bd498a164521ce9a`.
+- DLL SHA-256: `e2803d3f70ac168d52de27a075b36e6562c7209e709d02c62485f7ded0b13092`.
+
+After the handoff documentation commit, the final clean-head qualification uses
+`Qualify.ps1 -Build -Package -Candidate` again. The exact final source head,
+ZIP/DLL paths and independent hashes are authoritative in ignored
+`artifacts/build-provenance.json` and `artifacts/candidates/<full-clean-commit>/`:
+`package-manifest.json`, `independent-package-audit.json`, `HANDOFF.md` and
+`qualification.txt`. No generated provenance or machine paths enter Git.
+Next safe action is owner review of that candidate and, only if explicitly
+authorized, the guarded disposable-fixture smoke procedure below.
 
 ## Separate qualification status and blockers
 
 | Lane | Status |
 | --- | --- |
 | Offline tests / source / native contracts / Release build | PASS, scoped to recorded checks |
-| Candidate packaging | Pending clean final qualification |
+| Candidate packaging | PASS, six-file allowlist and independent byte/hash audit |
 | Live interactions and ownership behavior | NOT RUN |
 | Native aesthetic / press-motion acceptance | NOT RUN |
 | Audible click, Submit, master volume/mute | NOT RUN |
