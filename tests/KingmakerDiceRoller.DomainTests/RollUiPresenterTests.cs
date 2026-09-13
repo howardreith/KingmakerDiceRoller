@@ -1,4 +1,5 @@
 using System;
+using KingmakerDiceRoller.UI;
 using System.Linq;
 using KingmakerDiceRoller.CharacterCreation;
 using KingmakerDiceRoller.Domain;
@@ -468,6 +469,38 @@ namespace KingmakerDiceRoller.DomainTests
                 () => { throw new Exception("bad style"); },
                 () => { fallback++; throw new InvalidOperationException("bad base view"); }, _ => { }));
             AssertEx.Equal(2, fallback);
+        }
+
+        internal static void ThemeRetriesLeaveOwnedCommandDispatchSingle()
+        {
+            var target = new FakeTarget(Snapshot(RollSessionMode.PointBuy, null));
+            var router = new RollUiCommandRouter(target);
+            var bindings = new NativeThemeBindings();
+            int artwork = 0, audio = 0;
+            bindings.Add(NativeThemeCapability.Buttons, values => artwork++, () => { });
+            ThemeFixture fixture = ThemeFixture.Full();
+            fixture.Remove(NativeThemeResolver.RulePath);
+            // Same production restyling path runs repeatedly without registering input callbacks.
+            for (int index = 0; index < 3; index++) bindings.Apply(fixture.Resolve(), message => { throw new Exception(message); });
+            AssertEx.Equal(0, target.CommandCalls);
+            foreach (RollUiCommand command in new[] { RollUiCommand.Roll, RollUiCommand.StoreCurrent,
+                RollUiCommand.PreviousSaved, RollUiCommand.NextSaved, RollUiCommand.RecallSaved, RollUiCommand.DeleteSaved })
+            {
+                int before = target.CommandCalls;
+                NativeUiPresentation.Activate(() =>
+                {
+                    AssertEx.True(router.Execute(command, AbilityScore.Strength, out string error), error);
+                }, () => audio++, message => { throw new Exception(message); });
+                AssertEx.Equal(before + 1, target.CommandCalls);
+            }
+            AssertEx.Equal(6, audio);
+            AssertEx.Equal(1, artwork);
+            var panel = new NativeRollPanelState();
+            panel.ObserveOwner(new object(), new object()); panel.AttachView(); panel.Open();
+            AssertEx.True(NativeUiPresentation.CloseDrawer(panel, router.NotifyDrawerClosed));
+            AssertEx.True(!NativeUiPresentation.CloseDrawer(panel, router.NotifyDrawerClosed));
+            AssertEx.Equal(1, target.DrawerClosedNotifications);
+            AssertEx.Equal(6, target.CommandCalls);
         }
 
         private static RollUiSnapshot Snapshot(

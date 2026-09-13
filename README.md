@@ -1,12 +1,14 @@
 # Kingmaker Dice Roller
 
-**Latest official release: 0.1.6 — native book UI.** It adds textured native
-inset paper, gray framed buttons, role-specific typography and ordinary UI click
-feedback. Offline checks pass; live visuals, audio, runtime and compatibility
-acceptance are **NOT RUN**. The owner selected official/latest with these unrun
-checks disclosed. See [release notes](docs/RELEASE-NOTES-0.1.6.md),
-[qualification state](CODEX-NATIVE-UI-RESKIN-STATE.md) and the reusable
-[native style reference](docs/NATIVE-UI-STYLE.md).
+**Review candidate: 0.1.7 — native theme activation repair.** It repairs the
+literal-name donor lookup that prevented the 0.1.6 reskin from activating,
+retains independent valid styling during partial fallback, and permits bounded
+recovery without rebuilding the working roll session. The textured paper,
+gray framed buttons, typography and ordinary click route retain their existing
+design. This branch does not publish a new release; 0.1.6 remains public.
+See the [repair qualification handoff](CODEX-NATIVE-THEME-ACTIVATION-STATE.md)
+and [native style reference](docs/NATIVE-UI-STYLE.md). Source/build checks do
+not substitute for the separately recorded visual, audio and runtime lanes.
 
 The release includes the existing skills-page integration: the native red
 skill-points badge and phase-completion state refresh after rolled-assignment

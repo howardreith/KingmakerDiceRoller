@@ -96,9 +96,38 @@ public static class NativeUiContractProbe
             "Candidate replaces the click event and binds one listener");
         var callbacks = host.GetNestedTypes(All).SelectMany(t => t.GetMethods(All | BindingFlags.DeclaredOnly))
             .Where(m => m.Name.StartsWith("<CreateButton>b__", StringComparison.Ordinal)).ToArray();
-        Check(results, callbacks.Length == 1 && Calls(callbacks[0]).Count(m => m.Name == "Activate" &&
-            m.DeclaringType.FullName == "KingmakerDiceRoller.CharacterCreation.NativeUiPresentation") == 1,
+        Check(results, callbacks.Count(callback => Calls(callback).Count(m => m.Name == "Activate" &&
+            m.DeclaringType.FullName == "KingmakerDiceRoller.CharacterCreation.NativeUiPresentation") == 1) == 1 &&
+            callbacks.Sum(callback => Calls(callback).Count(m => m.Name == "Activate")) == 1,
             "Candidate accepted activation uses one presentation dispatcher");
+        Type themeResolver = candidate.GetType("KingmakerDiceRoller.UI.NativeThemeResolver", true);
+        Type lookup = candidate.GetType("KingmakerDiceRoller.UI.NativeUiDonorLookup", true);
+        Type bindings = candidate.GetType("KingmakerDiceRoller.UI.NativeThemeBindings", true);
+        Type recovery = candidate.GetType("KingmakerDiceRoller.UI.NativeThemeRecovery", true);
+        Check(results, Calls(Method(theme, "Resolve")).Count(m => m.DeclaringType == themeResolver && m.Name == "Resolve") == 1,
+            "Unity theme entry uses the shared production capability resolver");
+        Check(results, Calls(Method(themeResolver, "ResolveCapability")).Count(m => m.DeclaringType == lookup && m.Name == "RequireLiteralChild") == 1 &&
+            (string)themeResolver.GetField("ButtonLabelName", All).GetRawConstantValue() == "Next/Complete text",
+            "Button label uses exact literal-child lookup, independently of action artwork");
+        Type backend = theme.GetNestedType("UnitySource", All);
+        Check(results, Calls(Method(backend, "Child")).Any(m => m.Name == "GetChild") &&
+            Calls(Method(backend, "Components")).Any(m => m.Name == "GetComponents") &&
+            !backend.GetMethods(All | BindingFlags.DeclaredOnly).SelectMany(m => Calls(m)).Any(m => m.Name == "Find" || m.Name == "FindObjectsOfTypeAll"),
+            "Unity adapter reads bounded direct children/local components without scene searches");
+        Type phase = game.GetType("Kingmaker.UI.LevelUp.Phase.CharBPhase", true);
+        Type skills = game.GetType("Kingmaker.UI.LevelUp.Phase.CharBPhaseSkills", true);
+        Type allocator = game.GetType("Kingmaker.UI.LevelUp.CharBAbilityScoresAllocator", true);
+        Check(results, Calls(Method(phase, "UpdateData")).Any(m => m.Name == "FillData") &&
+            Calls(Method(skills, "FillData")).Count(m => m.DeclaringType == allocator && m.Name == "FillData") == 1,
+            "Existing native Skills phase update reaches allocator FillData exactly once");
+        var retryCalls = Calls(Method(host, "RecoverTheme"));
+        Check(results, retryCalls.Count(m => m.DeclaringType == recovery && m.Name == "TryBegin") == 1 &&
+            retryCalls.Any(m => m.DeclaringType == bindings && m.Name == "Apply") &&
+            !retryCalls.Any(m => m.Name == "CreateOwnedView" || m.Name == "DestroyAttachedView" || m.Name == "AddListener" || m.Name == "Execute"),
+            "Recovery applies existing bindings through one bounded gate without rebuilding or dispatching");
+        Check(results, (int)recovery.GetField("MaximumAttempts", All).GetRawConstantValue() == 3 &&
+            Calls(Method(host, "DestroyAttachedView")).Any(m => m.DeclaringType == bindings && m.Name == "Clear"),
+            "Three-attempt attachment budget and owned binding teardown are wired");
         return results.ToArray();
     }
 }

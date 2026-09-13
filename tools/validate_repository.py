@@ -173,14 +173,14 @@ def main():
     require(info['AssemblyName']=='KingmakerDiceRoller.dll','unexpected assembly name')
     require(info['EntryMethod']=='KingmakerDiceRoller.Main.Load','unexpected entry method')
     require(info['GameVersion']=='2.1.7','unexpected target game version')
-    require(info['Version']=='0.1.6','unexpected candidate version')
+    require(info['Version']=='0.1.7','unexpected candidate version')
     product_metadata=(ROOT/'src/KingmakerDiceRoller/ProductMetadata.cs').read_text(encoding='utf-8')
     assembly_info=(ROOT/'src/KingmakerDiceRoller/Properties/AssemblyInfo.cs').read_text(encoding='utf-8')
-    require('0.1.6' in product_metadata and '0.1.6-' not in product_metadata,
+    require('0.1.7' in product_metadata and '0.1.7-' not in product_metadata,
             'runtime product version is inconsistent')
-    require('AssemblyVersion("0.1.6.0")' in assembly_info and
-            'AssemblyFileVersion("0.1.6.0")' in assembly_info and
-            'AssemblyInformationalVersion("0.1.6")' in assembly_info,
+    require('AssemblyVersion("0.1.7.0")' in assembly_info and
+            'AssemblyFileVersion("0.1.7.0")' in assembly_info and
+            'AssemblyInformationalVersion("0.1.7")' in assembly_info,
             'assembly version metadata is inconsistent')
     require(parse_umm_version('0.1.0-alpha.2') > parse_umm_version('0.1.0'),
             'UMM prerelease-ordering regression fixture is invalid')
@@ -418,8 +418,23 @@ def main():
         require(token in theme, f'verified native presentation contract missing: {token}')
     require('FixedFooter' not in panel and 'MessageVisible' in presenter and 'Array applied' not in presenter,
             'empty success output must not retain a fixed footer or applied message')
-    require('BuildThemedView' in panel and 'ResolveTheme' in panel and 'PaperShadow' in panel,
-            'native theme requires bounded fallback and separate decorative paper layers')
+    lookup=(ROOT/'src/KingmakerDiceRoller/UI/NativeUiDonorLookup.cs').read_text(encoding='utf-8')
+    theme_resolver=(ROOT/'src/KingmakerDiceRoller/UI/NativeThemeResolver.cs').read_text(encoding='utf-8')
+    recovery=(ROOT/'src/KingmakerDiceRoller/UI/NativeThemeRecovery.cs').read_text(encoding='utf-8')
+    require('ResolveTheme' in panel and 'PaperShadow' in panel and 'themeBindings.Apply' in panel and
+            'RecoverTheme' in panel and 'EnsureAttached(allocator, contracts, true)' in panel,
+            'native theme requires in-place bounded fallback/recovery and separate decorative paper layers')
+    require('RequireLiteralChild(action, ButtonLabelName)' in theme_resolver and
+            'Next/Complete text' in theme_resolver and 'StringComparison.Ordinal' in lookup and
+            'MaximumChildren' in lookup and 'ambiguous direct children' in lookup,
+            'native donor lookup must distinguish literal names from paths and reject ambiguity')
+    require('NativeThemeResolver.Resolve' in theme and 'source.Validate(capability, resource.Components)' in theme_resolver and
+            'result.Reject(capability' in theme_resolver and 'DiscardStale' in panel and
+            'MaximumAttempts = 3' in recovery and 'Attempts > 0 && !allocatorFilled' in recovery,
+            'production theme requires isolated validated capabilities and bounded lifecycle recovery')
+    recover_method=panel[panel.index('private void RecoverTheme'):panel.index('private void ReportTheme')]
+    require(not any(token in recover_method for token in ['CreateOwnedView(', 'DestroyAttachedView(', 'AddListener(', 'Execute(', 'SetCustomExpression(']),
+            'cosmetic recovery must not rebuild controls or mutate workflow/commands')
     require('Instantiate(' not in theme and 'Instantiate(' not in panel and
             '.outlineWidth =' not in panel and '.outlineColor =' not in panel,
             'owned presentation must not clone native callbacks or modify shared font styling')

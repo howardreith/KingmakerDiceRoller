@@ -1,5 +1,42 @@
 # Project state
 
+## Current 0.1.7 native-theme activation repair candidate
+
+Candidate version `0.1.7`; branch `codex/native-theme-activation-repair`, based on
+`9b69751983a6bc80d1e73999d3fbba3e3e7f8927`. Historical `77d16ef` is an ancestor;
+`v0.1.6` peels to `7662a4239512edd9be7a8d3c3ca511a1d9ce763a`. Both the release
+ZIP's DLL and the installed pre-repair DLL match
+`e2803d3f70ac168d52de27a075b36e6562c7209e709d02c62485f7ded0b13092`.
+No reset or downgrade was performed. The owner reported the literal-name donor
+failure and authorized this focused repair, branch push and review PR; merge,
+tag and public release are not authorized for this candidate.
+
+The owner additionally authorized this machine's Kingmaker/Steam installation
+for disposable runtime verification. Preserve and restore the existing Dice
+Roller installation, own the test process, and use new-character creation without
+loading or changing valued campaign saves. Mercenary/respec fixtures have not
+been supplied. Prior release permissions below are historical.
+
+## Qualification truth
+
+- Implemented: **Yes** — literal-name lookup, independent styling capabilities,
+  and in-place recovery bounded to initial resolution plus two FillData retries.
+- Source-qualified: **Yes** — 370 C# cases, 30 Python cases, 13 release-gate
+  cases and 18 source groups passed.
+- Contract-qualified: **Yes** — existing contracts, 11 respec groups and
+  22 native UI IL checks passed.
+- Build-qualified: **Yes** — Release build, zero warnings/errors.
+- Package-qualified: **Pending** — candidate-only clean-source package required.
+- Installed: **No** — baseline installed DLL was read-only verified.
+- Focused runtime test: **NOT RUN** — final candidate not yet installed/tested.
+- Runtime-qualified: **No**.
+- Compatibility-qualified: **No** — mercenary/respec fixtures unavailable.
+- Human visual acceptance: **NOT RUN**.
+- Audio-qualified: **NOT RUN**.
+- Release-authorized: **No** — repair branch and PR only.
+- Testing-prerelease-authorized: **No**.
+- Publicly released: **No** — historical v0.1.6 remains the public release.
+
 ## Current 0.1.6 native book UI release
 
 Version `0.1.6`; implementation branch `codex/native-book-ui-reskin`.
@@ -17,7 +54,7 @@ existing release was promoted accordingly; this explicit publication decision
 does not establish runtime qualification. Live acceptance remains NOT RUN.
 Installation, desktop/game testing and save modification remain unauthorized.
 
-## Qualification truth
+## Historical 0.1.6 qualification record
 
 - Implemented: **Yes** — full native style with bounded usable fallback.
 - Source-qualified: **Yes** — 18 source groups, 13/13 release-gate tests,

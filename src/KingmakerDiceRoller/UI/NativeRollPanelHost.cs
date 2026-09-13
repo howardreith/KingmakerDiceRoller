@@ -47,6 +47,10 @@ namespace KingmakerDiceRoller.UI
         private readonly List<AssignmentWidgets> assignmentRows = new List<AssignmentWidgets>();
 
         private NativeBookTheme theme;
+        private Transform attachedThemeOwner;
+        private readonly NativeThemeRecovery themeRecovery = new NativeThemeRecovery();
+        private readonly NativeThemeBindings themeBindings = new NativeThemeBindings();
+        private readonly Dictionary<NativeThemeCapability, string> themeDiagnostics = new Dictionary<NativeThemeCapability, string>();
         private readonly List<RectTransform> paperLayers = new List<RectTransform>();
         private object attachedAllocator;
         private CollapsedAccessTabAnchorSource? lastAccessTabAnchorSource;
@@ -144,7 +148,7 @@ namespace KingmakerDiceRoller.UI
                     EndOwnerIfSessionEnded();
                     return;
                 }
-                EnsureAttached(allocator, contracts);
+                EnsureAttached(allocator, contracts, true);
                 Render(contracts);
             }
             catch (Exception exception)
@@ -207,6 +211,10 @@ namespace KingmakerDiceRoller.UI
             nativeControls.RestoreOwnedStates(contracts);
             attachedAllocator = null;
             theme = null;
+            attachedThemeOwner = null;
+            themeRecovery.Reset();
+            themeBindings.Clear();
+            themeDiagnostics.Clear();
             paperLayers.Clear();
             lastAccessTabAnchorSource = null;
             assignmentRows.Clear();
@@ -289,49 +297,93 @@ namespace KingmakerDiceRoller.UI
                 ReferenceEquals(allocator, currentAllocator);
         }
 
-        private void EnsureAttached(object allocator, KingmakerContracts contracts)
+        private void EnsureAttached(object allocator, KingmakerContracts contracts, bool allocatorFilled = false)
         {
             RollSession session = commands.ActiveSession;
             if (session == null)
-            {
                 throw new InvalidOperationException("A native panel cannot attach without an active roll session.");
-            }
-
-            bool ownerChanged = panelState.ObserveOwner(session.Controller, session.StableOwner);
-            if (!ownerChanged && root != null && ReferenceEquals(attachedAllocator, allocator)) return;
-
-            DestroyAttachedView(contracts);
             var behaviour = allocator as MonoBehaviour;
             if (behaviour == null)
-            {
                 throw new InvalidOperationException("The exact native ability allocator is not a MonoBehaviour.");
+
+            bool ownerChanged = panelState.ObserveOwner(session.Controller, session.StableOwner);
+            Transform themeOwner = NativeBookTheme.FindOwner(behaviour);
+            if (!ownerChanged && root != null && ReferenceEquals(attachedAllocator, allocator) &&
+                attachedThemeOwner == themeOwner && root.transform.parent == behaviour.transform.parent)
+            {
+                RecoverTheme(behaviour, allocatorFilled);
+                return;
             }
 
+            DestroyAttachedView(contracts);
             TextMeshProUGUI nativeText = contracts.AbilityAllocatorMainLabelField.GetValue(allocator) as TextMeshProUGUI;
             Image nativeFrame = contracts.AbilityAllocatorFrameField.GetValue(allocator) as Image;
             Button nativeButton = ResolveNativeButton(allocator, contracts);
             if (nativeText == null || nativeFrame == null || nativeButton == null)
-            {
                 throw new InvalidOperationException("Native text, material, or button styling could not be resolved.");
-            }
 
-            theme = NativeUiPresentation.ResolveTheme(() => NativeBookTheme.Resolve(behaviour), ReportAttachment);
-            if (theme == null)
-                CreateOwnedView(behaviour, nativeText, nativeFrame, nativeButton);
-            else
-                NativeUiPresentation.BuildThemedView(
-                    () => CreateOwnedView(behaviour, nativeText, nativeFrame, nativeButton),
-                    () =>
-                    {
-                        DestroyAttachedView(contracts);
-                        CreateOwnedView(behaviour, nativeText, nativeFrame, nativeButton);
-                    },
-                    ReportAttachment);
+            // Construct the working fallback and all owned widgets exactly once.
+            // Styling can subsequently change without touching their listeners/text/state.
+            CreateOwnedView(behaviour, nativeText, nativeFrame, nativeButton);
             attachedAllocator = allocator;
+            attachedThemeOwner = themeOwner;
+            themeRecovery.Bind(allocator, themeOwner);
+            RecoverTheme(behaviour, allocatorFilled);
             panelState.AttachView();
             ApplySurfaceState();
             PositionAccessTab(allocator, contracts);
             AttachmentCount++;
+        }
+
+        private void RecoverTheme(MonoBehaviour allocator, bool allocatorFilled)
+        {
+            // Update only checks cached object liveness. Donor lookup is attempted
+            // initially and at most twice at the existing FillData postfix boundary.
+            // Own skill-counter synchronization can reach that same hook; attempts
+            // are consumed before resolution and never reset by a notification.
+            try
+            {
+                if (theme != null && theme.Resources.DiscardStale())
+                {
+                    themeBindings.Apply(theme.Resources, ReportAttachment);
+                    lastLayoutModelKey = null;
+                    ReportTheme();
+                }
+                bool incomplete = theme == null || theme.Resources.Status != NativeThemeStatus.FullyThemed;
+                if (!themeRecovery.TryBegin(incomplete, allocatorFilled)) return;
+                try
+                {
+                    NativeBookTheme resolved = NativeUiPresentation.ResolveTheme(() => NativeBookTheme.Resolve(allocator), ReportAttachment);
+                    if (resolved != null) theme = resolved;
+                    themeBindings.Apply(theme == null ? null : theme.Resources, ReportAttachment);
+                    lastLayoutModelKey = null;
+                    ReportTheme();
+                }
+                finally { themeRecovery.Complete(); }
+            }
+            catch (Exception exception)
+            {
+                // A cosmetic retry never enters panel/session teardown or mechanic recovery.
+                ReportAttachment("Native Dice Roller theme recovery failed; retaining owned controls: " + exception.Message);
+            }
+        }
+
+        private void ReportTheme()
+        {
+            logger.Info("Native Dice Roller theme: " + (theme == null ? "status=Fallback; capabilities=0/9" : theme.Resources.Summary) +
+                "; attempt=" + themeRecovery.Attempts + "/" + NativeThemeRecovery.MaximumAttempts +
+                "; owner=" + (theme == null ? "<unresolved>" : theme.OwnerLocation));
+            if (theme == null) return;
+            foreach (NativeThemeCapability capability in NativeThemeResolution.Capabilities)
+            {
+                NativeThemeResource resource = theme.Resources.Get(capability);
+                string detail = resource == null ? "unavailable; " + theme.Resources.Failure(capability) : "available; " + resource.Identity;
+                string previous;
+                if (themeDiagnostics.TryGetValue(capability, out previous) && string.Equals(previous, detail, StringComparison.Ordinal)) continue;
+                themeDiagnostics[capability] = detail;
+                string message = "Native Dice Roller theme " + capability + ": " + detail;
+                if (resource == null) logger.Warning(message); else logger.Info(message);
+            }
         }
 
         private void CreateOwnedView(
@@ -370,13 +422,12 @@ namespace KingmakerDiceRoller.UI
 
             Image surfaceImage = expandedSurface.AddComponent<Image>();
             surfaceImage.sprite = null;
-            surfaceImage.color = theme == null ? Parchment : Color.clear;
+            surfaceImage.color = Parchment;
             surfaceImage.raycastTarget = true;
-            if (theme != null)
-            {
-                CreatePaperLayer("PaperShadow", new Vector2(2f, -3f), new Color(0.16f, 0.10f, 0.06f, 0.24f));
-                CreatePaperLayer("Paper", Vector2.zero, Color.white);
-            }
+            themeBindings.Add(NativeThemeCapability.Paper,
+                donors => surfaceImage.color = Color.clear, () => surfaceImage.color = Parchment);
+            CreatePaperLayer("PaperShadow", new Vector2(2f, -3f), new Color(0.16f, 0.10f, 0.06f, 0.24f));
+            CreatePaperLayer("Paper", Vector2.zero, Color.white);
             // Only the inner body is masked. The paper silhouette and shadow
             // remain outside that viewport, with no full-screen hit surface.
 
@@ -417,7 +468,6 @@ namespace KingmakerDiceRoller.UI
                 },
                 layout.CloseButtonHeight);
 
-            if (theme != null)
             {
                 GameObject ornament = NewUiObject("HeaderRule", root.layer);
                 RectTransform rect = ornament.GetComponent<RectTransform>();
@@ -427,7 +477,12 @@ namespace KingmakerDiceRoller.UI
                 rect.sizeDelta = new Vector2(-2f * layout.InternalPadding, 5f);
                 rect.anchoredPosition = new Vector2(0f, -layout.SurfaceVerticalPadding - 8f - layout.HeaderHeight - 1f);
                 ornament.AddComponent<LayoutElement>().ignoreLayout = true;
-                NativeBookTheme.CopyImage(theme.Rule, ornament.AddComponent<Image>());
+                Image rule = ornament.AddComponent<Image>();
+                rule.raycastTarget = false;
+                rule.enabled = false;
+                themeBindings.Add(NativeThemeCapability.Ornament,
+                    donors => { NativeBookTheme.CopyImage((Image)donors[0], rule); rule.enabled = true; },
+                    () => { rule.sprite = null; rule.enabled = false; });
             }
             Transform content = CreateScrollContent(expandedSurface.transform);
             messageLabel = CreateLabel(
@@ -451,8 +506,11 @@ namespace KingmakerDiceRoller.UI
             rect.localScale = new Vector3(0.5f, 0.5f, 1f);
             layer.AddComponent<LayoutElement>().ignoreLayout = true;
             Image image = layer.AddComponent<Image>();
-            NativeBookTheme.CopyImage(theme.Paper, image);
-            image.color = tint;
+            image.raycastTarget = false;
+            image.enabled = false;
+            themeBindings.Add(NativeThemeCapability.Paper,
+                donors => { NativeBookTheme.CopyImage((Image)donors[0], image); image.color = tint; image.enabled = true; },
+                () => { image.sprite = null; image.enabled = false; });
             paperLayers.Add(rect);
         }
 
@@ -685,8 +743,8 @@ namespace KingmakerDiceRoller.UI
                 layout.OrdinaryControlHeight,
                 -1f,
                 BodyText,
-                true);
-            if (theme != null) NativeBookTheme.CopyText(theme.Selector, valueLabel);
+                true,
+                NativeThemeCapability.Selector);
             valueLabel.fontSize = layout.BodyFontSize;
             valueLabel.enableWordWrapping = true;
             valueLabel.overflowMode = TextOverflowModes.Overflow;
@@ -864,14 +922,26 @@ namespace KingmakerDiceRoller.UI
             scrollbar.direction = Scrollbar.Direction.BottomToTop;
             scrollbar.numberOfSteps = 0;
             scrollbar.value = 1f;
-            if (theme != null)
-            {
-                NativeBookTheme.CopyImage(theme.ScrollTrack, track);
-                NativeBookTheme.CopyImage(theme.ScrollHandle, handle);
-                track.raycastTarget = handle.raycastTarget = true;
-                scrollbar.colors = theme.Scroll.colors;
-                scrollbar.transition = theme.Scroll.transition;
-            }
+            Color trackColor = track.color;
+            Color handleColor = handle.color;
+            ColorBlock scrollColors = scrollbar.colors;
+            Selectable.Transition scrollTransition = scrollbar.transition;
+            themeBindings.Add(NativeThemeCapability.Scrollbar,
+                donors =>
+                {
+                    NativeBookTheme.CopyImage((Image)donors[0], track);
+                    NativeBookTheme.CopyImage((Image)donors[1], handle);
+                    track.raycastTarget = handle.raycastTarget = true;
+                    scrollbar.colors = ((Scrollbar)donors[2]).colors;
+                    scrollbar.transition = ((Scrollbar)donors[2]).transition;
+                },
+                () =>
+                {
+                    ResetFallbackImage(track, null, trackColor);
+                    ResetFallbackImage(handle, null, handleColor);
+                    scrollbar.colors = scrollColors;
+                    scrollbar.transition = scrollTransition;
+                });
             return scrollbarObject;
         }
 
@@ -1324,15 +1394,14 @@ namespace KingmakerDiceRoller.UI
             float preferredHeight,
             float preferredWidth,
             Color color,
-            bool singleLine)
+            bool singleLine,
+            NativeThemeCapability? role = null)
         {
             GameObject gameObject = NewUiObject("Label", parent.gameObject.layer);
             gameObject.transform.SetParent(parent, false);
             var label = gameObject.AddComponent<TextMeshProUGUI>();
             label.font = source.font;
             label.fontSharedMaterial = source.fontSharedMaterial;
-            if (theme != null)
-                NativeBookTheme.CopyText(color == HeadingText ? theme.Heading : theme.Body, label);
             label.color = color;
             label.richText = false;
             label.fontSize = fontSize;
@@ -1341,6 +1410,7 @@ namespace KingmakerDiceRoller.UI
             label.overflowMode = singleLine ? TextOverflowModes.Ellipsis : TextOverflowModes.Overflow;
             label.raycastTarget = false;
             label.text = text;
+            BindTextStyle(label, role ?? (color == HeadingText ? NativeThemeCapability.Heading : NativeThemeCapability.Body), color);
             var layout = gameObject.AddComponent<LayoutElement>();
             if (preferredWidth > 0f)
             {
@@ -1392,7 +1462,16 @@ namespace KingmakerDiceRoller.UI
                 fadeDuration = 0.1f
             };
             button.colors = colors;
-            if (theme != null) theme.ApplyButton(button, image);
+            Material fallbackMaterial = image.material;
+            themeBindings.Add(NativeThemeCapability.Buttons,
+                donors => NativeBookTheme.ApplyButton((Button)donors[0], button, image),
+                () =>
+                {
+                    ResetFallbackImage(image, fallbackMaterial, ButtonSurface);
+                    button.spriteState = new SpriteState();
+                    button.colors = colors;
+                    button.transition = Selectable.Transition.ColorTint;
+                });
             button.onClick = new Button.ButtonClickedEvent();
             button.onClick.AddListener(() => NativeUiPresentation.Activate(
                 action, NativeBookTheme.PlayClick, ReportAttachment));
@@ -1422,11 +1501,11 @@ namespace KingmakerDiceRoller.UI
                 -1f,
                 -1f,
                 ButtonText,
-                true);
+                true,
+                NativeThemeCapability.ButtonText);
             label.enableAutoSizing = true;
             label.fontSizeMin = NativeRollPanelLayoutSpec.Default.BodyFontSize;
             label.fontSizeMax = NativeRollPanelLayoutSpec.Default.BodyFontSize;
-            if (theme != null) NativeBookTheme.CopyText(theme.ButtonLabel, label);
             RectTransform labelRect = label.rectTransform;
             labelRect.anchorMin = Vector2.zero;
             labelRect.anchorMax = Vector2.one;
@@ -1451,22 +1530,44 @@ namespace KingmakerDiceRoller.UI
             image.raycastTarget = true;
             var input = gameObject.AddComponent<TMP_InputField>();
             input.targetGraphic = image;
-            if (theme != null)
-            {
-                NativeBookTheme.CopyImage(theme.InputBackground, image);
-                image.raycastTarget = true;
-                GameObject frame = NewUiObject("InputFrame", parent.gameObject.layer);
-                RectTransform frameRect = frame.GetComponent<RectTransform>();
-                frameRect.SetParent(gameObject.transform, false);
-                frameRect.anchorMin = Vector2.zero;
-                frameRect.anchorMax = Vector2.one;
-                frameRect.offsetMin = frameRect.offsetMax = Vector2.zero;
-                NativeBookTheme.CopyImage(theme.InputFrame, frame.AddComponent<Image>());
-                input.selectionColor = theme.Input.selectionColor;
-                input.caretBlinkRate = theme.Input.caretBlinkRate;
-                input.caretColor = theme.Input.caretColor;
-                input.customCaretColor = true;
-            }
+            Material fallbackMaterial = image.material;
+            Color fallbackColor = image.color;
+            Color selectionColor = input.selectionColor;
+            Color caretColor = input.caretColor;
+            float blinkRate = input.caretBlinkRate;
+            bool customCaret = input.customCaretColor;
+            GameObject frame = NewUiObject("InputFrame", parent.gameObject.layer);
+            RectTransform frameRect = frame.GetComponent<RectTransform>();
+            frameRect.SetParent(gameObject.transform, false);
+            frameRect.anchorMin = Vector2.zero;
+            frameRect.anchorMax = Vector2.one;
+            frameRect.offsetMin = frameRect.offsetMax = Vector2.zero;
+            Image frameImage = frame.AddComponent<Image>();
+            frameImage.raycastTarget = false;
+            frameImage.enabled = false;
+            themeBindings.Add(NativeThemeCapability.Input,
+                donors =>
+                {
+                    NativeBookTheme.CopyImage((Image)donors[0], image);
+                    image.raycastTarget = true;
+                    NativeBookTheme.CopyImage((Image)donors[1], frameImage);
+                    frameImage.enabled = true;
+                    var nativeInput = (TMP_InputField)donors[2];
+                    input.selectionColor = nativeInput.selectionColor;
+                    input.caretBlinkRate = nativeInput.caretBlinkRate;
+                    input.caretColor = nativeInput.caretColor;
+                    input.customCaretColor = true;
+                },
+                () =>
+                {
+                    ResetFallbackImage(image, fallbackMaterial, fallbackColor);
+                    frameImage.sprite = null;
+                    frameImage.enabled = false;
+                    input.selectionColor = selectionColor;
+                    input.caretBlinkRate = blinkRate;
+                    input.caretColor = caretColor;
+                    input.customCaretColor = customCaret;
+                });
 
             GameObject viewportObject = NewUiObject("Viewport", gameObject.layer);
             RectTransform viewport = viewportObject.GetComponent<RectTransform>();
@@ -1518,6 +1619,45 @@ namespace KingmakerDiceRoller.UI
             layout.minHeight = 32f;
             layout.flexibleWidth = 1f;
             return input;
+        }
+
+        private static void ResetFallbackImage(Image image, Material material, Color color)
+        {
+            image.overrideSprite = null;
+            image.sprite = null;
+            image.material = material;
+            image.type = Image.Type.Simple;
+            image.color = color;
+            image.preserveAspect = false;
+            image.fillCenter = true;
+            image.raycastTarget = true;
+        }
+
+        private void BindTextStyle(TextMeshProUGUI label, NativeThemeCapability role, Color color)
+        {
+            // Capture fallback data, not a native behaviour whose owner may disappear.
+            TMP_FontAsset font = label.font;
+            Material material = label.fontSharedMaterial;
+            FontStyles style = label.fontStyle;
+            float characters = label.characterSpacing;
+            float words = label.wordSpacing;
+            float lines = label.lineSpacing;
+            themeBindings.Add(role,
+                donors =>
+                {
+                    NativeBookTheme.CopyText((TextMeshProUGUI)donors[0], label);
+                    if (role != NativeThemeCapability.ButtonText) label.color = color;
+                },
+                () =>
+                {
+                    label.font = font;
+                    label.fontSharedMaterial = material;
+                    label.fontStyle = style;
+                    label.characterSpacing = characters;
+                    label.wordSpacing = words;
+                    label.lineSpacing = lines;
+                    label.color = color;
+                });
         }
 
         private sealed class AssignmentWidgets

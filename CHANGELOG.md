@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.1.7 - native theme activation repair (review candidate)
+
+- Resolve the native action label's literal `Next/Complete text` child without
+  interpreting its slash as a hierarchy separator; diagnose missing, ambiguous
+  and wrong-component donors explicitly, including inactive donors.
+- Validate paper, button artwork, typography, input, scrollbar and ornament
+  independently. Keep functional fallback for only unavailable capabilities.
+- Recover styling on existing controls at the verified allocator FillData
+  boundary, bounded to three attempts per attachment. Discard stale donors
+  without resetting a roll session, input draft or command listeners.
+- Add production-resolver/capability/recovery tests and session/navigation
+  regressions, extended native IL checks, and a temporary guarded Unity probe.
+- Preserve existing artwork, layout, click route, score application, Point Buy
+  restoration, skill-counter synchronization and forward-navigation guards.
+  See the activation handoff for separate candidate qualification and live lanes.
+
 ## 0.1.6 - native book UI
 
 - Reskin the owned drawer with verified native inset paper, irregular edges,

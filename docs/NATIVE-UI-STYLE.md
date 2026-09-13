@@ -1,19 +1,37 @@
 # Native UI style reference
 
-This is the Dice Roller 0.1.6 native book UI style, source-qualified against
+This is the Dice Roller 0.1.7 activation repair of the existing 0.1.6 style, against
 Kingmaker 2.1.7b, Unity 2018.4.10f1. Assembly-CSharp MVID:
 `07fa1e4d-8618-41b3-9b8d-faa17d3b26f7`; SHA-256:
 `3b6450ffec440e296e586f71c711b195aed144b28d53e1cbb29406d18fef5afb`.
-Live visuals, audio and interaction are **NOT RUN**. Do not call fallback or
-compiled geometry a native-aesthetic pass.
+Qualification is recorded separately in
+[the activation repair handoff](../CODEX-NATIVE-THEME-ACTIVATION-STATE.md).
+Do not call fallback or compiled geometry a native-aesthetic pass.
 
 ## Resolution and availability
 
-`UI/NativeBookTheme.cs` resolves the exact allocator's ancestor
-`CharacterBuildController`, then uses the paths below. No translated text,
-`Resources.FindObjectsOfTypeAll`, arbitrary first match, or per-frame tree scan
-is involved. Resolution is cached for one owned attachment and cleared when
-that view is destroyed; a new allocator gets new references.
+`UI/NativeBookTheme.cs` obtains the exact allocator's ancestor
+`CharacterBuildController`. Its Unity adapter invokes the production
+`NativeThemeResolver`; deterministic tests use that same resolver with an
+opaque node adapter. Unity-dependent validation is additionally exercised by
+the temporary runtime probe, outside the distributed mod.
+
+**Locator semantics matter:** the table below contains hierarchy paths.
+`Next/Complete text` is instead one **literal direct child name** of Action.
+Use `RequirePath` for the table and `RequireLiteralChild` for that label.
+Do not pass this literal name to `Transform.Find`: `/` becomes a separator.
+Read-only decoding of both current PC scenes confirms the literal child and
+TMP component, with no intervening `Next` object. Exact ordinal direct-child
+matching includes inactive nodes, rejects ambiguous children/components, and
+never substitutes arbitrary text. Paths walk bounded direct-child segments
+(maximum depth 32, 512 children per segment). Diagnostics distinguish missing
+children/components and include locator kind, actual owner breadcrumbs and at
+most six candidate child names.
+
+No native objects are renamed, no callbacks cloned, and no scene-wide search
+is performed. Cache liveness uses Unity object identity and destruction
+semantics, including ownership ancestry; destroyed or detached donors lose
+only their affected capability.
 
 All eight paths and their required components were decoded in both PC scenes:
 BuildSettings scene `level18` (`Assets/Scenes/MainMenu/MainMenu.unity`) and
@@ -191,18 +209,36 @@ is used as an ownership shortcut.
 
 ## Failure, cleanup and adding controls
 
-Missing MVID/path/component/font/sprite/border/type contracts select the prior
-usable flat fallback via `ResolveTheme`; a themed construction exception
-rebuilds the partial owned view once with fallback. The partial root is
-immediately deactivated before Unity's deferred destruction. Failures of the
-underlying base view still fail closed through existing lifecycle handling.
-No cosmetic path calls coordinator recovery, RNG, stat application, budget
-restoration or settings writes. Real session tests verify intact assignments,
-revision, applied mode, history and pristine point-buy origin through fallback.
-A bounded diagnostic records fallback, which cannot qualify aesthetics.
+The host constructs owned controls once with functional fallback and inactive
+owned paper/decor images. `NativeThemeBindings` applies validated presentation
+to those same controls; it never registers listeners, dispatches commands,
+edits input drafts or rebuilds the session. The nine independent capabilities
+are Paper, Buttons, Heading, Body, ButtonText, Selector, Input, Scrollbar and
+Ornament. Each validates all its required resources before becoming available.
+Missing optional styling retains valid paper, buttons and typography. Button
+artwork does not depend on action-label typography.
 
-Cleanup clears theme references and all owned widget lists and destroys the
-owned root only; shared sprites, fonts and materials are never destroyed.
+`FullyThemed` means all nine intended capabilities validated and applied;
+`PartiallyThemed` means one through eight; `Fallback` means zero. Application
+failure rejects only the affected capability. Logs report actual state and
+specific reasons, suppressing unchanged details. A missing game-contract MVID
+still fails closed. Shared sprites/fonts/materials are never modified/destroyed.
+
+Recovery allows initial resolution plus **at most two** subsequent existing
+`CharBAbilityScoresAllocator.FillData` postfix notifications. Installed IL
+verifies `SetupUI -> CharBPhase.UpdateData -> CharBPhaseSkills.FillData ->
+CharBAbilityScoresAllocator.FillData`. Own skill synchronization shares this
+route; attempts are consumed before resolving and reentrancy is blocked.
+Repeated notifications cannot reset the budget. Ordinary Update only checks
+cached liveness. Actual teardown, new allocator or replaced owner starts a new
+budget. Unchanged valid resources are not reapplied on optional retries.
+
+Recovery retains widget identity, listeners, selected saved array, roll history,
+assignments, RNG consumption and unfinished custom input. Tests exercise actual
+workflow/coordinator/navigation boundaries as well as the production resolver.
+Teardown clears cached donors, bindings and owned widgets; only the owned root
+is destroyed, and the existing input-blocking/native-control cleanup remains.
+
 Rebinding preserves same-owner expansion/disclosures. No new textures,
 materials, emitters, native behaviours or persistent listeners are created.
 Existing native control suppression/restoration and context admission stay in
