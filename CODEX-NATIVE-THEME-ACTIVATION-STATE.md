@@ -68,20 +68,43 @@ third-party notices and upstream license. It excludes the probe, extracted
 assets, game libraries, settings, logs and saves. Framework .NET 4.7.2,
 C# 7.3, Harmony12 and UMM dependencies are unchanged.
 
-## Official 0.1.7 publication preparation
+## Verified official 0.1.7 publication
 
-PR #2 contains the repair and release documentation. The official package will
-be rebuilt from its clean, fully pushed main merge commit. Its DLL must match
-the review candidate hash above. The ZIP will differ because its packaged
-README now describes the official release and discloses the runtime blocker.
-Keep the original review candidate immutable. The release page will identify
-the exact merged source commit and new ZIP checksum.
+[PR #2](https://github.com/howardreith/KingmakerDiceRoller/pull/2) merged to main
+at `db36b3a55da66751478fa5847fb3cf92ee3eb7f0`. The existing publisher rebuilt
+and fully qualified that clean, fully pushed source, then prepared a draft.
+After downloaded asset verification, the owner-authorized publication made
+[v0.1.7 official/latest](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.7)
+at `2026-09-13T15:07:07Z`. GitHub reports draft=false, prerelease=false and
+latest release ID `387935603`. No runtime-confirmation assertion was made and
+the general qualification gate remains unchanged.
 
-The existing publisher prepares a draft with qualified assets and an annotated
-tag; after asset verification, the owner-authorized publication sets draft and
-prerelease false and marks latest. No `-ConfirmRuntimeQualified` assertion or
-weakening of the general publication gate is used. No additional installation,
-game launch or save access is needed to publish this release.
+Annotated tag object: `3f9dac9d3e76e83ba9280227f03e6d964f4e8aec`.
+Peeled release source: `db36b3a55da66751478fa5847fb3cf92ee3eb7f0`.
+Official package in the default-branch checkout:
+`artifacts/packages/KingmakerDiceRoller-0.1.7.zip`.
+Release DLL SHA-256:
+`9bd269d9f54f937323ef48285781e4ad67896c06117a4449f8b099fc04ad852d`.
+Release ZIP SHA-256:
+`1b3a5ec3be5085359f87c8da5732f8148573b0792072ba567fc995d45ed07cbc`.
+ZIP asset ID `561406947`, 120289 bytes; `SHA256SUMS.txt` asset ID `561406946`,
+97 bytes, SHA-256
+`4556a2486558a2ac428f7b3ba7e90e5aced87dafb63d0fb9b0180a1873fcb0b3`.
+
+The DLL exactly matches the review candidate. The ZIP differs only in its
+packaged README, which now describes official publication and discloses the
+runtime blocker. Both the original review candidate and prior v0.1.6 assets
+remain unchanged. All six published ZIP entries match their merged source/build
+inputs; downloaded draft/public assets, checksum contents and GitHub digests
+match. Publication retained the draft asset IDs/bytes and annotated tag.
+Post-publication documentation may advance main without changing the tagged
+build or assets. No additional game installation, launch or save access occurred.
+
+Complete release verification in the default checkout, outside Git:
+`artifacts/release-0.1.7/draft-preparation.txt`, `draft-verification.json`,
+`published-verification.json`, `draft-metadata.json`, `published-metadata.json`,
+`latest-metadata.json`, `download-draft/` and `download-published/`. Repair
+candidate/runtime evidence below remains in the isolated repair checkout.
 
 ## Separate qualification statuses
 
@@ -99,7 +122,7 @@ game launch or save access is needed to publish this release.
 | Runtime qualified | **NO** — character-creation interaction/skill/navigation/finalization lanes unrun |
 | Compatibility qualified | **NO** — no mercenary/respec disposable campaign fixture or focused provider matrix |
 | Human visual acceptance | **NOT RUN** |
-| Release authorized / published | **YES / pending** — official/latest requested; runtime statuses remain unchanged |
+| Release authorized / published | **YES / YES** — v0.1.7 official/latest; runtime statuses remain unchanged |
 
 Deterministic tests execute the shipped lookup, resolver, capabilities,
 recovery and binding logic through an opaque node adapter. They do not host

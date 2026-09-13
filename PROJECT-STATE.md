@@ -1,6 +1,6 @@
 # Project state
 
-## Current 0.1.7 native-theme activation release preparation
+## Current 0.1.7 native-theme activation release
 
 Version `0.1.7`; branch `codex/native-theme-activation-repair`, based on
 `9b69751983a6bc80d1e73999d3fbba3e3e7f8927`. Historical `77d16ef` is an ancestor;
@@ -14,8 +14,8 @@ push, and release this as a new release? Make it an actual release, not a test.
 Thank you." This explicitly authorizes merging PR #2, pushing main, tagging
 v0.1.7 and publishing an official/latest release with the unrun checks disclosed.
 It supersedes the earlier repair-only publication restriction, without claiming
-runtime qualification. The existing draft-build/package workflow will prepare
-reviewable assets; official publication uses the owner's instruction rather
+runtime qualification. The existing draft-build/package workflow prepared
+verified assets; official publication used the owner's instruction rather
 than asserting `-ConfirmRuntimeQualified`. The general qualification gate and
 its tests remain unchanged.
 
@@ -34,8 +34,10 @@ been supplied. Prior release permissions below are historical.
 - Contract-qualified: **Yes** — existing contracts, 11 respec groups and
   22 native UI IL checks passed.
 - Build-qualified: **Yes** — Release build, zero warnings/errors.
-- Package-qualified: **Yes** — clean candidate `c06ef75`, six-file allowlist;
-  exact hashes and evidence in `CODEX-NATIVE-THEME-ACTIVATION-STATE.md`.
+- Package-qualified: **Yes** — clean merged release commit `db36b3a`, six-file
+  allowlist and downloaded public ZIP/checksum parity. DLL equals candidate
+  `c06ef75`; ZIP differs only by the packaged official-release README.
+  Exact hashes/evidence: `CODEX-NATIVE-THEME-ACTIVATION-STATE.md`.
 - Installed: **No** currently — exact candidate was temporarily installed and
   loaded in owned PID 11832, then original mod/settings were hash-verified restored.
 - Focused runtime test: **NOT RUN** — startup succeeded, but Windows session
@@ -48,8 +50,35 @@ been supplied. Prior release permissions below are historical.
 - Audio-qualified: **NOT RUN**.
 - Release-authorized: **Yes** — explicit owner instruction above; official/latest.
 - Testing-prerelease-authorized: **No** — the owner requested an actual release.
-- Publicly released: **No** yet — preparing v0.1.7 official/latest; no new
-  runtime evidence is implied by publication.
+- Publicly released: **Yes** — [v0.1.7 official/latest](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.7),
+  published 2026-09-13 15:07:07 UTC; draft=false, prerelease=false, latest verified.
+  No new runtime evidence is implied by publication.
+
+## Verified v0.1.7 publication
+
+[PR #2](https://github.com/howardreith/KingmakerDiceRoller/pull/2) merged to
+`main` at `db36b3a55da66751478fa5847fb3cf92ee3eb7f0`. Annotated `v0.1.7` tag
+object `3f9dac9d3e76e83ba9280227f03e6d964f4e8aec` peels to that exact clean,
+fully pushed build commit. The release was prepared through the existing
+publisher, downloaded/verified as a draft, then published official/latest under
+the explicit owner instruction. The tag and assets were not retargeted/replaced.
+Post-publication documentation may advance main without changing release bytes.
+
+Release ID `387935603`; ZIP asset `561406947` (120289 bytes); checksum asset
+`561406946` (97 bytes). DLL SHA-256:
+`9bd269d9f54f937323ef48285781e4ad67896c06117a4449f8b099fc04ad852d`.
+ZIP SHA-256:
+`1b3a5ec3be5085359f87c8da5732f8148573b0792072ba567fc995d45ed07cbc`.
+Downloaded draft and published bytes, all six package inputs, GitHub asset
+digests and checksum contents match. Native themed-path, rendered, audio,
+runtime and compatibility statuses above remain unchanged.
+
+Default-checkout evidence is under ignored `artifacts/release-0.1.7/`:
+`draft-preparation.txt`, `draft-verification.json`, `published-verification.json`,
+GitHub metadata and both download snapshots. The full build again passed all
+370 C#/30 Python/13 gate cases, 18 source groups, existing native contracts,
+11 respec groups and 22 native UI checks, with zero warnings/errors. No game
+installation, launch or saved-game access was performed during publication.
 
 ## Historical 0.1.6 native book UI release
 
