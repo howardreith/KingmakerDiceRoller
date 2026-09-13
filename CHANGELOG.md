@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.1.6 - native book UI (local candidate, unreleased)
+
+- Reskin the owned drawer with verified native inset paper, irregular edges,
+  subtle depth and ornament; reduce Wide dimensions to 600x728.
+- Use native gray framed button sprites for normal/hover/held/disabled states,
+  role-specific TMP font materials and one ordinary native ButtonClick route.
+  Reconstruct owned controls without cloning gameplay/navigation bindings.
+- Remove the player-facing “Array applied” message and idle success strip.
+  Preserve actionable errors in measured, scrollable content with fixed Close.
+  Wrap long selectors and keep compact Saved actions on two rows.
+- Retain command routing, assignments, roll/history/saved behavior, point-buy
+  restoration, session ownership, close-time skills synchronization and forward
+  guards. Cosmetic resolution/construction/audio failures preserve the workflow.
+- Add eleven deterministic presentation regressions (347 total), sixteen
+  read-only native/candidate UI IL checks, reusable native style documentation,
+  and candidate-only packaging with clean-source provenance.
+- Offline qualification is separate from acceptance: live interactions, native
+  appearance, audio, finalization/save and compatibility lanes are NOT RUN.
+  No release, installation or gameplay testing is authorized by this mission.
+
 ## 0.1.5 - skills-counter refresh and forward-navigation guard
 
 - Confirmed two follow-up defects by IL inspection: the native skills page caches its

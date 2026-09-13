@@ -2,29 +2,80 @@
 
 Mission branch: `codex/native-book-ui-reskin`.
 Actual clean baseline: `504b5ae53600be99a01f437b35ed57cdff6c3535`
-(`main` and locally recorded `origin/main`). No reset or unknown work replaced.
+(main and locally recorded origin/main). Existing checkout and worktrees were
+inspected; no unknown work/reset, remote fetch or other-mod edits.
+First slice commit: `ba0d075250f28fd2fa8a997e637537f2f9fb29f9`.
+The full implementation follows that source-qualified paper/title/Close/opener
+slice. Exact final source head is recorded by the ignored clean-build candidate
+manifest; tracked documentation cannot contain its own commit hash.
 
-Completed: full mission and required project/integrity records read; all twelve
-owner screenshots inspected; exact PC main-menu/in-game donor paths, paper
-texture/borders, native button state sprites, typography and audio call route
-inspected. First slice implemented: opener, paper/shadow, heading and Close.
-It compiles against installed Unity/Kingmaker without warnings. Full reskin,
-new regression cases, documentation and candidate packaging follow.
+## Completed implementation
 
-Baseline offline: 336/336 C#; 30/30 Python; repository/release gates and native
-contracts pass; 11 respec checks pass; Release zero warnings/errors. Baseline
-DLL matches released 0.1.5 hash. Evidence:
-`artifacts/native-ui-reskin/baseline-build.txt`.
-First slice: `artifacts/native-ui-reskin/slice-build.txt`.
-Donor reference: `docs/NATIVE-UI-STYLE.md`.
+- Full mission, AGENTS and required project/integrity/skill-counter records read;
+  all twelve owner references inspected individually. Original stills remain
+  outside Git and are not candidate or audio evidence.
+- Native paper pixels, borders, PPU, fonts/materials, all button states, input,
+  scrollbar and ornament inspected; exact donors present in both serialized PC
+  main-menu and in-game scenes. Native activation/submit/audio and unsafe donor
+  callbacks inspected read-only. Complete reusable reference:
+  [docs/NATIVE-UI-STYLE.md](docs/NATIVE-UI-STYLE.md).
+- Full inset paper UI; role fonts; gray SpriteSwap controls; single ordinary
+  click route; readable wrapped selectors; two compact Saved action rows;
+  measured inline errors and no applied-success footer; fixed title/Close.
+- One owned root with existing responsive placement, command router, context
+  admission, point-buy restoration, skill-counter Close synchronization and
+  forward guards. Bounded theme/audio failures preserve the working session.
+- Numeric candidate version 0.1.6, matching assembly metadata. Candidate-only
+  packaging refuses dirty/mismatched source, overwrite and Install; no official
+  artifact replacement or new mod dependency.
 
-Live interactions, visuals, audio, workflow regressions, compatibility and
-final-character/save tests: **NOT RUN**. No authorized guarded runtime fixture,
-launch, desktop control or test installation is present. Next safe action:
-apply the compiled source-qualified slice to all controls and finish offline
-qualification. Fresh-launch rendering, held/canceled presses, focus, UI
-volume, actual scaling, donor integrity and lifecycle remain live questions.
+## Offline evidence
 
-No push, merge, PR, tag, publication, active install, other-mod edit or save
-modification is authorized or performed. Historical release permission is not
-authority for this mission.
+Baseline: 336/336 C#, 30/30 Python, 13/13 release-gate tests, source and native
+contracts, 11 respec groups, Release zero warnings/errors. Baseline DLL matches
+historical 0.1.5. `artifacts/native-ui-reskin/baseline-build.txt`.
+Slice build: `artifacts/native-ui-reskin/slice-build.txt`.
+Full implementation: 347/347 C#, 30/30 Python, 13/13 release gates, 18 source
+validation groups, existing Kingmaker contracts, 11 respec groups and 16 native
+UI IL checks; Release zero warnings/errors. Logs:
+`artifacts/native-ui-reskin/implementation-build.txt`, `candidate-build.txt`.
+Eleven new cases cover Close once, activation/feedback failure, empty success and
+long errors, theme fallback, real session/RNG/assignment preservation, all six
+requested resolutions and constrained geometry. Existing lifecycle, restoration,
+roll/history/saved, skills and forward-guard cases remain in the runner.
+
+Final package qualification is pending the clean implementation commit. Next
+safe action: commit, run `Qualify.ps1 -Build -Package -Candidate`, verify all six
+archive entries and exact DLL/ZIP/metadata hashes, then record the handoff.
+Final reports belong in `artifacts/candidates/<full-clean-commit>/` with a concise
+local `HANDOFF.md`; the qualification log is in `artifacts/native-ui-reskin/`.
+
+## Separate qualification status and blockers
+
+| Lane | Status |
+| --- | --- |
+| Offline tests / source / native contracts / Release build | PASS, scoped to recorded checks |
+| Candidate packaging | Pending clean final qualification |
+| Live interactions and ownership behavior | NOT RUN |
+| Native aesthetic / press-motion acceptance | NOT RUN |
+| Audible click, Submit, master volume/mute | NOT RUN |
+| In-game workflow / finalization / save regressions | NOT RUN |
+| Mercenary / supported-respec / provider / input compatibility | NOT RUN |
+
+No already authorized guarded runtime workflow or disposable fixture is present.
+Do not launch Steam/game, control a desktop or install this DLL without that
+separate authorization. Availability of a desktop/process is not authorization.
+Unresolved individually: fresh-launch initialization; actual paper/typography
+fit at real canvas scales; hover/held/disabled/canceled press; pointer/Submit
+focus and single audible cue; Wwise mix/mute behavior; long-content thumb/input
+layout; root cleanup/donor integrity; skill badge/Next/final-character behavior
+and existing supported entry points with the exact candidate.
+
+Owner procedure and all twelve scenarios/six resolutions are in
+[docs/SMOKE-TEST.md](docs/SMOKE-TEST.md#native-book-ui-candidate-matrix-all-live-lanes-not-run).
+Use only an explicitly authorized isolated disposable fixture, pin its DLL hash,
+compare with native Back and capture real before/after frames plus audio/motion.
+No fallback or green build qualifies the aesthetic goal.
+
+No push, merge, PR, tag, release, active install, game launch, desktop control,
+other-mod modification, Cloud/profile change or valued-save modification occurred.

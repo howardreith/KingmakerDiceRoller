@@ -28,8 +28,8 @@ namespace KingmakerDiceRoller.UI
         };
 
         private static readonly Color Parchment = new Color(0.91f, 0.84f, 0.69f, 0.98f);
-        private static readonly Color BodyText = new Color(0.176f, 0.11f, 0.067f, 1f);
-        private static readonly Color HeadingText = new Color(0.31f, 0.09f, 0.055f, 1f);
+        private static readonly Color BodyText = new Color(0.157f, 0.067f, 0.035f, 1f);
+        private static readonly Color HeadingText = new Color(0.588f, 0.243f, 0.106f, 1f);
         private static readonly Color ButtonSurface = new Color(0.34f, 0.12f, 0.075f, 0.98f);
         private static readonly Color ButtonText = new Color(0.98f, 0.91f, 0.74f, 1f);
         private static readonly Color ErrorText = new Color(0.48f, 0.04f, 0.025f, 1f);
@@ -70,7 +70,6 @@ namespace KingmakerDiceRoller.UI
         private RectTransform bodyContent;
         private ScrollRect bodyScroll;
         private LayoutElement headerLayout;
-        private LayoutElement footerLayout;
         private RollPanelPresentationProfile? lastProfile;
         private bool? lastScrolling;
         private ResponsiveRollPanelLayoutResult lastLayoutResult;
@@ -80,6 +79,8 @@ namespace KingmakerDiceRoller.UI
         private string lastLayoutModelKey;
         private string lastLayoutDiagnostic;
 
+        private string commandError;
+        private Button closeButton;
         private TextMeshProUGUI modeLabel;
         private TextMeshProUGUI presetLabel;
         private TextMeshProUGUI policyLabel;
@@ -87,7 +88,7 @@ namespace KingmakerDiceRoller.UI
         private TextMeshProUGUI summaryLabel;
         private TextMeshProUGUI historyLabel;
         private TextMeshProUGUI savedLabel;
-        private TextMeshProUGUI footerLabel;
+        private TextMeshProUGUI messageLabel;
         private TextMeshProUGUI advancedLabel;
         private TextMeshProUGUI historyDisclosureLabel;
         private TextMeshProUGUI savedDisclosureLabel;
@@ -210,13 +211,15 @@ namespace KingmakerDiceRoller.UI
             lastAccessTabAnchorSource = null;
             assignmentRows.Clear();
             modeLabel = null;
+            closeButton = null;
+            commandError = null;
             presetLabel = null;
             policyLabel = null;
             minimumLabel = null;
             summaryLabel = null;
             historyLabel = null;
             savedLabel = null;
-            footerLabel = null;
+            messageLabel = null;
             advancedLabel = null;
             historyDisclosureLabel = null;
             savedDisclosureLabel = null;
@@ -248,7 +251,6 @@ namespace KingmakerDiceRoller.UI
             bodyContent = null;
             bodyScroll = null;
             headerLayout = null;
-            footerLayout = null;
             lastProfile = null;
             lastScrolling = null;
             lastLayoutResult = null;
@@ -257,7 +259,11 @@ namespace KingmakerDiceRoller.UI
             lastPreferredBodyHeight = -1f;
             lastLayoutModelKey = null;
             lastLayoutDiagnostic = null;
-            if (root != null) Object.Destroy(root);
+            if (root != null)
+            {
+                root.SetActive(false);
+                Object.Destroy(root);
+            }
             root = null;
             panelState.DetachView();
         }
@@ -310,6 +316,27 @@ namespace KingmakerDiceRoller.UI
             }
 
             theme = NativeUiPresentation.ResolveTheme(() => NativeBookTheme.Resolve(behaviour), ReportAttachment);
+            if (theme == null)
+                CreateOwnedView(behaviour, nativeText, nativeFrame, nativeButton);
+            else
+                NativeUiPresentation.BuildThemedView(
+                    () => CreateOwnedView(behaviour, nativeText, nativeFrame, nativeButton),
+                    () =>
+                    {
+                        DestroyAttachedView(contracts);
+                        CreateOwnedView(behaviour, nativeText, nativeFrame, nativeButton);
+                    },
+                    ReportAttachment);
+            attachedAllocator = allocator;
+            panelState.AttachView();
+            ApplySurfaceState();
+            PositionAccessTab(allocator, contracts);
+            AttachmentCount++;
+        }
+
+        private void CreateOwnedView(
+            MonoBehaviour behaviour, TextMeshProUGUI nativeText, Image nativeFrame, Button nativeButton)
+        {
             root = NewUiObject(OwnedPanelName, behaviour.gameObject.layer);
             RectTransform rootRect = root.GetComponent<RectTransform>();
             rootRect.SetParent(behaviour.transform.parent, false);
@@ -322,11 +349,6 @@ namespace KingmakerDiceRoller.UI
 
             CreateExpandedSurface(nativeText, nativeFrame, nativeButton);
             CreateAccessTab(nativeText, nativeButton);
-            attachedAllocator = allocator;
-            panelState.AttachView();
-            ApplySurfaceState();
-            PositionAccessTab(allocator, contracts);
-            AttachmentCount++;
         }
 
         private void CreateExpandedSurface(
@@ -362,8 +384,8 @@ namespace KingmakerDiceRoller.UI
             surfaceLayout.padding = new RectOffset(
                 layout.InternalPadding,
                 layout.InternalPadding,
-                (int)layout.SurfaceVerticalPadding,
-                (int)layout.SurfaceVerticalPadding);
+                (int)layout.SurfaceVerticalPadding + 8,
+                (int)layout.SurfaceVerticalPadding - 8);
             surfaceLayout.spacing = layout.MajorVerticalSpacing;
             surfaceLayout.childControlWidth = true;
             surfaceLayout.childForceExpandWidth = true;
@@ -373,28 +395,15 @@ namespace KingmakerDiceRoller.UI
             GameObject header = CreateHorizontal(expandedSurface.transform, layout.HeaderHeight);
             header.name = "FixedHeader";
             headerLayout = header.GetComponent<LayoutElement>();
-            TextMeshProUGUI title = CreateLabel(
-                header.transform,
-                "Rolled Ability Scores",
-                nativeText,
-                layout.TitleFontSize,
-                TextAlignmentOptions.Left,
-                layout.HeaderHeight,
-                -1f,
-                HeadingText,
-                true);
-            if (theme != null) NativeBookTheme.CopyText(theme.Heading, title);
+            GameObject heading = CreateVertical("Heading", header.transform);
+            heading.AddComponent<LayoutElement>().flexibleWidth = 1f;
+            CreateLabel(
+                heading.transform, "Rolled Ability Scores", nativeText,
+                layout.TitleFontSize, TextAlignmentOptions.Left, 28f, -1f, HeadingText, true);
             modeLabel = CreateLabel(
-                header.transform,
-                string.Empty,
-                nativeText,
-                layout.SectionFontSize,
-                TextAlignmentOptions.Right,
-                layout.HeaderHeight,
-                132f,
-                HeadingText,
-                true);
-            CreateButton(
+                heading.transform, string.Empty, nativeText,
+                layout.StatusFontSize, TextAlignmentOptions.Left, 20f, -1f, BodyText, true);
+            closeButton = CreateButton(
                 header.transform,
                 "Close",
                 nativeText,
@@ -402,36 +411,31 @@ namespace KingmakerDiceRoller.UI
                 layout.CloseButtonWidth,
                 () =>
                 {
-                    panelState.Close();
-                    commands.NotifyDrawerClosed();
+                    NativeUiPresentation.CloseDrawer(panelState, commands.NotifyDrawerClosed);
                     ApplySurfaceState();
+                    if (accessTab != null) accessTab.GetComponent<Button>().Select();
                 },
-                layout.CloseButtonHeight,
-                true);
+                layout.CloseButtonHeight);
 
+            if (theme != null)
+            {
+                GameObject ornament = NewUiObject("HeaderRule", root.layer);
+                RectTransform rect = ornament.GetComponent<RectTransform>();
+                rect.SetParent(expandedSurface.transform, false);
+                rect.anchorMin = new Vector2(0f, 1f);
+                rect.anchorMax = new Vector2(1f, 1f);
+                rect.sizeDelta = new Vector2(-2f * layout.InternalPadding, 5f);
+                rect.anchoredPosition = new Vector2(0f, -layout.SurfaceVerticalPadding - 8f - layout.HeaderHeight - 1f);
+                ornament.AddComponent<LayoutElement>().ignoreLayout = true;
+                NativeBookTheme.CopyImage(theme.Rule, ornament.AddComponent<Image>());
+            }
             Transform content = CreateScrollContent(expandedSurface.transform);
+            messageLabel = CreateLabel(
+                content, string.Empty, nativeText, layout.StatusFontSize,
+                TextAlignmentOptions.Left, -1f, -1f, ErrorText, false);
+            messageLabel.gameObject.name = "InlineMessage";
+            SetVisible(messageLabel.gameObject, false);
             CreatePanelContent(content, nativeText, nativeButton);
-
-            GameObject footer = NewUiObject("FixedFooter", expandedSurface.layer);
-            footer.transform.SetParent(expandedSurface.transform, false);
-            footerLayout = footer.AddComponent<LayoutElement>();
-            footerLayout.preferredHeight = layout.FooterHeight;
-            footerLayout.minHeight = layout.FooterHeight;
-            var footerGroup = footer.AddComponent<HorizontalLayoutGroup>();
-            footerGroup.childControlWidth = true;
-            footerGroup.childForceExpandWidth = true;
-            footerGroup.childControlHeight = true;
-            footerGroup.childForceExpandHeight = false;
-            footerLabel = CreateLabel(
-                footer.transform,
-                string.Empty,
-                nativeText,
-                layout.StatusFontSize,
-                TextAlignmentOptions.Left,
-                layout.FooterHeight,
-                -1f,
-                BodyText,
-                false);
         }
 
         private void CreatePaperLayer(string name, Vector2 offset, Color tint)
@@ -508,7 +512,7 @@ namespace KingmakerDiceRoller.UI
             scroll.decelerationRate = 0.135f;
             scroll.verticalScrollbar = scrollbar;
             scroll.verticalScrollbarSpacing = 2f;
-            bodyScrollbarObject.SetActive(false);
+            SetVisible(bodyScrollbarObject, false);
             return content;
         }
 
@@ -547,8 +551,8 @@ namespace KingmakerDiceRoller.UI
                 });
             advancedDisclosure = advancedButton.gameObject;
             advancedDisclosure.name = "AdvancedDisclosure";
-            advancedDisclosure.GetComponent<LayoutElement>().preferredHeight = 30f;
-            advancedDisclosure.GetComponent<LayoutElement>().minHeight = 30f;
+            advancedDisclosure.GetComponent<LayoutElement>().preferredHeight = layout.OrdinaryControlHeight;
+            advancedDisclosure.GetComponent<LayoutElement>().minHeight = layout.OrdinaryControlHeight;
             advancedLabel = advancedButton.GetComponentInChildren<TextMeshProUGUI>();
 
             advancedContent = CreateVertical("AdvancedContent", content);
@@ -572,7 +576,7 @@ namespace KingmakerDiceRoller.UI
                 layout.BodyFontSize,
                 TextAlignmentOptions.Left,
                 layout.OrdinaryControlHeight,
-                124f,
+                108f,
                 BodyText,
                 true);
             minimumDown = CreateButton(minimumSection.transform, "-", nativeText, nativeButton, 44f,
@@ -604,7 +608,11 @@ namespace KingmakerDiceRoller.UI
             customInput = CreateInput(customSection.transform, nativeText, nativeButton);
             customInput.onValueChanged.AddListener(value =>
             {
-                if (!rendering) commands.SetCustomExpression(value);
+                if (!rendering)
+                {
+                    commandError = null;
+                    commands.SetCustomExpression(value);
+                }
             });
             CreateLabel(
                 customSection.transform,
@@ -637,7 +645,7 @@ namespace KingmakerDiceRoller.UI
                 nativeText,
                 layout.BodyFontSize,
                 TextAlignmentOptions.Left,
-                63f,
+                -1f,
                 -1f,
                 BodyText,
                 false);
@@ -664,7 +672,7 @@ namespace KingmakerDiceRoller.UI
                 layout.BodyFontSize,
                 TextAlignmentOptions.Left,
                 layout.OrdinaryControlHeight,
-                124f,
+                108f,
                 BodyText,
                 true);
             CreateButton(section.transform, "<", nativeText, nativeButton, 42f, () => Execute(previous));
@@ -678,10 +686,14 @@ namespace KingmakerDiceRoller.UI
                 -1f,
                 BodyText,
                 true);
-            valueLabel.enableAutoSizing = true;
-            valueLabel.fontSizeMin = layout.BodyFontSize;
-            valueLabel.fontSizeMax = layout.SectionFontSize;
-            valueLabel.overflowMode = TextOverflowModes.Ellipsis;
+            if (theme != null) NativeBookTheme.CopyText(theme.Selector, valueLabel);
+            valueLabel.fontSize = layout.BodyFontSize;
+            valueLabel.enableWordWrapping = true;
+            valueLabel.overflowMode = TextOverflowModes.Overflow;
+            // The value sets the row's measured height on narrow pages. Keep
+            // the native font readable instead of hiding the selected rule.
+            valueLabel.GetComponent<LayoutElement>().preferredHeight = -1f;
+            section.GetComponent<LayoutElement>().preferredHeight = -1f;
             CreateButton(section.transform, ">", nativeText, nativeButton, 42f, () => Execute(next));
         }
 
@@ -701,7 +713,7 @@ namespace KingmakerDiceRoller.UI
                     layout.BodyFontSize,
                     TextAlignmentOptions.Left,
                     layout.AssignmentRowHeight,
-                    layout.AssignmentLabelWidth,
+                    -1f,
                     BodyText,
                     true);
                 Button up = CreateButton(
@@ -740,8 +752,8 @@ namespace KingmakerDiceRoller.UI
                 });
             historyDisclosure = disclosure.gameObject;
             historyDisclosure.name = "HistoryDisclosure";
-            historyDisclosure.GetComponent<LayoutElement>().preferredHeight = 30f;
-            historyDisclosure.GetComponent<LayoutElement>().minHeight = 30f;
+            historyDisclosure.GetComponent<LayoutElement>().preferredHeight = layout.OrdinaryControlHeight;
+            historyDisclosure.GetComponent<LayoutElement>().minHeight = layout.OrdinaryControlHeight;
             historyDisclosureLabel = disclosure.GetComponentInChildren<TextMeshProUGUI>();
 
             historyDetails = CreateVertical("HistoryDetails", parent);
@@ -749,16 +761,16 @@ namespace KingmakerDiceRoller.UI
                 historyDetails.transform,
                 string.Empty,
                 nativeText,
-                layout.SectionFontSize,
+                layout.BodyFontSize,
                 TextAlignmentOptions.Left,
-                25f,
+                -1f,
                 -1f,
                 BodyText,
-                true);
-            GameObject row = CreateHorizontal(historyDetails.transform, 30f);
-            CreateButton(row.transform, "Previous", nativeText, nativeButton, 94f,
+                false);
+            GameObject row = CreateHorizontal(historyDetails.transform, layout.OrdinaryControlHeight);
+            CreateButton(row.transform, "Previous", nativeText, nativeButton, 88f,
                 () => Execute(RollUiCommand.PreviousHistory));
-            CreateButton(row.transform, "Next", nativeText, nativeButton, 74f,
+            CreateButton(row.transform, "Next", nativeText, nativeButton, 60f,
                 () => Execute(RollUiCommand.NextHistory));
             useHistoryButton = CreateButton(row.transform, "Use", nativeText, nativeButton, 68f,
                 () => Execute(RollUiCommand.UseHistory));
@@ -782,8 +794,8 @@ namespace KingmakerDiceRoller.UI
                 });
             savedDisclosure = disclosure.gameObject;
             savedDisclosure.name = "SavedDisclosure";
-            savedDisclosure.GetComponent<LayoutElement>().preferredHeight = 30f;
-            savedDisclosure.GetComponent<LayoutElement>().minHeight = 30f;
+            savedDisclosure.GetComponent<LayoutElement>().preferredHeight = layout.OrdinaryControlHeight;
+            savedDisclosure.GetComponent<LayoutElement>().minHeight = layout.OrdinaryControlHeight;
             savedDisclosureLabel = disclosure.GetComponentInChildren<TextMeshProUGUI>();
 
             savedDetails = CreateVertical("SavedDetails", parent);
@@ -791,22 +803,23 @@ namespace KingmakerDiceRoller.UI
                 savedDetails.transform,
                 string.Empty,
                 nativeText,
-                layout.SectionFontSize,
+                layout.BodyFontSize,
                 TextAlignmentOptions.Left,
-                25f,
+                -1f,
                 -1f,
                 BodyText,
-                true);
-            GameObject row = CreateHorizontal(savedDetails.transform, 30f);
-            storeButton = CreateButton(row.transform, "Store", nativeText, nativeButton, 68f,
+                false);
+            GameObject row = CreateHorizontal(savedDetails.transform, layout.OrdinaryControlHeight);
+            storeButton = CreateButton(row.transform, "Store", nativeText, nativeButton, 62f,
                 () => Execute(RollUiCommand.StoreCurrent));
-            CreateButton(row.transform, "Previous", nativeText, nativeButton, 94f,
+            CreateButton(row.transform, "Previous", nativeText, nativeButton, 88f,
                 () => Execute(RollUiCommand.PreviousSaved));
-            CreateButton(row.transform, "Next", nativeText, nativeButton, 74f,
+            CreateButton(row.transform, "Next", nativeText, nativeButton, 60f,
                 () => Execute(RollUiCommand.NextSaved));
-            recallButton = CreateButton(row.transform, "Recall", nativeText, nativeButton, 72f,
+            GameObject savedActions = CreateHorizontal(savedDetails.transform, layout.OrdinaryControlHeight);
+            recallButton = CreateButton(savedActions.transform, "Recall", nativeText, nativeButton, 70f,
                 () => Execute(RollUiCommand.RecallSaved));
-            deleteButton = CreateButton(row.transform, "Delete", nativeText, nativeButton, 72f,
+            deleteButton = CreateButton(savedActions.transform, "Delete", nativeText, nativeButton, 70f,
                 () => Execute(RollUiCommand.DeleteSaved));
         }
 
@@ -851,6 +864,14 @@ namespace KingmakerDiceRoller.UI
             scrollbar.direction = Scrollbar.Direction.BottomToTop;
             scrollbar.numberOfSteps = 0;
             scrollbar.value = 1f;
+            if (theme != null)
+            {
+                NativeBookTheme.CopyImage(theme.ScrollTrack, track);
+                NativeBookTheme.CopyImage(theme.ScrollHandle, handle);
+                track.raycastTarget = handle.raycastTarget = true;
+                scrollbar.colors = theme.Scroll.colors;
+                scrollbar.transition = theme.Scroll.transition;
+            }
             return scrollbarObject;
         }
 
@@ -866,9 +887,9 @@ namespace KingmakerDiceRoller.UI
                 {
                     panelState.Open();
                     Render(contractsProvider());
+                    if (closeButton != null) closeButton.Select();
                 },
-                layout.AccessTabHeight,
-                true);
+                layout.AccessTabHeight);
             accessTab = button.gameObject;
             accessTab.name = "CollapsedAccessTab";
             RectTransform rect = accessTab.GetComponent<RectTransform>();
@@ -958,9 +979,10 @@ namespace KingmakerDiceRoller.UI
             if (root == null) return;
             RollUiSnapshot snapshot = commands.Snapshot;
             ResponsiveRollPanelLayoutResult preliminaryLayout = CalculateResponsiveLayout(
-                snapshot.Mode == RollSessionMode.Roll
-                    ? layout.OrdinaryWideRollContentHeight
-                    : layout.OrdinaryWidePointBuyContentHeight);
+                lastPreferredBodyHeight >= 0f ? lastPreferredBodyHeight :
+                    snapshot.Mode == RollSessionMode.Roll
+                        ? layout.OrdinaryWideRollContentHeight
+                        : layout.OrdinaryWidePointBuyContentHeight);
             RollPanelModel model = presenter.Present(
                 snapshot,
                 panelState.Disclosure,
@@ -1003,53 +1025,56 @@ namespace KingmakerDiceRoller.UI
             presetLabel.text = model.Preset;
             policyLabel.text = model.Policy;
             minimumLabel.text = model.Minimum;
-            minimumDown.interactable = model.MinimumEnabled;
-            minimumUp.interactable = model.MinimumEnabled;
-            advancedDisclosure.SetActive(model.AdvancedVisible);
-            advancedContent.SetActive(model.AdvancedExpanded);
+            SetInteractable(minimumDown, model.MinimumEnabled);
+            SetInteractable(minimumUp, model.MinimumEnabled);
+            SetVisible(advancedDisclosure, model.AdvancedVisible);
+            SetVisible(advancedContent, model.AdvancedExpanded);
             advancedLabel.text = model.AdvancedLabel;
-            minimumSection.SetActive(model.MinimumVisible);
-            customSection.SetActive(model.CustomVisible);
+            SetVisible(minimumSection, model.MinimumVisible);
+            SetVisible(customSection, model.CustomVisible);
             if (customInput.text != model.CustomExpression) customInput.text = model.CustomExpression;
 
-            rollButton.gameObject.SetActive(model.RollVisible);
-            rerollButton.gameObject.SetActive(model.RerollVisible);
-            returnButton.gameObject.SetActive(model.ReturnToPointBuyVisible);
-            rollButton.interactable = model.CanRoll;
-            rerollButton.interactable = model.CanReroll;
-            returnButton.interactable = model.CanReturnToPointBuy;
+            SetVisible(rollButton.gameObject, model.RollVisible);
+            SetVisible(rerollButton.gameObject, model.RerollVisible);
+            SetVisible(returnButton.gameObject, model.ReturnToPointBuyVisible);
+            SetInteractable(rollButton, model.CanRoll);
+            SetInteractable(rerollButton, model.CanReroll);
+            SetInteractable(returnButton, model.CanReturnToPointBuy);
 
-            assignmentSection.SetActive(model.AssignmentVisible);
+            SetVisible(assignmentSection, model.AssignmentVisible);
             for (int index = 0; index < assignmentRows.Count; index++)
             {
                 AssignmentWidgets widgets = assignmentRows[index];
                 bool available = model.AssignmentVisible && index < model.AssignmentRows.Count;
-                widgets.Root.SetActive(available);
+                SetVisible(widgets.Root, available);
                 if (!available) continue;
                 RollPanelAssignmentRow row = model.AssignmentRows[index];
                 widgets.Value.text = row.Label + "   " + row.Value;
-                widgets.Up.interactable = row.CanMoveUp;
-                widgets.Down.interactable = row.CanMoveDown;
+                SetInteractable(widgets.Up, row.CanMoveUp);
+                SetInteractable(widgets.Down, row.CanMoveDown);
             }
 
-            summarySection.SetActive(model.SummaryVisible);
+            SetVisible(summarySection, model.SummaryVisible);
             summaryLabel.text = model.Summary;
-            historyDisclosure.SetActive(model.HistoryDisclosureVisible);
+            SetVisible(historyDisclosure, model.HistoryDisclosureVisible);
             historyDisclosureLabel.text = model.HistoryDisclosureLabel;
-            historyDetails.SetActive(model.HistoryDetailsVisible);
+            SetVisible(historyDetails, model.HistoryDetailsVisible);
             historyLabel.text = "History   " + model.History;
-            useHistoryButton.interactable = model.CanUseHistory;
+            SetInteractable(useHistoryButton, model.CanUseHistory);
 
-            savedDisclosure.SetActive(model.SavedDisclosureVisible);
+            SetVisible(savedDisclosure, model.SavedDisclosureVisible);
             savedDisclosureLabel.text = model.SavedDisclosureLabel;
-            savedDetails.SetActive(model.SavedDetailsVisible);
+            SetVisible(savedDetails, model.SavedDetailsVisible);
             savedLabel.text = "Saved   " + model.Saved;
-            storeButton.interactable = model.CanStore;
-            recallButton.interactable = model.CanRecall;
-            deleteButton.interactable = model.CanDeleteSaved;
-            bool hasError = !string.IsNullOrWhiteSpace(model.Error);
-            footerLabel.text = hasError ? model.Error : model.Status;
-            footerLabel.color = hasError ? ErrorText : BodyText;
+            SetInteractable(storeButton, model.CanStore);
+            SetInteractable(recallButton, model.CanRecall);
+            SetInteractable(deleteButton, model.CanDeleteSaved);
+            bool hasError = !string.IsNullOrWhiteSpace(model.Error) || !string.IsNullOrWhiteSpace(commandError);
+            string message = !string.IsNullOrWhiteSpace(model.Error) ? model.Error : commandError ?? model.Status;
+            if (messageLabel.text != message && hasError) bodyScroll.verticalNormalizedPosition = 1f;
+            messageLabel.text = message ?? string.Empty;
+            messageLabel.color = hasError ? ErrorText : BodyText;
+            SetVisible(messageLabel.gameObject, !string.IsNullOrWhiteSpace(message));
         }
 
         private ResponsiveRollPanelLayoutResult CalculateResponsiveLayout(float preferredBodyHeight)
@@ -1139,11 +1164,6 @@ namespace KingmakerDiceRoller.UI
                 headerLayout.preferredHeight = result.HeaderHeight;
                 headerLayout.minHeight = result.HeaderHeight;
             }
-            if (footerLayout != null)
-            {
-                footerLayout.preferredHeight = result.FooterHeight;
-                footerLayout.minHeight = result.FooterHeight;
-            }
             if (bodyScroll != null)
             {
                 bodyScroll.horizontal = false;
@@ -1152,7 +1172,7 @@ namespace KingmakerDiceRoller.UI
             }
             if (bodyScrollbarObject != null)
             {
-                bodyScrollbarObject.SetActive(result.ScrollingRequired);
+                SetVisible(bodyScrollbarObject, result.ScrollingRequired);
             }
             if (bodyViewport != null)
             {
@@ -1163,12 +1183,17 @@ namespace KingmakerDiceRoller.UI
             }
         }
 
-        private static string BuildLayoutModelKey(RollPanelModel model)
+        private string BuildLayoutModelKey(RollPanelModel model)
         {
             return string.Join("|", new[]
             {
                 model.Profile.ToString(),
                 model.Mode,
+                model.Preset,
+                model.Policy,
+                model.Message ?? string.Empty,
+                commandError ?? string.Empty,
+                model.Summary ?? string.Empty,
                 model.AdvancedVisible.ToString(),
                 model.AdvancedExpanded.ToString(),
                 model.MinimumVisible.ToString(),
@@ -1181,8 +1206,8 @@ namespace KingmakerDiceRoller.UI
                 model.SavedDisclosureVisible.ToString(),
                 model.SavedDetailsVisible.ToString(),
                 (model.CustomExpression ?? string.Empty).Length.ToString(CultureInfo.InvariantCulture),
-                (model.History ?? string.Empty).Length.ToString(CultureInfo.InvariantCulture),
-                (model.Saved ?? string.Empty).Length.ToString(CultureInfo.InvariantCulture)
+                model.History ?? string.Empty,
+                model.Saved ?? string.Empty
             });
         }
 
@@ -1222,17 +1247,17 @@ namespace KingmakerDiceRoller.UI
 
         private void ApplySurfaceState()
         {
-            if (expandedSurface != null) expandedSurface.SetActive(panelState.ExpandedSurfaceActive);
-            if (accessTab != null) accessTab.SetActive(panelState.AccessTabActive);
+            if (expandedSurface != null) SetVisible(expandedSurface, panelState.ExpandedSurfaceActive);
+            if (accessTab != null) SetVisible(accessTab, panelState.AccessTabActive);
         }
 
         private void Execute(RollUiCommand command, AbilityScore ability = AbilityScore.Strength)
         {
             string error;
-            if (!commands.Execute(command, ability, out error) && !string.IsNullOrWhiteSpace(error))
-            {
+            bool succeeded = commands.Execute(command, ability, out error);
+            commandError = succeeded ? null : error;
+            if (!succeeded && !string.IsNullOrWhiteSpace(error))
                 logger.Warning("Native Dice Roller command failed: " + error);
-            }
             Render(contractsProvider());
         }
 
@@ -1241,6 +1266,16 @@ namespace KingmakerDiceRoller.UI
             IList entries = contracts.AbilityAllocatorStatEntriesField.GetValue(allocator) as IList;
             if (entries == null || entries.Count == 0 || entries[0] == null) return null;
             return contracts.ScoreEntryUpButtonField.GetValue(entries[0]) as Button;
+        }
+
+        private static void SetVisible(GameObject target, bool visible)
+        {
+            if (target.activeSelf != visible) target.SetActive(visible);
+        }
+
+        private static void SetInteractable(Button target, bool interactable)
+        {
+            if (target.interactable != interactable) target.interactable = interactable;
         }
 
         private static GameObject NewUiObject(string name, int layer)
@@ -1273,13 +1308,14 @@ namespace KingmakerDiceRoller.UI
             layout.childForceExpandHeight = false;
             layout.childControlWidth = true;
             layout.childForceExpandWidth = false;
+            layout.childAlignment = TextAnchor.MiddleLeft;
             var element = row.AddComponent<LayoutElement>();
             element.preferredHeight = height;
             element.minHeight = height;
             return row;
         }
 
-        private static TextMeshProUGUI CreateLabel(
+        private TextMeshProUGUI CreateLabel(
             Transform parent,
             string text,
             TextMeshProUGUI source,
@@ -1295,11 +1331,14 @@ namespace KingmakerDiceRoller.UI
             var label = gameObject.AddComponent<TextMeshProUGUI>();
             label.font = source.font;
             label.fontSharedMaterial = source.fontSharedMaterial;
+            if (theme != null)
+                NativeBookTheme.CopyText(color == HeadingText ? theme.Heading : theme.Body, label);
             label.color = color;
+            label.richText = false;
             label.fontSize = fontSize;
             label.alignment = alignment;
             label.enableWordWrapping = !singleLine;
-            label.overflowMode = singleLine ? TextOverflowModes.Ellipsis : TextOverflowModes.Truncate;
+            label.overflowMode = singleLine ? TextOverflowModes.Ellipsis : TextOverflowModes.Overflow;
             label.raycastTarget = false;
             label.text = text;
             var layout = gameObject.AddComponent<LayoutElement>();
@@ -1327,8 +1366,7 @@ namespace KingmakerDiceRoller.UI
             Button nativeButton,
             float width,
             Action action,
-            float height = -1f,
-            bool themedSlice = false)
+            float height = -1f)
         {
             GameObject gameObject = NewUiObject("Button." + text, parent.gameObject.layer);
             gameObject.transform.SetParent(parent, false);
@@ -1354,7 +1392,7 @@ namespace KingmakerDiceRoller.UI
                 fadeDuration = 0.1f
             };
             button.colors = colors;
-            if (themedSlice && theme != null) theme.ApplyButton(button, image);
+            if (theme != null) theme.ApplyButton(button, image);
             button.onClick = new Button.ButtonClickedEvent();
             button.onClick.AddListener(() => NativeUiPresentation.Activate(
                 action, NativeBookTheme.PlayClick, ReportAttachment));
@@ -1386,9 +1424,9 @@ namespace KingmakerDiceRoller.UI
                 ButtonText,
                 true);
             label.enableAutoSizing = true;
-            label.fontSizeMin = 12f;
+            label.fontSizeMin = NativeRollPanelLayoutSpec.Default.BodyFontSize;
             label.fontSizeMax = NativeRollPanelLayoutSpec.Default.BodyFontSize;
-            if (themedSlice && theme != null) NativeBookTheme.CopyText(theme.ButtonLabel, label);
+            if (theme != null) NativeBookTheme.CopyText(theme.ButtonLabel, label);
             RectTransform labelRect = label.rectTransform;
             labelRect.anchorMin = Vector2.zero;
             labelRect.anchorMax = Vector2.one;
@@ -1397,7 +1435,7 @@ namespace KingmakerDiceRoller.UI
             return button;
         }
 
-        private static TMP_InputField CreateInput(
+        private TMP_InputField CreateInput(
             Transform parent,
             TextMeshProUGUI nativeText,
             Button nativeButton)
@@ -1413,6 +1451,22 @@ namespace KingmakerDiceRoller.UI
             image.raycastTarget = true;
             var input = gameObject.AddComponent<TMP_InputField>();
             input.targetGraphic = image;
+            if (theme != null)
+            {
+                NativeBookTheme.CopyImage(theme.InputBackground, image);
+                image.raycastTarget = true;
+                GameObject frame = NewUiObject("InputFrame", parent.gameObject.layer);
+                RectTransform frameRect = frame.GetComponent<RectTransform>();
+                frameRect.SetParent(gameObject.transform, false);
+                frameRect.anchorMin = Vector2.zero;
+                frameRect.anchorMax = Vector2.one;
+                frameRect.offsetMin = frameRect.offsetMax = Vector2.zero;
+                NativeBookTheme.CopyImage(theme.InputFrame, frame.AddComponent<Image>());
+                input.selectionColor = theme.Input.selectionColor;
+                input.caretBlinkRate = theme.Input.caretBlinkRate;
+                input.caretColor = theme.Input.caretColor;
+                input.customCaretColor = true;
+            }
 
             GameObject viewportObject = NewUiObject("Viewport", gameObject.layer);
             RectTransform viewport = viewportObject.GetComponent<RectTransform>();
@@ -1458,6 +1512,7 @@ namespace KingmakerDiceRoller.UI
             input.textComponent = text;
             input.placeholder = placeholder;
             input.lineType = TMP_InputField.LineType.SingleLine;
+            input.richText = false;
             var layout = gameObject.AddComponent<LayoutElement>();
             layout.preferredHeight = 32f;
             layout.minHeight = 32f;

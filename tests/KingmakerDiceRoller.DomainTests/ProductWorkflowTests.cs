@@ -464,6 +464,53 @@ namespace KingmakerDiceRoller.DomainTests
             AssertEx.True(session.IsStaged);
         }
 
+        internal static void PresentationAndThemeFailurePreserveRealRollSession()
+        {
+            var random = new SequenceRandomSource(6,5,4,1, 5,4,3,1, 4,3,2,1,
+                6,4,2,1, 5,3,2,1, 4,4,2,1);
+            int saves = 0, diagnostics = 0;
+            var workflow = new CharacterRollWorkflow(
+                new DiceRollEngine(new DiceExpressionParser(), random), new PointBuyEquivalentCalculator(),
+                RollConfiguration.Default(), null, () => "test", (config, saved) => saves++);
+            RollSession session = NewSession();
+            RollCandidate candidate;
+            string error;
+            AssertEx.True(workflow.TryGenerate(out candidate, out error), error);
+            CommitCandidate(workflow, session, NewOrigin(), candidate, false);
+            int beforeCalls = random.Calls, revision = session.AssignmentRevision;
+            StatAssignment assignment = session.Assignment;
+            PointBuyOrigin origin = session.PointBuyOrigin;
+            var panel = new NativeRollPanelState();
+            panel.ObserveOwner(session.Controller, session.StableOwner);
+            panel.AttachView();
+            panel.Open();
+            for (int index = 0; index < 4; index++)
+            {
+                panel.ToggleAdvanced(); panel.ToggleHistory(); panel.ToggleSaved();
+                var spec = NativeRollPanelLayoutSpec.Default;
+                var geometry = new ResponsiveRollPanelLayoutCalculator(spec).Calculate(
+                    new ResponsiveRollPanelLayoutInput(index % 2 == 0 ? 1600f : 460f, 900f,
+                        spec.SafeLeftInset, spec.SafeTopInset, spec.SafeRightInset, spec.SafeBottomInset,
+                        spec.OrdinaryWideRollContentHeight, null, null));
+                new RollPanelPresenter().Present(workflow.Snapshot(session), panel.Disclosure, geometry.Profile);
+            }
+            object theme = NativeUiPresentation.ResolveTheme<object>(
+                () => { throw new Exception("missing donor"); }, _ => diagnostics++);
+            AssertEx.Equal(null, theme);
+            NativeUiPresentation.BuildThemedView(() => { throw new Exception("style failure"); },
+                () => { panel.DetachView(); panel.AttachView(); }, _ => diagnostics++);
+            panel.Close(); panel.Open();
+            AssertEx.Equal(2, diagnostics);
+            AssertEx.Equal(beforeCalls, random.Calls);
+            AssertEx.Equal(0, saves);
+            AssertEx.Equal(revision, session.AssignmentRevision);
+            AssertEx.True(ReferenceEquals(assignment, session.Assignment));
+            AssertEx.True(ReferenceEquals(origin, session.PointBuyOrigin));
+            AssertEx.True(session.IsApplied && session.IsRollMode);
+            AssertEx.Equal(1, session.History.Count);
+            AssertEx.True(panel.ExpandedSurfaceActive);
+        }
+
         private static CharacterRollWorkflow NewWorkflow(
             IRandomSource random,
             RollConfiguration configuration)

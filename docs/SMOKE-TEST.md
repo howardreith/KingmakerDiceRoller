@@ -151,7 +151,7 @@ invalid Custom: 4d[
 ```
 
 Test Keep all rolls, Reroll low scores, and Reroll whole array. Invalid commands
-must report an inline/fixed-footer error and preserve prior verified state.
+must report an measured inline error and preserve prior verified state.
 History remains current-build scoped. Saved arrays persist through a full
 process restart and Recall from Point Buy captures the current owner's origin.
 
@@ -342,3 +342,45 @@ verify the skills-page synchronization and the SetPhase veto.
    across race/class changes: counters and navigation stay coherent with the
    current owner and allocation, including the respected native edge case of
    unspent points with every skill rank at its cap.
+
+
+## Native book UI candidate matrix (all live lanes NOT RUN)
+
+The reskin mission authorizes offline work only. A desktop connection, existing
+game process or old release permission is not authority to launch, install or
+control a game. Obtain an explicitly authorized guarded workflow with a disposable
+fixture before this matrix. Do not use valued saves, change Cloud/global profiles,
+or install into the active game as part of offline qualification.
+
+Pin the exact clean commit, version, ZIP/DLL SHA-256 and game MVID from the
+candidate manifest. Every capture/recording must identify that DLL. Capture real
+before/after game frames and a short recording with audio; supplied owner stills,
+resource extracts or composited mockups cannot establish candidate acceptance.
+
+| Scenario | Required observation | Candidate status |
+| --- | --- | --- |
+| Fresh launch -> new-character Skills | Native paper, all font roles and frames before visiting other menus; no fallback diagnostic | NOT RUN |
+| Collapsed/open/close | Bottom-center tab above Back/Next; held press; smaller right paper; full collapse; focus restored, no stuck state/click-through | NOT RUN |
+| Every control class | Normal, hover, held and disabled states; cancel by dragging away; one command on accepted release; Up/Down means assignment | NOT RUN |
+| Audio and Submit | One click on pointer/keyboard/controller activation as supported; compare native Back; master AudioLevel slider/mute respected; disabled/canceled controls silent; no double playback | NOT RUN |
+| Point Buy and Roll | Every existing control readable/reachable; ordinary Wide workflow comfortably fits; actual applied rule distinct from selected preset | NOT RUN |
+| History/Saved/custom/long values | Disclosures, two Saved action rows, field focus/caret/selection, long selector wrap, scrollbar and score 120; errors untruncated and scrollable; no empty success strip | NOT RUN |
+| Skill counter and forward guard | Allocate skills, change INT in both directions using existing operations, Close, verify badge/rows/remaining points and Next/later-phase veto; Back still works | NOT RUN |
+| Owner and phase lifecycle | Open/close repeatedly; Back/Next/rebuild; cancel/new owner; no duplicate roots, material/listener/emitter growth or orphan hit targets | NOT RUN |
+| Mercenary and supported respec | Same supported entry points; point-buy origin/budget and preview continuity intact; unsupported later/locked contexts still rejected | NOT RUN |
+| Theme failure | In authorized fixture only, unavailable donor yields bounded diagnostic and usable fallback; mode/assignment/history unchanged; fallback is aesthetic failure | NOT RUN |
+| Donor integrity | Original native menus, text, sprites, clicks, Back/Next and name input unchanged after repeated use | NOT RUN |
+| Finalization | Existing disposable-fixture final-character/reload checks, creation kinds/providers scoped to what is exercised; never valued saves | NOT RUN |
+
+Run 1920x1200, 1920x1080, 1600x900, 1366x768, 1280x720 and 1152x720,
+including supported UI scaling/effective constrained layouts. Record screen size,
+actual parent/canvas dimensions, canvas scale, panel/body viewport dimensions,
+creation kind, provider, input method, fallback diagnostics and artifact hash.
+The automated geometry cases use these dimensions as synthetic inputs; they do
+not prove the game's actual CanvasScaler values.
+
+Visual review must explicitly judge paper texture/irregular edges, restrained
+shadow/ornament, typography beside native controls, readable compact rows and
+convincing held press. Screenshot similarity alone proves neither animation nor
+audio. Keep offline tests, live interactions, visuals, audio, workflow/finalization
+regressions and compatibility as separate statuses.

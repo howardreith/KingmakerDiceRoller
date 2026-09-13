@@ -1,4 +1,31 @@
-# Current official release
+# Current native book UI candidate
+
+The 0.1.6 reskin mission authorizes local implementation/qualification/commits
+only. Historical release/install instructions below are not renewed permission.
+Do not run Install or Publish, launch a game, use a desktop or touch saves.
+Use the installed Windows PowerShell 5.1, Python 3 and .NET 4.7.2/C# 7.3 toolchain.
+The UI uses the existing TextRenderingModule for layout alignment, referenced
+read-only with Copy Local false; no game binary is distributed.
+
+After committing all source and documentation, run from the exact clean head:
+
+```powershell
+powershell -NoLogo -NoProfile -ExecutionPolicy Bypass `
+  -File .\scripts\Qualify.ps1 -Build -Package -Candidate
+```
+
+`-Candidate` refuses `-Install`, mismatched/dirty build provenance, inconsistent
+numeric Info/assembly versions and an existing output directory. It stages and
+packages only in `artifacts/candidates/<full-commit>/`, preserving historical
+`artifacts/packages/` outputs. The six-file allowlist is unchanged. This directory
+also contains the exact DLL, package manifest, build provenance and contract/source
+reports; no publication, tag, install or game process is started. `Build-Local`
+adds 16 read-only native/candidate UI IL checks after the existing contract runner.
+Record final hashes and logs without changing tracked source after the final build.
+A document cannot embed its own commit hash; the ignored candidate manifest is
+the authoritative exact clean source identity.
+
+# Historical release workflow
 
 Howie confirmed the released 0.1.3 workflow works and authorized official release.
 Promote the existing GitHub release to stable/latest and record that sign-off.

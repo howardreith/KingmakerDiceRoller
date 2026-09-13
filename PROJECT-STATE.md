@@ -1,6 +1,37 @@
 # Project state
 
-## Current 0.1.5 local candidate — skills-counter and forward-navigation integrity
+## Current 0.1.6 native book UI local candidate
+
+Current candidate version: `0.1.6`; branch `codex/native-book-ui-reskin`.
+Baseline `504b5ae53600be99a01f437b35ed57cdff6c3535` (clean main and locally
+recorded origin/main). Presentation-only paper/button/type/message reskin;
+mechanic and context services unchanged. Exact donors, offline evidence and
+remaining gates: `docs/NATIVE-UI-STYLE.md`, `CODEX-NATIVE-UI-RESKIN-STATE.md`.
+
+## Qualification truth
+
+- Implemented: **Yes** — full native style with bounded usable fallback.
+- Source-qualified: **Yes** — 18 source groups, 13/13 release-gate tests,
+  347/347 C# cases, 30/30 Python cases.
+- Contract-qualified: **Yes** — existing Kingmaker contracts, 11 respec groups,
+  16 installed/candidate UI IL checks; exact donors inspected in both PC scenes.
+- Build-qualified: **Yes** — Release, zero warnings/errors.
+- Package-qualified: **Pending final clean build** — candidate-only six-file
+  archive; the exact final manifest and hashes are recorded under ignored
+  `artifacts/candidates/<clean-commit>/` after qualification.
+- Installed: **No** — no active/test game installation by this mission.
+- Focused runtime test: **NOT RUN** — guarded disposable workflow not authorized.
+- Runtime-qualified: **No** — interactions, workflow/finalization/save regressions NOT RUN.
+- Compatibility-qualified: **No** — mercenary/respec/provider/input-method live matrix NOT RUN.
+- Human visual acceptance: **NOT RUN** — all twelve references and actual native
+  resources inspected; no real candidate captures or motion evidence.
+- Audio-qualified: **NOT RUN** — ordinary route source-qualified only.
+- Release-authorized: **No** — no push, merge, PR, tag or release authorization.
+- Testing-prerelease-authorized: **No**.
+- Publicly released: **No** — historical 0.1.5 release remains separate.
+
+
+## Historical 0.1.5 candidate — skills-counter and forward-navigation integrity
 
 Current candidate version: `0.1.5` on branch `z/skills-counter-next-guard`
 (baseline: `main` at `f9f7cf31`). IL inspection of the installed assembly
@@ -19,10 +50,10 @@ open live lanes: `Z-SKILLS-COUNTER-STATE.md` and
 After the 0.1.5 candidate was delivered, Howie instructed: "Please commit,
 merge, push, and do a release. And make it an actual release, not a test
 pre-release like the last one. We can make it 0.1.5 it's fine. No one else is
-using this mod yet." That is the current owner release authorization for an
+using this mod yet." That was owner release authorization for an
 official (latest, non-prerelease) v0.1.5.
 
-## Qualification truth
+## 0.1.5 qualification record (historical)
 
 - Implemented: **Yes** for new-main, mercenary, and the inspected native/Eddic
   respec path, including the skills-page synchronization and forward guard.

@@ -110,10 +110,10 @@ namespace KingmakerDiceRoller.DomainTests
             AssertEx.True(!state.OwnedRootBlocksRaycasts);
         }
 
-        internal static void LayoutUsesCodeOwnedRectangle()
+        internal static void LayoutUsesSeparateNativeInsetPaper()
         {
             NativeRollPanelLayoutSpec spec = NativeRollPanelLayoutSpec.Default;
-            AssertEx.Equal(NativeRollPanelBackgroundShape.SolidRectangle, spec.BackgroundShape);
+            AssertEx.Equal(NativeRollPanelBackgroundShape.NativeInsetPaper, spec.BackgroundShape);
             AssertEx.True(!spec.UsesAllocatorFrameSprite);
             spec.Validate();
         }
@@ -121,8 +121,8 @@ namespace KingmakerDiceRoller.DomainTests
         internal static void ExpandedDimensionsAreBounded()
         {
             NativeRollPanelLayoutSpec spec = NativeRollPanelLayoutSpec.Default;
-            AssertEx.True(spec.ExpandedWidth >= 600f && spec.ExpandedWidth <= 660f);
-            AssertEx.True(spec.ExpandedHeight >= 720f && spec.ExpandedHeight <= 800f);
+            AssertEx.True(spec.ExpandedWidth >= 560f && spec.ExpandedWidth <= 620f);
+            AssertEx.True(spec.ExpandedHeight >= 700f && spec.ExpandedHeight <= 760f);
             AssertEx.True(spec.MinimumWideWidth < spec.ExpandedWidth);
             AssertEx.True(spec.MinimumWideHeight < spec.ExpandedHeight);
         }
@@ -130,33 +130,33 @@ namespace KingmakerDiceRoller.DomainTests
         internal static void HeaderAndCloseDimensionsAreBounded()
         {
             NativeRollPanelLayoutSpec spec = NativeRollPanelLayoutSpec.Default;
-            AssertEx.True(spec.HeaderHeight >= 36f && spec.HeaderHeight <= 42f);
+            AssertEx.True(spec.HeaderHeight >= 48f && spec.HeaderHeight <= 56f);
             AssertEx.True(spec.CloseButtonWidth >= 64f && spec.CloseButtonWidth <= 80f);
-            AssertEx.True(spec.CloseButtonHeight >= 28f && spec.CloseButtonHeight <= 32f);
+            AssertEx.True(spec.CloseButtonHeight >= 32f && spec.CloseButtonHeight <= 38f);
         }
 
         internal static void AccessTabDimensionsAreBounded()
         {
             NativeRollPanelLayoutSpec spec = NativeRollPanelLayoutSpec.Default;
-            AssertEx.True(spec.AccessTabWidth >= 120f && spec.AccessTabWidth <= 150f);
+            AssertEx.True(spec.AccessTabWidth >= 160f && spec.AccessTabWidth <= 176f);
             AssertEx.True(spec.AccessTabHeight >= 30f && spec.AccessTabHeight <= 38f);
         }
 
         internal static void TypographyAndPaddingRemainReadable()
         {
             NativeRollPanelLayoutSpec spec = NativeRollPanelLayoutSpec.Default;
-            AssertEx.True(spec.InternalPadding >= 14);
-            AssertEx.True(spec.TitleFontSize >= 18f);
-            AssertEx.True(spec.SectionFontSize >= 15f);
-            AssertEx.True(spec.BodyFontSize >= 14f);
-            AssertEx.True(spec.StatusFontSize >= 13f);
+            AssertEx.True(spec.InternalPadding >= 24);
+            AssertEx.True(spec.TitleFontSize >= 24f);
+            AssertEx.True(spec.SectionFontSize >= 20f);
+            AssertEx.True(spec.BodyFontSize >= 18f);
+            AssertEx.True(spec.StatusFontSize >= 16f);
             AssertEx.True(spec.BackgroundOpacity >= 0.94f);
         }
 
         internal static void SelectorAndLabelRaycastPolicyIsSafe()
         {
             NativeRollPanelLayoutSpec spec = NativeRollPanelLayoutSpec.Default;
-            AssertEx.True(spec.SelectorValuesAreSingleLine);
+            AssertEx.True(!spec.SelectorValuesAreSingleLine);
             AssertEx.True(!spec.NonInteractiveLabelsRaycast);
             AssertEx.True(spec.InteractiveControlsRaycast);
             AssertEx.True(!spec.OwnedRootRaycast);

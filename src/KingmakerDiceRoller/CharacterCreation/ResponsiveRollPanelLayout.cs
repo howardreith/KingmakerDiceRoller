@@ -146,7 +146,7 @@ namespace KingmakerDiceRoller.CharacterCreation
                 0f,
                 panelHeight - headerHeight - footerHeight -
                 (2f * spec.SurfaceVerticalPadding) -
-                (2f * spec.MajorVerticalSpacing));
+                (spec.FooterHeight > 0f ? 2f : 1f) * spec.MajorVerticalSpacing);
 
             float overflowDelta = input.PreferredBodyContentHeight - bodyViewportHeight;
             bool scrollingRequired;

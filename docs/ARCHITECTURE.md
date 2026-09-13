@@ -128,8 +128,8 @@ geometry and returns a bottom-center position above native navigation. It has no
 upper-right fallback.
 `ResponsiveRollPanelLayoutCalculator` uses primitive parent bounds, safe insets,
 preferred body height, and prior layout state to return a data-only Wide or
-Compact result. `NativeRollPanelLayoutSpec` makes preferred 620 by 760 Wide
-dimensions, compact thresholds, deterministic header/footer/control sizes,
+Compact result. `NativeRollPanelLayoutSpec` makes preferred 600 by 728 Wide
+dimensions, compact thresholds, fixed header, no reserved footer, control sizes,
 typography floors, conditional scroll policy, and raycast boundaries
 executable.
 
@@ -137,8 +137,13 @@ Wide presentation exposes ordinary Point Buy configuration or the complete
 six-row Roll workflow with current History/Saved records. Compact presentation
 uses stable-owner disclosure choices. The host measures the single fitted body,
 enables its masked vertical-only `ScrollRect` only for overflow, and rebuilds
-layout only after meaningful geometry/profile/visibility changes. Header,
-Close, and status footer remain outside the scroll body.
+layout only after meaningful geometry/profile/visibility changes. Header
+and Close remain outside the scroll body; conditional messages use measured body
+space. Theme donors and artwork are resolved once per attachment through
+`NativeBookTheme`; `NativeUiPresentation` isolates cosmetic fallback and click
+feedback from workflow commands. Fresh buttons receive a new event with one
+listener, never copied native callbacks. The paper and shadow lie outside the
+inner body mask. See `NATIVE-UI-STYLE.md` for version-qualified resource paths.
 
 The host's top-level object has no Graphic. Its expanded rectangular surface
 and compact collapsed access tab are mutually exclusive, and all noninteractive

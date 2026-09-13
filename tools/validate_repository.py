@@ -12,6 +12,10 @@ import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = [
+    'docs/NATIVE-UI-STYLE.md','CODEX-NATIVE-UI-RESKIN-STATE.md',
+    'scripts/Verify-NativeUiContracts.ps1','tools/NativeUiContractProbe.cs',
+    'src/KingmakerDiceRoller/UI/NativeBookTheme.cs',
+    'src/KingmakerDiceRoller/CharacterCreation/NativeUiPresentation.cs',
     'AGENTS.md','CHANGELOG.md','Directory.Build.props','GamePath.props.example','Info.json',
     'KingmakerDiceRoller.sln','LICENSE','PROJECT-STATE.md','README.md','THIRD-PARTY-NOTICES.md',
     'src/KingmakerDiceRoller/KingmakerDiceRoller.csproj',
@@ -169,14 +173,14 @@ def main():
     require(info['AssemblyName']=='KingmakerDiceRoller.dll','unexpected assembly name')
     require(info['EntryMethod']=='KingmakerDiceRoller.Main.Load','unexpected entry method')
     require(info['GameVersion']=='2.1.7','unexpected target game version')
-    require(info['Version']=='0.1.5','unexpected candidate version')
+    require(info['Version']=='0.1.6','unexpected candidate version')
     product_metadata=(ROOT/'src/KingmakerDiceRoller/ProductMetadata.cs').read_text(encoding='utf-8')
     assembly_info=(ROOT/'src/KingmakerDiceRoller/Properties/AssemblyInfo.cs').read_text(encoding='utf-8')
-    require('0.1.5' in product_metadata and '0.1.5-' not in product_metadata,
+    require('0.1.6' in product_metadata and '0.1.6-' not in product_metadata,
             'runtime product version is inconsistent')
-    require('AssemblyVersion("0.1.5.0")' in assembly_info and
-            'AssemblyFileVersion("0.1.5.0")' in assembly_info and
-            'AssemblyInformationalVersion("0.1.5")' in assembly_info,
+    require('AssemblyVersion("0.1.6.0")' in assembly_info and
+            'AssemblyFileVersion("0.1.6.0")' in assembly_info and
+            'AssemblyInformationalVersion("0.1.6")' in assembly_info,
             'assembly version metadata is inconsistent')
     require(parse_umm_version('0.1.0-alpha.2') > parse_umm_version('0.1.0'),
             'UMM prerelease-ordering regression fixture is invalid')
@@ -402,10 +406,23 @@ def main():
                   'CreateSavedSection','TrySuppressForRoll','PositionAccessTab']:
         require(token in panel, f'native product panel surface missing: {token}')
     for token in ['surfaceImage.sprite = null','RectMask2D','ScrollRect',
-                  'raycastTarget = false','panelState.Close()','panelState.Open()',
-                  'FixedHeader','FixedFooter','LayoutUtility.GetPreferredHeight',
+                  'raycastTarget = false','NativeUiPresentation.CloseDrawer(panelState, commands.NotifyDrawerClosed)','panelState.Open()',
+                  'FixedHeader','InlineMessage','LayoutUtility.GetPreferredHeight',
                   'bodyScroll.vertical = result.ScrollingRequired']:
         require(token in panel, f'native panel usability invariant missing: {token}')
+    # Source invariants supplement behavior and installed-IL tests; they do not
+    # claim Unity press, masking, or audio behavior has been exercised.
+    theme=(ROOT/'src/KingmakerDiceRoller/UI/NativeBookTheme.cs').read_text(encoding='utf-8')
+    for token in ['dialogue_backsheet','button_hover','button_pressed','button_disable',
+                  'CharacterBuildController','RequireSprite','UISoundType.ButtonClick','fontSharedMaterial']:
+        require(token in theme, f'verified native presentation contract missing: {token}')
+    require('FixedFooter' not in panel and 'MessageVisible' in presenter and 'Array applied' not in presenter,
+            'empty success output must not retain a fixed footer or applied message')
+    require('BuildThemedView' in panel and 'ResolveTheme' in panel and 'PaperShadow' in panel,
+            'native theme requires bounded fallback and separate decorative paper layers')
+    require('Instantiate(' not in theme and 'Instantiate(' not in panel and
+            '.outlineWidth =' not in panel and '.outlineColor =' not in panel,
+            'owned presentation must not clone native callbacks or modify shared font styling')
     for token in ['CollapsedAccessTabLayoutCalculator','TryGetLocalBounds','AllocatorFrame',
                   'AllocatorRegion','AbilityPhaseRoot','BottomNavigationInset','SafeGap']:
         require(token in panel or token in access_layout,
@@ -526,7 +543,7 @@ def main():
         require(token in lifecycle_tests, f'native panel lifecycle behavior missing: {token}')
     for token in ['NewOwnerStartsCollapsed','OnlyAccessTabRaycastsWhenCollapsed',
                   'SameOwnerRebindPreservesExpandedChoice','NewOwnerResetsPresentationChoice',
-                  'DetachedViewHasNoRaycastFootprint','LayoutUsesCodeOwnedRectangle',
+                  'DetachedViewHasNoRaycastFootprint','LayoutUsesSeparateNativeInsetPaper',
                   'TypographyAndPaddingRemainReadable','ContentIsMaskedAndScrollable',
                   'AccessTabUsesBottomCenterAbilityGeometry','HeaderAndCloseDimensionsAreBounded',
                   'MovingBetweenCreationOwnersResetsPresentation','ResponsiveProfileIsNotCharacterState']:
@@ -606,7 +623,7 @@ def main():
     ok('licensing and attribution')
 
     state=(ROOT/'PROJECT-STATE.md').read_text(encoding='utf-8')
-    require('`0.1.5`' in state,'current candidate version is missing from project state')
+    require(('`' + info['Version'] + '`') in state,'current candidate version is missing from project state')
     for label in ['Implemented','Source-qualified','Contract-qualified','Build-qualified',
                   'Package-qualified','Installed','Focused runtime test','Compatibility-qualified']:
         require(label in state, f'qualification label missing: {label}')

@@ -1,5 +1,13 @@
 # Kingmaker Dice Roller
 
+**This checkout: 0.1.6 local native book UI candidate, unreleased.** It adds
+textured native inset paper, gray framed buttons, role-specific typography and
+ordinary UI click feedback. Offline checks pass; live visuals, audio and workflow
+acceptance are NOT RUN. See [candidate state](CODEX-NATIVE-UI-RESKIN-STATE.md)
+and [native style reference](docs/NATIVE-UI-STYLE.md). Candidate artifacts stay
+under ignored `artifacts/candidates/<clean-commit>/`; this mission does not
+install, publish or authorize game testing.
+
 **Latest official release:** `0.1.5`. Completes the skills-page integration:
 the native red skill-points badge and phase-completion state are refreshed after
 every rolled-assignment change (including on drawer close), and forward
@@ -22,7 +30,7 @@ rebuilt.
 The ability page initially shows only a compact **Roll Stats** access tab. It
 is bottom-centered within verified ability/allocator geometry, above the native
 bottom-navigation inset. It does not cover the Skills page or roll
-automatically. Press the tab to open the rectangular **Rolled Ability Scores**
+automatically. Press the tab to open the paper **Rolled Ability Scores**
 panel. The panel provides:
 
 - Roll and Reroll;
@@ -37,7 +45,7 @@ panel. The panel provides:
 
 The panel starts collapsed for every supported creation or eligible respec
 build. Wide layouts show ordinary Point Buy options and the complete six-score
-Roll workflow, History, Saved, summary, and status without wheel input. Compact
+Roll workflow, History, Saved and summary; measured errors can scroll. Compact
 layouts retain **Roll Options**, **History**, and **Saved** disclosures and add
 bounded vertical scrolling only for measured overflow. Press **Close** to
 remove the entire expanded surface and its click footprint; only the small

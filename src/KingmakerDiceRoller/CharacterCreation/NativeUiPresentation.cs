@@ -15,6 +15,26 @@ namespace KingmakerDiceRoller.CharacterCreation
             }
         }
 
+        public static void BuildThemedView(Action buildThemed, Action buildFallback, Action<string> diagnostic)
+        {
+            try { buildThemed(); }
+            catch (Exception exception)
+            {
+                diagnostic("Native Dice Roller view styling failed; rebuilding fallback: " + exception.Message);
+                // The caller discards only its partial view. Do not retry a
+                // failed fallback or enter the coordinator's recovery path.
+                buildFallback();
+            }
+        }
+
+        public static bool CloseDrawer(NativeRollPanelState state, Action notifyClosed)
+        {
+            if (!state.IsExpanded) return false;
+            state.Close();
+            notifyClosed();
+            return true;
+        }
+
         public static void Activate(Action command, Action clickFeedback, Action<string> diagnostic)
         {
             try { clickFeedback(); }

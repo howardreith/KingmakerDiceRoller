@@ -73,6 +73,8 @@ namespace KingmakerDiceRoller.CharacterCreation
         public bool CanDeleteSaved { get; internal set; }
         public string Error { get; internal set; }
         public string Status { get; internal set; }
+        public string Message => !string.IsNullOrWhiteSpace(Error) ? Error : Status;
+        public bool MessageVisible => !string.IsNullOrWhiteSpace(Message);
     }
 
     public sealed class RollPanelPresenter
@@ -227,10 +229,10 @@ namespace KingmakerDiceRoller.CharacterCreation
             if (!string.IsNullOrWhiteSpace(snapshot.ValidationError)) return "Check the highlighted option.";
             switch (snapshot.Mode)
             {
-                case RollSessionMode.Roll: return "Array applied.";
+                case RollSessionMode.Roll: return string.Empty;
                 case RollSessionMode.RestoringPointBuy: return "Restoring Point Buy...";
                 case RollSessionMode.EnteringRollMode: return "Applying roll...";
-                default: return snapshot.AssignedValues == null ? "Roll ready." : "Point Buy restored.";
+                default: return string.Empty;
             }
         }
     }

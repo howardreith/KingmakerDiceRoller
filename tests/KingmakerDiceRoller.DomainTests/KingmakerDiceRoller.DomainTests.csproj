@@ -33,6 +33,7 @@
     <Compile Include="RollUiPresenterTests.cs" />
     <Compile Include="ResponsiveRollPanelLayoutTests.cs" />
     <Compile Include="Program.cs" />
+    <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\NativeUiPresentation.cs"><Link>CharacterCreation\NativeUiPresentation.cs</Link></Compile>
     <Compile Include="RespecLifecycleTests.cs" />
     <Compile Include="SequenceRandomSource.cs" />
     <Compile Include="..\..\src\KingmakerDiceRoller\Domain\*.cs">

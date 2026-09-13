@@ -375,6 +375,101 @@ namespace KingmakerDiceRoller.DomainTests
             AssertEx.Equal(1, target.CommandCalls);
         }
 
+        internal static void SuccessfulModesHaveNoMessageButKeepScores()
+        {
+            var presenter = new RollPanelPresenter();
+            RollPanelModel ready = presenter.Present(Snapshot(RollSessionMode.PointBuy, null));
+            RollPanelModel rolled = presenter.Present(Snapshot(RollSessionMode.Roll, new[] {16,15,14,12,10,8}));
+            AssertEx.True(!ready.MessageVisible && !rolled.MessageVisible);
+            AssertEx.Equal(string.Empty, rolled.Message);
+            AssertEx.Equal(6, rolled.AssignmentRows.Count);
+            AssertEx.Equal(16, rolled.AssignmentRows[0].Value);
+            AssertEx.True(rolled.CanReturnToPointBuy);
+        }
+
+        internal static void FullActionableErrorWinsOverTransientStatus()
+        {
+            string error = "Cannot apply this expression. " + new string('x', 900);
+            RollUiSnapshot snapshot = new RollUiSnapshot(true, RollSessionMode.EnteringRollMode,
+                RollConfiguration.Default(), null, 0, 0, false, "", 0, 0, "", 0, 0, "", error, "Array applied");
+            RollPanelModel model = new RollPanelPresenter().Present(snapshot);
+            AssertEx.True(model.MessageVisible);
+            AssertEx.Equal(error, model.Message);
+            RollPanelModel applying = new RollPanelPresenter().Present(Snapshot(RollSessionMode.EnteringRollMode, null));
+            AssertEx.True(applying.MessageVisible);
+            AssertEx.Equal("Applying roll...", applying.Message);
+        }
+
+        internal static void CloseActivationRoutesSynchronizationExactlyOnce()
+        {
+            var target = new FakeTarget(Snapshot(RollSessionMode.PointBuy, null));
+            var router = new RollUiCommandRouter(target);
+            var state = new NativeRollPanelState();
+            state.ObserveOwner(new object(), new object());
+            state.AttachView();
+            AssertEx.True(!NativeUiPresentation.CloseDrawer(state, router.NotifyDrawerClosed));
+            state.Open();
+            AssertEx.True(NativeUiPresentation.CloseDrawer(state, router.NotifyDrawerClosed));
+            AssertEx.True(!NativeUiPresentation.CloseDrawer(state, router.NotifyDrawerClosed));
+            AssertEx.Equal(1, target.DrawerClosedNotifications);
+            AssertEx.Equal(0, target.CommandCalls);
+            AssertEx.True(state.AccessTabActive && !state.ExpandedSurfaceBlocksRaycasts);
+        }
+
+        internal static void AcceptedActivationRoutesOneCommandAndOneFeedback()
+        {
+            var target = new FakeTarget(Snapshot(RollSessionMode.PointBuy, null));
+            var router = new RollUiCommandRouter(target);
+            int clicks = 0;
+            NativeUiPresentation.Activate(() =>
+            {
+                string error;
+                AssertEx.True(router.Execute(RollUiCommand.Roll, AbilityScore.Strength, out error));
+            }, () => clicks++, message => { throw new Exception(message); });
+            AssertEx.Equal(1, clicks);
+            AssertEx.Equal(1, target.CommandCalls);
+            AssertEx.Equal(0, target.DrawerClosedNotifications);
+        }
+
+        internal static void FeedbackFailureStillRoutesOneCommand()
+        {
+            int commands = 0, warnings = 0;
+            NativeUiPresentation.Activate(() => commands++, () => { throw new Exception("missing sound"); }, _ => warnings++);
+            AssertEx.Equal(1, commands);
+            AssertEx.Equal(1, warnings);
+        }
+
+        internal static void CommandFailureIsNotRetriedOrSwallowed()
+        {
+            int commands = 0, clicks = 0;
+            AssertEx.Throws<InvalidOperationException>(() => NativeUiPresentation.Activate(
+                () => { commands++; throw new InvalidOperationException("command failure"); },
+                () => clicks++, _ => { }));
+            AssertEx.Equal(1, commands);
+            AssertEx.Equal(1, clicks);
+        }
+
+        internal static void ThemeResolutionRetainsQualifiedObject()
+        {
+            object donor = new object();
+            object result = NativeUiPresentation.ResolveTheme(() => donor, _ => { throw new Exception("unexpected fallback"); });
+            AssertEx.True(ReferenceEquals(donor, result));
+        }
+
+        internal static void ThemeConstructionUsesBoundedFallback()
+        {
+            int themed = 0, fallback = 0, warnings = 0;
+            NativeUiPresentation.BuildThemedView(
+                () => { themed++; throw new Exception("bad style"); }, () => fallback++, _ => warnings++);
+            AssertEx.Equal(1, themed);
+            AssertEx.Equal(1, fallback);
+            AssertEx.Equal(1, warnings);
+            AssertEx.Throws<InvalidOperationException>(() => NativeUiPresentation.BuildThemedView(
+                () => { throw new Exception("bad style"); },
+                () => { fallback++; throw new InvalidOperationException("bad base view"); }, _ => { }));
+            AssertEx.Equal(2, fallback);
+        }
+
         private static RollUiSnapshot Snapshot(
             RollSessionMode mode,
             int[] values,

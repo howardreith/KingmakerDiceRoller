@@ -22,7 +22,7 @@ replacement, and resets for a genuinely new owner.
 ## Collapsed access
 
 Collapsed mode deactivates the complete expanded surface, background, layout,
-mask, and content. Only a 140 by 34 **Roll Stats** button remains raycastable.
+mask, and content. Only a 164 by 38 **Roll Stats** button remains raycastable.
 The tab is always placed at the safe bottom center of verified ability-page
 geometry, above the 92-unit bottom-navigation inset plus an 8-unit gap. Its
 horizontal geometry source is selected in this order:
@@ -46,7 +46,7 @@ routes directly to Kingmaker while collapsed.
 
 ## Responsive expanded surface
 
-The expanded UI is an upper-right rectangular drawer. Wide prefers 620 by 760
+The expanded UI is an upper-right inset paper page. Wide prefers 600 by 728
 UI units with 18-unit top/right safe insets and a conservative 92-unit bottom
 inset for native navigation. Compact prefers 460 by 650 and clamps to the
 actual relevant parent `RectTransform`. These are Canvas-space values, not raw
@@ -72,15 +72,19 @@ bounds and body space cannot become negative. Responsive profile is not
 persisted as character state and is identical on main-character and mercenary
 screens.
 
-The surface uses a code-owned solid parchment `Image` at 0.98 opacity and the
-native local material. It deliberately does not copy the allocator's `m_Frame`
-sprite: that sprite is a curved oval and cannot contain the drawer.
+The surface uses the verified native `dialogue_backsheet` sprite as separately
+owned sliced Paper and PaperShadow layers. Mottling, irregular edges and depth
+come from real native artwork. Decoration remains outside the content mask;
+the transparent rectangular interactive surface shields only the bounded page.
+See [NATIVE-UI-STYLE.md](NATIVE-UI-STYLE.md) for exact paths and contracts.
 
-The 38-unit header is fixed outside the scroll body. It contains the title,
-compact current mode, and a 76 by 30 **Close** button; no
-`ContentSizeFitter` controls its height. A compact 38-unit status/error footer
-is also fixed. Ordinary messages wrap within that footer without reserving a
-large empty error area.
+The 52-unit header is fixed outside the scroll body and contains a 24-unit title,
+16-unit mode and a 76 by 34 Close button. Closing invokes the existing drawer
+synchronization once and returns focus to Roll Stats. No footer is reserved.
+“Array applied” and idle success boilerplate are suppressed only in presentation.
+Actionable validation/command errors remain intact in a conditional, measured
+message at the top of the body; new errors return the scroll to the top and long
+messages can scroll. The header and Close remain reachable.
 
 The body has a `RectMask2D`, one measurement `ContentSizeFitter`, and a clamped
 vertical-only `ScrollRect`. After meaningful geometry or visibility changes,
@@ -92,16 +96,18 @@ scrolling is never enabled.
 
 ## Typography and contrast
 
-The local `m_MainLabel` supplies the Kingmaker font and font material only.
-Body labels use explicit dark brown text on the opaque parchment; headings use
-a darker red-brown. Essential sizes are 20 for the title, 16 for headings, 14
-for selectors/body, and 13 for compact status text.
+Heading, body/status, button and selector fonts/materials come from distinct
+verified native roles. Sizes are 24 for title, 20 for section headings, 18 for
+body/selectors/buttons and 16 for messages. Brown body text and reddish headings
+sit on textured paper; gray framed buttons use native pale gold lettering and
+normal/hover/pressed/disabled sprite swaps. Shared materials are not edited.
 
-Code-owned dark button surfaces use light text with a subtle dark TMP outline.
-Selector values are single-line, bounded to 14-16 point auto-sizing, and use
-ellipsis only as a last resort. Noninteractive TMP labels always have
-`raycastTarget = false`; button and input backgrounds are the intentional
-raycast targets.
+Selectors wrap and measure their row height at narrow widths. Summary, History,
+Saved and errors also measure text. Noninteractive TMP labels reject raycasts;
+button/input backgrounds and scroll controls are explicit targets. Native click
+feedback uses the ordinary UI sound route through one owned activation listener.
+All live appearance, motion, audio and input-method acceptance remains NOT RUN
+for this candidate until the guarded smoke workflow is authorized.
 
 ## Wide presentation
 
@@ -133,8 +139,8 @@ CHA  value                                      [Up] [Down]
 It also shows the current roll-method selector, Reroll, Return to Point Buy,
 total, point-buy equivalent, actual applied generation rule (`Rolled with:`),
 one current History record with Previous/Next/Use, one current Saved record
-with Store/Previous/Next/Recall/Delete as applicable, and status. Ordinary
-Wide Roll Mode fits without wheel input at the primary desktop gate.
+with Store/Previous/Next then Recall/Delete on two compact rows. Ordinary
+Wide Roll Mode is intended to fit without wheel input; this remains a live gate.
 
 The selected preset remains separate from the actual applied rule because the
 player may change the selector after rolling.
@@ -187,15 +193,16 @@ observer provides bounded cleanup and allocator-replacement handling.
   choice for navigation.
 - Cancel, completion, disable, or unload: restore native controls, destroy all
   owned objects, and clear view ownership.
-- Contract or construction failure: fail the panel closed and leave vanilla
-  Point Buy untouched.
+- Theme resolution/construction failure: log a bounded diagnostic and use the
+  previous usable presentation without changing the roll session. Base context
+  or mechanic safety failures retain the existing fail-closed behavior.
 
 ## Human layout gate
 
 Exact compilation and contract fixtures cannot prove real resolution scaling,
-prefab offsets, focus, visual clipping, or click routing. The repair's first
-live mercenary gate is 1152 by 720, followed by 1280 by 720, 1366 by 768, 1600
-by 900, and 1920 by 1080. New-main-character creation must also be regressed.
+prefab offsets, focus, visual clipping, or click routing. The candidate requires
+1920 by 1200, 1920 by 1080, 1600 by 900, 1366 by 768, 1280 by 720 and 1152 by
+720 plus effective constrained geometry, recording actual canvas/viewport sizes. New-main-character creation must also be regressed.
 The gate must prove safe bottom-center tab placement, true collapse, Back/Next
 access, one panel through navigation/rebuild, and complete cleanup. Constrained
 effective geometry must remain fully visible and clickable. Any obstruction or

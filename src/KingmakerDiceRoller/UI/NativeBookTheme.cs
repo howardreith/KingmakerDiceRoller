@@ -1,5 +1,4 @@
 using System;
-using KingmakerDiceRoller.CharacterCreation;
 using Kingmaker.UI;
 using Kingmaker.UI.LevelUp;
 using TMPro;
@@ -19,17 +18,57 @@ namespace KingmakerDiceRoller.UI
         internal const string HeadingPath =
             "Body/Content/SkillsMiddleScoresAllocator/Content/STR Background/Labels/SHORT";
 
+        internal const string BodyPath =
+            "Body/Content/Book/Image_Book/Container_SpellsLeft/Spells_Container/SpellBookItem (2)/Item/Body/NamePlace/LabelName";
+        internal const string SelectorPath =
+            "Body/Content/RaceRightSide/Head/SequentialSelector/SequentialSelector/GameObject/Frame/Label";
+        internal const string InputPath = "Body/Content/CharacterMiddleSide/CharacterName/PointsBox/Bg";
+        internal const string ScrollPath =
+            "Body/Content/SkillsLeftSide/MartiaAndSaves/SpellTable/DescriptionView/Scrollbar Vertical";
+        internal const string RulePath = "Body/Content/RaceRightSide/Constitution/DescriptionView/Decor (1)";
+
         internal readonly Image Paper;
         internal readonly Button Action;
         internal readonly TextMeshProUGUI Heading;
         internal readonly TextMeshProUGUI ButtonLabel;
 
-        private NativeBookTheme(Image paper, Button action, TextMeshProUGUI heading, TextMeshProUGUI buttonLabel)
+        internal readonly TextMeshProUGUI Body;
+        internal readonly TextMeshProUGUI Selector;
+        internal readonly Image InputBackground;
+        internal readonly Image InputFrame;
+        internal readonly TMP_InputField Input;
+        internal readonly Scrollbar Scroll;
+        internal readonly Image ScrollTrack;
+        internal readonly Image ScrollHandle;
+        internal readonly Image Rule;
+
+        private NativeBookTheme(Transform owner, Image paper, Button action, TextMeshProUGUI heading, TextMeshProUGUI buttonLabel)
         {
             Paper = paper;
             Action = action;
             Heading = heading;
             ButtonLabel = buttonLabel;
+            Body = Require<TextMeshProUGUI>(owner, BodyPath);
+            Selector = Require<TextMeshProUGUI>(owner, SelectorPath);
+            InputBackground = Require<Image>(owner, InputPath);
+            InputFrame = Require<Image>(owner, InputPath + "/Frame");
+            Input = Require<TMP_InputField>(owner, InputPath + "/InputField");
+            Scroll = Require<Scrollbar>(owner, ScrollPath);
+            ScrollTrack = Require<Image>(owner, ScrollPath);
+            ScrollHandle = Require<Image>(owner, ScrollPath + "/Sliding Area/Handle");
+            Rule = Require<Image>(owner, RulePath);
+            RequireSprite(InputBackground.sprite, "SlotBackgroundFilled", new Vector4(9, 9, 8, 9), 100f);
+            RequireSprite(InputFrame.sprite, "map_cameraframe", new Vector4(7, 7, 7, 7));
+            RequireSprite(ScrollHandle.sprite, "ScrollBar_Big_Handler", new Vector4(0, 48, 0, 45));
+            RequireSprite(ScrollTrack.sprite, "SliderArea", new Vector4(0, 62, 0, 52));
+            RequireSprite(Rule.sprite, "blockscroll_bottom", new Vector4(20, 0, 20, 0));
+            if (InputBackground.type != Image.Type.Sliced || InputFrame.type != Image.Type.Sliced ||
+                ScrollTrack.type != Image.Type.Sliced || ScrollHandle.type != Image.Type.Sliced ||
+                Rule.type != Image.Type.Sliced || Scroll.transition != Selectable.Transition.ColorTint)
+                throw new InvalidOperationException("Native input/scroll/ornament presentation contract changed.");
+            if (Body.font == null || Body.fontSharedMaterial == null ||
+                Selector.font == null || Selector.fontSharedMaterial == null)
+                throw new InvalidOperationException("Native body/selector typography is unavailable.");
         }
 
         internal static NativeBookTheme Resolve(MonoBehaviour allocator)
@@ -48,11 +87,11 @@ namespace KingmakerDiceRoller.UI
             RequireSprite(action.spriteState.highlightedSprite, "button_hover", new Vector4(16, 16, 16, 16));
             RequireSprite(action.spriteState.pressedSprite, "button_pressed", new Vector4(16, 16, 16, 16));
             RequireSprite(action.spriteState.disabledSprite, "button_disable", new Vector4(16, 16, 16, 16));
-            if (paper.type != Image.Type.Sliced || action.transition != Selectable.Transition.SpriteSwap ||
+            if (paper.type != Image.Type.Sliced || ((Image)action.targetGraphic).type != Image.Type.Sliced || action.transition != Selectable.Transition.SpriteSwap ||
                 heading.font == null || heading.fontSharedMaterial == null ||
                 label.font == null || label.fontSharedMaterial == null)
                 throw new InvalidOperationException("Native paper/button/text presentation contract changed.");
-            return new NativeBookTheme(paper, action, heading, label);
+            return new NativeBookTheme(owner.transform, paper, action, heading, label);
         }
 
         internal static T Require<T>(Transform owner, string path) where T : Component
@@ -63,9 +102,10 @@ namespace KingmakerDiceRoller.UI
             return value;
         }
 
-        private static void RequireSprite(Sprite sprite, string name, Vector4 border)
+        private static void RequireSprite(Sprite sprite, string name, Vector4 border, float pixelsPerUnit = 200f)
         {
-            if (sprite == null || sprite.name != name || sprite.texture == null || sprite.border != border)
+            if (sprite == null || sprite.name != name || sprite.texture == null || sprite.border != border ||
+                sprite.pixelsPerUnit != pixelsPerUnit)
                 throw new InvalidOperationException("Unqualified native UI sprite: " + name);
         }
 

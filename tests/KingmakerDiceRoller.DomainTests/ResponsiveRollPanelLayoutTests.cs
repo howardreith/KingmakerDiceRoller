@@ -8,8 +8,8 @@ namespace KingmakerDiceRoller.DomainTests
         {
             ResponsiveRollPanelLayoutResult result = Calculate(1600f, 900f, 520f);
             AssertEx.Equal(RollPanelPresentationProfile.Wide, result.Profile);
-            AssertEx.Equal(620f, result.PanelWidth);
-            AssertEx.Equal(760f, result.PanelHeight);
+            AssertEx.Equal(600f, result.PanelWidth);
+            AssertEx.Equal(728f, result.PanelHeight);
         }
 
         internal static void ConstrainedWidthSelectsCompact()
@@ -126,6 +126,40 @@ namespace KingmakerDiceRoller.DomainTests
             var random = new SequenceRandomSource(6);
             Calculate(1600f, 900f, 520f);
             AssertEx.Equal(0, random.Calls);
+        }
+
+        internal static void EmptyMessagesReserveNoFooterAndErrorsCanScroll()
+        {
+            NativeRollPanelLayoutSpec spec = NativeRollPanelLayoutSpec.Default;
+            ResponsiveRollPanelLayoutResult empty = Calculate(1600f, 900f, 500f);
+            ResponsiveRollPanelLayoutResult error = Calculate(1600f, 900f, 1600f);
+            AssertEx.Equal(0f, spec.FooterHeight);
+            AssertEx.Equal(empty.PanelHeight, error.PanelHeight);
+            AssertEx.Equal(empty.HeaderHeight, error.HeaderHeight);
+            AssertEx.Equal(empty.BodyViewportHeight, error.BodyViewportHeight);
+            AssertEx.True(!empty.ScrollingRequired && error.ScrollingRequired);
+            AssertEx.True(error.BodyViewportHeight > 0f);
+            AssertEx.True(spec.CloseButtonHeight <= error.HeaderHeight);
+        }
+
+        internal static void RequiredResolutionMatrixPreservesNavigationAndContentBounds()
+        {
+            // Screen-sized and deliberately constrained effective canvas inputs;
+            // this is geometry coverage, not a claim about live CanvasScaler values.
+            float[,] bounds = { {1920,1200}, {1920,1080}, {1600,900},
+                {1366,768}, {1280,720}, {1152,720}, {720,600}, {460,610} };
+            NativeRollPanelLayoutSpec spec = NativeRollPanelLayoutSpec.Default;
+            for (int row = 0; row < bounds.GetLength(0); row++)
+            {
+                ResponsiveRollPanelLayoutResult result = Calculate(bounds[row,0], bounds[row,1], 1800f);
+                AssertEx.True(result.PanelWidth <= result.SafeWidth);
+                AssertEx.True(result.PanelHeight <= result.SafeHeight);
+                AssertEx.True(result.BodyViewportHeight > 0f && result.ScrollingRequired);
+                AssertEx.True(result.PanelHeight + spec.SafeTopInset + spec.SafeBottomInset <= bounds[row,1]);
+                float contentWidth = result.PanelWidth - 2f * spec.InternalPadding - spec.ScrollbarWidth - 2f;
+                AssertEx.True(spec.AssignmentRowRequiredWidth <= contentWidth);
+                AssertEx.True(spec.CloseButtonHeight <= result.HeaderHeight);
+            }
         }
 
         private static ResponsiveRollPanelLayoutResult Calculate(
