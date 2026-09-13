@@ -26,9 +26,14 @@ been supplied. Prior release permissions below are historical.
 - Contract-qualified: **Yes** — existing contracts, 11 respec groups and
   22 native UI IL checks passed.
 - Build-qualified: **Yes** — Release build, zero warnings/errors.
-- Package-qualified: **Pending** — candidate-only clean-source package required.
-- Installed: **No** — baseline installed DLL was read-only verified.
-- Focused runtime test: **NOT RUN** — final candidate not yet installed/tested.
+- Package-qualified: **Yes** — clean candidate `c06ef75`, six-file allowlist;
+  exact hashes and evidence in `CODEX-NATIVE-THEME-ACTIVATION-STATE.md`.
+- Installed: **No** currently — exact candidate was temporarily installed and
+  loaded in owned PID 11832, then original mod/settings were hash-verified restored.
+- Focused runtime test: **NOT RUN** — startup succeeded, but Windows session
+  was disconnected with no foreground window; guarded input/capture refused.
+- Native themed path verified: **NOT RUN** — no genuine Skills entry or live Resolve.
+- Rendered appearance/interactions inspected: **NOT RUN**.
 - Runtime-qualified: **No**.
 - Compatibility-qualified: **No** — mercenary/respec fixtures unavailable.
 - Human visual acceptance: **NOT RUN**.
