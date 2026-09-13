@@ -46,6 +46,8 @@ namespace KingmakerDiceRoller.UI
         private readonly CollapsedAccessTabLayoutCalculator accessTabLayoutCalculator;
         private readonly List<AssignmentWidgets> assignmentRows = new List<AssignmentWidgets>();
 
+        private NativeBookTheme theme;
+        private readonly List<RectTransform> paperLayers = new List<RectTransform>();
         private object attachedAllocator;
         private CollapsedAccessTabAnchorSource? lastAccessTabAnchorSource;
         private GameObject root;
@@ -203,6 +205,8 @@ namespace KingmakerDiceRoller.UI
         {
             nativeControls.RestoreOwnedStates(contracts);
             attachedAllocator = null;
+            theme = null;
+            paperLayers.Clear();
             lastAccessTabAnchorSource = null;
             assignmentRows.Clear();
             modeLabel = null;
@@ -305,6 +309,7 @@ namespace KingmakerDiceRoller.UI
                 throw new InvalidOperationException("Native text, material, or button styling could not be resolved.");
             }
 
+            theme = NativeUiPresentation.ResolveTheme(() => NativeBookTheme.Resolve(behaviour), ReportAttachment);
             root = NewUiObject(OwnedPanelName, behaviour.gameObject.layer);
             RectTransform rootRect = root.GetComponent<RectTransform>();
             rootRect.SetParent(behaviour.transform.parent, false);
@@ -343,15 +348,15 @@ namespace KingmakerDiceRoller.UI
 
             Image surfaceImage = expandedSurface.AddComponent<Image>();
             surfaceImage.sprite = null;
-            surfaceImage.material = nativeFrame.material;
-            surfaceImage.type = Image.Type.Simple;
-            surfaceImage.preserveAspect = false;
-            surfaceImage.color = new Color(Parchment.r, Parchment.g, Parchment.b, layout.BackgroundOpacity);
+            surfaceImage.color = theme == null ? Parchment : Color.clear;
             surfaceImage.raycastTarget = true;
-            var outline = expandedSurface.AddComponent<Outline>();
-            outline.effectColor = new Color(0.19f, 0.08f, 0.035f, 0.9f);
-            outline.effectDistance = new Vector2(1.5f, -1.5f);
-            expandedSurface.AddComponent<RectMask2D>();
+            if (theme != null)
+            {
+                CreatePaperLayer("PaperShadow", new Vector2(2f, -3f), new Color(0.16f, 0.10f, 0.06f, 0.24f));
+                CreatePaperLayer("Paper", Vector2.zero, Color.white);
+            }
+            // Only the inner body is masked. The paper silhouette and shadow
+            // remain outside that viewport, with no full-screen hit surface.
 
             var surfaceLayout = expandedSurface.AddComponent<VerticalLayoutGroup>();
             surfaceLayout.padding = new RectOffset(
@@ -368,7 +373,7 @@ namespace KingmakerDiceRoller.UI
             GameObject header = CreateHorizontal(expandedSurface.transform, layout.HeaderHeight);
             header.name = "FixedHeader";
             headerLayout = header.GetComponent<LayoutElement>();
-            CreateLabel(
+            TextMeshProUGUI title = CreateLabel(
                 header.transform,
                 "Rolled Ability Scores",
                 nativeText,
@@ -378,6 +383,7 @@ namespace KingmakerDiceRoller.UI
                 -1f,
                 HeadingText,
                 true);
+            if (theme != null) NativeBookTheme.CopyText(theme.Heading, title);
             modeLabel = CreateLabel(
                 header.transform,
                 string.Empty,
@@ -400,7 +406,8 @@ namespace KingmakerDiceRoller.UI
                     commands.NotifyDrawerClosed();
                     ApplySurfaceState();
                 },
-                layout.CloseButtonHeight);
+                layout.CloseButtonHeight,
+                true);
 
             Transform content = CreateScrollContent(expandedSurface.transform);
             CreatePanelContent(content, nativeText, nativeButton);
@@ -425,6 +432,24 @@ namespace KingmakerDiceRoller.UI
                 -1f,
                 BodyText,
                 false);
+        }
+
+        private void CreatePaperLayer(string name, Vector2 offset, Color tint)
+        {
+            GameObject layer = NewUiObject(name, root.layer);
+            RectTransform rect = layer.GetComponent<RectTransform>();
+            rect.SetParent(expandedSurface.transform, false);
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.sizeDelta = new Vector2(layout.PreferredExpandedWidth * 2f, layout.PreferredExpandedHeight * 2f);
+            rect.anchoredPosition = offset;
+            // Unity 2018 has no Image.pixelsPerUnitMultiplier. Uniform half
+            // scale retains the verified sliced border without editing sprites.
+            rect.localScale = new Vector3(0.5f, 0.5f, 1f);
+            layer.AddComponent<LayoutElement>().ignoreLayout = true;
+            Image image = layer.AddComponent<Image>();
+            NativeBookTheme.CopyImage(theme.Paper, image);
+            image.color = tint;
+            paperLayers.Add(rect);
         }
 
         private Transform CreateScrollContent(Transform parent)
@@ -841,7 +866,9 @@ namespace KingmakerDiceRoller.UI
                 {
                     panelState.Open();
                     Render(contractsProvider());
-                });
+                },
+                layout.AccessTabHeight,
+                true);
             accessTab = button.gameObject;
             accessTab.name = "CollapsedAccessTab";
             RectTransform rect = accessTab.GetComponent<RectTransform>();
@@ -1104,6 +1131,8 @@ namespace KingmakerDiceRoller.UI
                     result.AnchoredPositionX,
                     result.AnchoredPositionY);
                 expandedSurfaceRect.sizeDelta = new Vector2(result.PanelWidth, result.PanelHeight);
+                foreach (RectTransform paper in paperLayers)
+                    paper.sizeDelta = new Vector2(result.PanelWidth * 2f, result.PanelHeight * 2f);
             }
             if (headerLayout != null)
             {
@@ -1291,14 +1320,15 @@ namespace KingmakerDiceRoller.UI
             return label;
         }
 
-        private static Button CreateButton(
+        private Button CreateButton(
             Transform parent,
             string text,
             TextMeshProUGUI nativeText,
             Button nativeButton,
             float width,
             Action action,
-            float height = -1f)
+            float height = -1f,
+            bool themedSlice = false)
         {
             GameObject gameObject = NewUiObject("Button." + text, parent.gameObject.layer);
             gameObject.transform.SetParent(parent, false);
@@ -1324,7 +1354,10 @@ namespace KingmakerDiceRoller.UI
                 fadeDuration = 0.1f
             };
             button.colors = colors;
-            button.onClick.AddListener(() => action());
+            if (themedSlice && theme != null) theme.ApplyButton(button, image);
+            button.onClick = new Button.ButtonClickedEvent();
+            button.onClick.AddListener(() => NativeUiPresentation.Activate(
+                action, NativeBookTheme.PlayClick, ReportAttachment));
 
             var layout = gameObject.AddComponent<LayoutElement>();
             if (width > 0f)
@@ -1355,8 +1388,7 @@ namespace KingmakerDiceRoller.UI
             label.enableAutoSizing = true;
             label.fontSizeMin = 12f;
             label.fontSizeMax = NativeRollPanelLayoutSpec.Default.BodyFontSize;
-            label.outlineColor = new Color32(18, 10, 6, 255);
-            label.outlineWidth = 0.15f;
+            if (themedSlice && theme != null) NativeBookTheme.CopyText(theme.ButtonLabel, label);
             RectTransform labelRect = label.rectTransform;
             labelRect.anchorMin = Vector2.zero;
             labelRect.anchorMax = Vector2.one;
