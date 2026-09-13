@@ -1,6 +1,6 @@
 # Native UI style reference
 
-This is the Dice Roller 0.1.6 **local candidate** style, source-qualified against
+This is the Dice Roller 0.1.6 native book UI style, source-qualified against
 Kingmaker 2.1.7b, Unity 2018.4.10f1. Assembly-CSharp MVID:
 `07fa1e4d-8618-41b3-9b8d-faa17d3b26f7`; SHA-256:
 `3b6450ffec440e296e586f71c711b195aed144b28d53e1cbb29406d18fef5afb`.

@@ -1,5 +1,22 @@
 # Native book UI reskin state
 
+## Release follow-up
+
+On 2026-09-13 the owner authorized committing, merging to the default branch,
+pushing and cutting a release. Release preparation uses 0.1.6 as a testing
+prerelease while live visual, audio, runtime and compatibility lanes remain
+NOT RUN. Current authorization and publication status are in `PROJECT-STATE.md`.
+No game installation, desktop control or save modification is included.
+
+The local mission handoff below is preserved as historical evidence. Its final
+clean source is `bc01fde7e5e37471ea95d793e1fe5891bf6e979c`; the exact candidate
+and its reports remain under ignored `artifacts/candidates/` at that source ID.
+Release preparation updates documentation only. The release ZIP includes the
+updated README, so its ZIP hash may differ from the historical candidate while
+the compiled DLL must remain identical.
+
+## Original local mission handoff
+
 Mission branch: `codex/native-book-ui-reskin`.
 Actual clean baseline: `504b5ae53600be99a01f437b35ed57cdff6c3535`
 (main and locally recorded origin/main). Existing checkout and worktrees were
@@ -92,5 +109,7 @@ Use only an explicitly authorized isolated disposable fixture, pin its DLL hash,
 compare with native Back and capture real before/after frames plus audio/motion.
 No fallback or green build qualifies the aesthetic goal.
 
-No push, merge, PR, tag, release, active install, game launch, desktop control,
-other-mod modification, Cloud/profile change or valued-save modification occurred.
+At the original local handoff, no push, merge, PR, tag, release, active install,
+game launch, desktop control, other-mod modification, Cloud/profile change or
+valued-save modification had occurred. The release follow-up above records the
+subsequent publication authorization separately.

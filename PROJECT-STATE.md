@@ -1,12 +1,19 @@
 # Project state
 
-## Current 0.1.6 native book UI local candidate
+## Current 0.1.6 native book UI release
 
-Current candidate version: `0.1.6`; branch `codex/native-book-ui-reskin`.
-Baseline `504b5ae53600be99a01f437b35ed57cdff6c3535` (clean main and locally
-recorded origin/main). Presentation-only paper/button/type/message reskin;
-mechanic and context services unchanged. Exact donors, offline evidence and
-remaining gates: `docs/NATIVE-UI-STYLE.md`, `CODEX-NATIVE-UI-RESKIN-STATE.md`.
+Version `0.1.6`; implementation branch `codex/native-book-ui-reskin`.
+Baseline `504b5ae53600be99a01f437b35ed57cdff6c3535`. Presentation-only
+paper/button/type/message reskin; mechanic and context services unchanged.
+Exact donors, offline evidence and remaining gates: `docs/NATIVE-UI-STYLE.md`
+and `CODEX-NATIVE-UI-RESKIN-STATE.md`.
+
+On 2026-09-13, after the local candidate handoff, the owner instructed:
+"Could you please commit, merge to the default branch, push to remote, and
+cut a release? Thank you." This authorizes publication of 0.1.6 and supersedes
+the original mission's local-only publication restriction. The release uses
+the testing-prerelease classification while live acceptance remains NOT RUN.
+Installation, desktop/game testing and save modification remain unauthorized.
 
 ## Qualification truth
 
@@ -16,10 +23,11 @@ remaining gates: `docs/NATIVE-UI-STYLE.md`, `CODEX-NATIVE-UI-RESKIN-STATE.md`.
 - Contract-qualified: **Yes** — existing Kingmaker contracts, 11 respec groups,
   16 installed/candidate UI IL checks; exact donors inspected in both PC scenes.
 - Build-qualified: **Yes** — Release, zero warnings/errors.
-- Package-qualified: **Yes** — clean-commit candidate-only six-file archive;
-  all entries independently matched to inputs and DLL hashes agreed. Exact
-  final source identity, manifest and handoff are recorded under ignored
-  `artifacts/candidates/<clean-commit>/`. This remains an unreleased candidate.
+- Package-qualified: **Yes** — clean-commit six-file candidate archive; all
+  entries independently matched to inputs and DLL hashes agreed. The release
+  publisher repeats qualification and packaging from clean, pushed main;
+  release preparation changes documentation only. Historical candidate
+  provenance remains under ignored `artifacts/candidates/<clean-commit>/`.
 - Installed: **No** — no active/test game installation by this mission.
 - Focused runtime test: **NOT RUN** — guarded disposable workflow not authorized.
 - Runtime-qualified: **No** — interactions, workflow/finalization/save regressions NOT RUN.
@@ -27,9 +35,11 @@ remaining gates: `docs/NATIVE-UI-STYLE.md`, `CODEX-NATIVE-UI-RESKIN-STATE.md`.
 - Human visual acceptance: **NOT RUN** — all twelve references and actual native
   resources inspected; no real candidate captures or motion evidence.
 - Audio-qualified: **NOT RUN** — ordinary route source-qualified only.
-- Release-authorized: **No** — no push, merge, PR, tag or release authorization.
-- Testing-prerelease-authorized: **No**.
-- Publicly released: **No** — historical 0.1.5 release remains separate.
+- Release-authorized: **Yes** — owner's 2026-09-13 instruction quoted above.
+- Testing-prerelease-authorized: **Yes** — publication under that instruction,
+  using the existing testing path and disclosing all unrun acceptance lanes.
+- Publicly released: **No** — prepared for publication; record the verified
+  tag, release source commit, asset hashes and URL after publication.
 
 
 ## Historical 0.1.5 candidate — skills-counter and forward-navigation integrity

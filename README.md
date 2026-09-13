@@ -1,12 +1,12 @@
 # Kingmaker Dice Roller
 
-**This checkout: 0.1.6 local native book UI candidate, unreleased.** It adds
-textured native inset paper, gray framed buttons, role-specific typography and
-ordinary UI click feedback. Offline checks pass; live visuals, audio and workflow
-acceptance are NOT RUN. See [candidate state](CODEX-NATIVE-UI-RESKIN-STATE.md)
-and [native style reference](docs/NATIVE-UI-STYLE.md). Candidate artifacts stay
-under ignored `artifacts/candidates/<clean-commit>/`; this mission does not
-install, publish or authorize game testing.
+**0.1.6 native book UI testing prerelease.** It adds textured native inset
+paper, gray framed buttons, role-specific typography and ordinary UI click
+feedback. Offline checks pass; live visuals, audio and workflow acceptance are
+**NOT RUN**. See [release notes](docs/RELEASE-NOTES-0.1.6.md),
+[qualification state](CODEX-NATIVE-UI-RESKIN-STATE.md) and the reusable
+[native style reference](docs/NATIVE-UI-STYLE.md). Publication does not establish
+live acceptance or authorize installation/game testing by the agent.
 
 **Latest official release:** `0.1.5`. Completes the skills-page integration:
 the native red skill-points badge and phase-completion state are refreshed after
@@ -103,28 +103,36 @@ Roll or Recall and restored exactly; neither 20 nor 25 is hard-coded.
 
 ## Installation
 
-Download **KingmakerDiceRoller-0.1.5.zip** from the
-[v0.1.5 release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.5),
+For the native book UI testing prerelease, download
+**KingmakerDiceRoller-0.1.6.zip** from the
+[v0.1.6 release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.6),
 then drag that ZIP into Unity Mod Manager's Mods tab for Pathfinder: Kingmaker.
-Confirm UMM displays version **0.1.5**. Keep the installed UMM/Harmony libraries;
+Confirm UMM displays version **0.1.6**. Keep the installed UMM/Harmony libraries;
 no loader downgrade is required. GitHub's Source code archives are not mod packages.
 
-Version `0.1.5` is the latest official release. It includes the rolled-stat
-build-integrity repair and the skills-counter/forward-navigation fix; `v0.1.4`
-remains available as the prior testing prerelease.
+Version `0.1.5` remains the latest official release, available from the
+[v0.1.5 release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.5).
+Both versions include the rolled-stat build-integrity repair and the
+skills-counter/forward-navigation fix. The 0.1.6 prerelease adds the presentation
+reskin; its visual, audio and runtime acceptance checks remain NOT RUN.
 
 The archive contains one `KingmakerDiceRoller` directory with exactly six
 allowlisted files and does not bundle development artifacts or game assemblies.
 
 ## Qualification
 
-The candidate has deterministic service coverage (328 cases) and exact-contract
-checks against Kingmaker 2.1.7b, including the native derived-allowance
-members, replay/copy order, and installed Harmony scope behavior. Interactive
-gameplay, save/reload, and provider-matrix lanes were **not executed** by the
-agent; they are recorded as NOT RUN in `PROJECT-STATE.md` and
-`docs/SMOKE-TEST.md` section K. See `docs/CHARACTER-BUILD-INTEGRITY.md` for
-the verified native lifecycle behind the repair.
+Offline qualification passes 347 deterministic C# cases, 30 Python oracle
+cases, 13 release-gate tests and 18 source-validation groups. Kingmaker 2.1.7b
+contract checks include native derived allowances, replay/copy order, installed
+Harmony scope behavior, 11 respec contract groups and 16 native UI IL/component
+checks. The Release build has zero warnings/errors and the package passes the
+six-file allowlist and hash checks.
+
+Live visual and press-motion acceptance, audio/volume/mute, interactive gameplay,
+finalization, save/reload and the provider/input compatibility matrix are
+**NOT RUN**. See `PROJECT-STATE.md`, the native book UI matrix in
+`docs/SMOKE-TEST.md`, and `docs/CHARACTER-BUILD-INTEGRITY.md` for the verified
+native lifecycle behind the existing workflow.
 
 The project does not claim an exhaustive compatibility matrix. Bag of Tricks
 and Call of the Wild are detected but never modified. Bag of Tricks budgets are

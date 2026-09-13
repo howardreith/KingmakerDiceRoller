@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.6 - native book UI (local candidate, unreleased)
+## 0.1.6 - native book UI (testing prerelease)
 
 - Reskin the owned drawer with verified native inset paper, irregular edges,
   subtle depth and ornament; reduce Wide dimensions to 600x728.
@@ -18,7 +18,8 @@
   and candidate-only packaging with clean-source provenance.
 - Offline qualification is separate from acceptance: live interactions, native
   appearance, audio, finalization/save and compatibility lanes are NOT RUN.
-  No release, installation or gameplay testing is authorized by this mission.
+  Published under the owner's follow-up release instruction; installation and
+  gameplay testing remain outside the authorized work.
 
 ## 0.1.5 - skills-counter refresh and forward-navigation guard
 

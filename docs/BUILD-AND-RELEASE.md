@@ -1,11 +1,30 @@
-# Current native book UI candidate
+# Current native book UI release
 
-The 0.1.6 reskin mission authorizes local implementation/qualification/commits
-only. Historical release/install instructions below are not renewed permission.
-Do not run Install or Publish, launch a game, use a desktop or touch saves.
-Use the installed Windows PowerShell 5.1, Python 3 and .NET 4.7.2/C# 7.3 toolchain.
-The UI uses the existing TextRenderingModule for layout alignment, referenced
-read-only with Copy Local false; no game binary is distributed.
+The owner authorized committing, merging to the default branch, pushing and
+cutting a 0.1.6 release on 2026-09-13. This supersedes the original reskin
+mission's publication restriction; installation, desktop/game testing and save
+modification remain outside the authorized task. Live visual, audio and runtime
+acceptance remain NOT RUN. Use the existing testing-prerelease publisher from
+clean, fully pushed main:
+
+```powershell
+powershell -NoLogo -NoProfile -ExecutionPolicy Bypass `
+  -File .\scripts\Publish-Release.ps1 `
+  -ReleaseNotesPath .\docs\RELEASE-NOTES-0.1.6.md `
+  -Publish -TestingPrerelease
+```
+
+This rebuilds and qualifies the final release, publishes the numeric 0.1.6 UMM
+package and checksum as a GitHub testing prerelease, and keeps 0.1.5 as the latest
+official release. Record the exact source, hashes, tag and remote asset evidence
+in `PROJECT-STATE.md`. Publication does not change runtime qualification.
+
+Use installed Windows PowerShell 5.1, Python 3 and the .NET 4.7.2/C# 7.3 toolchain.
+Run Python in UTF-8 mode for repository documentation. The UI uses the existing
+TextRenderingModule for layout alignment, referenced read-only with Copy Local
+false; no game binary is distributed. No installation is part of publication.
+
+## Preserved local candidate workflow
 
 After committing all source and documentation, run from the exact clean head:
 
