@@ -1,20 +1,18 @@
 # Kingmaker Dice Roller
 
-**0.1.6 native book UI testing prerelease.** It adds textured native inset
-paper, gray framed buttons, role-specific typography and ordinary UI click
-feedback. Offline checks pass; live visuals, audio and workflow acceptance are
-**NOT RUN**. See [release notes](docs/RELEASE-NOTES-0.1.6.md),
+**Latest official release: 0.1.6 — native book UI.** It adds textured native
+inset paper, gray framed buttons, role-specific typography and ordinary UI click
+feedback. Offline checks pass; live visuals, audio, runtime and compatibility
+acceptance are **NOT RUN**. The owner selected official/latest with these unrun
+checks disclosed. See [release notes](docs/RELEASE-NOTES-0.1.6.md),
 [qualification state](CODEX-NATIVE-UI-RESKIN-STATE.md) and the reusable
-[native style reference](docs/NATIVE-UI-STYLE.md). Publication does not establish
-live acceptance or authorize installation/game testing by the agent.
+[native style reference](docs/NATIVE-UI-STYLE.md).
 
-**Latest official release:** `0.1.5`. Completes the skills-page integration:
-the native red skill-points badge and phase-completion state are refreshed after
-every rolled-assignment change (including on drawer close), and forward
-navigation out of Skills is genuinely blocked while the native skill allocation
-is invalid. Service tests, exact assembly contracts, and builds pass; the
-detailed live matrix is pending. Released officially at the owner's direction
-after the `0.1.4` testing prerelease was played in-game.
+The release includes the existing skills-page integration: the native red
+skill-points badge and phase-completion state refresh after rolled-assignment
+changes, including drawer close, and the forward guard blocks leaving Skills
+while the native skill allocation is invalid. The 0.1.6 reskin preserves this
+behavior and the existing roll workflow.
 
 Kingmaker Dice Roller is a standalone Unity Mod Manager mod for Pathfinder:
 Kingmaker 2.1.7b. It adds an explicit rolled-ability workflow to the native
@@ -103,18 +101,18 @@ Roll or Recall and restored exactly; neither 20 nor 25 is hard-coded.
 
 ## Installation
 
-For the native book UI testing prerelease, download
+Download the native book UI release,
 **KingmakerDiceRoller-0.1.6.zip** from the
 [v0.1.6 release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.6),
 then drag that ZIP into Unity Mod Manager's Mods tab for Pathfinder: Kingmaker.
 Confirm UMM displays version **0.1.6**. Keep the installed UMM/Harmony libraries;
 no loader downgrade is required. GitHub's Source code archives are not mod packages.
 
-Version `0.1.5` remains the latest official release, available from the
-[v0.1.5 release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.5).
-Both versions include the rolled-stat build-integrity repair and the
-skills-counter/forward-navigation fix. The 0.1.6 prerelease adds the presentation
-reskin; its visual, audio and runtime acceptance checks remain NOT RUN.
+Version `0.1.6` is the latest official release. The existing ZIP, checksum and
+tag were retained when the owner directed promotion from testing prerelease.
+The README inside that unchanged ZIP retains its original prerelease wording;
+this repository and the GitHub release page record the current status. Live
+visual, audio and runtime acceptance remain NOT RUN.
 
 The archive contains one `KingmakerDiceRoller` directory with exactly six
 allowlisted files and does not bundle development artifacts or game assemblies.

@@ -1,5 +1,11 @@
 # Native book UI reskin
 
+**Official/latest release at the owner's direction.** Live visual, audio,
+runtime and compatibility acceptance checks remain **NOT RUN**. Promotion
+preserves the existing ZIP, checksum asset and version tag. The README inside
+the unchanged ZIP retains its original testing-prerelease wording; this release
+page and the current repository record the official/latest status.
+
 Dice Roller now presents its existing rolled-ability workflow on a smaller
 textured paper page within Kingmaker's character-creation book.
 

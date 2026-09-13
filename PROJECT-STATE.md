@@ -11,8 +11,10 @@ and `CODEX-NATIVE-UI-RESKIN-STATE.md`.
 On 2026-09-13, after the local candidate handoff, the owner instructed:
 "Could you please commit, merge to the default branch, push to remote, and
 cut a release? Thank you." This authorizes publication of 0.1.6 and supersedes
-the original mission's local-only publication restriction. The release uses
-the testing-prerelease classification while live acceptance remains NOT RUN.
+the original mission's local-only publication restriction. The owner then
+selected "Official/latest, with the unrun checks disclosed" for v0.1.6. The
+existing release was promoted accordingly; this explicit publication decision
+does not establish runtime qualification. Live acceptance remains NOT RUN.
 Installation, desktop/game testing and save modification remain unauthorized.
 
 ## Qualification truth
@@ -35,18 +37,19 @@ Installation, desktop/game testing and save modification remain unauthorized.
 - Human visual acceptance: **NOT RUN** — all twelve references and actual native
   resources inspected; no real candidate captures or motion evidence.
 - Audio-qualified: **NOT RUN** — ordinary route source-qualified only.
-- Release-authorized: **Yes** — owner's 2026-09-13 instruction quoted above.
-- Testing-prerelease-authorized: **Yes** — publication under that instruction,
-  using the existing testing path and disclosing all unrun acceptance lanes.
-- Publicly released: **Yes** — `v0.1.6` testing prerelease, not latest;
-  verified publication and exact hashes below. Latest official remains `v0.1.5`.
+- Release-authorized: **Yes** — owner's 2026-09-13 release instruction and
+  subsequent explicit official/latest selection quoted above.
+- Testing-prerelease-authorized: **No** — superseded by the owner's selection
+  of official/latest; the initial prerelease publication is historical below.
+- Publicly released: **Yes** — `v0.1.6` official/latest (not a prerelease);
+  exact artifact hashes and verified promotion below.
 
 
 ## Verified 0.1.6 publication
 
-[v0.1.6](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.6) was published on
-2026-09-13 at 12:56:46 UTC as a **testing prerelease**, not a draft or the latest
-official release. Release ID `387900346`. Implementation and release
+[v0.1.6](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.6) was initially published on
+2026-09-13 at 12:56:46 UTC as a testing prerelease and subsequently promoted to
+**official/latest** as recorded below. Release ID `387900346`. Implementation and release
 preparation were fast-forward merged from `codex/native-book-ui-reskin` into
 `main`, then both branches were pushed. The guarded publisher reran the complete
 offline qualification from clean, fully pushed main at release commit
@@ -70,7 +73,8 @@ the locally qualified files and GitHub SHA-256 digests. Every one of the six ZIP
 entries matched its source/build input; Info version is 0.1.6 and the DLL is
 identical to the original local candidate. The ZIP differs because its README
 now describes the release. Historical candidate files and the v0.1.5 ZIP remain
-unchanged; GitHub's latest-release response still identifies v0.1.5.
+unchanged. The initial publication audit identified v0.1.5 as latest; the
+subsequent promotion audit below now identifies v0.1.6.
 
 Evidence remains under ignored `artifacts/release-0.1.6/`: `publication.txt`,
 `github-release.json`, `github-latest.json`, `independent-publication-audit.json`,
@@ -78,6 +82,36 @@ copied build/package/contract reports and the downloaded assets. This publicatio
 record is a later documentation commit; the release tag and asset bytes remain
 fixed at the release commit above. No PR, installation, game/desktop session,
 other-mod change or save modification was performed.
+
+
+## Verified 0.1.6 official/latest promotion
+
+The owner selected "Official/latest, with the unrun checks disclosed" on
+2026-09-13. The existing release was promoted using `gh release edit`, retaining
+the original build, ZIP, checksum asset and annotated version tag. This explicit
+owner decision supersedes the normal requirement to finish live qualification
+before official publication for this release; it does not mark those lanes as
+passed or change the automated new-release gate.
+
+At 13:19:54 UTC on 2026-09-13, GitHub's latest-release response and the v0.1.6
+release response both identified release `387900346`, with `prerelease=false`
+and `draft=false`. The title is `Kingmaker Dice Roller v0.1.6`. Both asset IDs,
+names, sizes, SHA-256 digests and upload timestamps matched the records above;
+the annotated tag object and peeled release commit also matched exactly.
+
+Release notes prominently disclose that visual, audio, runtime and compatibility
+acceptance remain **NOT RUN**, and preserve the original release checksum and
+commit. The unchanged ZIP's README still says testing prerelease; the release
+page and current repository documentation record the promotion. Runtime-qualified
+remains **No**. Promotion involved no rebuild, repackaging, installation, game
+session or save modification. Repository/source validation and all 13 release-gate
+tests pass for the documentation update; the original artifact's complete offline
+qualification remains the evidence for its unchanged DLL/package bytes.
+
+Before/after GitHub responses, tag refs, exact posted notes and
+`promotion-audit.json` are preserved under ignored
+`artifacts/release-0.1.6/promotion/`. Promotion documentation is newer than the
+immutable tagged build; no published asset or tag was replaced.
 
 
 ## Historical 0.1.5 candidate — skills-counter and forward-navigation integrity

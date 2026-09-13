@@ -1,28 +1,36 @@
 # Current native book UI release
 
-The owner authorized committing, merging to the default branch, pushing and
-cutting a 0.1.6 release on 2026-09-13. This supersedes the original reskin
-mission's publication restriction; installation, desktop/game testing and save
-modification remain outside the authorized task. Live visual, audio and runtime
-acceptance remain NOT RUN. Use the existing testing-prerelease publisher from
-clean, fully pushed main:
+The owner authorized committing, merging, pushing and cutting a 0.1.6 release
+on 2026-09-13, then selected "Official/latest, with the unrun checks disclosed."
+The existing v0.1.6 release was promoted to official/latest with this command:
 
 ```powershell
-powershell -NoLogo -NoProfile -ExecutionPolicy Bypass `
-  -File .\scripts\Publish-Release.ps1 `
-  -ReleaseNotesPath .\docs\RELEASE-NOTES-0.1.6.md `
-  -Publish -TestingPrerelease
+gh release edit v0.1.6 --repo howardreith/KingmakerDiceRoller `
+  --prerelease=false --latest --title "Kingmaker Dice Roller v0.1.6" `
+  --notes-file artifacts/release-0.1.6/promotion/release-notes-official.md `
+  --verify-tag
 ```
 
-This rebuilds and qualifies the final release, publishes the numeric 0.1.6 UMM
-package and checksum as a GitHub testing prerelease, and keeps 0.1.5 as the latest
-official release. Record the exact source, hashes, tag and remote asset evidence
-in `PROJECT-STATE.md`. Publication does not change runtime qualification.
+The prepared notes retain the full installation/verification sections and
+original artifact hash and source commit. The owner explicitly selected official
+publication with visual, audio, runtime and compatibility checks still NOT RUN;
+this decision does not mark Runtime-qualified Yes. It supersedes the usual live
+acceptance prerequisite for this specific promotion. The automated new-release
+qualification gate remains unchanged; no runtime-confirmation assertion was made.
 
-Use installed Windows PowerShell 5.1, Python 3 and the .NET 4.7.2/C# 7.3 toolchain.
-Run Python in UTF-8 mode for repository documentation. The UI uses the existing
-TextRenderingModule for layout alignment, referenced read-only with Copy Local
-false; no game binary is distributed. No installation is part of publication.
+GitHub's latest-release response, prerelease/draft flags, asset IDs, sizes,
+digests, upload timestamps and tag refs were verified before/after promotion.
+The existing ZIP, checksum and annotated tag are unchanged. Do not rerun the
+new-release publisher or replace the published package for a metadata promotion.
+The ZIP's README retains its original testing-prerelease wording; the release
+page and current repository record official/latest status. Exact publication
+and promotion evidence is in `PROJECT-STATE.md`.
+
+Use installed Windows PowerShell 5.1, Python 3 and the .NET 4.7.2/C# 7.3 toolchain
+for future builds. Run Python in UTF-8 mode for repository documentation. The UI
+uses the existing TextRenderingModule for layout alignment, referenced read-only
+with Copy Local false; no game binary is distributed. Installation, desktop/game
+testing and save modification remain outside the authorized work.
 
 ## Preserved local candidate workflow
 

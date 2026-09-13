@@ -5,9 +5,10 @@
 On 2026-09-13 the owner authorized committing, merging to the default branch,
 pushing and cutting a release. The mission branch was fast-forward merged into
 main and both branches pushed. [v0.1.6](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.6)
-is published as a testing prerelease; latest official remains v0.1.5. Live visual,
-audio, runtime and compatibility lanes remain NOT RUN. No game installation,
-desktop control or save modification occurred.
+is the official/latest release after the owner selected "Official/latest, with
+the unrun checks disclosed." Live visual, audio, runtime and compatibility lanes
+remain NOT RUN, and Runtime-qualified remains No. No game installation, desktop
+control or save modification occurred.
 
 Release source: `7662a4239512edd9be7a8d3c3ca511a1d9ce763a`.
 ZIP SHA-256: `6e81dde5773b1d23706f57ed96f1f738a28a9cabc955295d5625a21a8911d1f1`.
@@ -16,6 +17,14 @@ The full qualification passed again at that clean, pushed main commit and the
 published assets were downloaded and independently audited. Exact tag/asset IDs,
 qualification statuses and publication time are in `PROJECT-STATE.md`; local
 reports and downloaded assets are in ignored `artifacts/release-0.1.6/`.
+
+Official/latest promotion was verified on 2026-09-13 at 13:19:54 UTC. GitHub's
+latest-release response identifies v0.1.6 with prerelease/draft false. Both asset
+IDs, upload timestamps, sizes and SHA-256 digests, plus the annotated tag object
+and peeled commit, are unchanged. The released ZIP retains its original README;
+the release page and current repository document promotion and the unrun checks.
+No rebuild or repackaging occurred. Before/after records and the promotion audit
+are preserved in ignored `artifacts/release-0.1.6/promotion/`.
 
 The local mission handoff below is preserved as historical evidence. Its final
 clean source is `bc01fde7e5e37471ea95d793e1fe5891bf6e979c`; the exact candidate
