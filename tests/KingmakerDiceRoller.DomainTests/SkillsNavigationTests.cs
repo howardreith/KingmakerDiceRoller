@@ -1,4 +1,5 @@
 using System;
+using KingmakerDiceRoller.UI;
 using System.Linq;
 using KingmakerDiceRoller.CharacterCreation;
 using KingmakerDiceRoller.Domain;
@@ -10,6 +11,58 @@ namespace KingmakerDiceRoller.DomainTests
     // native phase-completion cache, and the forward-transition decision must agree.
     internal static partial class PreviewSessionContinuityTests
     {
+        internal static void ThemeRecoveryPreservesCloseBadgeAndForwardGuards()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            CharacterCreationCoordinator coordinator = OpenSkillsGuardCoordinator(environment, new RuntimeDiagnostics(),
+                new[] { SavedArray(10, "int10"), SavedArray(16, "int16") }, out FakeState state);
+            AssertEx.True(coordinator.TryRecallSelectedSaved(out string error), error);
+            state.SpentSkillPoints = state.TotalSkillPoints;
+            environment.CharacterBuild.Skills.SkillsAllocator.FillLevelUpData();
+            var fixture = new ThemeFixture();
+            var bindings = new NativeThemeBindings();
+            var recovery = new NativeThemeRecovery();
+            bindings.Add(NativeThemeCapability.Buttons, values => { }, () => { });
+            recovery.Bind(new object(), fixture.Root);
+            AssertEx.True(recovery.TryBegin(true, false));
+            bindings.Apply(fixture.Resolve(), message => { throw new Exception(message); }); recovery.Complete();
+            coordinator.SelectNextSaved();
+            AssertEx.True(coordinator.TryRecallSelectedSaved(out error), error);
+            RollSession session = coordinator.ActiveSession;
+            int revision = session.AssignmentRevision;
+            StatAssignment assignment = session.Assignment;
+            fixture.Populate();
+            AssertEx.True(recovery.TryBegin(true, true));
+            NativeThemeResolution theme = fixture.Resolve();
+            bindings.Apply(theme, message => { throw new Exception(message); }); recovery.Complete();
+            AssertEx.Equal(revision, session.AssignmentRevision);
+            AssertEx.True(ReferenceEquals(assignment, session.Assignment));
+            var router = new RollUiCommandRouter(coordinator);
+            var panel = new NativeRollPanelState();
+            panel.ObserveOwner(session.Controller, session.StableOwner); panel.AttachView(); panel.Open();
+            AssertEx.True(NativeUiPresentation.CloseDrawer(panel, router.NotifyDrawerClosed));
+            AssertEx.Equal(2, environment.CharacterBuild.Skills.SkillsAllocator.DisplayedRemainingPoints);
+            AssertEx.True(!coordinator.AllowForwardPhaseTransition(environment.CharacterBuild, 6));
+            state.SpentSkillPoints = state.TotalSkillPoints;
+            AssertEx.True(coordinator.AllowForwardPhaseTransition(environment.CharacterBuild, 6));
+            // Reverse direction, with a donor lost between score application and Close.
+            coordinator.SelectPreviousSaved();
+            AssertEx.True(coordinator.TryRecallSelectedSaved(out error), error);
+            revision = session.AssignmentRevision;
+            fixture.Action.Values[0].Alive = false;
+            AssertEx.True(theme.DiscardStale());
+            bindings.Apply(theme, message => { throw new Exception(message); });
+            AssertEx.Equal(revision, session.AssignmentRevision);
+            panel.Open();
+            AssertEx.True(NativeUiPresentation.CloseDrawer(panel, router.NotifyDrawerClosed));
+            AssertEx.Equal(-2, environment.CharacterBuild.Skills.SkillsAllocator.DisplayedRemainingPoints);
+            AssertEx.True(!coordinator.AllowForwardPhaseTransition(environment.CharacterBuild, 6));
+            AssertEx.True(coordinator.AllowForwardPhaseTransition(environment.CharacterBuild, 4));
+            state.SpentSkillPoints = state.TotalSkillPoints;
+            AssertEx.True(coordinator.AllowForwardPhaseTransition(environment.CharacterBuild, 6));
+            AssertEx.True(ReferenceEquals(session, coordinator.ActiveSession));
+        }
+
         private static SavedRollArrayRecord SavedArray(int intelligence, string label)
         {
             return SavedRollArrayRecord.Create(

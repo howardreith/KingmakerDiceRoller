@@ -1,4 +1,38 @@
-# Current native book UI release
+# Current 0.1.7 official release
+
+On 2026-09-13, after the repair handoff disclosed the disconnected-desktop
+blocker, the owner explicitly requested merge, push and an actual release,
+not a test. This authorizes v0.1.7 as official/latest while native themed-path,
+rendered interaction, audio, runtime and compatibility acceptance remain unrun.
+The automated publication gate remains unchanged; do not falsely assert
+`-ConfirmRuntimeQualified` or mark runtime evidence Yes.
+
+Prepare from the clean, fully pushed main merge commit using the existing
+publisher's draft path (Windows PowerShell 5.1):
+
+```powershell
+powershell -NoLogo -NoProfile -ExecutionPolicy Bypass `
+  -File .\scripts\Publish-Release.ps1 `
+  -ReleaseNotesPath .\docs\RELEASE-NOTES-0.1.7.md
+```
+
+This runs the full qualification suite, packages the six allowlisted files,
+creates/pushes the annotated v0.1.7 tag and uploads the ZIP/checksum to a draft.
+Verify the source/tag, DLL parity with the reviewed candidate and downloaded
+ZIP/checksum assets. Then apply the specific owner authorization:
+
+```powershell
+gh release edit v0.1.7 --repo howardreith/KingmakerDiceRoller `
+  --draft=false --prerelease=false --latest --verify-tag
+```
+
+Verify the published release is official/latest and its bytes match the draft.
+Record final source/tag, asset hashes and publication metadata in the handoff.
+Runtime installation and saved-game operations are separate from publication.
+This documented exception applies to the owner's v0.1.7 request; it does not
+change the normal qualification gate for future releases.
+
+# Historical 0.1.6 native book UI release
 
 The owner authorized committing, merging, pushing and cutting a 0.1.6 release
 on 2026-09-13, then selected "Official/latest, with the unrun checks disclosed."

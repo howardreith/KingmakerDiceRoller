@@ -1,6 +1,57 @@
 # Project state
 
-## Current 0.1.6 native book UI release
+## Current 0.1.7 native-theme activation release preparation
+
+Version `0.1.7`; branch `codex/native-theme-activation-repair`, based on
+`9b69751983a6bc80d1e73999d3fbba3e3e7f8927`. Historical `77d16ef` is an ancestor;
+`v0.1.6` peels to `7662a4239512edd9be7a8d3c3ca511a1d9ce763a`. Both the release
+ZIP's DLL and the installed pre-repair DLL match
+`e2803d3f70ac168d52de27a075b36e6562c7209e709d02c62485f7ded0b13092`.
+No reset or downgrade was performed. The owner reported the literal-name donor
+failure and initially authorized a repair branch and review PR. On 2026-09-13,
+after the candidate handoff, the owner instructed: "Could you please merge,
+push, and release this as a new release? Make it an actual release, not a test.
+Thank you." This explicitly authorizes merging PR #2, pushing main, tagging
+v0.1.7 and publishing an official/latest release with the unrun checks disclosed.
+It supersedes the earlier repair-only publication restriction, without claiming
+runtime qualification. The existing draft-build/package workflow will prepare
+reviewable assets; official publication uses the owner's instruction rather
+than asserting `-ConfirmRuntimeQualified`. The general qualification gate and
+its tests remain unchanged.
+
+The owner additionally authorized this machine's Kingmaker/Steam installation
+for disposable runtime verification. Preserve and restore the existing Dice
+Roller installation, own the test process, and use new-character creation without
+loading or changing valued campaign saves. Mercenary/respec fixtures have not
+been supplied. Prior release permissions below are historical.
+
+## Qualification truth
+
+- Implemented: **Yes** — literal-name lookup, independent styling capabilities,
+  and in-place recovery bounded to initial resolution plus two FillData retries.
+- Source-qualified: **Yes** — 370 C# cases, 30 Python cases, 13 release-gate
+  cases and 18 source groups passed.
+- Contract-qualified: **Yes** — existing contracts, 11 respec groups and
+  22 native UI IL checks passed.
+- Build-qualified: **Yes** — Release build, zero warnings/errors.
+- Package-qualified: **Yes** — clean candidate `c06ef75`, six-file allowlist;
+  exact hashes and evidence in `CODEX-NATIVE-THEME-ACTIVATION-STATE.md`.
+- Installed: **No** currently — exact candidate was temporarily installed and
+  loaded in owned PID 11832, then original mod/settings were hash-verified restored.
+- Focused runtime test: **NOT RUN** — startup succeeded, but Windows session
+  was disconnected with no foreground window; guarded input/capture refused.
+- Native themed path verified: **NOT RUN** — no genuine Skills entry or live Resolve.
+- Rendered appearance/interactions inspected: **NOT RUN**.
+- Runtime-qualified: **No**.
+- Compatibility-qualified: **No** — mercenary/respec fixtures unavailable.
+- Human visual acceptance: **NOT RUN**.
+- Audio-qualified: **NOT RUN**.
+- Release-authorized: **Yes** — explicit owner instruction above; official/latest.
+- Testing-prerelease-authorized: **No** — the owner requested an actual release.
+- Publicly released: **No** yet — preparing v0.1.7 official/latest; no new
+  runtime evidence is implied by publication.
+
+## Historical 0.1.6 native book UI release
 
 Version `0.1.6`; implementation branch `codex/native-book-ui-reskin`.
 Baseline `504b5ae53600be99a01f437b35ed57cdff6c3535`. Presentation-only
@@ -17,7 +68,7 @@ existing release was promoted accordingly; this explicit publication decision
 does not establish runtime qualification. Live acceptance remains NOT RUN.
 Installation, desktop/game testing and save modification remain unauthorized.
 
-## Qualification truth
+## Historical 0.1.6 qualification record
 
 - Implemented: **Yes** — full native style with bounded usable fallback.
 - Source-qualified: **Yes** — 18 source groups, 13/13 release-gate tests,

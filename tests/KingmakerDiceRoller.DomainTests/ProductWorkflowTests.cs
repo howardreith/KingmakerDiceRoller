@@ -1,4 +1,5 @@
 using System;
+using KingmakerDiceRoller.UI;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -509,6 +510,61 @@ namespace KingmakerDiceRoller.DomainTests
             AssertEx.True(session.IsApplied && session.IsRollMode);
             AssertEx.Equal(1, session.History.Count);
             AssertEx.True(panel.ExpandedSurfaceActive);
+        }
+
+        internal static void ProductionThemeRecoveryPreservesRollSavedAndDraft()
+        {
+            var random = new SequenceRandomSource(6,5,4,1, 5,4,3,1, 4,3,2,1,
+                6,4,2,1, 5,3,2,1, 4,4,2,1);
+            int saves = 0;
+            var workflow = new CharacterRollWorkflow(
+                new DiceRollEngine(new DiceExpressionParser(), random), new PointBuyEquivalentCalculator(),
+                RollConfiguration.Default(), null, () => "test", (config, saved) => saves++);
+            RollSession session = NewSession();
+            AssertEx.True(workflow.TryGenerate(out RollCandidate candidate, out string error), error);
+            CommitCandidate(workflow, session, NewOrigin(), candidate, false);
+            workflow.StoreCurrent(session);
+            workflow.SetCustomExpression("4d[6]kh"); // deliberately unfinished input
+            var panel = new NativeRollPanelState();
+            panel.ObserveOwner(session.Controller, session.StableOwner);
+            panel.AttachView(); panel.Open(); panel.ToggleSaved(); panel.ToggleAdvanced();
+            StatAssignment assignment = session.Assignment;
+            PointBuyOrigin origin = session.PointBuyOrigin;
+            RollUiSnapshot before = workflow.Snapshot(session);
+            int revision = session.AssignmentRevision, rng = random.Calls, writes = saves;
+            object selected = workflow.Saved.Selected;
+            var fixture = new ThemeFixture();
+            var recovery = new NativeThemeRecovery();
+            var bindings = new NativeThemeBindings();
+            bool paper = false, button = false;
+            bindings.Add(NativeThemeCapability.Paper, values => paper = true, () => paper = false);
+            bindings.Add(NativeThemeCapability.Buttons, values => button = true, () => button = false);
+            recovery.Bind(new object(), fixture.Root);
+            AssertEx.True(recovery.TryBegin(true, false));
+            bindings.Apply(fixture.Resolve(), message => { throw new Exception(message); });
+            recovery.Complete();
+            fixture.Populate();
+            fixture.Remove(NativeThemeResolver.ScrollPath);
+            AssertEx.True(recovery.TryBegin(true, true));
+            NativeThemeResolution partial = fixture.Resolve();
+            bindings.Apply(partial, message => { throw new Exception(message); });
+            recovery.Complete();
+            AssertEx.Equal(NativeThemeStatus.PartiallyThemed, partial.Status);
+            AssertEx.True(paper && button);
+            for (int index = 0; index < 100; index++) AssertEx.True(!recovery.TryBegin(true, false));
+            AssertEx.Equal(rng, random.Calls);
+            AssertEx.Equal(writes, saves);
+            AssertEx.Equal(revision, session.AssignmentRevision);
+            AssertEx.True(ReferenceEquals(assignment, session.Assignment) && ReferenceEquals(origin, session.PointBuyOrigin));
+            AssertEx.True(ReferenceEquals(selected, workflow.Saved.Selected));
+            RollUiSnapshot after = workflow.Snapshot(session);
+            AssertEx.SequenceEqual(before.AssignedValues, after.AssignedValues);
+            AssertEx.Equal(before.SavedPosition, after.SavedPosition);
+            AssertEx.Equal(before.SavedCount, after.SavedCount);
+            AssertEx.Equal(before.HistoryCount, after.HistoryCount);
+            AssertEx.Equal("4d[6]kh", after.Configuration.CustomExpression);
+            AssertEx.True(session.IsApplied && session.IsRollMode && panel.ExpandedSurfaceActive);
+            AssertEx.True(panel.SavedExpanded && panel.AdvancedExpanded);
         }
 
         private static CharacterRollWorkflow NewWorkflow(
