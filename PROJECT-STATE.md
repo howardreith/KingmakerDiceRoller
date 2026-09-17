@@ -82,6 +82,43 @@ the general qualification gate and its tests remain unchanged.
 - Release-authorized: **Yes** — the owner's 2026-09-17 instruction quoted
   above; official full release.
 - Testing-prerelease-authorized: **No** — the owner requested a full release.
+- Publicly released: **Yes** — [v0.1.9 official/latest](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.9),
+  published 2026-09-17 21:55:33 UTC; draft=false, prerelease=false, latest
+  verified. No new runtime evidence is implied by publication.
+
+## Verified v0.1.9 publication
+
+The mission branch `z/fix-button-caption-sizing` was fast-forward merged into
+`main` at `cd7052c5b24f9ca73a28f6e6e1305be57459640b` and pushed, together
+with the implementation branch. The existing publisher reran the complete
+offline qualification from that clean, fully pushed main (384/384 C# cases,
+30/30 Python cases, 13/13 release-gate cases, repository validation, 11
+respec contract groups, 30/30 native UI IL checks, zero Release
+warnings/errors) and created the draft release in one pass. After downloaded
+asset verification, the owner-authorized publication made v0.1.9
+official/latest.
+
+Annotated tag object `2939ce5a8f07928f76de93e84acc0310e4e33503` peels to the
+exact clean release commit `cd7052c` (= `origin/main` at publication). Release
+ID `391084409`. ZIP asset 121,940 bytes; checksum asset 97 bytes.
+
+- ZIP SHA-256: `9942c63d106a2b729ddda5d0f454c1d9623c4b6ae04231d74758e79d565d0e38`.
+- DLL SHA-256: `185f2b0e9d1e5de2dfe120bfebebeeec94df0b41b4b71107f5075c768a11954f`
+  — byte-identical to the qualified candidate from clean commit `d4a3416`.
+- `SHA256SUMS.txt` SHA-256: `13812313d03a96eea19d632a99af3c94c89a8d61a86054cd3aa0d0d9a331a551`
+  and carries the same ZIP digest.
+
+Downloaded draft and published bytes, all six package entries, GitHub's asset
+digests and the latest-release endpoint all match. The prior v0.1.8/v0.1.7
+releases and tags were not modified. Post-publication documentation may
+advance main without changing the tagged build or assets.
+
+Publication evidence in the default checkout, outside Git:
+`artifacts/release-0.1.9/draft-preparation.txt`, `download-draft/` and
+`download-published/`. No game installation, launch or saved-game access
+occurred at any point during this release; the rendered-verification blocker
+above remains the honest runtime record for this version, and the owner's
+cross-machine test is the acceptance lane.
 
 ## Historical 0.1.8 roll-panel input initialization repair
 
