@@ -38,15 +38,40 @@ Theme recovery failures also report the complete exception.
 
 - Implemented: **Yes** — input dependency binding order, phased complete
   exception reporting, bounded per-identity construction retry.
-- Source-qualified: status recorded in the mission handoff after the final
-  clean run (375/375 C# cases including five new budget cases, 30/30 Python).
-- Contract-qualified: **Yes** — existing native/respec contracts plus three new
-  native UI IL checks: the installed TMP `caretColor` getter semantics, the
-  candidate `CreateInput` binding order (negative-control verified to fail
-  against the official v0.1.7 DLL), and construction-budget wiring.
+- Source-qualified: **Yes** — 375/375 C# cases (including five new
+  construction-budget cases), 30/30 Python cases, 13/13 release-gate cases and
+  the repository source validation passed.
+- Contract-qualified: **Yes** — existing Kingmaker contracts, 11 respec groups
+  and 25/25 native UI IL checks, including three new checks: the installed TMP
+  `caretColor` getter semantics, the candidate `CreateInput` binding order
+  (negative-control verified to fail against the official v0.1.7 DLL), and
+  construction-budget wiring.
 - Build-qualified: **Yes** — Release build, zero warnings/errors.
-- Package-qualified / Installed / Runtime: recorded in the mission handoff;
-  publication of any kind is **not authorized** by this mission.
+- Package-qualified: **Yes** — clean committed tree
+  `6729f96168d90e0a07a9c29572634ae7c0e13396`; candidate ZIP
+  `artifacts/candidates/6729f96168d90e0a07a9c29572634ae7c0e13396/KingmakerDiceRoller-0.1.8.zip`
+  (SHA-256 `729fc6dbb64975c2dba0e43a838e6ecfd9b7abdd150406d33a42738af4185b2e`,
+  DLL SHA-256
+  `43ee3d93a239c6b503ad446c744ca92eaae977fc3522f0199311396ef9129267`) passed
+  the deterministic package validation.
+- Installed: **No** currently — the exact candidate was temporarily installed
+  through the guarded installer (after a `-WhatIf` dry run) and loaded in owned
+  PID 9796; the original mod/settings were then restored and hash-verified.
+- Temporary installation/startup: **PASS, limited** — UMM log records 0.1.8
+  loading, enabling and `Active` with the lab probe, with no Dice Roller
+  startup exceptions.
+- Focused runtime test: **NOT RUN** — the Windows session was disconnected
+  (`Disc`; console `Conn`), screen capture failed and Unity exposes no
+  accessibility elements; the mission forbids blind input, so no genuine
+  Skills entry, drawer opening, custom-expression roll, reopen/navigation or
+  adjacent roll/assign/Point Buy/INT check occurred. Evidence:
+  `artifacts/input-initialization/runtime-6729f96/` (ignored by Git).
+- Runtime-qualified: **No**.
+- Compatibility-qualified: **No** — mercenary/respec fixtures unavailable.
+- Human visual acceptance: **NOT RUN**.
+- Audio-qualified: **NOT RUN**.
+- Release-authorized: **No** — this mission does not authorize publication;
+  the candidate is a local handoff only.
 
 ## Historical 0.1.7 native-theme activation release
 

@@ -55,7 +55,14 @@ so the defect was introduced with the 0.1.7 native-theme fallback capture.
 - The lab-only runtime probe gained a guarded input-initialization fixture
   that reproduces the engine behavior live (unbound read throws; bound read
   is safe) and reports the attached production input's dependency bindings.
+- A guarded disposable runtime attempt installed the exact candidate through
+  the repository installer (after a `-WhatIf` dry run) and launched an owned
+  game process with the probe pinned to the candidate hash. The UMM log
+  records 0.1.8 loading, enabling and `Active` with no Dice Roller startup
+  exceptions. The Windows session was disconnected, so screen capture failed
+  and no visible input could be sent without bypassing the guard; the owned
+  process exited gracefully and the original installation, settings and all
+  85 inventoried saves were restored and hash-verified.
 - Actual in-game Skills-page appearance, drawer opening, custom-expression
   rolling, reopen/navigation behavior and adjacent roll/assign/Point Buy/INT
-  checks are recorded separately in the mission handoff; a passing build does
-  not claim them.
+  checks are **NOT RUN**; a passing build or startup does not claim them.
