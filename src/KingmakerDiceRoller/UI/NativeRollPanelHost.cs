@@ -49,6 +49,7 @@ namespace KingmakerDiceRoller.UI
         private NativeBookTheme theme;
         private Transform attachedThemeOwner;
         private readonly NativeThemeRecovery themeRecovery = new NativeThemeRecovery();
+        private readonly NativePanelConstructionBudget constructionBudget = new NativePanelConstructionBudget();
         private readonly NativeThemeBindings themeBindings = new NativeThemeBindings();
         private readonly Dictionary<NativeThemeCapability, string> themeDiagnostics = new Dictionary<NativeThemeCapability, string>();
         private readonly List<RectTransform> paperLayers = new List<RectTransform>();
@@ -137,9 +138,10 @@ namespace KingmakerDiceRoller.UI
 
         public void OnAbilityAllocatorFilled(object allocator)
         {
+            KingmakerContracts contracts = null;
             try
             {
-                KingmakerContracts contracts = contractsProvider();
+                contracts = contractsProvider();
                 bool eligible = contracts != null && IsEligibleAllocator(allocator, contracts);
                 NativePanelAttachmentAction action = lifecycle.Observe(eligible, allocator);
                 if (!eligible)
@@ -149,47 +151,65 @@ namespace KingmakerDiceRoller.UI
                     return;
                 }
                 EnsureAttached(allocator, contracts, true);
+            }
+            catch (Exception exception)
+            {
+                ReportAttachment("Dice Roller panel attachment failure (construction): " + exception);
+                Detach(contracts);
+                return;
+            }
+            try
+            {
                 Render(contracts);
             }
             catch (Exception exception)
             {
-                ReportAttachment("Dice Roller panel attachment failure: " + exception.GetType().Name + ": " + exception.Message);
-                Detach(contractsProvider());
+                ReportAttachment("Dice Roller panel attachment failure (rendering): " + exception);
+                Detach(contracts);
             }
         }
 
         public void Update()
         {
             KingmakerContracts contracts = contractsProvider();
+            object characterBuild;
+            bool active;
+            object phase;
+            object allocator;
+            if (contracts == null ||
+                !contracts.TryGetAbilityPhasePresentationContext(
+                    out characterBuild,
+                    out active,
+                    out phase,
+                    out allocator) ||
+                !active || allocator == null || !IsEligibleAllocator(allocator, contracts))
+            {
+                if (lifecycle.Observe(false, null) == NativePanelAttachmentAction.Detach)
+                {
+                    DestroyAttachedView(contracts);
+                }
+                EndOwnerIfSessionEnded();
+                return;
+            }
+
+            lifecycle.Observe(true, allocator);
             try
             {
-                object characterBuild;
-                bool active;
-                object phase;
-                object allocator;
-                if (contracts == null ||
-                    !contracts.TryGetAbilityPhasePresentationContext(
-                        out characterBuild,
-                        out active,
-                        out phase,
-                        out allocator) ||
-                    !active || allocator == null || !IsEligibleAllocator(allocator, contracts))
-                {
-                    if (lifecycle.Observe(false, null) == NativePanelAttachmentAction.Detach)
-                    {
-                        DestroyAttachedView(contracts);
-                    }
-                    EndOwnerIfSessionEnded();
-                    return;
-                }
-
-                lifecycle.Observe(true, allocator);
                 EnsureAttached(allocator, contracts);
+            }
+            catch (Exception exception)
+            {
+                ReportAttachment("Dice Roller panel lifecycle failure (construction): " + exception);
+                Detach(contracts);
+                return;
+            }
+            try
+            {
                 Render(contracts);
             }
             catch (Exception exception)
             {
-                ReportAttachment("Dice Roller panel lifecycle failure: " + exception.GetType().Name + ": " + exception.Message);
+                ReportAttachment("Dice Roller panel lifecycle failure (rendering): " + exception);
                 Detach(contracts);
             }
         }
@@ -306,6 +326,9 @@ namespace KingmakerDiceRoller.UI
             if (behaviour == null)
                 throw new InvalidOperationException("The exact native ability allocator is not a MonoBehaviour.");
 
+            constructionBudget.Observe(allocator, session.Controller);
+            if (constructionBudget.Exhausted) return;
+
             bool ownerChanged = panelState.ObserveOwner(session.Controller, session.StableOwner);
             Transform themeOwner = NativeBookTheme.FindOwner(behaviour);
             if (!ownerChanged && root != null && ReferenceEquals(attachedAllocator, allocator) &&
@@ -322,17 +345,26 @@ namespace KingmakerDiceRoller.UI
             if (nativeText == null || nativeFrame == null || nativeButton == null)
                 throw new InvalidOperationException("Native text, material, or button styling could not be resolved.");
 
-            // Construct the working fallback and all owned widgets exactly once.
-            // Styling can subsequently change without touching their listeners/text/state.
-            CreateOwnedView(behaviour, nativeText, nativeFrame, nativeButton);
-            attachedAllocator = allocator;
-            attachedThemeOwner = themeOwner;
-            themeRecovery.Bind(allocator, themeOwner);
-            RecoverTheme(behaviour, allocatorFilled);
-            panelState.AttachView();
-            ApplySurfaceState();
-            PositionAccessTab(allocator, contracts);
-            AttachmentCount++;
+            try
+            {
+                // Construct the working fallback and all owned widgets exactly once.
+                // Styling can subsequently change without touching their listeners/text/state.
+                CreateOwnedView(behaviour, nativeText, nativeFrame, nativeButton);
+                attachedAllocator = allocator;
+                attachedThemeOwner = themeOwner;
+                themeRecovery.Bind(allocator, themeOwner);
+                RecoverTheme(behaviour, allocatorFilled);
+                panelState.AttachView();
+                ApplySurfaceState();
+                PositionAccessTab(allocator, contracts);
+                constructionBudget.Clear();
+                AttachmentCount++;
+            }
+            catch (Exception)
+            {
+                constructionBudget.RecordFailure();
+                throw;
+            }
         }
 
         private void RecoverTheme(MonoBehaviour allocator, bool allocatorFilled)
@@ -364,7 +396,7 @@ namespace KingmakerDiceRoller.UI
             catch (Exception exception)
             {
                 // A cosmetic retry never enters panel/session teardown or mechanic recovery.
-                ReportAttachment("Native Dice Roller theme recovery failed; retaining owned controls: " + exception.Message);
+                ReportAttachment("Native Dice Roller theme recovery failed; retaining owned controls: " + exception);
             }
         }
 
@@ -1530,44 +1562,6 @@ namespace KingmakerDiceRoller.UI
             image.raycastTarget = true;
             var input = gameObject.AddComponent<TMP_InputField>();
             input.targetGraphic = image;
-            Material fallbackMaterial = image.material;
-            Color fallbackColor = image.color;
-            Color selectionColor = input.selectionColor;
-            Color caretColor = input.caretColor;
-            float blinkRate = input.caretBlinkRate;
-            bool customCaret = input.customCaretColor;
-            GameObject frame = NewUiObject("InputFrame", parent.gameObject.layer);
-            RectTransform frameRect = frame.GetComponent<RectTransform>();
-            frameRect.SetParent(gameObject.transform, false);
-            frameRect.anchorMin = Vector2.zero;
-            frameRect.anchorMax = Vector2.one;
-            frameRect.offsetMin = frameRect.offsetMax = Vector2.zero;
-            Image frameImage = frame.AddComponent<Image>();
-            frameImage.raycastTarget = false;
-            frameImage.enabled = false;
-            themeBindings.Add(NativeThemeCapability.Input,
-                donors =>
-                {
-                    NativeBookTheme.CopyImage((Image)donors[0], image);
-                    image.raycastTarget = true;
-                    NativeBookTheme.CopyImage((Image)donors[1], frameImage);
-                    frameImage.enabled = true;
-                    var nativeInput = (TMP_InputField)donors[2];
-                    input.selectionColor = nativeInput.selectionColor;
-                    input.caretBlinkRate = nativeInput.caretBlinkRate;
-                    input.caretColor = nativeInput.caretColor;
-                    input.customCaretColor = true;
-                },
-                () =>
-                {
-                    ResetFallbackImage(image, fallbackMaterial, fallbackColor);
-                    frameImage.sprite = null;
-                    frameImage.enabled = false;
-                    input.selectionColor = selectionColor;
-                    input.caretBlinkRate = blinkRate;
-                    input.caretColor = caretColor;
-                    input.customCaretColor = customCaret;
-                });
 
             GameObject viewportObject = NewUiObject("Viewport", gameObject.layer);
             RectTransform viewport = viewportObject.GetComponent<RectTransform>();
@@ -1609,11 +1603,54 @@ namespace KingmakerDiceRoller.UI
             placeholderRect.offsetMin = Vector2.zero;
             placeholderRect.offsetMax = Vector2.zero;
 
+            // Bind the dependencies first: the installed TMP_InputField.caretColor
+            // getter returns textComponent.color while customCaretColor is false,
+            // so reading it on a freshly added, unbound input throws.
             input.textViewport = viewport;
             input.textComponent = text;
             input.placeholder = placeholder;
             input.lineType = TMP_InputField.LineType.SingleLine;
             input.richText = false;
+
+            GameObject frame = NewUiObject("InputFrame", parent.gameObject.layer);
+            RectTransform frameRect = frame.GetComponent<RectTransform>();
+            frameRect.SetParent(gameObject.transform, false);
+            frameRect.anchorMin = Vector2.zero;
+            frameRect.anchorMax = Vector2.one;
+            frameRect.offsetMin = frameRect.offsetMax = Vector2.zero;
+            Image frameImage = frame.AddComponent<Image>();
+            frameImage.raycastTarget = false;
+            frameImage.enabled = false;
+            Material fallbackMaterial = image.material;
+            Color fallbackColor = image.color;
+            Color selectionColor = input.selectionColor;
+            Color caretColor = input.caretColor;
+            float blinkRate = input.caretBlinkRate;
+            bool customCaret = input.customCaretColor;
+            themeBindings.Add(NativeThemeCapability.Input,
+                donors =>
+                {
+                    NativeBookTheme.CopyImage((Image)donors[0], image);
+                    image.raycastTarget = true;
+                    NativeBookTheme.CopyImage((Image)donors[1], frameImage);
+                    frameImage.enabled = true;
+                    var nativeInput = (TMP_InputField)donors[2];
+                    input.selectionColor = nativeInput.selectionColor;
+                    input.caretBlinkRate = nativeInput.caretBlinkRate;
+                    input.caretColor = nativeInput.caretColor;
+                    input.customCaretColor = true;
+                },
+                () =>
+                {
+                    ResetFallbackImage(image, fallbackMaterial, fallbackColor);
+                    frameImage.sprite = null;
+                    frameImage.enabled = false;
+                    input.selectionColor = selectionColor;
+                    input.caretBlinkRate = blinkRate;
+                    input.caretColor = caretColor;
+                    input.customCaretColor = customCaret;
+                });
+
             var layout = gameObject.AddComponent<LayoutElement>();
             layout.preferredHeight = 32f;
             layout.minHeight = 32f;

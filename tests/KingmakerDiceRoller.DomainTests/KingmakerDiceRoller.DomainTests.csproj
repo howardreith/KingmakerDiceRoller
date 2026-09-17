@@ -21,9 +21,11 @@
   <ItemGroup>
     <Compile Include="AssertEx.cs" />
     <Compile Include="NativeThemeResolverTests.cs" />
+    <Compile Include="NativePanelConstructionBudgetTests.cs" />
     <Compile Include="..\..\src\KingmakerDiceRoller\UI\NativeUiDonorLookup.cs"><Link>UI\NativeUiDonorLookup.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\UI\NativeThemeResolver.cs"><Link>UI\NativeThemeResolver.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\UI\NativeThemeRecovery.cs"><Link>UI\NativeThemeRecovery.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\UI\NativePanelConstructionBudget.cs"><Link>UI\NativePanelConstructionBudget.cs</Link></Compile>
 
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RespecOwnership.cs"><Link>CharacterCreation\RespecOwnership.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RespecLifecycleService.cs"><Link>CharacterCreation\RespecLifecycleService.cs</Link></Compile>

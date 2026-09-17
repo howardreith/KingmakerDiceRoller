@@ -199,6 +199,16 @@ allocator, and attachment failure. The panel host emits at most sixteen distinct
 attachment diagnostics, not an error every frame. A hidden preferred racial
 anchor still uses the established bottom-center fallback.
 
+Panel attachment/lifecycle failures report the operation phase — `(construction)`
+or `(rendering)` — with the complete exception, including its stack trace and
+inner exceptions. Deduplication still bounds the log; silent frames do not mean
+construction stopped. A deterministic owned-view construction failure is
+additionally capped at three attempts per allocator/controller identity, so a
+permanently failing rebuild stops reconstructing the panel every frame. Any
+allocator or session-controller identity change reopens construction, and
+readiness transients that fail before view construction are never counted
+against that budget.
+
 At an accepted launch, both available Harmony APIs report owners and priorities
 for native respec, state construction, replay, and Commit. This is observation,
 not an ordering override. Installed patch attributes alone are not evidence of

@@ -133,7 +133,14 @@ public static class NativeThemeRuntimeProbe
         object panel = Member(host, "panelState");
         output.AppendLine("panel.expanded=" + Member(panel, "IsExpanded") + "; attachments=" + Member(host, "AttachmentCount"));
         var input = Member(host, "customInput") as TMP_InputField;
-        if (input != null) output.AppendLine("input.text=" + input.text + "; caret=" + Member(input, "caretPosition"));
+        if (input != null)
+        {
+            output.AppendLine("input.text=" + input.text + "; caret=" + Member(input, "caretPosition"));
+            // The 0.1.7 disappearance: production must bind these dependencies
+            // before reading caret fallback styling off the owned input.
+            output.AppendLine("input.bound=" + (input.textComponent != null) + "/" + (input.textViewport != null) + "/" + (input.placeholder != null) +
+                "; customCaret=" + input.customCaretColor + "; caretColor=" + input.caretColor + "; selection=" + input.selectionColor);
+        }
     }
     private static void DumpControls(StringBuilder output, GameObject root)
     {
@@ -297,6 +304,32 @@ public static class NativeThemeRuntimeProbe
             Check(!(bool)Call(recovery, "TryBegin", true, true), "repeated FillData stops at three total attempts", output);
             Call(bindings, "Clear");
             Check((int)Member(bindings, "Count") == 0, "owned bindings released on teardown", output);
+        }
+        // Engine regression for the 0.1.7 Roll Stats disappearance: exercise the
+        // production AddComponent/binding order on a briefly live owned object.
+        {
+            var activeRoot = new GameObject("KingmakerDiceRoller.InputProbe.Fixture", typeof(RectTransform));
+            try
+            {
+                activeRoot.AddComponent<Image>();
+                TMP_InputField freshInput = activeRoot.AddComponent<TMP_InputField>(); // Awake/OnEnable fire unbound, as in production.
+                Check(!freshInput.customCaretColor, "fresh installed TMP input uses text component caret color", output);
+                bool earlyReadThrew = false;
+                try { output.AppendLine("input.fixture_early_caret=" + freshInput.caretColor); }
+                catch (NullReferenceException) { earlyReadThrew = true; }
+                Check(earlyReadThrew, "unbound installed TMP input caretColor read throws NullReferenceException", output);
+                Transform inputViewport = Fixture.Add(activeRoot.transform, "Viewport");
+                TextMeshProUGUI inputText = inputViewport.gameObject.AddComponent<TextMeshProUGUI>();
+                TextMeshProUGUI inputPlaceholder = inputViewport.gameObject.AddComponent<TextMeshProUGUI>();
+                freshInput.textViewport = (RectTransform)inputViewport;
+                freshInput.textComponent = inputText;
+                freshInput.placeholder = inputPlaceholder;
+                Color boundCaret = freshInput.caretColor; // Production order: bind dependencies before reading caret styling.
+                Check(freshInput.textComponent == inputText && freshInput.textViewport == inputViewport && freshInput.placeholder == inputPlaceholder,
+                    "bound installed TMP input dependencies are exact and caretColor reads safely", output);
+                output.AppendLine("input.fixture_bound_caret=" + boundCaret);
+            }
+            finally { Object.DestroyImmediate(activeRoot); } // Probe-owned disposable object only.
         }
     }
 }

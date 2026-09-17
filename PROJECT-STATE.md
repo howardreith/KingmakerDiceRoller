@@ -1,6 +1,54 @@
 # Project state
 
-## Current 0.1.7 native-theme activation release
+## Current 0.1.8 roll-panel input initialization repair (candidate)
+
+Version `0.1.8`; branch `z/fix-roll-panel-input-initialization`, based on `main`
+at `54d0814` (post-v0.1.7 documentation). The released v0.1.7 made the entire
+Roll Stats surface disappear from character creation. `CreateInput` captured
+`TMP_InputField.caretColor` fallback styling immediately after
+`AddComponent<TMP_InputField>()`, before `textComponent` was assigned.
+
+Source inspection versus the installed runtime confirmed the cause: the
+installed `Assembly-CSharp-firstpass.dll` (`TMPro.TMP_InputField`, MVID
+`57f03756-55de-42f5-8bb3-e983306082b2`) implements `get_caretColor` as
+`customCaretColor ? m_CaretColor : textComponent.color`, and its constructor
+never stores `m_CustomCaretColor`, so a fresh component evaluates the
+`textComponent.color` branch against null and throws
+`NullReferenceException`. The failure escaped `CreatePanelContent` before
+`CreateAccessTab` could run, and the attachment/lifecycle catches detached the
+partially constructed view every frame — exactly the two deduplicated warnings
+in the reported log. The v0.1.6 code only ever wrote caret properties from a
+resolved donor, which is why the regression appeared with the 0.1.7
+fallback-capture work (`c06ef75`).
+
+The repair binds `textViewport`, `textComponent` and `placeholder` before any
+caret/selection fallback capture and before registering the input theme
+binding, preserving caret color, custom caret flag, selection color, blink
+rate, placeholder styling, custom-expression editing and theme recovery.
+Attachment/lifecycle failure reports now distinguish `(construction)` from
+`(rendering)` phases and include the complete exception with stack trace and
+inner exceptions while retaining the sixteen-message bounded deduplication.
+A deterministic owned-view construction failure is bounded to three attempts
+per allocator/controller identity (`NativePanelConstructionBudget`); any
+allocator or session-controller identity change reopens construction, and
+readiness transients that fail before view construction are not counted.
+Theme recovery failures also report the complete exception.
+
+## 0.1.8 qualification truth
+
+- Implemented: **Yes** — input dependency binding order, phased complete
+  exception reporting, bounded per-identity construction retry.
+- Source-qualified: status recorded in the mission handoff after the final
+  clean run (375/375 C# cases including five new budget cases, 30/30 Python).
+- Contract-qualified: **Yes** — existing native/respec contracts plus three new
+  native UI IL checks: the installed TMP `caretColor` getter semantics, the
+  candidate `CreateInput` binding order (negative-control verified to fail
+  against the official v0.1.7 DLL), and construction-budget wiring.
+- Build-qualified: **Yes** — Release build, zero warnings/errors.
+- Package-qualified / Installed / Runtime: recorded in the mission handoff;
+  publication of any kind is **not authorized** by this mission.
+
+## Historical 0.1.7 native-theme activation release
 
 Version `0.1.7`; branch `codex/native-theme-activation-repair`, based on
 `9b69751983a6bc80d1e73999d3fbba3e3e7f8927`. Historical `77d16ef` is an ancestor;

@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.1.8 - roll panel input initialization repair (candidate)
+
+- Bind the custom-expression input's viewport, text component and placeholder
+  before reading caret/selection fallback styling. The installed TextMesh Pro
+  `caretColor` getter dereferences `textComponent` while `customCaretColor` is
+  false, so the 0.1.7 early capture threw `NullReferenceException` and removed
+  the whole Roll Stats surface from character creation.
+- Report panel attachment/lifecycle failures with their operation phase and the
+  complete exception, including stack trace and inner exceptions, while keeping
+  the bounded sixteen-message deduplication.
+- Stop repeating a deterministic owned-view construction failure every frame
+  after three attempts for one allocator/controller identity. Allocator or
+  session-controller identity changes reopen construction; readiness
+  transients before view construction are never counted against the budget.
+- Add deterministic construction-budget cases, installed-TMP getter and
+  candidate `CreateInput` ordering IL checks (negative-control verified against
+  the official 0.1.7 DLL), and a guarded runtime input-initialization fixture
+  to the lab-only probe.
+- Preserve the native theme, caret behavior, placeholder styling, custom
+  expression editing, theme recovery, rolls/assignments/saved arrays, Point Buy
+  restoration, skill-counter synchronization and forward-navigation guards.
+
 ## 0.1.7 - native theme activation repair
 
 - Resolve the native action label's literal `Next/Complete text` child without

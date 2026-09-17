@@ -45,6 +45,39 @@ public static class NativeUiContractProbe
     }
 
     private static List<MethodBase> Calls(MethodBase method) { return Operands(method).OfType<MethodBase>().ToList(); }
+    private sealed class CallSite { internal int Offset; internal MethodBase Method; }
+    private static List<CallSite> OrderedCallSites(MethodBase method)
+    {
+        var result = new List<CallSite>();
+        byte[] bytes = method.GetMethodBody().GetILAsByteArray();
+        for (int offset = 0; offset < bytes.Length;)
+        {
+            short value = bytes[offset++];
+            if (value == 0xfe) value = (short)(0xfe00 | bytes[offset++]);
+            OpCode code = Codes[value];
+            int size;
+            switch (code.OperandType)
+            {
+                case OperandType.InlineNone: size = 0; break;
+                case OperandType.ShortInlineBrTarget:
+                case OperandType.ShortInlineI:
+                case OperandType.ShortInlineVar: size = 1; break;
+                case OperandType.InlineVar: size = 2; break;
+                case OperandType.InlineI8:
+                case OperandType.InlineR: size = 8; break;
+                case OperandType.InlineSwitch: size = 4 + 4 * BitConverter.ToInt32(bytes, offset); break;
+                default: size = 4; break;
+            }
+            if (code.OperandType == OperandType.InlineMethod)
+            {
+                MethodBase call = method.Module.ResolveMethod(BitConverter.ToInt32(bytes, offset),
+                    method.DeclaringType.GetGenericArguments(), method.IsGenericMethod ? method.GetGenericArguments() : null) as MethodBase;
+                if (call != null) result.Add(new CallSite { Offset = offset, Method = call });
+            }
+            offset += size;
+        }
+        return result;
+    }
     private static MethodInfo Method(Type type, string name, int parameters = -1)
     {
         return type.GetMethods(All).Single(m => m.Name == name && (parameters < 0 || m.GetParameters().Length == parameters));
@@ -128,6 +161,26 @@ public static class NativeUiContractProbe
         Check(results, (int)recovery.GetField("MaximumAttempts", All).GetRawConstantValue() == 3 &&
             Calls(Method(host, "DestroyAttachedView")).Any(m => m.DeclaringType == bindings && m.Name == "Clear"),
             "Three-attempt attachment budget and owned binding teardown are wired");
+        // The 0.1.7 Roll Stats disappearance: the installed TMP caretColor getter
+        // dereferences textComponent while customCaretColor is false, so the
+        // production input construction must bind its text dependency first.
+        Assembly firstpass = Assembly.LoadFrom(Path.Combine(managedDirectory, "Assembly-CSharp-firstpass.dll"));
+        Type tmpInput = firstpass.GetType("TMPro.TMP_InputField", true);
+        var caretGetterCalls = Calls(Method(tmpInput, "get_caretColor"));
+        Check(results, caretGetterCalls.Any(m => m.DeclaringType == tmpInput && m.Name == "get_customCaretColor") &&
+            caretGetterCalls.Any(m => m.DeclaringType == tmpInput && m.Name == "get_textComponent") &&
+            caretGetterCalls.Any(m => m.DeclaringType.Name == "Graphic" && m.Name == "get_color"),
+            "Installed TMP caretColor getter reads textComponent.color while customCaretColor is false");
+        var inputSites = OrderedCallSites(Method(host, "CreateInput"));
+        Check(results, inputSites.First(s => s.Method.Name == "set_textComponent").Offset <
+                       inputSites.First(s => s.Method.Name == "get_caretColor").Offset,
+            "Candidate CreateInput binds textComponent before its first caretColor read");
+        Type constructionBudget = candidate.GetType("KingmakerDiceRoller.UI.NativePanelConstructionBudget", true);
+        var ensureAttachedSites = OrderedCallSites(Method(host, "EnsureAttached"));
+        Check(results, (int)constructionBudget.GetField("MaximumFailures", All).GetRawConstantValue() == 3 &&
+            ensureAttachedSites.Any(s => s.Method.DeclaringType == constructionBudget && s.Method.Name == "Observe") &&
+            ensureAttachedSites.Any(s => s.Method.DeclaringType == constructionBudget && s.Method.Name == "RecordFailure"),
+            "Owned-view construction failures are counted against a bounded per-identity budget");
         return results.ToArray();
     }
 }
