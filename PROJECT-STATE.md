@@ -87,6 +87,48 @@ remain unchanged.
   above; official full release at the next version, published with the unrun
   interactive checks disclosed.
 - Testing-prerelease-authorized: **No** — the owner requested a real release.
+- Publicly released: **Yes** — [v0.1.8 official/latest](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.8),
+  published 2026-09-17 21:06:08 UTC; draft=false, prerelease=false, latest
+  verified. No new runtime evidence is implied by publication.
+
+## Verified v0.1.8 publication
+
+The mission branch `z/fix-roll-panel-input-initialization` was fast-forward
+merged into `main` at `f63a95eee3298d96fd35d20f2c45203dfe09eb45` and pushed,
+together with the implementation branch. The existing publisher reran the
+complete offline qualification from that clean, fully pushed main (375/375 C#
+cases, 30/30 Python cases, 13/13 release-gate cases, repository validation,
+11 respec contract groups, 25/25 native UI IL checks, zero Release
+warnings/errors) and prepared a draft release. A transient GitHub HTTP 500
+during the first ZIP upload was resolved by the publisher's idempotent
+draft-upload path; only one draft was ever created. After downloaded asset
+verification, the owner-authorized publication made v0.1.8 official/latest.
+
+Annotated tag object `abc73d37558a741c50ea8b85c0fab145ada7800d` peels to the
+exact clean release commit `f63a95e` (= `origin/main`). Release ID `391059843`.
+ZIP asset `571135224` (`KingmakerDiceRoller-0.1.8.zip`, 120,701 bytes); checksum
+asset `571135185` (`SHA256SUMS.txt`, 97 bytes).
+
+- ZIP SHA-256: `ab837f979144c79153bd4e04cbd005990e2c34e628a5f78fa4579e8277f1858f`.
+- DLL SHA-256: `43ee3d93a239c6b503ad446c744ca92eaae977fc3522f0199311396ef9129267`
+  — byte-identical to the review candidate that the guarded owned game process
+  loaded during the runtime attempt.
+- `SHA256SUMS.txt` SHA-256: `51bc7e903b7720d787022186af392ef8761d69503fc282f596f56083f61bae11`
+  and carries the same ZIP digest.
+
+Downloaded draft and published bytes, all six package entries, GitHub's asset
+digests and the latest-release endpoint all match. The ZIP differs from the
+review candidate ZIP only in its packaged README, which now describes the
+official publication and discloses the runtime blocker; the DLL is unchanged.
+The prior v0.1.7 assets and tag were not modified. Post-publication
+documentation may advance main without changing the tagged build or assets.
+
+Publication evidence in the default checkout, outside Git:
+`artifacts/release-0.1.8/draft-preparation.txt`,
+`draft-preparation-retry.txt`, `download-draft/` and `download-published/`.
+No game installation, launch or saved-game access occurred during
+publication; the guarded runtime attempt evidence above remains the only
+runtime record for this version.
 
 ## Historical 0.1.7 native-theme activation release
 
