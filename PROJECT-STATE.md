@@ -59,9 +59,22 @@ the general qualification gate and its tests remain unchanged.
   groups and 30/30 native UI IL checks, including five new caption-fit
   checks negative-control verified against the released v0.1.8 DLL.
 - Build-qualified: **Yes** — Release build, zero warnings/errors.
-- Package-qualified: recorded in the publication record below.
-- Runtime (agent-executed rendered caption verification): recorded in the
-  publication record below (guarded attempt or concrete blocker).
+- Package-qualified: **Yes** — clean committed tree
+  `d4a34164a2836619bd39fd364bb832f4f59f8aeb`; candidate ZIP
+  `artifacts/candidates/d4a34164a2836619bd39fd364bb832f4f59f8aeb/KingmakerDiceRoller-0.1.9.zip`
+  (SHA-256 `9942c63d106a2b729ddda5d0f454c1d9623c4b6ae04231d74758e79d565d0e38`,
+  DLL SHA-256
+  `185f2b0e9d1e5de2dfe120bfebebeeec94df0b41b4b71107f5075c768a11954f`) passed
+  the deterministic package validation.
+- Installed: **No** — no game installation or launch was performed for this
+  candidate; the interactive desktop remains disconnected (session `Disc`),
+  which blocks rendered caption verification without blind input
+  (`artifacts/button-fit/runtime-d4a3416/desktop-blocker.json`). A headless
+  startup would only re-exercise unchanged initialization and cannot reach
+  the Skills page where the sizing code runs.
+- Rendered caption verification (agent-executed): **NOT RUN** — the concrete
+  blocker above. The probe's live CAPTION reporting is ready for any future
+  guarded interactive session.
 - Runtime-qualified: **No** — not claimed by publication.
 - Compatibility-qualified: **No** — mercenary/respec fixtures unavailable.
 - Human visual acceptance: **Pending owner cross-machine test**.
