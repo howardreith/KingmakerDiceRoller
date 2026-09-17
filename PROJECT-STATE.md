@@ -1,6 +1,76 @@
 # Project state
 
-## Current 0.1.8 roll-panel input initialization repair
+## Current 0.1.9 button caption fit release
+
+Version `0.1.9`; implementation branch `z/fix-button-caption-sizing`, based
+on `main` at `01e73df` (post-v0.1.8 publication record). The owner tested
+v0.1.8 in play and supplied screenshots: the drawer appears and the
+native-themed aesthetic is much improved, but multiple button captions
+truncate with ellipses ("STO…", "PREVI…", "REC…", "DEL…", "DO…",
+"RETURN TO POINT B…") and the "Low-score rule" caption is cut.
+
+Source inspection confirmed the cause: `CreateButton` derived
+`LayoutElement.minWidth`/`preferredWidth` from fixed design constants
+(Store 62, Previous 88, Recall/Delete 70, Return 210, Up/Down 64, caption
+column 108) without consulting caption text metrics; labels use
+`TextOverflowModes.Ellipsis`; and `NativeBookTheme.CopyText` applies the
+native font/style/spacings after construction without recalculating width.
+
+Installed-assembly IL inspection verified the measurement basis:
+`TMP_Text.preferredWidth` computes unconstrained (large-margin) width through
+`CalculatePreferredValues`, which reads the live `m_characterSpacing`,
+`m_wordSpacing`, `m_fontStyle` and `m_fontSize`; with autosizing enabled it
+uses `fontSizeMax`, which the buttons pin to `BodyFontSize` (18). Style and
+text setters dirty the preferred cache through
+`TextMeshProUGUI.SetLayoutDirty`, so post-styling re-reads are accurate.
+
+The repair adds a shared caption-fit path: every textual button (including
+Close and Roll Stats) reserves
+`max(design minimum, measured caption + insets + safety)` in width and height
+through its existing `LayoutElement`, re-measured when `ButtonText`/`Body`
+capability styling is applied or restored (including delayed recovery) and
+when a disclosure caption's text actually changes — never per frame and never
+by recreating controls. Selector captions fit their full styled width;
+assignment Up/Down pairs share one unified fitted width; and in Compact
+layouts the Return-to-Point-Buy control reflows onto a spare row because the
+single point-actions row cannot hold the fitted captions (documented by a
+deterministic capacity test). The pure arithmetic lives in
+`ButtonCaptionFit`; Unity measurement stays in the panel host. The fit guards
+`label.font` before reading any TMP property, preserving the 0.1.8
+input-binding and bounded-construction behavior.
+
+On 2026-09-17 the owner instructed: "When you have made the fix, please go
+ahead and merge to the default branch and cut a new release. I will test it
+myself on another computer after the release is pushed. Thank you Z." This
+authorizes merging to `main`, pushing, tagging and publishing an official
+(not prerelease) `0.1.9`, with the rendered-verification status below
+disclosed honestly and the owner's cross-machine test as the acceptance
+lane. It does not convert NOT RUN lanes into passed lanes; publication uses
+the owner's instruction rather than asserting `-ConfirmRuntimeQualified`, and
+the general qualification gate and its tests remain unchanged.
+
+## 0.1.9 qualification truth
+
+- Implemented: **Yes** — measured caption-fit sizing with theme re-measure,
+  selector caption fit, Up/Down unification, Compact reflow.
+- Source-qualified: **Yes** — 384/384 C# cases (nine new caption-fit cases),
+  30/30 Python cases, 13/13 release-gate cases, repository validation.
+- Contract-qualified: **Yes** — existing Kingmaker contracts, 11 respec
+  groups and 30/30 native UI IL checks, including five new caption-fit
+  checks negative-control verified against the released v0.1.8 DLL.
+- Build-qualified: **Yes** — Release build, zero warnings/errors.
+- Package-qualified: recorded in the publication record below.
+- Runtime (agent-executed rendered caption verification): recorded in the
+  publication record below (guarded attempt or concrete blocker).
+- Runtime-qualified: **No** — not claimed by publication.
+- Compatibility-qualified: **No** — mercenary/respec fixtures unavailable.
+- Human visual acceptance: **Pending owner cross-machine test**.
+- Audio-qualified: **NOT RUN**.
+- Release-authorized: **Yes** — the owner's 2026-09-17 instruction quoted
+  above; official full release.
+- Testing-prerelease-authorized: **No** — the owner requested a full release.
+
+## Historical 0.1.8 roll-panel input initialization repair
 
 Version `0.1.8`; implementation branch `z/fix-roll-panel-input-initialization`,
 based on `main` at `54d0814` (post-v0.1.7 documentation). The released v0.1.7

@@ -181,6 +181,30 @@ public static class NativeUiContractProbe
             ensureAttachedSites.Any(s => s.Method.DeclaringType == constructionBudget && s.Method.Name == "Observe") &&
             ensureAttachedSites.Any(s => s.Method.DeclaringType == constructionBudget && s.Method.Name == "RecordFailure"),
             "Owned-view construction failures are counted against a bounded per-identity budget");
+        // Caption-fit sizing: the installed TMP preferred-width API is unconstrained
+        // and spacing-aware, and the candidate must measure before reserving width.
+        Type tmpText = firstpass.GetType("TMPro.TMP_Text", true);
+        MethodInfo preferredWidthGetter = tmpText.GetProperty("preferredWidth", All).GetGetMethod(true);
+        Check(results, preferredWidthGetter != null &&
+            Calls(Method(tmpText, "GetPreferredWidth", 0)).Any(m => m.Name == "CalculatePreferredValues"),
+            "Installed TMP preferred width computes through the styled preferred-values path");
+        Type captionFit = candidate.GetType("KingmakerDiceRoller.UI.ButtonCaptionFit", true);
+        MethodInfo fitCaption = host.GetMethods(All | BindingFlags.DeclaredOnly).Single(m => m.Name == "FitButtonCaption");
+        var fitSites = OrderedCallSites(fitCaption);
+        Check(results, fitSites.First(s => s.Method.Name == "get_font").Offset < fitSites.First(s => s.Method.Name == "get_preferredWidth").Offset &&
+            fitSites.Any(s => s.Method.Name == "set_minWidth"),
+            "Candidate caption fit guards the font before measuring and reserves LayoutElement width");
+        MethodInfo bindCaptionFit = host.GetMethods(All | BindingFlags.DeclaredOnly).Single(m => m.Name == "BindButtonCaptionFit");
+        var bindSites = OrderedCallSites(bindCaptionFit);
+        Check(results, Calls(Method(host, "CreateButton")).Any(m => m.Name == "BindButtonCaptionFit") &&
+            bindSites.Any(s => s.Method.Name == "Add") && Calls(bindCaptionFit).Any(m => m.Name == "FitButtonCaption"),
+            "Every created button re-fits its caption on ButtonText capability changes");
+        Check(results, Calls(Method(host, "CreateAssignmentRows")).Any(m => m.Name == "UnifyButtonWidths") &&
+            Calls(Method(host, "UnifyButtonWidths", 1)).Any(m => m.Name == "UnifyPair"),
+            "Assignment Up/Down pairs share one unified fitted width");
+        Check(results, Calls(Method(host, "ApplyResponsiveGeometry")).Any(m => m.Name == "ApplyPointActionsProfile") &&
+            Calls(Method(host, "ApplyPointActionsProfile", 1)).Any(m => m.Name == "SetParent"),
+            "Compact layouts reflow the Return control onto its spare row");
         return results.ToArray();
     }
 }

@@ -17,6 +17,10 @@ namespace KingmakerDiceRoller.UI
     {
         public const string OwnedPanelName = "KingmakerDiceRoller.NativeRollPanel";
 
+        // Label RectTransform insets inside a button; see CreateButton.
+        private const float CaptionHorizontalInset = 4f;
+        private const float CaptionVerticalInset = 2f;
+
         private static readonly AbilityScore[] Abilities =
         {
             AbilityScore.Strength,
@@ -69,6 +73,10 @@ namespace KingmakerDiceRoller.UI
         private GameObject savedDisclosure;
         private GameObject savedDetails;
         private GameObject bodyScrollbarObject;
+        private GameObject pointActionsRow;
+        private GameObject returnRow;
+        private LayoutElement accessTabLayout;
+        private float accessTabFittedWidth;
         private bool rendering;
         private RectTransform expandedSurfaceRect;
         private RectTransform bodyViewport;
@@ -78,6 +86,9 @@ namespace KingmakerDiceRoller.UI
         private RollPanelPresentationProfile? lastProfile;
         private bool? lastScrolling;
         private ResponsiveRollPanelLayoutResult lastLayoutResult;
+        private LayoutElement advancedDisclosureLayout;
+        private LayoutElement historyDisclosureLayout;
+        private LayoutElement savedDisclosureLayout;
         private float lastAvailableWidth = -1f;
         private float lastAvailableHeight = -1f;
         private float lastPreferredBodyHeight = -1f;
@@ -274,6 +285,13 @@ namespace KingmakerDiceRoller.UI
             savedDisclosure = null;
             savedDetails = null;
             bodyScrollbarObject = null;
+            pointActionsRow = null;
+            returnRow = null;
+            accessTabLayout = null;
+            accessTabFittedWidth = 0f;
+            advancedDisclosureLayout = null;
+            historyDisclosureLayout = null;
+            savedDisclosureLayout = null;
             expandedSurfaceRect = null;
             bodyViewport = null;
             bodyContent = null;
@@ -620,12 +638,17 @@ namespace KingmakerDiceRoller.UI
                 RollUiCommand.NextPreset,
                 out presetLabel);
 
-            GameObject pointActions = CreateHorizontal(content, layout.OrdinaryControlHeight);
-            rollButton = CreateButton(pointActions.transform, "Roll", nativeText, nativeButton, 120f,
+            pointActionsRow = CreateHorizontal(content, layout.OrdinaryControlHeight);
+            rollButton = CreateButton(pointActionsRow.transform, "Roll", nativeText, nativeButton, 120f,
                 () => Execute(RollUiCommand.Roll));
-            rerollButton = CreateButton(pointActions.transform, "Reroll", nativeText, nativeButton, 120f,
+            rerollButton = CreateButton(pointActionsRow.transform, "Reroll", nativeText, nativeButton, 120f,
                 () => Execute(RollUiCommand.Reroll));
-            returnButton = CreateButton(pointActions.transform, "Return to Point Buy", nativeText, nativeButton, 210f,
+            // Compact profiles cannot hold the whole point-actions row next to a
+            // fitted caption; the Return control reflows onto this spare row.
+            returnRow = CreateHorizontal(content, layout.OrdinaryControlHeight);
+            returnRow.name = "ReturnRow";
+            SetVisible(returnRow, false);
+            returnButton = CreateButton(pointActionsRow.transform, "Return to Point Buy", nativeText, nativeButton, 210f,
                 () => Execute(RollUiCommand.ReturnToPointBuy));
 
             Button advancedButton = CreateButton(
@@ -643,6 +666,7 @@ namespace KingmakerDiceRoller.UI
             advancedDisclosure.name = "AdvancedDisclosure";
             advancedDisclosure.GetComponent<LayoutElement>().preferredHeight = layout.OrdinaryControlHeight;
             advancedDisclosure.GetComponent<LayoutElement>().minHeight = layout.OrdinaryControlHeight;
+            advancedDisclosureLayout = advancedDisclosure.GetComponent<LayoutElement>();
             advancedLabel = advancedButton.GetComponentInChildren<TextMeshProUGUI>();
 
             advancedContent = CreateVertical("AdvancedContent", content);
@@ -755,7 +779,7 @@ namespace KingmakerDiceRoller.UI
         {
             GameObject section = CreateHorizontal(parent, layout.OrdinaryControlHeight);
             section.name = caption.Replace(" ", string.Empty);
-            CreateLabel(
+            TextMeshProUGUI captionLabel = CreateLabel(
                 section.transform,
                 caption,
                 nativeText,
@@ -765,6 +789,9 @@ namespace KingmakerDiceRoller.UI
                 108f,
                 BodyText,
                 true);
+            // Captions such as "Low-score rule" reserve their full styled width
+            // instead of ellipsizing inside the design column.
+            BindLabelCaptionFit(captionLabel, 108f);
             CreateButton(section.transform, "<", nativeText, nativeButton, 42f, () => Execute(previous));
             valueLabel = CreateLabel(
                 section.transform,
@@ -820,6 +847,8 @@ namespace KingmakerDiceRoller.UI
                     nativeButton,
                     layout.AssignmentButtonWidth,
                     () => Execute(RollUiCommand.MoveDown, ability));
+                // Both controls of a pair share one fitted width so the six rows stay aligned.
+                UnifyButtonWidths(up, down);
                 assignmentRows.Add(new AssignmentWidgets(row, value, up, down));
             }
         }
@@ -844,6 +873,7 @@ namespace KingmakerDiceRoller.UI
             historyDisclosure.name = "HistoryDisclosure";
             historyDisclosure.GetComponent<LayoutElement>().preferredHeight = layout.OrdinaryControlHeight;
             historyDisclosure.GetComponent<LayoutElement>().minHeight = layout.OrdinaryControlHeight;
+            historyDisclosureLayout = historyDisclosure.GetComponent<LayoutElement>();
             historyDisclosureLabel = disclosure.GetComponentInChildren<TextMeshProUGUI>();
 
             historyDetails = CreateVertical("HistoryDetails", parent);
@@ -886,6 +916,7 @@ namespace KingmakerDiceRoller.UI
             savedDisclosure.name = "SavedDisclosure";
             savedDisclosure.GetComponent<LayoutElement>().preferredHeight = layout.OrdinaryControlHeight;
             savedDisclosure.GetComponent<LayoutElement>().minHeight = layout.OrdinaryControlHeight;
+            savedDisclosureLayout = savedDisclosure.GetComponent<LayoutElement>();
             savedDisclosureLabel = disclosure.GetComponentInChildren<TextMeshProUGUI>();
 
             savedDetails = CreateVertical("SavedDetails", parent);
@@ -994,9 +1025,13 @@ namespace KingmakerDiceRoller.UI
                 layout.AccessTabHeight);
             accessTab = button.gameObject;
             accessTab.name = "CollapsedAccessTab";
-            RectTransform rect = accessTab.GetComponent<RectTransform>();
-            rect.sizeDelta = new Vector2(layout.AccessTabWidth, layout.AccessTabHeight);
             LayoutElement element = accessTab.GetComponent<LayoutElement>();
+            accessTabLayout = element;
+            // The tab is positioned by rect, not by a layout group; keep the rect
+            // and the placement input aligned with the caption-fitted width.
+            accessTabFittedWidth = element.minWidth;
+            RectTransform rect = accessTab.GetComponent<RectTransform>();
+            rect.sizeDelta = new Vector2(accessTabFittedWidth, layout.AccessTabHeight);
             element.preferredHeight = layout.AccessTabHeight;
             element.minHeight = layout.AccessTabHeight;
         }
@@ -1006,6 +1041,14 @@ namespace KingmakerDiceRoller.UI
             RectTransform tabRect = accessTab == null ? null : accessTab.GetComponent<RectTransform>();
             RectTransform rootRect = root == null ? null : root.GetComponent<RectTransform>();
             if (tabRect == null || rootRect == null || allocator == null || contracts == null) return;
+            if (accessTabLayout != null && accessTabFittedWidth > 0f &&
+                Mathf.Abs(accessTabLayout.minWidth - accessTabFittedWidth) > 0.01f)
+            {
+                // A later theme refit changed the fitted caption width.
+                accessTabFittedWidth = accessTabLayout.minWidth;
+                tabRect.sizeDelta = new Vector2(accessTabFittedWidth, layout.AccessTabHeight);
+            }
+            float tabWidth = accessTabFittedWidth > 0f ? accessTabFittedWidth : layout.AccessTabWidth;
 
             GameObject raceBonus = contracts.AbilityAllocatorRaceBonusContainerField.GetValue(allocator) as GameObject;
             RectTransform raceRect = raceBonus == null ? null : raceBonus.GetComponent<RectTransform>();
@@ -1026,7 +1069,7 @@ namespace KingmakerDiceRoller.UI
                 raceBonus != null && raceBonus.activeInHierarchy,
                 frameBounds,
                 allocatorBounds,
-                layout.AccessTabWidth,
+                tabWidth,
                 layout.AccessTabHeight,
                 layout.SafeLeftInset,
                 layout.SafeRightInset,
@@ -1131,7 +1174,7 @@ namespace KingmakerDiceRoller.UI
             SetInteractable(minimumUp, model.MinimumEnabled);
             SetVisible(advancedDisclosure, model.AdvancedVisible);
             SetVisible(advancedContent, model.AdvancedExpanded);
-            advancedLabel.text = model.AdvancedLabel;
+            SetDisclosureCaption(advancedLabel, advancedDisclosureLayout, model.AdvancedLabel);
             SetVisible(minimumSection, model.MinimumVisible);
             SetVisible(customSection, model.CustomVisible);
             if (customInput.text != model.CustomExpression) customInput.text = model.CustomExpression;
@@ -1139,6 +1182,11 @@ namespace KingmakerDiceRoller.UI
             SetVisible(rollButton.gameObject, model.RollVisible);
             SetVisible(rerollButton.gameObject, model.RerollVisible);
             SetVisible(returnButton.gameObject, model.ReturnToPointBuyVisible);
+            if (returnRow != null && returnButton.transform.parent == returnRow.transform)
+            {
+                // In the reflowed compact layout the spare row tracks its control.
+                SetVisible(returnRow, model.ReturnToPointBuyVisible);
+            }
             SetInteractable(rollButton, model.CanRoll);
             SetInteractable(rerollButton, model.CanReroll);
             SetInteractable(returnButton, model.CanReturnToPointBuy);
@@ -1159,13 +1207,13 @@ namespace KingmakerDiceRoller.UI
             SetVisible(summarySection, model.SummaryVisible);
             summaryLabel.text = model.Summary;
             SetVisible(historyDisclosure, model.HistoryDisclosureVisible);
-            historyDisclosureLabel.text = model.HistoryDisclosureLabel;
+            SetDisclosureCaption(historyDisclosureLabel, historyDisclosureLayout, model.HistoryDisclosureLabel);
             SetVisible(historyDetails, model.HistoryDetailsVisible);
             historyLabel.text = "History   " + model.History;
             SetInteractable(useHistoryButton, model.CanUseHistory);
 
             SetVisible(savedDisclosure, model.SavedDisclosureVisible);
-            savedDisclosureLabel.text = model.SavedDisclosureLabel;
+            SetDisclosureCaption(savedDisclosureLabel, savedDisclosureLayout, model.SavedDisclosureLabel);
             SetVisible(savedDetails, model.SavedDetailsVisible);
             savedLabel.text = "Saved   " + model.Saved;
             SetInteractable(storeButton, model.CanStore);
@@ -1250,8 +1298,28 @@ namespace KingmakerDiceRoller.UI
             ReportResponsiveLayout(resolved, preferredBodyHeight, availableWidth, availableHeight);
         }
 
+        // Compact content width cannot hold Roll, Reroll and a fitted
+        // "Return to Point Buy" caption in one row; the Return control moves
+        // to its spare row there while Wide keeps the single original row.
+        private void ApplyPointActionsProfile(RollPanelPresentationProfile profile)
+        {
+            if (returnButton == null || pointActionsRow == null || returnRow == null) return;
+            Transform target = profile == RollPanelPresentationProfile.Compact
+                ? returnRow.transform
+                : pointActionsRow.transform;
+            if (returnButton.transform.parent != target)
+            {
+                returnButton.transform.SetParent(target, false);
+                // Row structure changed; force a body-height re-measure.
+                lastLayoutModelKey = null;
+            }
+            SetVisible(returnRow,
+                profile == RollPanelPresentationProfile.Compact && returnButton.gameObject.activeSelf);
+        }
+
         private void ApplyResponsiveGeometry(ResponsiveRollPanelLayoutResult result)
         {
+            ApplyPointActionsProfile(result.Profile);
             if (expandedSurfaceRect != null)
             {
                 expandedSurfaceRect.anchoredPosition = new Vector2(
@@ -1543,7 +1611,100 @@ namespace KingmakerDiceRoller.UI
             labelRect.anchorMax = Vector2.one;
             labelRect.offsetMin = new Vector2(4f, 2f);
             labelRect.offsetMax = new Vector2(-4f, -2f);
+            BindButtonCaptionFit(button, label, width, resolvedHeight);
             return button;
+        }
+
+        // preferredWidth/preferredHeight are unconstrained and computed from the
+        // label's live font, style and spacings, so the fit adapts to whichever
+        // styling is active without measuring truncated rendered text.
+        private static float MeasuredCaptionExtent(float extent)
+        {
+            return float.IsNaN(extent) || float.IsInfinity(extent) ? 0f : Mathf.Max(0f, extent);
+        }
+
+        private static void FitButtonCaption(Button button, TextMeshProUGUI label, float designWidth, float designHeight)
+        {
+            if (button == null || label == null || label.font == null) return;
+            LayoutElement element = button.GetComponent<LayoutElement>();
+            if (element == null) return;
+            float width = ButtonCaptionFit.ResolveExtent(
+                designWidth,
+                ButtonCaptionFit.RequiredWidth(MeasuredCaptionExtent(label.preferredWidth), CaptionHorizontalInset));
+            float height = ButtonCaptionFit.ResolveExtent(
+                designHeight,
+                ButtonCaptionFit.RequiredHeight(MeasuredCaptionExtent(label.preferredHeight), CaptionVerticalInset));
+            if (designWidth > 0f) element.preferredWidth = width;
+            element.minWidth = width;
+            element.preferredHeight = height;
+            element.minHeight = height;
+        }
+
+        private static float RequiredButtonWidth(TextMeshProUGUI label)
+        {
+            if (label == null || label.font == null) return 0f;
+            return ButtonCaptionFit.RequiredWidth(MeasuredCaptionExtent(label.preferredWidth), CaptionHorizontalInset);
+        }
+
+        // Keeps a paired control set (assignment Up/Down) at one shared width so
+        // rows stay aligned while both captions fit.
+        private static void UnifyButtonWidths(params Button[] buttons)
+        {
+            if (buttons == null || buttons.Length == 0) return;
+            float unified = 0f;
+            foreach (Button button in buttons)
+                unified = ButtonCaptionFit.UnifyPair(unified, RequiredButtonWidth(button.GetComponentInChildren<TextMeshProUGUI>()));
+            foreach (Button button in buttons)
+            {
+                LayoutElement element = button == null ? null : button.GetComponent<LayoutElement>();
+                if (element == null) continue;
+                float width = ButtonCaptionFit.ResolveExtent(element.preferredWidth, unified);
+                element.preferredWidth = width;
+                element.minWidth = width;
+            }
+        }
+
+        private void BindButtonCaptionFit(Button button, TextMeshProUGUI label, float designWidth, float designHeight)
+        {
+            // Styled text metrics change with theme application and fallback
+            // restoration; re-fit on those capability changes and once now.
+            themeBindings.Add(NativeThemeCapability.ButtonText,
+                donors => FitButtonCaption(button, label, designWidth, designHeight),
+                () => FitButtonCaption(button, label, designWidth, designHeight));
+            FitButtonCaption(button, label, designWidth, designHeight);
+        }
+
+        private static void FitLabelCaptionWidth(TextMeshProUGUI label, float designMinimum)
+        {
+            if (label == null || label.font == null) return;
+            LayoutElement element = label.GetComponent<LayoutElement>();
+            if (element == null) return;
+            float width = ButtonCaptionFit.ResolveExtent(
+                designMinimum,
+                ButtonCaptionFit.RequiredWidth(MeasuredCaptionExtent(label.preferredWidth), 0f));
+            element.preferredWidth = width;
+            element.minWidth = width;
+        }
+
+        private void BindLabelCaptionFit(TextMeshProUGUI label, float designMinimum)
+        {
+            themeBindings.Add(NativeThemeCapability.Body,
+                donors => FitLabelCaptionWidth(label, designMinimum),
+                () => FitLabelCaptionWidth(label, designMinimum));
+            FitLabelCaptionWidth(label, designMinimum);
+        }
+
+        private void SetDisclosureCaption(TextMeshProUGUI label, LayoutElement element, string text)
+        {
+            string value = text ?? string.Empty;
+            if (label.text == value) return;
+            label.text = value;
+            // Measure only when the caption changed; counts grow, so keeping the
+            // widest seen minimum avoids per-frame measurement and layout jitter.
+            if (element != null && label.font != null)
+                element.minWidth = ButtonCaptionFit.UnifyPair(
+                    element.minWidth,
+                    ButtonCaptionFit.RequiredWidth(MeasuredCaptionExtent(label.preferredWidth), 0f));
         }
 
         private TMP_InputField CreateInput(

@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.1.9 - button caption fit
+
+- Size every textual owned button from its actual styled caption. The
+  unconstrained TextMesh Pro `preferredWidth`/`preferredHeight` of the label —
+  which the installed assembly computes from the live font, style, character
+  and word spacing — now drives the button's reserved `LayoutElement` width
+  and height, so captions such as Store, Previous, Recall, Delete, Down and
+  Return to Point Buy no longer ellipsize.
+- Re-measure captions when native theme styling is applied or fallback is
+  restored, including delayed recovery, through the existing capability
+  bindings; update dynamic disclosure captions (Roll Options, History, Saved)
+  only when their text changes, never per frame.
+- Fit the "Low-score rule" (and every selector) caption to its full styled
+  width instead of a fixed 108-unit column, while keeping the selected rule
+  and navigation arrows their existing space.
+- Keep the six assignment rows aligned by giving each Up/Down pair one shared
+  unified fitted width, and reflow the Return-to-Point-Buy control onto a
+  spare row in Compact layouts where the single point-actions row cannot hold
+  the fitted captions.
+- Preserve the native button artwork, typography, hover/pressed/disabled
+  states, click routing, the 0.1.8 input initialization order and bounded
+  construction retry. Add deterministic caption-fit policy tests, five native
+  UI IL checks (negative-control verified against the released 0.1.8 DLL) and
+  live caption-fit probe reporting.
+
 ## 0.1.8 - roll panel input initialization repair (candidate)
 
 - Bind the custom-expression input's viewport, text component and placeholder

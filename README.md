@@ -1,26 +1,20 @@
 # Kingmaker Dice Roller
 
-**Release 0.1.8 — roll panel input initialization repair.** This fixes the
-regression that made the entire Roll Stats interface disappear from character
-creation in 0.1.7. The custom-expression input read caret fallback styling
-before its text component was bound, and the installed TextMesh Pro
-`caretColor` getter dereferences that component, so panel construction failed
-before the access tab existed. The input is now fully bound first; panel
-failures are reported with complete exceptions and per phase; a deterministic
-construction failure stops rebuilding every frame. The native theme, caret
-behavior, custom-expression editing, rolls, assignments, saved arrays, Point
-Buy restoration, skill-counter synchronization and forward guards are
-unchanged.
+**Release 0.1.9 — button caption fit.** This repairs the truncated button
+captions reported in play: Store, Previous, Recall, Delete, Down, Return to
+Point Buy and the "Low-score rule" caption now reserve the full width of
+their actual styled text, measured through the installed TextMesh Pro
+preferred-width API and re-measured when the native theme applies or falls
+back. Assignment Up/Down pairs keep one aligned width, and Compact layouts
+reflow the Return control onto its own row. The native theme, artwork,
+typography, click routing and all rolling behavior are unchanged, and the
+0.1.8 input-initialization repair is preserved.
 
-Published as an official release at the owner's direction. The guarded game
-attempt loaded this exact build successfully (enabled and active with no
-startup exceptions), but rendered interaction and audio checks remain
-**NOT RUN**: a disconnected Windows desktop blocked input before character
-creation, and the owner will test in play. Source/build qualification is
-separate from runtime acceptance. See
-[release notes](docs/RELEASE-NOTES-0.1.8.md), the
-[project state](PROJECT-STATE.md) and
-[native style reference](docs/NATIVE-UI-STYLE.md).
+Published as an official release at the owner's direction; the owner tests
+in play on another computer. Rendered caption verification by the
+development agent is recorded in the
+[release notes](docs/RELEASE-NOTES-0.1.9.md) and
+[project state](PROJECT-STATE.md); a passing build does not claim it.
 
 The release includes the existing skills-page integration: the native red
 skill-points badge and phase-completion state refresh after rolled-assignment

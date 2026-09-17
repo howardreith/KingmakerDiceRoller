@@ -153,6 +153,28 @@ public static class NativeThemeRuntimeProbe
                 "|active=" + button.gameObject.activeInHierarchy + "|interactable=" + button.interactable +
                 "|sprite=" + (image == null || image.overrideSprite == null ? "<none>" : image.overrideSprite.name) +
                 "|runtimeListeners=" + (listeners == null ? -1 : listeners.Count));
+            // Live caption-fit evidence: an owned button must reserve at least the
+            // unconstrained styled width of its caption, or TMP ellipsizes it.
+            TextMeshProUGUI caption = button.GetComponentInChildren<TextMeshProUGUI>(true);
+            RectTransform buttonRect = button.transform as RectTransform;
+            if (caption != null && caption.font != null && buttonRect != null)
+            {
+                output.AppendLine("CAPTION|" + PathOf(button.transform, root.transform) +
+                    "|text=" + caption.text.Replace("\n", " ") +
+                    string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                        "|preferredW={0:F1}|renderedW={1:F1}|buttonW={2:F1}|buttonMinW={3:F1}",
+                        caption.preferredWidth, caption.renderedWidth, buttonRect.rect.width,
+                        button.GetComponent<LayoutElement>() == null ? -1f : button.GetComponent<LayoutElement>().minWidth));
+            }
+        }
+        foreach (TextMeshProUGUI selectorCaption in root.GetComponentsInChildren<TextMeshProUGUI>(true))
+        {
+            if (selectorCaption.name != "Label" || selectorCaption.text != "Low-score rule") continue;
+            output.AppendLine("CAPTION|" + PathOf(selectorCaption.transform, root.transform) +
+                "|text=" + selectorCaption.text +
+                string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                    "|preferredW={0:F1}|renderedW={1:F1}",
+                    selectorCaption.preferredWidth, selectorCaption.renderedWidth));
         }
         foreach (TextMeshProUGUI text in root.GetComponentsInChildren<TextMeshProUGUI>(true))
             output.AppendLine("TEXT|" + PathOf(text.transform, root.transform) + "|" + Bounds(text.rectTransform) + "|" + text.text.Replace("\n", " ") +

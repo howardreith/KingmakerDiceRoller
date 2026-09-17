@@ -209,6 +209,17 @@ allocator or session-controller identity change reopens construction, and
 readiness transients that fail before view construction are never counted
 against that budget.
 
+## Caption-fit sizing
+
+Owned button widths and heights are reserved from the caption's unconstrained
+styled TextMesh Pro preferred extents (live font, style, character/word
+spacing) plus the label insets and a small safety margin, never below the
+design minimum. The measurement reruns when native theme styling is applied
+or restored and when a disclosure caption's text changes; it never runs per
+frame and never recreates controls. Assignment Up/Down pairs share one
+unified fitted width, and the probe reports each button's preferred versus
+reserved width for live verification.
+
 At an accepted launch, both available Harmony APIs report owners and priorities
 for native respec, state construction, replay, and Commit. This is observation,
 not an ordering override. Installed patch attributes alone are not evidence of
