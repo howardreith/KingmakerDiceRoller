@@ -1,12 +1,13 @@
 # Project state
 
-## Current 0.1.8 roll-panel input initialization repair (candidate)
+## Current 0.1.8 roll-panel input initialization repair
 
-Version `0.1.8`; branch `z/fix-roll-panel-input-initialization`, based on `main`
-at `54d0814` (post-v0.1.7 documentation). The released v0.1.7 made the entire
-Roll Stats surface disappear from character creation. `CreateInput` captured
-`TMP_InputField.caretColor` fallback styling immediately after
-`AddComponent<TMP_InputField>()`, before `textComponent` was assigned.
+Version `0.1.8`; implementation branch `z/fix-roll-panel-input-initialization`,
+based on `main` at `54d0814` (post-v0.1.7 documentation). The released v0.1.7
+made the entire Roll Stats surface disappear from character creation.
+`CreateInput` captured `TMP_InputField.caretColor` fallback styling
+immediately after `AddComponent<TMP_InputField>()`, before `textComponent`
+was assigned.
 
 Source inspection versus the installed runtime confirmed the cause: the
 installed `Assembly-CSharp-firstpass.dll` (`TMPro.TMP_InputField`, MVID
@@ -33,6 +34,17 @@ per allocator/controller identity (`NativePanelConstructionBudget`); any
 allocator or session-controller identity change reopens construction, and
 readiness transients that fail before view construction are not counted.
 Theme recovery failures also report the complete exception.
+
+On 2026-09-17, after the candidate handoff, the owner instructed: "Could you
+go ahead and make this a real release? Go ahead and merge to master and do a
+new full release increasing the number by 1. I will test it when I can,
+probably tonight. Thank you." This explicitly authorizes merging to the
+default branch and publishing an official full release at `0.1.8`, with the
+unrun interactive checks disclosed and the owner performing in-play
+acceptance. It does not convert the NOT RUN lanes below into passed lanes;
+official publication again uses the owner's instruction rather than asserting
+`-ConfirmRuntimeQualified`, and the general qualification gate and its tests
+remain unchanged.
 
 ## 0.1.8 qualification truth
 
@@ -68,10 +80,13 @@ Theme recovery failures also report the complete exception.
   `artifacts/input-initialization/runtime-6729f96/` (ignored by Git).
 - Runtime-qualified: **No**.
 - Compatibility-qualified: **No** — mercenary/respec fixtures unavailable.
-- Human visual acceptance: **NOT RUN**.
+- Human visual acceptance: **Pending owner in-play test** — the owner stated
+  they will test this release, probably tonight; no separate record exists yet.
 - Audio-qualified: **NOT RUN**.
-- Release-authorized: **No** — this mission does not authorize publication;
-  the candidate is a local handoff only.
+- Release-authorized: **Yes** — the owner's 2026-09-17 instruction quoted
+  above; official full release at the next version, published with the unrun
+  interactive checks disclosed.
+- Testing-prerelease-authorized: **No** — the owner requested a real release.
 
 ## Historical 0.1.7 native-theme activation release
 

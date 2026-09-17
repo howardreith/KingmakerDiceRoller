@@ -1,17 +1,25 @@
 # Kingmaker Dice Roller
 
-**Release 0.1.7 — native theme activation repair.** This fixes the literal-name
-donor lookup that prevented the 0.1.6 reskin from activating, retains independent
-valid styling during partial fallback, and permits bounded recovery without
-rebuilding the working roll session. The textured paper, gray framed buttons,
-typography and ordinary click route retain their existing design.
+**Release 0.1.8 — roll panel input initialization repair.** This fixes the
+regression that made the entire Roll Stats interface disappear from character
+creation in 0.1.7. The custom-expression input read caret fallback styling
+before its text component was bound, and the installed TextMesh Pro
+`caretColor` getter dereferences that component, so panel construction failed
+before the access tab existed. The input is now fully bound first; panel
+failures are reported with complete exceptions and per phase; a deterministic
+construction failure stops rebuilding every frame. The native theme, caret
+behavior, custom-expression editing, rolls, assignments, saved arrays, Point
+Buy restoration, skill-counter synchronization and forward guards are
+unchanged.
 
-Published as an official release at the owner's direction. Native themed-path,
-rendered interaction and audio checks remain **NOT RUN**: the guarded game
-attempt loaded successfully, but a disconnected Windows desktop blocked input
-before character creation. Source/build qualification is separate from runtime
-acceptance. See [release notes](docs/RELEASE-NOTES-0.1.7.md), the
-[repair handoff](CODEX-NATIVE-THEME-ACTIVATION-STATE.md) and
+Published as an official release at the owner's direction. The guarded game
+attempt loaded this exact build successfully (enabled and active with no
+startup exceptions), but rendered interaction and audio checks remain
+**NOT RUN**: a disconnected Windows desktop blocked input before character
+creation, and the owner will test in play. Source/build qualification is
+separate from runtime acceptance. See
+[release notes](docs/RELEASE-NOTES-0.1.8.md), the
+[project state](PROJECT-STATE.md) and
 [native style reference](docs/NATIVE-UI-STYLE.md).
 
 The release includes the existing skills-page integration: the native red
