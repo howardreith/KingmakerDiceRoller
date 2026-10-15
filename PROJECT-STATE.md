@@ -1,6 +1,76 @@
 # Project state
 
-## Current 0.1.9 button caption fit release
+## Current 0.1.10 Mr. Bard branding release
+
+Version `0.1.10`; branch `codex/mr-bard-branding`, based on `main` at
+`f185603` (post-v0.1.9 publication record). The owner moved the public
+branding to the modding identity **Mr. Bard** before Nexus Mods publication,
+without changing technical identity or behavior, and on 2026-10-15 authorized
+merging, pushing, tagging and publishing 0.1.10 as a stable GitHub release
+without an additional in-game test.
+
+- UMM `DisplayName` **Mr. Bard's Kingmaker Roll For Stats UI** and `Author`
+  **Mr. Bard**; `ProductMetadata.DisplayName` drives the UMM settings-panel
+  title; assembly title/product carry the public name and the assembly company
+  is **Mr. Bard**. Two UMM-panel status/warning strings no longer call the mod
+  "Dice Roller"; log lines keep the technical name.
+- Unchanged: UMM ID `KingmakerDiceRoller`, `KingmakerDiceRoller.dll`,
+  `KingmakerDiceRoller.Main.Load`, namespaces/classes, Harmony ID
+  `howardreith.kingmakerdiceroller`, ZIP folder and six-file allowlist,
+  `Settings.xml` fields and saved-array schema 2, all patches and roll logic.
+  LICENSE, THIRD-PARTY-NOTICES and the upstream MIT text are unchanged; the
+  assembly copyright keeps its holder and year, with only the mis-encoded
+  copyright sign repaired.
+- The version advances to `0.1.10` so changed bytes never reuse `0.1.9`.
+  Persistence carries no product version (only saved-array schema 2), so the
+  bump has no settings consequence.
+- The guarded publisher gained `-ConfirmOwnerAuthorizedPreRuntimeRelease`: an
+  explicit stable-release disposition for owner approval before runtime
+  testing, separate from `-ConfirmRuntimeQualified`. It never records runtime
+  evidence, and its generated notes say the release is not runtime-qualified.
+
+## Qualification truth
+
+- Implemented: **Yes** — branding metadata, settings-panel title, validation,
+  publisher disposition and documentation only.
+- Source-qualified: **Yes** — 383/383 C# cases, 30/30 Python cases, 20/20
+  release-gate cases and 18/18 repository validation groups on the final
+  branch candidate, including display-name/author, above-0.1.9 UMM ordering
+  and owner-disposition checks. The unchanged `f185603` baseline also runs
+  383/383 C# cases; the 384 recorded for 0.1.9 below is not reproduced by that
+  baseline and no test was removed.
+- Contract-qualified: **Yes** — existing Kingmaker contracts, 11 respec
+  groups and 30/30 native UI IL checks against the installed 2.1.7b
+  assemblies (read-only).
+- Build-qualified: **Yes** — Release build, zero warnings/errors.
+- Package-qualified: **Yes** — the clean branch candidate passed
+  `Qualify.ps1 -Build -Package -Candidate` and strict package validation
+  (six-file allowlist, branded name/author, unchanged ID, assembly name and
+  entry method). The guarded publisher re-runs build and package
+  qualification on the merge commit and records the released ZIP's SHA-256
+  in its checksum asset and generated notes.
+- Published-package comparison: the earlier branding candidate was compared
+  with the downloaded v0.1.9 asset
+  (`9942c63d106a2b729ddda5d0f454c1d9623c4b6ae04231d74758e79d565d0e38`): same
+  six entries under one `KingmakerDiceRoller` folder, LICENSE,
+  THIRD-PARTY-NOTICES and the upstream license byte-identical, and a dnlib IL
+  comparison differing only in assembly metadata, the added
+  `ProductMetadata.DisplayName` constant, version text in two log lines and
+  three UMM-panel strings.
+- Installed: **No** — no game installation, launch or saved-game access.
+- Focused runtime test: **NOT RUN**.
+- Runtime-qualified: **No**.
+- Compatibility-qualified: **No**.
+- Release-authorized: **Yes** — explicit owner instruction of 2026-10-15 to
+  merge, push, tag and publish the three Mr. Bard releases.
+- Owner-authorized pre-runtime release: **Yes** — the owner authorized stable
+  v0.1.10 without an additional in-game test on 2026-10-15; an unperformed
+  optional playtest is not a release blocker, and no runtime PASS is recorded.
+- Testing-prerelease-authorized: **No** — the owner requested a stable release.
+- Publicly released: **No** at this commit — the guarded publisher creates the
+  `v0.1.10` tag and stable release from the merged `main` commit.
+
+## Published 0.1.9 button caption fit release
 
 Version `0.1.9`; implementation branch `z/fix-button-caption-sizing`, based
 on `main` at `01e73df` (post-v0.1.8 publication record). The owner tested
@@ -275,7 +345,7 @@ Roller installation, own the test process, and use new-character creation withou
 loading or changing valued campaign saves. Mercenary/respec fixtures have not
 been supplied. Prior release permissions below are historical.
 
-## Qualification truth
+## 0.1.7 qualification truth (historical)
 
 - Implemented: **Yes** — literal-name lookup, independent styling capabilities,
   and in-place recovery bounded to initial resolution plus two FillData retries.

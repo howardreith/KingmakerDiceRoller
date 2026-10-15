@@ -80,6 +80,15 @@ if ($info.Version -ne $expectedInfo.Version) {
 }
 if ($info.AssemblyName -ne 'KingmakerDiceRoller.dll') { throw "Unexpected packaged assembly name: $($info.AssemblyName)" }
 if ($info.EntryMethod -ne 'KingmakerDiceRoller.Main.Load') { throw "Unexpected packaged entry method: $($info.EntryMethod)" }
+# Public branding: the displayed name and author change; the identity checks above stay fixed.
+$publicDisplayName = "Mr. Bard's Kingmaker Roll For Stats UI"
+$publicAuthor = 'Mr. Bard'
+if ($info.DisplayName -ne $expectedInfo.DisplayName -or $info.DisplayName -ne $publicDisplayName) {
+    throw "Unexpected packaged display name: $($info.DisplayName)"
+}
+if ($info.Author -ne $expectedInfo.Author -or $info.Author -ne $publicAuthor) {
+    throw "Unexpected packaged author: $($info.Author)"
+}
 if ($dllHeader.Count -ne 2 -or $dllHeader[0] -ne 0x4D -or $dllHeader[1] -ne 0x5A) {
     throw 'Packaged DLL does not have a PE MZ header.'
 }

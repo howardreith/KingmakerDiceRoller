@@ -33,7 +33,7 @@ namespace KingmakerDiceRoller.UI
         public void Draw()
         {
             RollUiSnapshot workflow = coordinator.UiSnapshot;
-            GUILayout.Label("Kingmaker Dice Roller " + ProductMetadata.Version);
+            GUILayout.Label(ProductMetadata.DisplayName + " " + ProductMetadata.Version);
             GUILayout.Label("Roll controls are on the native new-character ability-score page.");
             settings.VerboseDiagnostics = GUILayout.Toggle(settings.VerboseDiagnostics, "Verbose diagnostic logging");
             GUILayout.Space(6f);

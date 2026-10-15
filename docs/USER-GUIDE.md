@@ -2,9 +2,11 @@
 
 ## Getting started
 
-Enable Kingmaker Dice Roller in Unity Mod Manager, then either start a genuinely
-new custom campaign main character, recruit a mercenary, or select an eligible
-native/Eddic respec that reopens all six starting scores. On the ability page, ordinary Point Buy appears first. The mod
+Enable **Mr. Bard's Kingmaker Roll For Stats UI** (UMM ID `KingmakerDiceRoller`;
+published as Kingmaker Dice Roller before 0.1.10) in Unity Mod Manager, then
+either start a genuinely new custom campaign main character, recruit a
+mercenary, or select an eligible native/Eddic respec that reopens all six
+starting scores. On the ability page, ordinary Point Buy appears first. The mod
 does not roll automatically.
 
 The page initially shows a compact **Roll Stats** tab at the safe bottom center
@@ -134,8 +136,8 @@ mercenary, the mod does not equate a matching preview with completion: it feeds
 the verified base assignment to the exact stable custom-companion descriptor
 after native action replay and verifies that descriptor after the success
 callback. Racial modifiers remain separate. A final mismatch is an error, not a
-successful commit claim. The character receives no Dice Roller facts or
-components; History and active session state are not saved with the character.
+successful commit claim. The character receives no facts or components from
+this mod; History and active session state are not saved with the character.
 
 ## Compatibility status
 

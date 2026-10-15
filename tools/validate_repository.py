@@ -11,6 +11,9 @@ import sys
 import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
+PUBLIC_DISPLAY_NAME = "Mr. Bard's Kingmaker Roll For Stats UI"
+PUBLIC_AUTHOR = 'Mr. Bard'
+LATEST_PUBLISHED_VERSION = '0.1.9'
 REQUIRED = [
     'docs/NATIVE-UI-STYLE.md','CODEX-NATIVE-UI-RESKIN-STATE.md',
     'scripts/Verify-NativeUiContracts.ps1','tools/NativeUiContractProbe.cs',
@@ -173,19 +176,26 @@ def main():
     require(info['AssemblyName']=='KingmakerDiceRoller.dll','unexpected assembly name')
     require(info['EntryMethod']=='KingmakerDiceRoller.Main.Load','unexpected entry method')
     require(info['GameVersion']=='2.1.7','unexpected target game version')
-    require(info['Version']=='0.1.9','unexpected candidate version')
+    require(info['Version']=='0.1.10','unexpected candidate version')
+    # Public branding changes only the displayed name and author; the identity above stays fixed.
+    require(info['DisplayName']==PUBLIC_DISPLAY_NAME,'unexpected UMM display name')
+    require(info['Author']==PUBLIC_AUTHOR,'unexpected UMM author')
     product_metadata=(ROOT/'src/KingmakerDiceRoller/ProductMetadata.cs').read_text(encoding='utf-8')
     assembly_info=(ROOT/'src/KingmakerDiceRoller/Properties/AssemblyInfo.cs').read_text(encoding='utf-8')
-    require('0.1.9' in product_metadata and '0.1.9-' not in product_metadata,
+    require('"0.1.10"' in product_metadata and '0.1.10-' not in product_metadata,
             'runtime product version is inconsistent')
-    require('AssemblyVersion("0.1.9.0")' in assembly_info and
-            'AssemblyFileVersion("0.1.9.0")' in assembly_info and
-            'AssemblyInformationalVersion("0.1.9")' in assembly_info,
+    require(f'DisplayName = "{PUBLIC_DISPLAY_NAME}"' in product_metadata,
+            'runtime display name is inconsistent with Info.json')
+    require('AssemblyVersion("0.1.10.0")' in assembly_info and
+            'AssemblyFileVersion("0.1.10.0")' in assembly_info and
+            'AssemblyInformationalVersion("0.1.10")' in assembly_info,
             'assembly version metadata is inconsistent')
     require(parse_umm_version('0.1.0-alpha.2') > parse_umm_version('0.1.0'),
             'UMM prerelease-ordering regression fixture is invalid')
     require(parse_umm_version(info['Version']) > parse_umm_version('0.1.0-alpha.2'),
             'stable version must sort above the published alpha under the UMM parser')
+    require(parse_umm_version(info['Version']) > parse_umm_version(LATEST_PUBLISHED_VERSION),
+            'candidate version must sort above the latest published release under the UMM parser')
     ok('Info.json, assembly product identity, and UMM version ordering')
 
     xml_files=list(ROOT.rglob('*.csproj'))+list(ROOT.rglob('*.props'))
@@ -591,6 +601,9 @@ def main():
     require("Join-Path $root 'Info.json'" in package_validator and
             '$info.Version -ne $expectedInfo.Version' in package_validator,
             'package validator must derive the expected version from repository Info.json')
+    require('$info.DisplayName -ne $expectedInfo.DisplayName' in package_validator and
+            '$info.Author -ne $expectedInfo.Author' in package_validator,
+            'package validator must check the packaged display name and author')
     require('rollback was attempted' in installer and '.KingmakerDiceRoller.install.' in installer,'transactional install rollback missing')
     require('Security.Cryptography.SHA256' in common and 'Get-FileHash' not in common,'hash helper must not inherit WhatIf behavior')
     require('[IO.Directory]::CreateDirectory($temporary)' in installer and '[IO.Directory]::Delete($temporary, $true)' in installer,'WhatIf preflight temp lifecycle must execute outside ShouldProcess')
@@ -611,8 +624,18 @@ def main():
             'qualification gate must terminate at the next level-2 heading or EOF')
     for token in ['FollowingHeadingRenameDoesNotBreakGate','ArbitraryFollowingHeadingDoesNotBreakGate',
                   'EndOfFileTerminatesQualificationSection','LaterSectionCannotAuthorizePublication',
-                  'ConfirmationSwitchRemainsRequired','RuntimeNoRemainsRejected']:
+                  'ConfirmationSwitchRemainsRequired','RuntimeNoRemainsRejected',
+                  'OwnerAuthorizedPreRuntimeReleaseKeepsRuntimeNo','OwnerAuthorizationMustNameTheExactVersion',
+                  'OwnerPathRequiresEveryCurrentQualification','OwnerPathCannotClaimRuntimeQualification',
+                  'OwnerAuthorizationCannotSatisfyRuntimeGate','PublicationDispositionsAreExclusive',
+                  'HistoricalOwnerAuthorizationCannotPublish']:
         require(token in release_gate_tests, f'release qualification gate regression missing: {token}')
+    # Owner approval is a separate stable-release disposition, never a runtime claim.
+    require('-ConfirmOwnerAuthorizedPreRuntimeRelease:$ConfirmOwnerAuthorizedPreRuntimeRelease' in publisher and
+            'not runtime-qualified' in publisher,
+            'publisher must pass the owner-authorized disposition to the gate and disclose it')
+    require('Runtime-qualified:\\s+\\*\\*No\\*\\*' in release_gate,
+            'owner-authorized pre-runtime gate must require Runtime-qualified: No')
     require('Test-ReleaseQualificationGate.ps1' in
             (ROOT/'scripts/Validate-Repository.ps1').read_text(encoding='utf-8'),
             'repository validation must execute release qualification gate tests')

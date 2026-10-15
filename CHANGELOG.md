@@ -1,5 +1,36 @@
 # Changelog
 
+## 0.1.10 - 2026-10-15 - Mr. Bard branding
+
+Owner-authorized stable release; not runtime-qualified (not installed or run
+in the game before publication). Branding and publication tooling only; no
+rolling, assignment, UI-layout, Harmony patch or persistence change.
+
+- Show the mod in Unity Mod Manager as **Mr. Bard's Kingmaker Roll For Stats
+  UI** by **Mr. Bard** (`DisplayName`/`Author`). The UMM ID
+  `KingmakerDiceRoller`, `KingmakerDiceRoller.dll`, entry method, namespaces,
+  Harmony ID, install folder and `Settings.xml` saved arrays are unchanged, so
+  0.1.10 installs over 0.1.9 and earlier versions.
+- Use the public name for the UMM settings-panel title and the assembly
+  title/product metadata, and stop calling the mod "Dice Roller" in two
+  UMM-panel status/warning texts. Diagnostic log lines keep the technical name.
+- Advance the version to 0.1.10 so the rebranded package never reuses a
+  published version number.
+- Check the exact display name and author, alongside the unchanged ID,
+  assembly name and entry method, in repository and package validation, and
+  require the version to sort above the published 0.1.9 under UMM's parser.
+- Correct the README's current-release statements (it still called v0.1.6 the
+  latest release), add upgrade guidance and Nexus Mods release copy.
+- Set the assembly company to **Mr. Bard** and repair the mis-encoded
+  copyright sign in the assembly copyright text; the copyright holder is
+  unchanged.
+- Add an explicit owner-authorized pre-runtime disposition to the guarded
+  publisher (`-ConfirmOwnerAuthorizedPreRuntimeRelease`). It publishes a stable
+  release only while the current qualification section records the exact
+  version's owner authorization and `Runtime-qualified: No`, and the generated
+  release notes say the release is not runtime-qualified. Seven new
+  release-gate regression cases cover it.
+
 ## 0.1.9 - button caption fit
 
 - Size every textual owned button from its actual styled caption. The

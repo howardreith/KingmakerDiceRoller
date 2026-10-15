@@ -5,7 +5,9 @@
 This repository produces one independent Unity Mod Manager mod:
 
 ```text
-Product:      Kingmaker Dice Roller
+Product:      Kingmaker Dice Roller (technical/repository name)
+Public name:  Mr. Bard's Kingmaker Roll For Stats UI (UMM DisplayName)
+Public author: Mr. Bard (UMM Author)
 Repository:   KingmakerDiceRoller
 Assembly:     KingmakerDiceRoller.dll
 UMM ID:       KingmakerDiceRoller
@@ -15,6 +17,9 @@ Language:     C# 7.3
 Game target:  Pathfinder: Kingmaker 2.1.7b
 Harmony:      Harmony12
 ```
+
+The public name and author are branding only. Never rename the UMM ID, DLL,
+entry method, namespaces, Harmony ID, install folder or settings to match them.
 
 It must not become part of the Gunslinger/Tabletop Expansion assembly and must
 not create save-owned custom blueprints, facts, unit parts, or components.

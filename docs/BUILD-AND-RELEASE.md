@@ -1,4 +1,31 @@
-# Current 0.1.7 official release
+# 0.1.10 Mr. Bard branding release
+
+`0.1.10` is a branding-only release: UMM `DisplayName` **Mr. Bard's Kingmaker
+Roll For Stats UI**, `Author` **Mr. Bard**, the matching settings-panel title,
+assembly title/product/company metadata and documentation. The UMM ID, DLL,
+entry method, Harmony ID, package layout and settings are unchanged. The
+publisher derives the GitHub release title (`<DisplayName> v<Version>`) and
+generated install notes from `Info.json`.
+
+On 2026-10-15 the owner authorized merging and publishing 0.1.10 as a stable
+release without an additional in-game test. `PROJECT-STATE.md` records that
+authorization under `## Qualification truth` with `Runtime-qualified: **No**`.
+Publish from a clean release clone of the fully pushed `main` merge commit
+(Windows PowerShell 5.1):
+
+```powershell
+powershell -NoLogo -NoProfile -ExecutionPolicy Bypass `
+  -File .\scripts\Publish-Release.ps1 `
+  -ReleaseNotesPath .\docs\RELEASE-NOTES-0.1.10.md `
+  -Publish `
+  -ConfirmOwnerAuthorizedPreRuntimeRelease
+```
+
+The packaged README is frozen into the ZIP, so release-status wording must be
+final before this command runs. Nexus page text is in
+`docs/NEXUS-RELEASE-COPY.md`; upload the exact GitHub v0.1.10 asset.
+
+# Historical 0.1.7 official release
 
 On 2026-09-13, after the repair handoff disclosed the disconnected-desktop
 blocker, the owner explicitly requested merge, push and an actual release,
@@ -260,8 +287,9 @@ and Testing-prerelease-authorized statuses to be Yes. It marks the GitHub releas
 as a prerelease and not latest; it does not mark runtime qualification Yes.
 Keep the numeric UMM version `0.1.3` so future version ordering remains predictable.
 
-Publish a stable release only after the exact current candidate has passed its
-human runtime gate and `PROJECT-STATE.md` records `Runtime-qualified: **Yes**`:
+Publish a runtime-qualified stable release only after the exact current
+candidate has passed its human runtime gate and `PROJECT-STATE.md` records
+`Runtime-qualified: **Yes**`:
 
 ```powershell
 powershell -NoLogo -NoProfile -ExecutionPolicy Bypass `
@@ -270,6 +298,18 @@ powershell -NoLogo -NoProfile -ExecutionPolicy Bypass `
   -Publish `
   -ConfirmRuntimeQualified
 ```
+
+When the owner explicitly authorizes a stable release before the runtime gate,
+record it in the current `## Qualification truth` section as
+`- Owner-authorized pre-runtime release: **Yes** — <version and instruction>`
+while keeping `Runtime-qualified: **No**`, then use
+`-Publish -ConfirmOwnerAuthorizedPreRuntimeRelease` instead of
+`-ConfirmRuntimeQualified`. The gate requires current Source/Contract/Build/
+Package-qualified and Release-authorized **Yes**, the exact version in the
+owner-authorization line and `Runtime-qualified: **No**`; it refuses a
+prerelease version and any second disposition switch. The release is stable
+and latest, and its generated notes state that it is not runtime-qualified.
+This path never records runtime evidence.
 
 The publisher refuses a dirty worktree, a non-default branch, a commit that
 does not exactly match `origin/<default branch>`, an existing release, a
