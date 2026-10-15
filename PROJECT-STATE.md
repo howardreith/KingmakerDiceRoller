@@ -1,6 +1,52 @@
 # Project state
 
-## Current 0.1.9 button caption fit release
+## Current 0.1.10 Mr. Bard branding candidate (unreleased)
+
+Version `0.1.10`; branch `codex/mr-bard-branding`, based on `main` at
+`f185603` (post-v0.1.9 publication record). The owner asked for the public
+branding to move to the modding identity **Mr. Bard** before Nexus Mods
+publication, without changing technical identity or behavior. Nothing is
+tagged, pushed, released or uploaded.
+
+- UMM `DisplayName` **Mr. Bard's Kingmaker Roll For Stats UI** and `Author`
+  **Mr. Bard**; `ProductMetadata.DisplayName` drives the UMM settings-panel
+  title; assembly title/product carry the public name. Two UMM-panel
+  status/warning strings no longer call the mod "Dice Roller"; log lines keep
+  the technical name.
+- Unchanged: UMM ID `KingmakerDiceRoller`, `KingmakerDiceRoller.dll`,
+  `KingmakerDiceRoller.Main.Load`, namespaces/classes, Harmony ID
+  `howardreith.kingmakerdiceroller`, ZIP folder and six-file allowlist,
+  `Settings.xml` fields and saved-array schema 2, all patches and roll logic.
+  `AssemblyCompany`, `AssemblyCopyright`, LICENSE, THIRD-PARTY-NOTICES and the
+  upstream MIT text are unchanged.
+- The version advances to `0.1.10` so changed bytes never reuse `0.1.9`.
+  Persistence carries no product version (only saved-array schema 2), so the
+  bump has no settings consequence.
+
+## 0.1.10 qualification truth
+
+- Implemented: **Yes** — branding metadata, settings-panel title, validation
+  and documentation only.
+- Source-qualified: **Yes** — 383/383 C# cases, 30/30 Python cases, 13/13
+  release-gate cases and 18/18 repository validation groups, including the new
+  display-name/author and above-0.1.9 UMM ordering checks. The unchanged
+  `f185603` baseline also runs 383/383 C# cases; the 384 recorded for 0.1.9
+  below is not reproduced by that baseline and no test was removed here.
+- Contract-qualified: **Yes** — existing Kingmaker contracts, 11 respec
+  groups and 30/30 native UI IL checks against the installed 2.1.7b
+  assemblies (read-only).
+- Build-qualified: **Yes** — Release build, zero warnings/errors.
+- Package-qualified: **Pending** — the clean-commit candidate package is built
+  after the source commit and recorded below.
+- Installed: **No** — no game installation, launch or saved-game access.
+- Focused runtime test: **NOT RUN**.
+- Runtime-qualified: **No**.
+- Compatibility-qualified: **No**.
+- Release-authorized: **No** — branding preparation only; no tag, release,
+  push or Nexus upload.
+- Publicly released: **No**.
+
+## Published 0.1.9 button caption fit release
 
 Version `0.1.9`; implementation branch `z/fix-button-caption-sizing`, based
 on `main` at `01e73df` (post-v0.1.8 publication record). The owner tested

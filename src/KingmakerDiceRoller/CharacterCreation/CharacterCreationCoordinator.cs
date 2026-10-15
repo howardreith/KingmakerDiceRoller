@@ -190,7 +190,7 @@ namespace KingmakerDiceRoller.CharacterCreation
                 RecordEvent(
                     "Observed a same-owner preview while PointBuy mode is active; no array was generated or staged. " +
                     BuildSessionFacts(session));
-                diagnostics.SetStatus("Point Buy is active; use the native Dice Roller panel to roll explicitly.");
+                diagnostics.SetStatus("Point Buy is active; use the native Roll Stats panel to roll explicitly.");
                 return;
             }
 

@@ -35,7 +35,7 @@ namespace KingmakerDiceRoller.Compatibility
                 loaded.Add(found.Info.Id + " " + found.Info.Version + " enabled=" + found.Enabled + " active=" + found.Active);
                 if (string.Equals(KnownMods[group][0], "BagOfTricks", StringComparison.Ordinal))
                 {
-                    warnings.Add("Bag of Tricks changes character-creation point-buy behavior. Dice Roller observes the live allocator budget, but compatibility is not qualified until the dedicated smoke matrix passes.");
+                    warnings.Add("Bag of Tricks changes character-creation point-buy behavior. This mod observes the live allocator budget, but compatibility is not qualified until the dedicated smoke matrix passes.");
                 }
                 else if (string.Equals(KnownMods[group][0], "Respecialization", StringComparison.Ordinal))
                 {

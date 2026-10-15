@@ -1,8 +1,8 @@
 {
   "Id": "KingmakerDiceRoller",
-  "DisplayName": "Kingmaker Dice Roller",
-  "Author": "Howie Reith",
-  "Version": "0.1.9",
+  "DisplayName": "Mr. Bard's Kingmaker Roll For Stats UI",
+  "Author": "Mr. Bard",
+  "Version": "0.1.10",
   "ManagerVersion": "0.32.0",
   "GameVersion": "2.1.7",
   "AssemblyName": "KingmakerDiceRoller.dll",
