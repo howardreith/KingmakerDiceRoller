@@ -15,12 +15,14 @@ rebuilt.
 
 ## Release status
 
-**Version 0.1.10 — Mr. Bard branding.** Unity Mod Manager now shows the mod as
-**Mr. Bard's Kingmaker Roll For Stats UI** by **Mr. Bard**, and the UMM
-settings panel uses the same title. Rolling, assignment, Point Buy
-restoration, the native UI and saved arrays are unchanged from 0.1.9. As of
-this README, 0.1.10 is a prepared candidate that has not been published;
-v0.1.9 is the latest published release.
+**Release 0.1.10 — Mr. Bard branding (2026-10-15).** Unity Mod Manager now
+shows the mod as **Mr. Bard's Kingmaker Roll For Stats UI** by **Mr. Bard**,
+and the UMM settings panel uses the same title. Rolling, assignment, Point Buy
+restoration, the native UI and saved arrays are unchanged from 0.1.9.
+
+0.1.10 is an owner-authorized stable release. It passed the offline
+qualification below but was not installed or run in the game before
+publication; it is not runtime-qualified.
 
 **Release 0.1.9 — button caption fit.** This repairs the truncated button
 captions reported in play: Store, Previous, Recall, Delete, Down, Return to
@@ -122,20 +124,20 @@ Roll or Recall and restored exactly; neither 20 nor 25 is hard-coded.
 
 ## Installation
 
-Download the mod package **KingmakerDiceRoller-<version>.zip** from a
-release's **Assets**. The latest published release is
-[v0.1.9](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.9)
-(**KingmakerDiceRoller-0.1.9.zip**). Drag that ZIP into Unity Mod Manager's
-Mods tab for Pathfinder: Kingmaker and confirm UMM displays the version you
-installed. Releases up to 0.1.9 appear in UMM as **Kingmaker Dice Roller**;
-from 0.1.10 the same mod appears as **Mr. Bard's Kingmaker Roll For Stats
-UI**. Keep the installed UMM/Harmony libraries; no loader downgrade is
-required. GitHub's Source code archives are not mod packages.
+Download **KingmakerDiceRoller-0.1.10.zip** from the
+[v0.1.10 release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.10)
+**Assets**. Drag that ZIP into Unity Mod Manager's Mods tab for Pathfinder:
+Kingmaker and confirm UMM lists **Mr. Bard's Kingmaker Roll For Stats UI**
+version **0.1.10**. Releases up to 0.1.9 appear in UMM as **Kingmaker Dice
+Roller**; it is the same mod. Keep the installed UMM/Harmony libraries; no
+loader downgrade is required. GitHub's Source code archives are not mod
+packages.
 
-Version `0.1.9` is the latest official release, published on 2026-09-17 at
-the owner's direction. Its rendered caption fit was not verified by the
-development agent, and live visual, audio, runtime and compatibility
-acceptance remain NOT RUN; the owner's in-play test is its acceptance lane.
+Version `0.1.10` is the current official release, published on 2026-10-15
+at the owner's direction without a new in-game test. Its code is the 0.1.9
+code apart from the displayed name, author and version texts. The 0.1.9
+caption fit was not verified in-game by the development agent, and live
+visual, audio, runtime and compatibility acceptance remain NOT RUN.
 
 The archive contains one `KingmakerDiceRoller` directory with exactly six
 allowlisted files and does not bundle development artifacts or game assemblies.
@@ -155,7 +157,7 @@ arrays through a reinstall.
 ## Qualification
 
 Offline qualification of 0.1.10 passes 383 deterministic C# cases, 30 Python
-oracle cases, 13 release-gate tests and 18 source-validation groups. Kingmaker
+oracle cases, 20 release-gate tests and 18 source-validation groups. Kingmaker
 2.1.7b contract checks include native derived allowances, replay/copy order,
 installed Harmony scope behavior, 11 respec contract groups and 30 native UI
 IL/component checks. The Release build has zero warnings/errors and the package

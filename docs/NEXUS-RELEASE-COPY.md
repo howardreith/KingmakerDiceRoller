@@ -1,11 +1,18 @@
 # Nexus Mods release copy
 
-Prepared text for the Nexus Mods page of version `0.1.10`. Nothing has been
-uploaded. Version 0.1.10 is not yet tagged or published on GitHub; upload the
-exact `KingmakerDiceRoller-0.1.10.zip` asset from the GitHub release once it
-exists, without repackaging it. Everything below is based on this repository's
-code and its records (`README.md`, `docs/USER-GUIDE.md`,
-`docs/COMPATIBILITY.md`, `PROJECT-STATE.md`); update it if those change.
+Nexus Mods page text for version `0.1.10`, the owner-authorized stable
+release of 2026-10-15. The Nexus file is the exact
+`KingmakerDiceRoller-0.1.10.zip` asset of the GitHub
+[v0.1.10 release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.10),
+uploaded without repackaging; its SHA-256 is in that release's
+`SHA256SUMS.txt`. Everything below is based on this repository's code and its
+records (`README.md`, `docs/USER-GUIDE.md`, `docs/COMPATIBILITY.md`,
+`PROJECT-STATE.md`).
+
+- **Author credit:** Mr. Bard
+- **Version:** 0.1.10
+- **Category:** the closest available Kingmaker category for character
+  creation or user-interface mods
 
 ## Title
 
@@ -72,7 +79,8 @@ Formerly published as **Kingmaker Dice Roller**.
 ## Installation
 
 1. Install Unity Mod Manager for Pathfinder: Kingmaker if you have not already.
-2. Download `KingmakerDiceRoller-0.1.10.zip`. Do not extract it.
+2. Download `KingmakerDiceRoller-0.1.10.zip` (from this page's Files tab or
+   the GitHub v0.1.10 release). Do not extract it.
 3. In Unity Mod Manager, select Pathfinder: Kingmaker, open the **Mods** tab
    and drag the ZIP onto it (or use **Install Mod**).
 4. Start the game and confirm that **Mr. Bard's Kingmaker Roll For Stats UI**
@@ -107,9 +115,10 @@ installation for 0.1.10.
 
 ## Known limitations
 
-- **Testing status.** 0.1.10 passes the automated suite (deterministic
-  behavior tests, contract checks against the 2.1.7b game assemblies, a clean
-  Release build and package validation) but has not been run in the game.
+- **Testing status.** 0.1.10 is an owner-authorized release that passed the
+  automated suite (deterministic behavior tests, contract checks against the
+  2.1.7b game assemblies, a clean Release build and package validation) but
+  was not run in the game before release.
   In-game testing so far is hands-on play by the author, most recently of
   0.1.8, whose feedback produced the 0.1.9 button-caption fix; that fix was not
   verified in-game before 0.1.9 was released. Structured in-game testing of
@@ -142,9 +151,16 @@ installation for 0.1.10.
 
 ## Credits and permissions
 
+- Author: **Mr. Bard**.
 - Released under the MIT License. The full license text is in `LICENSE` inside
-  the download. Modification and redistribution are permitted under its terms,
-  provided the copyright and permission notice is kept.
+  the download. Use, modification and redistribution, including in other mods
+  and modpacks, are permitted under its terms, provided the copyright and
+  permission notice is kept.
+- Nexus permission settings consistent with MIT: upload to other sites,
+  modification, use of assets in other files and conversion all allowed,
+  with the condition that the `LICENSE` and `licenses/` notices are kept
+  and credit is given. Do not add a "no modification" or
+  "no redistribution" restriction.
 - Dice-expression, reroll, keep-highest/lowest, roll-array and
   point-buy-equivalent concepts were studied from FakeFriend24's
   `wotr-dice-roller` for Pathfinder: Wrath of the Righteous (MIT; notices for

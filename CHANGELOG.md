@@ -1,8 +1,9 @@
 # Changelog
 
-## 0.1.10 - Mr. Bard branding (unreleased)
+## 0.1.10 - 2026-10-15 - Mr. Bard branding
 
-Not yet tagged or published. Branding and publication preparation only; no
+Owner-authorized stable release; not runtime-qualified (not installed or run
+in the game before publication). Branding and publication tooling only; no
 rolling, assignment, UI-layout, Harmony patch or persistence change.
 
 - Show the mod in Unity Mod Manager as **Mr. Bard's Kingmaker Roll For Stats
@@ -18,8 +19,17 @@ rolling, assignment, UI-layout, Harmony patch or persistence change.
 - Check the exact display name and author, alongside the unchanged ID,
   assembly name and entry method, in repository and package validation, and
   require the version to sort above the published 0.1.9 under UMM's parser.
-- Correct the README's current-release statements (v0.1.9, not v0.1.6, is the
-  latest published release), add upgrade guidance and Nexus Mods release copy.
+- Correct the README's current-release statements (it still called v0.1.6 the
+  latest release), add upgrade guidance and Nexus Mods release copy.
+- Set the assembly company to **Mr. Bard** and repair the mis-encoded
+  copyright sign in the assembly copyright text; the copyright holder is
+  unchanged.
+- Add an explicit owner-authorized pre-runtime disposition to the guarded
+  publisher (`-ConfirmOwnerAuthorizedPreRuntimeRelease`). It publishes a stable
+  release only while the current qualification section records the exact
+  version's owner authorization and `Runtime-qualified: No`, and the generated
+  release notes say the release is not runtime-qualified. Seven new
+  release-gate regression cases cover it.
 
 ## 0.1.9 - button caption fit
 
