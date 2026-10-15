@@ -67,8 +67,20 @@ without an additional in-game test.
   v0.1.10 without an additional in-game test on 2026-10-15; an unperformed
   optional playtest is not a release blocker, and no runtime PASS is recorded.
 - Testing-prerelease-authorized: **No** — the owner requested a stable release.
-- Publicly released: **No** at this commit — the guarded publisher creates the
-  `v0.1.10` tag and stable release from the merged `main` commit.
+- Publicly released: **Yes** — published 2026-10-15T22:17:33Z by the guarded
+  publisher (`-ConfirmOwnerAuthorizedPreRuntimeRelease`) as stable, latest
+  https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.10 from
+  PR #3 merge `9c3f1cee0ecd2a50fa545ab79fefa077acc83e62`; annotated tag
+  `v0.1.10` peels to that commit. On the merge commit the publisher's
+  `Qualify.ps1 -Build -Package` ran the release gate, source validation, the
+  Python oracle, C# 383/383, read-only Kingmaker contracts, respec 11/11 and
+  native UI IL 30/30 checks with 0 warnings/errors and strict package
+  validation. Asset `KingmakerDiceRoller-0.1.10.zip` SHA-256
+  `668dc8082921b3bf4ffbcd32a8e8a5504313d2612ea9136dde9549cefc0e0bb0`; DLL
+  SHA-256 `6bf2ba1792ebcdc454eaa973ba223c3edeb80d23c059a3bfbed5be225df2b8df`.
+  The downloaded asset matched the local artifact and `SHA256SUMS.txt`
+  byte-for-byte, with the six allowlisted entries and the branded manifest.
+  Runtime-qualified remains **No**; Nexus Mods upload was not performed.
 
 ## Published 0.1.9 button caption fit release
 
