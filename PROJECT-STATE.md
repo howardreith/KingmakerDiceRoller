@@ -36,8 +36,23 @@ tagged, pushed, released or uploaded.
   groups and 30/30 native UI IL checks against the installed 2.1.7b
   assemblies (read-only).
 - Build-qualified: **Yes** — Release build, zero warnings/errors.
-- Package-qualified: **Pending** — the clean-commit candidate package is built
-  after the source commit and recorded below.
+- Package-qualified: **Yes** — `Qualify.ps1 -Build -Package -Candidate` from
+  clean commit `88d5ea0316a9704dfb7ffa592d2d5e30d01f7aa0`; candidate ZIP
+  `artifacts/candidates/88d5ea0316a9704dfb7ffa592d2d5e30d01f7aa0/KingmakerDiceRoller-0.1.10.zip`
+  (SHA-256 `037d74c6dc671e9dba5329a12b0675b91c9168c26ac316e216d8c402a45d0f3f`,
+  DLL SHA-256
+  `d80d68a3bcf053cefc1021024c5443fd1a55d02d701cef0a2cc261b6385b4534`) passed
+  package validation. Its packaged `Info.json` has the branded name/author and
+  the unchanged ID, assembly name and entry method; tampered copies with the
+  old name, old author or a renamed ID are rejected.
+- Published-package comparison: the downloaded v0.1.9 asset still matches
+  `9942c63d106a2b729ddda5d0f454c1d9623c4b6ae04231d74758e79d565d0e38`. Both
+  ZIPs have the same six entries under one `KingmakerDiceRoller` folder;
+  LICENSE, THIRD-PARTY-NOTICES and the upstream license are byte-identical.
+  A dnlib IL comparison of the two DLLs differs only in assembly
+  title/product/version attributes, the added `ProductMetadata.DisplayName`
+  constant, the version text in two log lines and three UMM-panel strings;
+  every type, method body and Harmony target is otherwise identical.
 - Installed: **No** — no game installation, launch or saved-game access.
 - Focused runtime test: **NOT RUN**.
 - Runtime-qualified: **No**.
