@@ -1,4 +1,23 @@
-# Current 0.1.7 official release
+# Next release: 0.1.10 Mr. Bard branding (not published)
+
+`0.1.10` is a branding-only candidate: UMM `DisplayName` **Mr. Bard's Kingmaker
+Roll For Stats UI**, `Author` **Mr. Bard**, the matching settings-panel title,
+assembly title/product metadata and documentation. The UMM ID, DLL, entry
+method, Harmony ID, package layout and settings are unchanged. No tag, GitHub
+release or Nexus upload exists for it. The publisher derives the GitHub release
+title (`<DisplayName> v<Version>`) and generated install notes from `Info.json`,
+so they carry the new name without script changes.
+
+Publication still needs the owner's explicit authorization and the same choice
+made for 0.1.7-0.1.9: either record `Runtime-qualified: **Yes**` under a
+`## Qualification truth` heading and use `-Publish -ConfirmRuntimeQualified`,
+or prepare a draft with the existing publisher from the clean, fully pushed
+`main` and promote it with `gh release edit` under a recorded owner instruction.
+Update the README release-status paragraph before building the release package,
+because the packaged README is frozen into the ZIP. Nexus page text is in
+`docs/NEXUS-RELEASE-COPY.md`.
+
+# Historical 0.1.7 official release
 
 On 2026-09-13, after the repair handoff disclosed the disconnected-desktop
 blocker, the owner explicitly requested merge, push and an actual release,

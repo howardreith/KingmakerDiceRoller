@@ -1,4 +1,26 @@
-# Kingmaker Dice Roller
+# Mr. Bard's Kingmaker Roll For Stats UI
+
+Mr. Bard's Kingmaker Roll For Stats UI is a standalone Unity Mod Manager mod
+for Pathfinder: Kingmaker 2.1.7b. It adds an explicit rolled-ability workflow
+to the native custom-character ability page through a compact native access
+tab and a responsive right-side drawer.
+
+It was previously published as **Kingmaker Dice Roller**. Its Unity Mod
+Manager ID, DLL, `Mods/KingmakerDiceRoller` install folder and settings are
+unchanged, so a new version installs over an earlier one.
+
+The mod starts every supported character in ordinary Point Buy. It rolls only
+when you press **Roll**, never because a preview, race, phase, or UI object was
+rebuilt.
+
+## Release status
+
+**Version 0.1.10 — Mr. Bard branding.** Unity Mod Manager now shows the mod as
+**Mr. Bard's Kingmaker Roll For Stats UI** by **Mr. Bard**, and the UMM
+settings panel uses the same title. Rolling, assignment, Point Buy
+restoration, the native UI and saved arrays are unchanged from 0.1.9. As of
+this README, 0.1.10 is a prepared candidate that has not been published;
+v0.1.9 is the latest published release.
 
 **Release 0.1.9 — button caption fit.** This repairs the truncated button
 captions reported in play: Store, Previous, Recall, Delete, Down, Return to
@@ -10,9 +32,9 @@ reflow the Return control onto its own row. The native theme, artwork,
 typography, click routing and all rolling behavior are unchanged, and the
 0.1.8 input-initialization repair is preserved.
 
-Published as an official release at the owner's direction; the owner tests
-in play on another computer. Rendered caption verification by the
-development agent is recorded in the
+0.1.9 was published as an official release at the owner's direction; the
+owner tests in play on another computer. Rendered caption verification by
+the development agent is recorded in the
 [release notes](docs/RELEASE-NOTES-0.1.9.md) and
 [project state](PROJECT-STATE.md); a passing build does not claim it.
 
@@ -21,15 +43,6 @@ skill-points badge and phase-completion state refresh after rolled-assignment
 changes, including drawer close, and the forward guard blocks leaving Skills
 while the native skill allocation is invalid. The 0.1.6 reskin preserves this
 behavior and the existing roll workflow.
-
-Kingmaker Dice Roller is a standalone Unity Mod Manager mod for Pathfinder:
-Kingmaker 2.1.7b. It adds an explicit rolled-ability workflow to the native
-custom-character ability page through a compact native access tab and a
-responsive right-side drawer.
-
-The mod starts every supported character in ordinary Point Buy. It rolls only
-when you press **Roll**, never because a preview, race, phase, or UI object was
-rebuilt.
 
 ## Player workflow
 
@@ -78,14 +91,14 @@ slots contain base values only.
 
 ## Persistence and safety
 
-Completed characters contain ordinary Kingmaker base ability values. Dice
-Roller creates no blueprint, fact, buff, component, or unit part and adds no
+Completed characters contain ordinary Kingmaker base ability values. The mod
+creates no blueprint, fact, buff, component, or unit part and adds no
 content to a game save. Saved-array slots use Unity Mod Manager settings, not a
 character save.
 
 For mercenaries, matching preview labels and `StatsDistribution` are not treated
 as completion. After Kingmaker replays native level-up actions onto its stable
-custom-companion descriptor, Dice Roller applies the verified base-only
+custom-companion descriptor, the mod applies the verified base-only
 assignment at that exact seam and verifies the same descriptor after the native
 success callback. A mismatch is logged as a final failure.
 
@@ -109,30 +122,45 @@ Roll or Recall and restored exactly; neither 20 nor 25 is hard-coded.
 
 ## Installation
 
-Download the native book UI release,
-**KingmakerDiceRoller-0.1.6.zip** from the
-[v0.1.6 release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.6),
-then drag that ZIP into Unity Mod Manager's Mods tab for Pathfinder: Kingmaker.
-Confirm UMM displays version **0.1.6**. Keep the installed UMM/Harmony libraries;
-no loader downgrade is required. GitHub's Source code archives are not mod packages.
+Download the mod package **KingmakerDiceRoller-<version>.zip** from a
+release's **Assets**. The latest published release is
+[v0.1.9](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.9)
+(**KingmakerDiceRoller-0.1.9.zip**). Drag that ZIP into Unity Mod Manager's
+Mods tab for Pathfinder: Kingmaker and confirm UMM displays the version you
+installed. Releases up to 0.1.9 appear in UMM as **Kingmaker Dice Roller**;
+from 0.1.10 the same mod appears as **Mr. Bard's Kingmaker Roll For Stats
+UI**. Keep the installed UMM/Harmony libraries; no loader downgrade is
+required. GitHub's Source code archives are not mod packages.
 
-Version `0.1.6` is the latest official release. The existing ZIP, checksum and
-tag were retained when the owner directed promotion from testing prerelease.
-The README inside that unchanged ZIP retains its original prerelease wording;
-this repository and the GitHub release page record the current status. Live
-visual, audio and runtime acceptance remain NOT RUN.
+Version `0.1.9` is the latest official release, published on 2026-09-17 at
+the owner's direction. Its rendered caption fit was not verified by the
+development agent, and live visual, audio, runtime and compatibility
+acceptance remain NOT RUN; the owner's in-play test is its acceptance lane.
 
 The archive contains one `KingmakerDiceRoller` directory with exactly six
 allowlisted files and does not bundle development artifacts or game assemblies.
 
+## Upgrading
+
+Install the new ZIP over the existing installation; do not uninstall first.
+The UMM ID (`KingmakerDiceRoller`), DLL name and install folder are unchanged,
+so the new version replaces the existing entry instead of adding a second
+one, even though the displayed name changed in 0.1.10. Saved arrays and roll
+preferences live in UMM's `Settings.xml` inside the mod folder; the package
+does not contain that file and the settings format is unchanged. Removing the
+mod folder (for example by uninstalling) also removes `Settings.xml`, so back
+up `Mods/KingmakerDiceRoller/Settings.xml` first if you want to keep saved
+arrays through a reinstall.
+
 ## Qualification
 
-Offline qualification passes 347 deterministic C# cases, 30 Python oracle
-cases, 13 release-gate tests and 18 source-validation groups. Kingmaker 2.1.7b
-contract checks include native derived allowances, replay/copy order, installed
-Harmony scope behavior, 11 respec contract groups and 16 native UI IL/component
-checks. The Release build has zero warnings/errors and the package passes the
-six-file allowlist and hash checks.
+Offline qualification of 0.1.10 passes 383 deterministic C# cases, 30 Python
+oracle cases, 13 release-gate tests and 18 source-validation groups. Kingmaker
+2.1.7b contract checks include native derived allowances, replay/copy order,
+installed Harmony scope behavior, 11 respec contract groups and 30 native UI
+IL/component checks. The Release build has zero warnings/errors and the package
+passes the six-file allowlist, manifest identity/branding and hash checks.
+0.1.10 has not been installed or run in the game.
 
 Live visual and press-motion acceptance, audio/volume/mute, interactive gameplay,
 finalization, save/reload and the provider/input compatibility matrix are
