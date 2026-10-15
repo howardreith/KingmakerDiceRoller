@@ -11,6 +11,10 @@ param(
 
     [switch] $TestingPrerelease,
 
+    # Stable release explicitly authorized by the owner before any in-game
+    # test. It never marks runtime qualification; see ReleaseQualificationGate.
+    [switch] $ConfirmOwnerAuthorizedPreRuntimeRelease,
+
     [switch] $AllowPrivateRepositoryRelease
 )
 
@@ -66,6 +70,10 @@ function Test-NativeCommand {
     finally {
         $ErrorActionPreference = $priorErrorActionPreference
     }
+}
+
+if ($ConfirmOwnerAuthorizedPreRuntimeRelease -and -not $Publish) {
+    throw '-ConfirmOwnerAuthorizedPreRuntimeRelease is valid only with -Publish.'
 }
 
 $root = Get-RepositoryRoot
@@ -157,7 +165,12 @@ try {
         Assert-PublicationQualification `
             -ProjectStateText $projectState `
             -ConfirmRuntimeQualified:$ConfirmRuntimeQualified `
-            -TestingPrerelease:$TestingPrerelease
+            -TestingPrerelease:$TestingPrerelease `
+            -ConfirmOwnerAuthorizedPreRuntimeRelease:$ConfirmOwnerAuthorizedPreRuntimeRelease `
+            -Version $version
+    }
+    if ($ConfirmOwnerAuthorizedPreRuntimeRelease -and $version.Contains('-')) {
+        throw 'The owner-authorized pre-runtime path publishes stable versions only.'
     }
 
     $tag = "v$version"
@@ -253,8 +266,18 @@ try {
         '',
         "Release commit: $head",
         '',
-        'The asset was rebuilt, source-tested, contract-checked, deterministically packaged, and package-validated by the repository qualification pipeline.'
+        'The asset was rebuilt, source-tested, contract-checked, deterministically packaged, and package-validated by the repository qualification pipeline.',
+        '',
+        ('Checks run on the release commit by `Qualify.ps1 -Build -Package`: release-gate tests, repository source validation, the Python domain oracle, the compiled C# behavior suite, read-only Kingmaker {0} contract verification, a Release build, respec and native UI IL contract checks, deterministic packaging and strict package validation.' -f $info.GameVersion)
     )
+    if ($ConfirmOwnerAuthorizedPreRuntimeRelease) {
+        $notesLines += @(
+            '',
+            '## Release disposition',
+            '',
+            "**Owner-authorized stable release.** The owner authorized publishing $tag before an in-game test. This release is **not runtime-qualified**: it was not installed or run in Pathfinder: Kingmaker before publication, and live visual, audio, save/reload and compatibility checks were not run."
+        )
+    }
 
     $notes = $notesLines -join [Environment]::NewLine
     if (-not [string]::IsNullOrWhiteSpace($ReleaseNotesPath)) {
@@ -288,6 +311,9 @@ try {
         if ($isPrerelease) {
             $releaseArguments += '--prerelease'
             $releaseArguments += '--latest=false'
+        }
+        elseif ($Publish) {
+            $releaseArguments += '--latest'
         }
         if (-not $Publish) {
             $releaseArguments += '--draft'
@@ -333,12 +359,16 @@ try {
         Invoke-NativeCommand -FilePath 'gh' -Arguments $editArguments
     }
 
-    $releaseUrl = Get-NativeCommandOutput -FilePath 'gh' -Arguments @(
+    $releaseState = Get-NativeCommandOutput -FilePath 'gh' -Arguments @(
         'release', 'view', $tag,
         '--repo', $repository,
-        '--json', 'url',
-        '--jq', '.url'
-    )
+        '--json', 'url,isDraft,isPrerelease'
+    ) | ConvertFrom-Json
+    $releaseUrl = [string] $releaseState.url
+    if ($Publish -and ([bool] $releaseState.isDraft -or
+            [bool] $releaseState.isPrerelease -ne [bool] $isPrerelease)) {
+        throw "GitHub did not record the requested published state for $tag."
+    }
 
     Write-Host "Release: $releaseUrl"
     Write-Host "State: $(if ($Publish) { 'published' } else { 'draft' })"

@@ -624,8 +624,18 @@ def main():
             'qualification gate must terminate at the next level-2 heading or EOF')
     for token in ['FollowingHeadingRenameDoesNotBreakGate','ArbitraryFollowingHeadingDoesNotBreakGate',
                   'EndOfFileTerminatesQualificationSection','LaterSectionCannotAuthorizePublication',
-                  'ConfirmationSwitchRemainsRequired','RuntimeNoRemainsRejected']:
+                  'ConfirmationSwitchRemainsRequired','RuntimeNoRemainsRejected',
+                  'OwnerAuthorizedPreRuntimeReleaseKeepsRuntimeNo','OwnerAuthorizationMustNameTheExactVersion',
+                  'OwnerPathRequiresEveryCurrentQualification','OwnerPathCannotClaimRuntimeQualification',
+                  'OwnerAuthorizationCannotSatisfyRuntimeGate','PublicationDispositionsAreExclusive',
+                  'HistoricalOwnerAuthorizationCannotPublish']:
         require(token in release_gate_tests, f'release qualification gate regression missing: {token}')
+    # Owner approval is a separate stable-release disposition, never a runtime claim.
+    require('-ConfirmOwnerAuthorizedPreRuntimeRelease:$ConfirmOwnerAuthorizedPreRuntimeRelease' in publisher and
+            'not runtime-qualified' in publisher,
+            'publisher must pass the owner-authorized disposition to the gate and disclose it')
+    require('Runtime-qualified:\\s+\\*\\*No\\*\\*' in release_gate,
+            'owner-authorized pre-runtime gate must require Runtime-qualified: No')
     require('Test-ReleaseQualificationGate.ps1' in
             (ROOT/'scripts/Validate-Repository.ps1').read_text(encoding='utf-8'),
             'repository validation must execute release qualification gate tests')
