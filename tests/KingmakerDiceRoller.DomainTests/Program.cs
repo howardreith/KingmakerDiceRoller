@@ -405,7 +405,21 @@ namespace KingmakerDiceRoller.DomainTests
                 new TestCase("liveness match resets mismatch", LivenessMatchResetsMismatch),
                 new TestCase("liveness rejects invalid delta", LivenessRejectsInvalidDelta),
                 new TestCase("session ownership uses identity", SessionOwnershipUsesIdentity),
-                new TestCase("session ownership transfers explicitly", SessionOwnershipTransfersExplicitly)
+                new TestCase("session ownership transfers explicitly", SessionOwnershipTransfersExplicitly),
+                new TestCase("SettingsPanelHealthyMainMenuIsShortAndCollapsed", PreviewSessionContinuityTests.SettingsPanelHealthyMainMenuIsShortAndCollapsed),
+                new TestCase("SettingsPanelUnrelatedLevelUpIsNotAlarming", PreviewSessionContinuityTests.SettingsPanelUnrelatedLevelUpIsNotAlarming),
+                new TestCase("SettingsPanelSupportedCreationShowsAvailabilityAndRecovery", PreviewSessionContinuityTests.SettingsPanelSupportedCreationShowsAvailabilityAndRecovery),
+                new TestCase("SettingsPanelNamesMercenaryAndRespecContexts", PreviewSessionContinuityTests.SettingsPanelNamesMercenaryAndRespecContexts),
+                new TestCase("SettingsPanelRejectedOwnershipIsNotAlarming", PreviewSessionContinuityTests.SettingsPanelRejectedOwnershipIsNotAlarming),
+                new TestCase("SettingsPanelStartFailureStaysVisible", PreviewSessionContinuityTests.SettingsPanelStartFailureStaysVisible),
+                new TestCase("SettingsPanelApplicationFailureKeepsRecoveryVisible", PreviewSessionContinuityTests.SettingsPanelApplicationFailureKeepsRecoveryVisible),
+                new TestCase("SettingsPanelBlockedRecoveryExplainsReason", PreviewSessionContinuityTests.SettingsPanelBlockedRecoveryExplainsReason),
+                new TestCase("SettingsPanelFailedReturnKeepsActionAvailable", PreviewSessionContinuityTests.SettingsPanelFailedReturnKeepsActionAvailable),
+                new TestCase("SettingsPanelIncompleteReturnStaysVisible", PreviewSessionContinuityTests.SettingsPanelIncompleteReturnStaysVisible),
+                new TestCase("SettingsPanelFinalizationFailureStaysVisibleAfterSessionEnds", PreviewSessionContinuityTests.SettingsPanelFinalizationFailureStaysVisibleAfterSessionEnds),
+                new TestCase("SettingsPanelUnverifiedCompatibilityIsConcise", PreviewSessionContinuityTests.SettingsPanelUnverifiedCompatibilityIsConcise),
+                new TestCase("SettingsPanelTroubleshootingIsPresentationOnly", PreviewSessionContinuityTests.SettingsPanelTroubleshootingIsPresentationOnly),
+                new TestCase("SettingsPanelPreservesSavedPreferences", PreviewSessionContinuityTests.SettingsPanelPreservesSavedPreferences)
             };
 
             int passed = 0;

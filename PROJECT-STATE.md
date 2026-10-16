@@ -1,6 +1,69 @@
 # Project state
 
-## Current 0.1.10 Mr. Bard branding release
+## Current 0.1.11 settings-panel cleanup candidate
+
+Version `0.1.11`; branch `z/umm-panel-simplification`, based on `main` at
+`8c57c1e` (post-v0.1.10 publication record). v0.1.10 is published and
+distributed, so this presentation change takes the next unused patch version.
+The owner asked for a public-release-appropriate Unity Mod Manager panel without
+changing rolling, the native UI or safety behavior. They did not authorize a
+merge, tag, release, Nexus upload or permanent installation.
+
+- Default panel: one sentence on where roll controls appear (new main
+  character, mercenary recruitment, respec of all six starting scores), one
+  status line, concise notices only for current problems, **Return to Point
+  Buy** only while the active session is in a non-Point Buy mode, and a
+  collapsed, non-persisted **Show troubleshooting** section. The duplicate
+  name/version heading is removed.
+- Status is derived from structured state, not status text.
+  `RuntimeDiagnostics` records activation (Enabled, EnableFailed, Disabled),
+  a refused disable and the last finalization verdict. The coordinator
+  records the latest Return to Point Buy outcome (Failed, derived values not
+  refreshed, page not refreshed). That outcome applies only while the same
+  session keeps the same assignment revision. Readiness additionally requires
+  resolved contracts. Routine rejected contexts never become notices.
+- Return to Point Buy keeps the unchanged `CanRestorePointBuy` eligibility and
+  `TryRestorePointBuy` checks. A session stuck in `RestoringPointBuy` or
+  `EnteringRollMode` shows the disabled action with its reason instead of
+  hiding it.
+- `CompatibilityDetector` keeps its detection and detail/log text and now also
+  returns the mod name. The panel shows "Compatibility with ... is unverified.
+  See Troubleshooting."; the full text, detected mods and flags move into
+  Troubleshooting.
+- `SettingsView` renders a Unity-free `SettingsPanel` model and rebuilds it on
+  IMGUI Layout events. The old view drew extra rows in the same pass that
+  flipped the verbose toggle.
+- Unchanged: `Settings.xml` fields and defaults (verbose logging still defaults
+  on and keeps saved values), saved-array schema 2, all patches, roll logic,
+  context policy, ownership checks, native UI, branding and identifiers. The
+  Nexus copy remains the exact v0.1.10 text and must be refreshed before any
+  0.1.11 Nexus upload.
+
+## Qualification truth
+
+- Implemented: **Yes** — UMM panel presentation, structured panel state and
+  documentation.
+- Source-qualified: **Yes** — 397/397 C# cases (383 existing plus 14 panel
+  cases driving the real coordinator, policy, session and restore paths),
+  30/30 Python cases, 20/20 release-gate cases and 18/18 repository
+  validation groups. Five deliberate presenter/coordinator mutations were each
+  caught by the intended panel test: recovery gated on Roll Mode only, a
+  dropped application-failure notice, raw status text in the default view, an
+  unscoped Return outcome, and rejected contexts promoted to a warning.
+- Contract-qualified: **Yes** — existing Kingmaker contracts, 11 respec groups
+  and 30/30 native UI IL checks against the installed 2.1.7b assemblies
+  (read-only).
+- Build-qualified: **Yes** — Release build, zero warnings/errors.
+- Package-qualified: **Pending** — recorded after the clean candidate run.
+- Installed: **No** — no game installation, launch or saved-game access.
+- Focused runtime test: **NOT RUN** — the rendered UMM panel was not inspected.
+- Runtime-qualified: **No**.
+- Compatibility-qualified: **No**.
+- Release-authorized: **No**.
+- Testing-prerelease-authorized: **No**.
+- Publicly released: **No**.
+
+## Published 0.1.10 Mr. Bard branding release
 
 Version `0.1.10`; branch `codex/mr-bard-branding`, based on `main` at
 `f185603` (post-v0.1.9 publication record). The owner moved the public
@@ -29,7 +92,7 @@ without an additional in-game test.
   testing, separate from `-ConfirmRuntimeQualified`. It never records runtime
   evidence, and its generated notes say the release is not runtime-qualified.
 
-## Qualification truth
+## 0.1.10 qualification truth
 
 - Implemented: **Yes** — branding metadata, settings-panel title, validation,
   publisher disposition and documentation only.

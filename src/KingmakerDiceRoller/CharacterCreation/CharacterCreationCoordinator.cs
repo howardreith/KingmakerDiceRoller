@@ -27,6 +27,10 @@ namespace KingmakerDiceRoller.CharacterCreation
         private readonly Func<KingmakerContracts> contractsProvider;
         private readonly Func<bool> verboseProvider;
         private readonly CharacterRollWorkflow workflow;
+        private RollSession pointBuyReturnSession;
+        private int pointBuyReturnRevision;
+        private PointBuyReturnOutcome pointBuyReturnOutcome;
+        private string pointBuyReturnDetail;
 
         public CharacterCreationCoordinator(
             CharacterCreationContextPolicy contextPolicy,
@@ -108,6 +112,24 @@ namespace KingmakerDiceRoller.CharacterCreation
         public bool CanRestorePointBuy => sessions.Active != null && sessions.Active.IsRollMode;
         public RollSession ActiveSession => sessions.Active;
         public RollUiSnapshot UiSnapshot => workflow.Snapshot(sessions.Active);
+
+        // Applies only while the same session still holds the assignment the attempt left behind,
+        // so a released session, a later roll, or a rebuilt preview never inherits a stale result.
+        public PointBuyReturnOutcome LastPointBuyReturn
+        {
+            get
+            {
+                RollSession session = sessions.Active;
+                return session != null && ReferenceEquals(session, pointBuyReturnSession) &&
+                    session.AssignmentRevision == pointBuyReturnRevision
+                    ? pointBuyReturnOutcome
+                    : PointBuyReturnOutcome.None;
+            }
+        }
+
+        public string LastPointBuyReturnDetail =>
+            LastPointBuyReturn == PointBuyReturnOutcome.None ? null : pointBuyReturnDetail;
+
         public bool CanAttachNativePanel
         {
             get
@@ -871,16 +893,22 @@ namespace KingmakerDiceRoller.CharacterCreation
             if (contracts == null)
             {
                 error = "Kingmaker contracts are unavailable.";
+                RecordPointBuyReturn(session, PointBuyReturnOutcome.Failed, error);
                 return false;
             }
             if (session.CreationKind == SupportedCharacterCreationKind.Respec && !HasCurrentLiveBinding(session, contracts))
-            { error = "Respec ownership/generation was lost; restoration cannot retarget a character."; return false; }
+            {
+                error = "Respec ownership/generation was lost; restoration cannot retarget a character.";
+                RecordPointBuyReturn(session, PointBuyReturnOutcome.Failed, error);
+                return false;
+            }
             PointBuyRestoreObservation restored;
             if (!pointBuyRestore.TryRestore(session, contracts, out restored, out error))
             {
                 string detail = "Point-buy restoration failed closed: " + error + " " + BuildSessionFacts(session);
                 diagnostics.SetStatus(detail);
                 RecordEvent(detail);
+                RecordPointBuyReturn(session, PointBuyReturnOutcome.Failed, detail);
                 return false;
             }
 
@@ -898,6 +926,7 @@ namespace KingmakerDiceRoller.CharacterCreation
                     BuildSessionFacts(session);
                 diagnostics.SetStatus(error);
                 RecordEvent("FAIL " + error);
+                RecordPointBuyReturn(session, PointBuyReturnOutcome.DerivedValuesNotRefreshed, error);
                 return false;
             }
             PointBuyPresentationObservation presentation;
@@ -918,6 +947,7 @@ namespace KingmakerDiceRoller.CharacterCreation
                     "The captured point-buy model and active native ability page are synchronized; rolled-array staging is suppressed.");
                 logger.Info("Verified pristine point-buy model and native ability-page presentation. " + facts);
                 workflow.SetPointBuyStatus();
+                RecordPointBuyReturn(session, PointBuyReturnOutcome.None, null);
             }
             else
             {
@@ -927,6 +957,7 @@ namespace KingmakerDiceRoller.CharacterCreation
                 diagnostics.Restored(detail);
                 diagnostics.SetStatus(detail);
                 logger.Warning(detail);
+                RecordPointBuyReturn(session, PointBuyReturnOutcome.PageNotRefreshed, detail);
             }
             SynchronizeSkillsPresentation(session, "Return to Point Buy");
             error = null;
@@ -989,6 +1020,14 @@ namespace KingmakerDiceRoller.CharacterCreation
         private void RecordEvent(string detail)
         {
             if (diagnostics.Event(detail)) logger.Info(detail);
+        }
+
+        private void RecordPointBuyReturn(RollSession session, PointBuyReturnOutcome outcome, string detail)
+        {
+            pointBuyReturnSession = session;
+            pointBuyReturnRevision = session.AssignmentRevision;
+            pointBuyReturnOutcome = outcome;
+            pointBuyReturnDetail = detail;
         }
 
         private bool TryApplyUserAssignment(

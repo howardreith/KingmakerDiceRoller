@@ -369,6 +369,7 @@ namespace KingmakerDiceRoller.DomainTests
             internal readonly TestEnvironment Environment = TestEnvironment.Create();
             internal readonly SequenceRandomSource Random = new SequenceRandomSource(Enumerable.Range(0, 240).Select(i => 6 - (i / 4) % 6).ToArray());
             internal readonly FakeUnitDescriptor Original;
+            internal readonly RuntimeDiagnostics Diagnostics = new RuntimeDiagnostics();
             internal readonly CharacterCreationCoordinator Coordinator;
             internal FakeState Preview;
             internal RespecOwnership Owner;
@@ -382,7 +383,7 @@ namespace KingmakerDiceRoller.DomainTests
                 Environment.Source.IsCustomCompanion = category == "mercenary";
                 if (category == "main") Environment.Player.MainCharacter = Original;
                 Preview = Environment.NewState(10); Preview.Mode = FakeMode.Respec;
-                Coordinator = Environment.CreateCoordinator(new PointBudgetTracker(), new RuntimeDiagnostics(), NewProductWorkflow(Random, RollConfiguration.Default()));
+                Coordinator = Environment.CreateCoordinator(new PointBudgetTracker(), Diagnostics, NewProductWorkflow(Random, RollConfiguration.Default()));
                 Owner = MakeOwner();
                 if (bind) Coordinator.OnRespecBound(Owner);
                 Environment.Allocator.FillData();

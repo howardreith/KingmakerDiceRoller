@@ -121,7 +121,9 @@ namespace KingmakerDiceRoller
                 for (int index = 0; index < resolved.Evidence.Count; index++) logger.Info("Contract: " + resolved.Evidence[index]);
                 patches.Install(resolved, coordinator, nativePanel);
                 enabled = true;
-                diagnostics.SetStatus("Enabled; waiting for supported creation or an owned starting-score respec.");
+                diagnostics.SetActivation(
+                    RuntimeActivation.Enabled,
+                    "Enabled; waiting for supported creation or an owned starting-score respec.");
                 logger.Info("Kingmaker Dice Roller " + ProductMetadata.Version +
                     " enabled; explicit rolled-ability workflow is ready.");
                 return true;
@@ -131,7 +133,7 @@ namespace KingmakerDiceRoller
                 nativePanel.Detach(contracts.Current);
                 patches.Uninstall();
                 contracts.Clear();
-                diagnostics.SetStatus("Enable failed closed: " + exception.Message);
+                diagnostics.SetActivation(RuntimeActivation.EnableFailed, "Enable failed closed: " + exception.Message);
                 logger.Exception("Enable Kingmaker Dice Roller", exception);
                 enabled = false;
                 return false;
@@ -151,7 +153,7 @@ namespace KingmakerDiceRoller
             string error;
             if (!coordinator.TryPrepareDisable(out error))
             {
-                diagnostics.SetStatus("Disable refused because point-buy restoration failed: " + error);
+                diagnostics.RefuseDisable("Disable refused because point-buy restoration failed: " + error);
                 logger.Error("Kingmaker Dice Roller remains enabled to preserve recovery hooks: " + error);
                 return false;
             }
@@ -160,7 +162,7 @@ namespace KingmakerDiceRoller
             patches.Uninstall();
             contracts.Clear();
             enabled = false;
-            diagnostics.SetStatus("Disabled; no owned roll session remains.");
+            diagnostics.SetActivation(RuntimeActivation.Disabled, "Disabled; no owned roll session remains.");
             logger.Info("Kingmaker Dice Roller disabled.");
             return true;
         }

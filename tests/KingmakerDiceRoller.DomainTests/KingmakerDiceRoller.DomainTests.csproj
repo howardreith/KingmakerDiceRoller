@@ -28,6 +28,10 @@
     <Compile Include="..\..\src\KingmakerDiceRoller\UI\NativeThemeRecovery.cs"><Link>UI\NativeThemeRecovery.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\UI\NativePanelConstructionBudget.cs"><Link>UI\NativePanelConstructionBudget.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\UI\ButtonCaptionFit.cs"><Link>UI\ButtonCaptionFit.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\UI\SettingsPanel.cs"><Link>UI\SettingsPanel.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\Compatibility\CompatibilitySnapshot.cs"><Link>Compatibility\CompatibilitySnapshot.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\PointBuyReturnOutcome.cs"><Link>CharacterCreation\PointBuyReturnOutcome.cs</Link></Compile>
+    <Compile Include="SettingsPanelTests.cs" />
 
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RespecOwnership.cs"><Link>CharacterCreation\RespecOwnership.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RespecLifecycleService.cs"><Link>CharacterCreation\RespecLifecycleService.cs</Link></Compile>

@@ -161,6 +161,17 @@ In Roll Mode, `NativeAbilityControlService` records and suppresses the exact 12
 native authoritative state; disable/phase cleanup restores any still-owned
 states.
 
+### Unity Mod Manager settings panel
+
+`SettingsPanel` is a Unity-free presenter that reads runtime state into a
+`SettingsPanelModel`; `SettingsView` only renders that model with IMGUI and
+rebuilds it on Layout events. Building the model never mutates sessions,
+scores, settings or diagnostics. Readiness comes from the activation state and
+resolved contracts, current problems from session state, the coordinator's
+session-scoped Return to Point Buy outcome and the last finalization verdict.
+Return to Point Buy uses the coordinator's unchanged `CanRestorePointBuy` and
+`TryRestorePointBuy`. The collapsed Troubleshooting state is not persisted.
+
 ### Harmony
 
 Six narrow postfixes delegate immediately:

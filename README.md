@@ -15,6 +15,15 @@ rebuilt.
 
 ## Release status
 
+**0.1.11 candidate — cleaner settings panel (unreleased).** The Unity Mod
+Manager settings panel now shows where roll controls appear, one status line,
+brief notices only when something needs attention, and **Return to Point
+Buy** only while rolled scores are in use or a roll or restore did not
+finish. Detailed diagnostics remain available under **Show troubleshooting**.
+Rolling, assignment, Point Buy restoration, the native UI and saved settings
+are unchanged. 0.1.11 is not yet released or runtime-qualified; 0.1.10 below
+remains the current official release.
+
 **Release 0.1.10 — Mr. Bard branding (2026-10-15).** Unity Mod Manager now
 shows the mod as **Mr. Bard's Kingmaker Roll For Stats UI** by **Mr. Bard**,
 and the UMM settings panel uses the same title. Rolling, assignment, Point Buy

@@ -1,4 +1,13 @@
-# 0.1.10 Mr. Bard branding release
+# 0.1.11 settings-panel candidate
+
+`0.1.11` simplifies the UMM settings panel only; v0.1.10 is published, so the
+change takes the next unused patch version. It is an unreleased candidate:
+qualify it with the preserved local candidate workflow below
+(`Qualify.ps1 -Build -Package -Candidate`). Publication, tagging, merging and
+Nexus upload are not authorized; `docs/RELEASE-NOTES-0.1.11.md` and the
+README release status must be finalized before any future publication.
+
+# Published 0.1.10 Mr. Bard branding release
 
 `0.1.10` is a branding-only release: UMM `DisplayName` **Mr. Bard's Kingmaker
 Roll For Stats UI**, `Author` **Mr. Bard**, the matching settings-panel title,

@@ -1,19 +1,31 @@
 # Runtime diagnostics
 
-The UMM panel is an operational and recovery surface. The native ability page
+The UMM panel is a short status and recovery surface. The native ability page
 is the primary product UI.
 
 ## UMM status
 
-The panel reports:
+By default the panel shows where roll controls appear and one status line. It
+adds concise notices only for current problems: the mod could not start, the
+active roll could not be applied, the latest Return to Point Buy failed or
+left derived values or the page unrefreshed, the last finalization failed, or
+a detected mod is compatibility-unverified. Routine rejected contexts never
+produce a notice. **Return to Point Buy** appears while the active session is
+in any non-Point Buy mode. It is enabled only when `CanRestorePointBuy`
+allows it; otherwise it shows the blocking reason.
 
-- product version and current workflow mode;
+**Show troubleshooting** (collapsed, not persisted) reports:
+
+- the verbose diagnostic logging toggle;
+- the raw status text, activation state and workflow mode;
+- history/saved-array counts and active session facts;
+- Return to Point Buy availability and the latest attempt's outcome;
+- the last finalization verdict and detail;
 - accepted/rejected context totals, verified preview applications, final
-  mercenary PASS/FAIL totals, and releases;
+  PASS/FAIL totals, and releases;
 - exact contract resolution and Assembly-CSharp MVID;
-- detected compatibility mods and warnings;
-- history/saved-array counts;
-- emergency Return to Point Buy while Roll Mode is active;
+- detected compatibility mods, versions and enabled/active flags, and the full
+  compatibility explanations;
 - recent deduplicated facts when verbose diagnostics are enabled.
 
 Rejection counts include repeated observations, but visible rejection messages

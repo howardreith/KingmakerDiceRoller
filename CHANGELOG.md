@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.1.11 - unreleased candidate - cleaner settings panel
+
+Not released and not runtime-qualified. Unity Mod Manager panel presentation
+only; rolling, assignment, Point Buy restoration, the native ability-page UI,
+Harmony patches and `Settings.xml` keys and defaults are unchanged.
+
+- The UMM settings panel is cleaner: one sentence on where roll controls
+  appear, one status line, concise notices only for current problems, and
+  **Return to Point Buy** only while rolled scores are in use or a roll or
+  restore did not finish. The duplicate name/version heading is removed.
+- Detailed diagnostics remain available under a collapsed **Show
+  troubleshooting** section, including the verbose logging toggle, counters,
+  contract MVID, detected mods and the full compatibility explanations.
+- Bag of Tricks and Respecialization detection now reads "Compatibility with
+  ... is unverified. See Troubleshooting." The emergency button is labelled
+  **Return to Point Buy**; its eligibility and restore checks are unchanged.
+
 ## 0.1.10 - 2026-10-15 - Mr. Bard branding
 
 Owner-authorized stable release; not runtime-qualified (not installed or run
