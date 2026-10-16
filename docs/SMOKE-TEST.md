@@ -384,3 +384,30 @@ shadow/ornament, typography beside native controls, readable compact rows and
 convincing held press. Screenshot similarity alone proves neither animation nor
 audio. Keep offline tests, live interactions, visuals, audio, workflow/finalization
 regressions and compatibility as separate statuses.
+
+## K. Unity Mod Manager settings panel (0.1.11, NOT RUN)
+
+Use the exact candidate ZIP, a temporary installation with the existing
+backup/restore procedure, and only a disposable new-character creation. Never
+use Return to Point Buy only to obtain a screenshot.
+
+1. At the main menu, open the mod's UMM settings. Confirm there is no
+   duplicate name/version heading. The panel should show only the
+   roll-controls sentence, `Status: Ready.`, any concise compatibility notice
+   (with Bag of Tricks installed: "Compatibility with Bag of Tricks is
+   unverified. See Troubleshooting.") and **Show troubleshooting**. It must not
+   show a disabled Return to Point Buy button. It should fit without
+   scrolling at the ordinary UMM window width, with readable wrapping and a
+   legible amber notice.
+2. Press **Show troubleshooting**. Confirm the verbose toggle keeps its saved
+   value and that the workflow, counters, contract MVID, detected mods with
+   flags, the full compatibility text and (with verbose on) recent entries
+   appear. Hide it again. Confirm nothing in the game changed and the verbose
+   preference is unchanged after closing UMM.
+3. In a disposable new-character creation, confirm the status reads "This new
+   character can use Roll Stats." with no recovery action. After **Roll** on
+   the ability page, confirm "is using rolled scores." and an enabled
+   **Return to Point Buy** with its one-line effect.
+4. During an ordinary level-up of a loaded disposable character, confirm the
+   panel stays `Status: Ready.` with no warning even though rejected contexts
+   increase under Troubleshooting.

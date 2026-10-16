@@ -54,9 +54,26 @@ merge, tag, release, Nexus upload or permanent installation.
   and 30/30 native UI IL checks against the installed 2.1.7b assemblies
   (read-only).
 - Build-qualified: **Yes** — Release build, zero warnings/errors.
-- Package-qualified: **Pending** — recorded after the clean candidate run.
-- Installed: **No** — no game installation, launch or saved-game access.
-- Focused runtime test: **NOT RUN** — the rendered UMM panel was not inspected.
+- Package-qualified: **Yes** — `Qualify.ps1 -Build -Package -Candidate` on the
+  clean implementation commit `b669400ea16affddd6bcde1421a5572841e4f178`
+  re-ran every check above and produced
+  `artifacts/candidates/b669400ea16affddd6bcde1421a5572841e4f178/KingmakerDiceRoller-0.1.11.zip`
+  (SHA-256 `7d5213cc5226174801bfc97aed406d73b50da9b9fa125b6757f55627dc48e96f`,
+  DLL SHA-256
+  `6d39e0b69b1f915f27a2b1aa64c3a8070cd4d71038127550112e52f603fcd808`). It
+  passed strict validation: six allowlisted files, branded name/author,
+  version 0.1.11, and the unchanged ID, assembly name and entry method. Later
+  commits on this branch change only unpackaged documentation.
+- Installed: **No** — no game installation, launch or saved-game access. This
+  machine still has 0.1.6 installed, untouched.
+- Focused runtime test: **NOT RUN** — rendered UMM panel inspection is
+  blocked. `CopyFromScreen` fails with "The handle is invalid" from the agent
+  session even though the RDP session is listed as Active, and no
+  desktop-control tool is available. Blind input and guard bypass are not
+  permitted. A startup-only launch cannot reach the changed IMGUI draw path,
+  so none was attempted
+  (`artifacts/umm-panel/runtime-b669400/desktop-blocker.json`, ignored).
+  `docs/SMOKE-TEST.md` section K lists the manual panel check.
 - Runtime-qualified: **No**.
 - Compatibility-qualified: **No**.
 - Release-authorized: **No**.
