@@ -1,8 +1,9 @@
 # Cleaner settings panel
 
-**Unreleased candidate.** 0.1.11 has not been authorized for release and is
-**not runtime-qualified**: it has not been installed or run in Pathfinder:
-Kingmaker.
+**Owner-authorized stable release.** On 2026-10-15 the owner authorized
+releasing 0.1.11 as the next version. This release is **not
+runtime-qualified**: it was not installed or run in Pathfinder: Kingmaker
+before publication.
 
 ## What changed
 
@@ -38,7 +39,13 @@ and the verbose logging preference keeps its saved value.
 
 ## Qualification and limitations
 
-- Offline qualification is recorded in `PROJECT-STATE.md` for the exact
-  candidate commit.
+- Offline qualification passed: 397/397 C# behavior cases (14 new
+  settings-panel cases driving the real coordinator, context policy, session
+  and Point Buy restoration paths), 30/30 Python oracle cases, 20/20
+  release-gate cases and repository source validation; read-only Kingmaker
+  2.1.7b contract checks, 11 respec contract groups and 30/30 native UI IL
+  checks; a Release build with zero warnings/errors; and strict six-file
+  package validation.
 - Not run for 0.1.11: installation, the rendered UMM panel, in-game rolling,
-  live visual/audio checks, save/reload and the compatibility matrix.
+  live visual/audio checks, save/reload and the compatibility matrix. The
+  manual panel check is section K of `docs/SMOKE-TEST.md`.

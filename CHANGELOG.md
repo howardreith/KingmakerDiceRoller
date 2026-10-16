@@ -1,9 +1,9 @@
 # Changelog
 
-## 0.1.11 - unreleased candidate - cleaner settings panel
+## 0.1.11 - 2026-10-15 - cleaner settings panel
 
-Not released and not runtime-qualified. Unity Mod Manager panel presentation
-only; rolling, assignment, Point Buy restoration, the native ability-page UI,
+Owner-authorized stable release; not runtime-qualified (not installed or run
+in the game before publication). Unity Mod Manager panel presentation only; rolling, assignment, Point Buy restoration, the native ability-page UI,
 Harmony patches and `Settings.xml` keys and defaults are unchanged.
 
 - The UMM settings panel is cleaner: one sentence on where roll controls

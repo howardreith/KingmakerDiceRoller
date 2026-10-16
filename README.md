@@ -15,19 +15,23 @@ rebuilt.
 
 ## Release status
 
-**0.1.11 candidate — cleaner settings panel (unreleased).** The Unity Mod
+**Release 0.1.11 — cleaner settings panel (2026-10-15).** The Unity Mod
 Manager settings panel now shows where roll controls appear, one status line,
 brief notices only when something needs attention, and **Return to Point
 Buy** only while rolled scores are in use or a roll or restore did not
 finish. Detailed diagnostics remain available under **Show troubleshooting**.
 Rolling, assignment, Point Buy restoration, the native UI and saved settings
-are unchanged. 0.1.11 is not yet released or runtime-qualified; 0.1.10 below
-remains the current official release.
+are unchanged from 0.1.10.
+
+0.1.11 is an owner-authorized stable release. It passed the offline
+qualification below but was not installed or run in the game before
+publication; it is not runtime-qualified.
 
 **Release 0.1.10 — Mr. Bard branding (2026-10-15).** Unity Mod Manager now
 shows the mod as **Mr. Bard's Kingmaker Roll For Stats UI** by **Mr. Bard**,
-and the UMM settings panel uses the same title. Rolling, assignment, Point Buy
-restoration, the native UI and saved arrays are unchanged from 0.1.9.
+and the UMM settings panel used the same title until 0.1.11. Rolling,
+assignment, Point Buy restoration, the native UI and saved arrays are
+unchanged from 0.1.9.
 
 0.1.10 is an owner-authorized stable release. It passed the offline
 qualification below but was not installed or run in the game before
@@ -133,20 +137,21 @@ Roll or Recall and restored exactly; neither 20 nor 25 is hard-coded.
 
 ## Installation
 
-Download **KingmakerDiceRoller-0.1.10.zip** from the
-[v0.1.10 release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.10)
+Download **KingmakerDiceRoller-0.1.11.zip** from the
+[v0.1.11 release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.11)
 **Assets**. Drag that ZIP into Unity Mod Manager's Mods tab for Pathfinder:
 Kingmaker and confirm UMM lists **Mr. Bard's Kingmaker Roll For Stats UI**
-version **0.1.10**. Releases up to 0.1.9 appear in UMM as **Kingmaker Dice
+version **0.1.11**. Releases up to 0.1.9 appear in UMM as **Kingmaker Dice
 Roller**; it is the same mod. Keep the installed UMM/Harmony libraries; no
 loader downgrade is required. GitHub's Source code archives are not mod
 packages.
 
-Version `0.1.10` is the current official release, published on 2026-10-15
-at the owner's direction without a new in-game test. Its code is the 0.1.9
-code apart from the displayed name, author and version texts. The 0.1.9
-caption fit was not verified in-game by the development agent, and live
-visual, audio, runtime and compatibility acceptance remain NOT RUN.
+Version `0.1.11` is the current official release, published on 2026-10-15
+at the owner's direction without a new in-game test. Its code is the 0.1.10
+code apart from the UMM settings panel and its supporting status records.
+The new panel, the 0.1.9 caption fit and live visual, audio, runtime and
+compatibility acceptance have not been verified in-game by the development
+agent.
 
 The archive contains one `KingmakerDiceRoller` directory with exactly six
 allowlisted files and does not bundle development artifacts or game assemblies.
@@ -165,13 +170,13 @@ arrays through a reinstall.
 
 ## Qualification
 
-Offline qualification of 0.1.10 passes 383 deterministic C# cases, 30 Python
+Offline qualification of 0.1.11 passes 397 deterministic C# cases, 30 Python
 oracle cases, 20 release-gate tests and 18 source-validation groups. Kingmaker
 2.1.7b contract checks include native derived allowances, replay/copy order,
 installed Harmony scope behavior, 11 respec contract groups and 30 native UI
 IL/component checks. The Release build has zero warnings/errors and the package
 passes the six-file allowlist, manifest identity/branding and hash checks.
-0.1.10 has not been installed or run in the game.
+0.1.11 has not been installed or run in the game.
 
 Live visual and press-motion acceptance, audio/volume/mute, interactive gameplay,
 finalization, save/reload and the provider/input compatibility matrix are

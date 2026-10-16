@@ -1,13 +1,18 @@
 # Project state
 
-## Current 0.1.11 settings-panel cleanup candidate
+## Current 0.1.11 settings-panel cleanup release
 
 Version `0.1.11`; branch `z/umm-panel-simplification`, based on `main` at
 `8c57c1e` (post-v0.1.10 publication record). v0.1.10 is published and
 distributed, so this presentation change takes the next unused patch version.
 The owner asked for a public-release-appropriate Unity Mod Manager panel without
-changing rolling, the native UI or safety behavior. They did not authorize a
-merge, tag, release, Nexus upload or permanent installation.
+changing rolling, the native UI or safety behavior. After reviewing the
+candidate, on 2026-10-15 the owner instructed: "Go ahead and release the new
+version and increment the version number please." That instruction
+authorizes merging, pushing, tagging and publishing 0.1.11, which is the
+increment over the published 0.1.10, as a stable GitHub release without an
+additional in-game test. Bumping to 0.1.12 would skip an unpublished number.
+It does not cover a Nexus upload or a permanent installation.
 
 - Default panel: one sentence on where roll controls appear (new main
   character, mercenary recruitment, respec of all six starting scores), one
@@ -36,8 +41,7 @@ merge, tag, release, Nexus upload or permanent installation.
 - Unchanged: `Settings.xml` fields and defaults (verbose logging still defaults
   on and keeps saved values), saved-array schema 2, all patches, roll logic,
   context policy, ownership checks, native UI, branding and identifiers. The
-  Nexus copy remains the exact v0.1.10 text and must be refreshed before any
-  0.1.11 Nexus upload.
+  Nexus copy now describes 0.1.11.
 
 ## Qualification truth
 
@@ -62,8 +66,11 @@ merge, tag, release, Nexus upload or permanent installation.
   DLL SHA-256
   `6d39e0b69b1f915f27a2b1aa64c3a8070cd4d71038127550112e52f603fcd808`). It
   passed strict validation: six allowlisted files, branded name/author,
-  version 0.1.11, and the unchanged ID, assembly name and entry method. Later
-  commits on this branch change only unpackaged documentation.
+  version 0.1.11, and the unchanged ID, assembly name and entry method. The
+  release-preparation commit changes only documentation, including the
+  packaged README release status. The guarded publisher re-runs build and
+  package qualification on the merge commit and records the released ZIP's
+  SHA-256 in its checksum asset.
 - Installed: **No** — no game installation, launch or saved-game access. This
   machine still has 0.1.6 installed, untouched.
 - Focused runtime test: **NOT RUN** — rendered UMM panel inspection is
@@ -76,9 +83,12 @@ merge, tag, release, Nexus upload or permanent installation.
   `docs/SMOKE-TEST.md` section K lists the manual panel check.
 - Runtime-qualified: **No**.
 - Compatibility-qualified: **No**.
-- Release-authorized: **No**.
-- Testing-prerelease-authorized: **No**.
-- Publicly released: **No**.
+- Release-authorized: **Yes** — the owner's 2026-10-15 instruction quoted
+  above.
+- Owner-authorized pre-runtime release: **Yes** — the owner authorized stable
+  v0.1.11 without an in-game test on 2026-10-15; no runtime PASS is recorded.
+- Testing-prerelease-authorized: **No** — the owner requested a release.
+- Publicly released: **No** — pending the guarded publisher.
 
 ## Published 0.1.10 Mr. Bard branding release
 
