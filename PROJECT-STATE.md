@@ -1,6 +1,96 @@
 # Project state
 
-## Current 0.1.10 Mr. Bard branding release
+## Current 0.1.11 settings-panel cleanup release
+
+Version `0.1.11`; branch `z/umm-panel-simplification`, based on `main` at
+`8c57c1e` (post-v0.1.10 publication record). v0.1.10 is published and
+distributed, so this presentation change takes the next unused patch version.
+The owner asked for a public-release-appropriate Unity Mod Manager panel without
+changing rolling, the native UI or safety behavior. After reviewing the
+candidate, on 2026-10-15 the owner instructed: "Go ahead and release the new
+version and increment the version number please." That instruction
+authorizes merging, pushing, tagging and publishing 0.1.11, which is the
+increment over the published 0.1.10, as a stable GitHub release without an
+additional in-game test. Bumping to 0.1.12 would skip an unpublished number.
+It does not cover a Nexus upload or a permanent installation.
+
+- Default panel: one sentence on where roll controls appear (new main
+  character, mercenary recruitment, respec of all six starting scores), one
+  status line, concise notices only for current problems, **Return to Point
+  Buy** only while the active session is in a non-Point Buy mode, and a
+  collapsed, non-persisted **Show troubleshooting** section. The duplicate
+  name/version heading is removed.
+- Status is derived from structured state, not status text.
+  `RuntimeDiagnostics` records activation (Enabled, EnableFailed, Disabled),
+  a refused disable and the last finalization verdict. The coordinator
+  records the latest Return to Point Buy outcome (Failed, derived values not
+  refreshed, page not refreshed). That outcome applies only while the same
+  session keeps the same assignment revision. Readiness additionally requires
+  resolved contracts. Routine rejected contexts never become notices.
+- Return to Point Buy keeps the unchanged `CanRestorePointBuy` eligibility and
+  `TryRestorePointBuy` checks. A session stuck in `RestoringPointBuy` or
+  `EnteringRollMode` shows the disabled action with its reason instead of
+  hiding it.
+- `CompatibilityDetector` keeps its detection and detail/log text and now also
+  returns the mod name. The panel shows "Compatibility with ... is unverified.
+  See Troubleshooting."; the full text, detected mods and flags move into
+  Troubleshooting.
+- `SettingsView` renders a Unity-free `SettingsPanel` model and rebuilds it on
+  IMGUI Layout events. The old view drew extra rows in the same pass that
+  flipped the verbose toggle.
+- Unchanged: `Settings.xml` fields and defaults (verbose logging still defaults
+  on and keeps saved values), saved-array schema 2, all patches, roll logic,
+  context policy, ownership checks, native UI, branding and identifiers. The
+  Nexus copy now describes 0.1.11.
+
+## Qualification truth
+
+- Implemented: **Yes** — UMM panel presentation, structured panel state and
+  documentation.
+- Source-qualified: **Yes** — 397/397 C# cases (383 existing plus 14 panel
+  cases driving the real coordinator, policy, session and restore paths),
+  30/30 Python cases, 20/20 release-gate cases and 18/18 repository
+  validation groups. Five deliberate presenter/coordinator mutations were each
+  caught by the intended panel test: recovery gated on Roll Mode only, a
+  dropped application-failure notice, raw status text in the default view, an
+  unscoped Return outcome, and rejected contexts promoted to a warning.
+- Contract-qualified: **Yes** — existing Kingmaker contracts, 11 respec groups
+  and 30/30 native UI IL checks against the installed 2.1.7b assemblies
+  (read-only).
+- Build-qualified: **Yes** — Release build, zero warnings/errors.
+- Package-qualified: **Yes** — `Qualify.ps1 -Build -Package -Candidate` on the
+  clean implementation commit `b669400ea16affddd6bcde1421a5572841e4f178`
+  re-ran every check above and produced
+  `artifacts/candidates/b669400ea16affddd6bcde1421a5572841e4f178/KingmakerDiceRoller-0.1.11.zip`
+  (SHA-256 `7d5213cc5226174801bfc97aed406d73b50da9b9fa125b6757f55627dc48e96f`,
+  DLL SHA-256
+  `6d39e0b69b1f915f27a2b1aa64c3a8070cd4d71038127550112e52f603fcd808`). It
+  passed strict validation: six allowlisted files, branded name/author,
+  version 0.1.11, and the unchanged ID, assembly name and entry method. The
+  release-preparation commit changes only documentation, including the
+  packaged README release status. The guarded publisher re-runs build and
+  package qualification on the merge commit and records the released ZIP's
+  SHA-256 in its checksum asset.
+- Installed: **No** — no game installation, launch or saved-game access. This
+  machine still has 0.1.6 installed, untouched.
+- Focused runtime test: **NOT RUN** — rendered UMM panel inspection is
+  blocked. `CopyFromScreen` fails with "The handle is invalid" from the agent
+  session even though the RDP session is listed as Active, and no
+  desktop-control tool is available. Blind input and guard bypass are not
+  permitted. A startup-only launch cannot reach the changed IMGUI draw path,
+  so none was attempted
+  (`artifacts/umm-panel/runtime-b669400/desktop-blocker.json`, ignored).
+  `docs/SMOKE-TEST.md` section K lists the manual panel check.
+- Runtime-qualified: **No**.
+- Compatibility-qualified: **No**.
+- Release-authorized: **Yes** — the owner's 2026-10-15 instruction quoted
+  above.
+- Owner-authorized pre-runtime release: **Yes** — the owner authorized stable
+  v0.1.11 without an in-game test on 2026-10-15; no runtime PASS is recorded.
+- Testing-prerelease-authorized: **No** — the owner requested a release.
+- Publicly released: **No** — pending the guarded publisher.
+
+## Published 0.1.10 Mr. Bard branding release
 
 Version `0.1.10`; branch `codex/mr-bard-branding`, based on `main` at
 `f185603` (post-v0.1.9 publication record). The owner moved the public
@@ -29,7 +119,7 @@ without an additional in-game test.
   testing, separate from `-ConfirmRuntimeQualified`. It never records runtime
   evidence, and its generated notes say the release is not runtime-qualified.
 
-## Qualification truth
+## 0.1.10 qualification truth
 
 - Implemented: **Yes** — branding metadata, settings-panel title, validation,
   publisher disposition and documentation only.

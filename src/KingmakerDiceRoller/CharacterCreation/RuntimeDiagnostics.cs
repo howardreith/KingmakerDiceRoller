@@ -3,6 +3,14 @@ using System.Collections.Generic;
 
 namespace KingmakerDiceRoller.CharacterCreation
 {
+    public enum RuntimeActivation
+    {
+        NotEnabled,
+        Enabled,
+        EnableFailed,
+        Disabled
+    }
+
     public sealed class RuntimeDiagnostics
     {
         private readonly object sync = new object();
@@ -11,6 +19,9 @@ namespace KingmakerDiceRoller.CharacterCreation
         private readonly HashSet<string> observedEventDetails = new HashSet<string>(StringComparer.Ordinal);
 
         public string Status { get; private set; } = "Not enabled.";
+        public RuntimeActivation Activation { get; private set; } = RuntimeActivation.NotEnabled;
+        // Set when a disable request was refused to keep recovery hooks installed.
+        public bool DisableRefused { get; private set; }
         public int AcceptedContexts { get; private set; }
         public int RejectedContexts { get; private set; }
         public int ArraysApplied { get; private set; }
@@ -18,6 +29,9 @@ namespace KingmakerDiceRoller.CharacterCreation
         public int SessionsReleased { get; private set; }
         public int FinalizationsVerified { get; private set; }
         public int FinalizationFailures { get; private set; }
+        // The most recent finalization verdict; a later verified finalization supersedes a failure.
+        public bool LastFinalizationFailed { get; private set; }
+        public string LastFinalizationDetail { get; private set; }
 
         public void SetStatus(string value)
         {
@@ -25,6 +39,27 @@ namespace KingmakerDiceRoller.CharacterCreation
             {
                 Status = value;
                 AddRecent(value);
+            }
+        }
+
+        public void SetActivation(RuntimeActivation value, string status)
+        {
+            lock (sync)
+            {
+                Activation = value;
+                DisableRefused = false;
+                Status = status;
+                AddRecent(status);
+            }
+        }
+
+        public void RefuseDisable(string status)
+        {
+            lock (sync)
+            {
+                DisableRefused = true;
+                Status = status;
+                AddRecent(status);
             }
         }
 
@@ -96,6 +131,8 @@ namespace KingmakerDiceRoller.CharacterCreation
             {
                 FinalizationsVerified++;
                 SessionsReleased++;
+                LastFinalizationFailed = false;
+                LastFinalizationDetail = detail;
                 AddRecent("FINAL PASS " + detail);
             }
         }
@@ -106,6 +143,8 @@ namespace KingmakerDiceRoller.CharacterCreation
             {
                 FinalizationFailures++;
                 SessionsReleased++;
+                LastFinalizationFailed = true;
+                LastFinalizationDetail = detail;
                 AddRecent("FINAL FAIL " + detail);
             }
         }

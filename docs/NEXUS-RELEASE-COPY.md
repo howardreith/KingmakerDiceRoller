@@ -1,16 +1,16 @@
 # Nexus Mods release copy
 
-Nexus Mods page text for version `0.1.10`, the owner-authorized stable
+Nexus Mods page text for version `0.1.11`, the owner-authorized stable
 release of 2026-10-15. The Nexus file is the exact
-`KingmakerDiceRoller-0.1.10.zip` asset of the GitHub
-[v0.1.10 release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.10),
+`KingmakerDiceRoller-0.1.11.zip` asset of the GitHub
+[v0.1.11 release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.11),
 uploaded without repackaging; its SHA-256 is in that release's
 `SHA256SUMS.txt`. Everything below is based on this repository's code and its
 records (`README.md`, `docs/USER-GUIDE.md`, `docs/COMPATIBILITY.md`,
 `PROJECT-STATE.md`).
 
 - **Author credit:** Mr. Bard
-- **Version:** 0.1.10
+- **Version:** 0.1.11
 - **Category:** the closest available Kingmaker category for character
   creation or user-interface mods
 
@@ -79,12 +79,12 @@ Formerly published as **Kingmaker Dice Roller**.
 ## Installation
 
 1. Install Unity Mod Manager for Pathfinder: Kingmaker if you have not already.
-2. Download `KingmakerDiceRoller-0.1.10.zip` (from this page's Files tab or
-   the GitHub v0.1.10 release). Do not extract it.
+2. Download `KingmakerDiceRoller-0.1.11.zip` (from this page's Files tab or
+   the GitHub v0.1.11 release). Do not extract it.
 3. In Unity Mod Manager, select Pathfinder: Kingmaker, open the **Mods** tab
    and drag the ZIP onto it (or use **Install Mod**).
 4. Start the game and confirm that **Mr. Bard's Kingmaker Roll For Stats UI**
-   version **0.1.10** is listed and enabled in the mod manager.
+   version **0.1.11** is listed and enabled in the mod manager.
 5. Create a new character. On the ability-score page, press the **Roll Stats**
    tab.
 
@@ -94,7 +94,7 @@ expected.
 
 ## Upgrading from Kingmaker Dice Roller
 
-This is the same mod under a new name. Install 0.1.10 over your existing copy
+This is the same mod under a new name. Install 0.1.11 over your existing copy
 the normal way; you do not need to uninstall first.
 
 - The Unity Mod Manager ID (`KingmakerDiceRoller`), DLL name and install folder
@@ -102,20 +102,20 @@ the normal way; you do not need to uninstall first.
   a second one. After updating, the entry shows the new name and author.
 - Saved arrays and roll preferences are stored in
   `Mods/KingmakerDiceRoller/Settings.xml`. The download does not contain that
-  file, and 0.1.10 uses the same settings format, so in-place updates keep it.
+  file, and 0.1.11 uses the same settings format, so in-place updates keep it.
   Uninstalling or deleting the mod folder removes it, so back it up first if
   you plan to reinstall from scratch.
-- 0.1.10 changes only the name and author shown in the mod manager, the
-  settings-panel title and the documentation. Rolling and character creation
-  behave as in 0.1.9.
+- 0.1.10 changed the name and author shown in the mod manager. 0.1.11 changes
+  only the mod manager settings panel, which is now shorter. Rolling and
+  character creation behave as in 0.1.9 and 0.1.10.
 
 These points are based on the unchanged package layout, ID and settings code.
 An in-place upgrade has not been exercised in a live Unity Mod Manager
-installation for 0.1.10.
+installation for 0.1.11.
 
 ## Known limitations
 
-- **Testing status.** 0.1.10 is an owner-authorized release that passed the
+- **Testing status.** 0.1.11 is an owner-authorized release that passed the
   automated suite (deterministic behavior tests, contract checks against the
   2.1.7b game assemblies, a clean Release build and package validation) but
   was not run in the game before release.
@@ -131,12 +131,14 @@ installation for 0.1.10.
   untouched. Bag of Tricks point budgets are read from the live allocator, and
   Call of the Wild racial modifiers stay separate from rolled base values.
   Neither combination has been through the full compatibility test matrix.
-  The mod manager settings panel shows a warning when Bag of Tricks is present.
+  The mod manager settings panel notes that compatibility with Bag of Tricks
+  is unverified when it is present.
 - **History is not saved.** Roll history covers only the current character
   build. Use the saved-array slots to keep arrays between sessions.
-- The mod manager settings panel provides diagnostics and an emergency
-  **Return active Roll Mode to Point Buy** action. Normal rolling happens on
-  the character-creation page.
+- The mod manager settings panel shows the mod's status and, while rolled
+  scores are in use, a fallback **Return to Point Buy** action. Diagnostics are
+  under **Show troubleshooting**. Normal rolling happens on the
+  character-creation page.
 
 ## Compatibility
 

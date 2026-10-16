@@ -7,11 +7,11 @@ namespace KingmakerDiceRoller.UI
 {
     public sealed class SettingsView
     {
-        private readonly Settings settings;
-        private readonly CharacterCreationCoordinator coordinator;
-        private readonly RuntimeDiagnostics diagnostics;
-        private readonly KingmakerContractHolder contracts;
-        private CompatibilitySnapshot compatibility;
+        private static readonly Color NoticeColor = new Color(1f, 0.82f, 0.35f);
+        private static readonly Color ProblemColor = new Color(1f, 0.5f, 0.45f);
+        private readonly SettingsPanel panel;
+        private SettingsPanelModel model;
+        private GUIStyle wrappedLabel;
 
         public SettingsView(
             Settings settings,
@@ -19,53 +19,64 @@ namespace KingmakerDiceRoller.UI
             RuntimeDiagnostics diagnostics,
             KingmakerContractHolder contracts)
         {
-            this.settings = settings;
-            this.coordinator = coordinator;
-            this.diagnostics = diagnostics;
-            this.contracts = contracts;
+            panel = new SettingsPanel(
+                coordinator,
+                diagnostics,
+                () => contracts.Current,
+                () => settings.VerboseDiagnostics,
+                value => settings.VerboseDiagnostics = value);
         }
 
         public void SetCompatibility(CompatibilitySnapshot value)
         {
-            compatibility = value;
+            panel.SetCompatibility(value);
         }
 
         public void Draw()
         {
-            RollUiSnapshot workflow = coordinator.UiSnapshot;
-            GUILayout.Label(ProductMetadata.DisplayName + " " + ProductMetadata.Version);
-            GUILayout.Label("Roll controls are on the native new-character ability-score page.");
-            settings.VerboseDiagnostics = GUILayout.Toggle(settings.VerboseDiagnostics, "Verbose diagnostic logging");
-            GUILayout.Space(6f);
-            GUILayout.Label("Workflow: " + workflow.Mode +
-                "; history: " + workflow.HistoryCount + "/20" +
-                "; saved arrays: " + workflow.SavedCount + "/10");
-            GUILayout.Label("Status: " + diagnostics.Status);
-            GUILayout.Label("Accepted contexts: " + diagnostics.AcceptedContexts + "; rejected: " + diagnostics.RejectedContexts + "; applications: " + diagnostics.ArraysApplied + "; final pass/fail: " + diagnostics.FinalizationsVerified + "/" + diagnostics.FinalizationFailures + "; released: " + diagnostics.SessionsReleased);
-            GUILayout.Label(contracts.Current == null
-                ? "Kingmaker contracts: unavailable"
-                : "Kingmaker contracts: resolved; MVID " + contracts.Current.AssemblyMvid.ToString("D"));
+            // The model is rebuilt only on Layout so every pass of one IMGUI event draws the same
+            // controls; clicks take effect from the next Layout.
+            Event current = Event.current;
+            if (model == null || current == null || current.type == EventType.Layout) model = panel.Build();
+            if (wrappedLabel == null) wrappedLabel = new GUIStyle(GUI.skin.label) { wordWrap = true };
 
-            if (compatibility != null)
-            {
-                for (int index = 0; index < compatibility.LoadedMods.Count; index++) GUILayout.Label("Detected: " + compatibility.LoadedMods[index]);
-                for (int index = 0; index < compatibility.Warnings.Count; index++) GUILayout.Label("WARNING: " + compatibility.Warnings[index]);
-            }
+            GUILayout.Label(model.Explanation, wrappedLabel);
+            if (model.Status != null) DrawLine(model.Status);
+            for (int index = 0; index < model.Notices.Count; index++) DrawLine(model.Notices[index].Line);
+            if (model.Recovery != null) DrawRecovery(model.Recovery);
 
             GUILayout.Space(6f);
-            GUI.enabled = coordinator.CanRestorePointBuy;
-            if (GUILayout.Button("Emergency: Return active Roll Mode to Point Buy"))
-            {
-                string error;
-                if (!coordinator.TryRestorePointBuy(out error)) diagnostics.SetStatus("Point-buy restoration failed: " + error);
-            }
-            GUI.enabled = true;
+            if (GUILayout.Button(model.TroubleshootingButtonLabel, GUILayout.ExpandWidth(false))) panel.ToggleTroubleshooting();
+            if (model.Troubleshooting != null) DrawTroubleshooting(model.Troubleshooting);
+        }
 
-            if (settings.VerboseDiagnostics)
+        private void DrawRecovery(RecoveryAction recovery)
+        {
+            GUILayout.Space(6f);
+            bool oldEnabled = GUI.enabled;
+            GUI.enabled = oldEnabled && recovery.Enabled;
+            if (GUILayout.Button(RecoveryAction.Label, GUILayout.ExpandWidth(false))) panel.ReturnToPointBuy();
+            GUI.enabled = oldEnabled;
+            DrawLine(recovery.Explanation);
+        }
+
+        private void DrawTroubleshooting(TroubleshootingSection troubleshooting)
+        {
+            bool verbose = GUILayout.Toggle(troubleshooting.VerboseDiagnostics, TroubleshootingSection.VerboseDiagnosticsLabel);
+            if (verbose != troubleshooting.VerboseDiagnostics) panel.SetVerboseDiagnostics(verbose);
+            for (int index = 0; index < troubleshooting.Details.Count; index++)
             {
-                string[] recent = diagnostics.SnapshotRecent();
-                for (int index = 0; index < recent.Length; index++) GUILayout.Label(recent[index]);
+                GUILayout.Label(troubleshooting.Details[index], wrappedLabel);
             }
+        }
+
+        private void DrawLine(PanelLine line)
+        {
+            Color oldColor = GUI.contentColor;
+            if (line.Tone == PanelTone.Notice) GUI.contentColor = NoticeColor;
+            else if (line.Tone == PanelTone.Problem) GUI.contentColor = ProblemColor;
+            GUILayout.Label(line.Text, wrappedLabel);
+            GUI.contentColor = oldColor;
         }
     }
 }

@@ -1,4 +1,24 @@
-# 0.1.10 Mr. Bard branding release
+# 0.1.11 settings-panel release
+
+`0.1.11` simplifies the UMM settings panel only; v0.1.10 is published, so the
+change takes the next unused patch version. On 2026-10-15 the owner authorized
+releasing it without an additional in-game test. `PROJECT-STATE.md` records
+that authorization under `## Qualification truth` with
+`Runtime-qualified: **No**`. Publish from a clean release clone of the fully
+pushed `main` merge commit (Windows PowerShell 5.1):
+
+```powershell
+powershell -NoLogo -NoProfile -ExecutionPolicy Bypass `
+  -File .\scripts\Publish-Release.ps1 `
+  -ReleaseNotesPath .\docs\RELEASE-NOTES-0.1.11.md `
+  -Publish `
+  -ConfirmOwnerAuthorizedPreRuntimeRelease
+```
+
+Nexus page text is in `docs/NEXUS-RELEASE-COPY.md`; upload the exact GitHub
+v0.1.11 asset.
+
+# Published 0.1.10 Mr. Bard branding release
 
 `0.1.10` is a branding-only release: UMM `DisplayName` **Mr. Bard's Kingmaker
 Roll For Stats UI**, `Author` **Mr. Bard**, the matching settings-panel title,

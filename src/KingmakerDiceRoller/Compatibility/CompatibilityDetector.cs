@@ -19,7 +19,7 @@ namespace KingmakerDiceRoller.Compatibility
         public CompatibilitySnapshot Detect()
         {
             var loaded = new List<string>();
-            var warnings = new List<string>();
+            var warnings = new List<CompatibilityNotice>();
             for (int group = 0; group < KnownMods.Length; group++)
             {
                 UnityModManager.ModEntry found = null;
@@ -35,11 +35,15 @@ namespace KingmakerDiceRoller.Compatibility
                 loaded.Add(found.Info.Id + " " + found.Info.Version + " enabled=" + found.Enabled + " active=" + found.Active);
                 if (string.Equals(KnownMods[group][0], "BagOfTricks", StringComparison.Ordinal))
                 {
-                    warnings.Add("Bag of Tricks changes character-creation point-buy behavior. This mod observes the live allocator budget, but compatibility is not qualified until the dedicated smoke matrix passes.");
+                    warnings.Add(new CompatibilityNotice(
+                        "Bag of Tricks",
+                        "Bag of Tricks changes character-creation point-buy behavior. This mod observes the live allocator budget, but compatibility is not qualified until the dedicated smoke matrix passes."));
                 }
                 else if (string.Equals(KnownMods[group][0], "Respecialization", StringComparison.Ordinal))
                 {
-                    warnings.Add("newman55 Respecialization was detected. Its replacement/Original-score contracts are not qualified; this provider has no adapter.");
+                    warnings.Add(new CompatibilityNotice(
+                        "Respecialization",
+                        "newman55 Respecialization was detected. Its replacement/Original-score contracts are not qualified; this provider has no adapter."));
                 }
             }
 
