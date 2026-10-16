@@ -88,7 +88,24 @@ It does not cover a Nexus upload or a permanent installation.
 - Owner-authorized pre-runtime release: **Yes** — the owner authorized stable
   v0.1.11 without an in-game test on 2026-10-15; no runtime PASS is recorded.
 - Testing-prerelease-authorized: **No** — the owner requested a release.
-- Publicly released: **No** — pending the guarded publisher.
+- Publicly released: **Yes** — published 2026-10-16T01:00:37Z (2026-10-15
+  local) by the guarded publisher (`-ConfirmOwnerAuthorizedPreRuntimeRelease`)
+  from a clean release clone. It is stable and latest:
+  https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.11,
+  built from PR #4 merge `69b78b64350e1d3914bb70d89f67454c1c961751`, which the
+  owner merged. Annotated tag `v0.1.11` (`d89d5f3`) peels to that commit, whose
+  tree is identical to the qualified head `dbcc2a2`. On the merge commit the
+  publisher's `Qualify.ps1 -Build -Package` ran the release gate, source
+  validation, the Python oracle, C# 397/397, read-only Kingmaker contracts,
+  respec 11/11 and native UI IL 30/30 checks with 0 warnings/errors and strict
+  package validation. Asset `KingmakerDiceRoller-0.1.11.zip` SHA-256
+  `805c2be8d4f18504a4c368dc911177784d2ef86e07b3e705ea2d1d4fdacf2d40`; DLL
+  SHA-256 `6d39e0b69b1f915f27a2b1aa64c3a8070cd4d71038127550112e52f603fcd808`.
+  The downloaded asset matched byte-for-byte the publisher artifact,
+  `SHA256SUMS.txt`, GitHub's asset digest and the pre-merge `dbcc2a2`
+  candidate ZIP. It has the six allowlisted entries, the branded 0.1.11
+  manifest and the final README. Runtime-qualified remains **No**; Nexus Mods
+  upload was not performed.
 
 ## Published 0.1.10 Mr. Bard branding release
 
