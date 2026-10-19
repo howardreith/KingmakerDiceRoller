@@ -1,5 +1,19 @@
 # Build and release
 
+## 0.1.14 native-stat UI presentation alpha
+
+The [v0.1.14 testing alpha](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.14)
+contains the exact ZIP from qualified implementation commit
+`252ff2f435476bdc74d051cf09358250dd3e204c` (SHA-256
+`95603893a14a0b6538977070e893603ab1328f556c7893fe70d5229fbfca6d1a`).
+The annotated tag points to documentation-only release commit
+`a45e5336add15dfc45aea249ee2b6d7c5e78c142` on
+`codex/native-stat-ui-v2`. A fresh zero-warning Release rebuild and strict
+package validation reproduced the qualified ZIP and DLL byte for byte. The
+full suite was not rerun for publication, at the owner's request. Actual-game
+visuals, input, and compatibility remain unverified; see
+`docs/NATIVE-STAT-UI-V3-CANDIDATE.md`. v0.1.11 remains latest stable.
+
 ## 0.1.13 revised native-stat candidate
 
 The revised UI is packaged from clean implementation commit

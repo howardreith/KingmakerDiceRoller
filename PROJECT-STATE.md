@@ -1,6 +1,6 @@
 # Project state
 
-## 0.1.14 native-stat UI presentation candidate
+## 0.1.14 native-stat UI presentation alpha
 
 Candidate version `0.1.14` continues draft PR #7 on
 `codex/native-stat-ui-v2`. It responds to the owner's v3 mission: centered
@@ -23,7 +23,15 @@ checks remain **NOT RUN**. On 2026-10-19 the owner requested another alpha
 release of this version. The earlier instruction to build and publish an alpha
 without rerunning the full release suite remains in effect. Testing-alpha
 publication is **authorized**; stable or runtime-qualified publication is not.
-The 0.1.14 GitHub release is pending.
+The annotated `v0.1.14` tag points to
+`a45e5336add15dfc45aea249ee2b6d7c5e78c142` on the mission branch. The
+[GitHub testing prerelease](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.14)
+is published with the validated ZIP and `SHA256SUMS.txt`; GitHub reports ZIP
+SHA-256 `95603893a14a0b6538977070e893603ab1328f556c7893fe70d5229fbfca6d1a`.
+A fresh zero-warning Release rebuild and strict package validation reproduced
+the qualified candidate ZIP and DLL byte for byte. The full suite was not
+rerun for publication, per the owner's alpha instruction. v0.1.11 remains
+latest stable. Actual-game visuals, input, and compatibility remain **NOT RUN**.
 
 ## 0.1.13 revised native-stat UI candidate
 
