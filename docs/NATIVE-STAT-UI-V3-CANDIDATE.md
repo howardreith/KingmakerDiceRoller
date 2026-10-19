@@ -3,10 +3,25 @@
 ## Artifact and provenance
 
 - Branch: `codex/native-stat-ui-v2`; continuation of [draft PR #7](https://github.com/howardreith/KingmakerDiceRoller/pull/7).
-- Clean implementation commit: pending qualification.
-- Installable UMM ZIP and SHA-256: pending clean-commit candidate packaging.
+- Clean implementation commit: `252ff2f435476bdc74d051cf09358250dd3e204c`.
+- Installable UMM ZIP: `artifacts/candidates/252ff2f435476bdc74d051cf09358250dd3e204c/KingmakerDiceRoller-0.1.14.zip`.
+- ZIP SHA-256: `95603893a14a0b6538977070e893603ab1328f556c7893fe70d5229fbfca6d1a`.
+- DLL SHA-256: `73d5600ec3c4e7df3a2cc954d321775a09518ea33755307a71de411407d6e684`.
 - Target: Pathfinder: Kingmaker 2.1.7b, .NET Framework 4.7.2, UMM/Harmony12.
 - Publication: not requested for this revision. The prior v0.1.13 testing alpha is unchanged.
+
+## Qualification
+
+| Check | Result | Evidence |
+| --- | --- | --- |
+| Clean candidate workflow | PASS | `powershell.exe -File scripts/Qualify.ps1 -Build -Package -Candidate` on the implementation commit. |
+| Source/release gate | PASS | 20/20 release-gate cases; repository/source validation. |
+| Deterministic C# behavior runner | PASS | 413/413, including five tooltip frame-placement cases. |
+| Installed Kingmaker/respec contracts | PASS | Exact 2.1.7b reflection identities and 11 respec groups. |
+| Native UI IL/contracts | PASS | 30/30. |
+| Release build and UMM package | PASS | Zero warnings/errors; strict package validation and ZIP/DLL hashes above. |
+| Actual game visuals, input, audio, and teardown | NOT RUN | Computer-use helper failed during initialization with `helper_unknown_error` before window discovery, including the reset/retry. No after capture was obtained. |
+| Live compatibility | NOT RUN | No game run. |
 
 ## V3 acceptance evidence
 
@@ -45,3 +60,7 @@ The tooltip uses the validated `dialogue_backsheet` paper,
 Owner screenshots in the mission package are before observations, and design
 schematics are not candidate after captures. Source/IL qualification proves
 the scoped field and method identities, not rendered placement or input.
+The candidate was not installed into the game on this computer, so installed
+package identity, resolution, canvas scale, creation context, and race for an
+after run are **NOT RUN**. Use the cases in `docs/SMOKE-TEST.md` for the six
+remaining live checks on this exact ZIP.

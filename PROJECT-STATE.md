@@ -9,10 +9,18 @@ downward right-column icons; one measured, nonblocking native-style tooltip
 overlay; exact score-row cost presentation concealment; and a single compact
 Previous/Next/Return row with final-content measurement for Human.
 
-The 0.1.13 testing prerelease remains published and unchanged. Source,
-contract, build, candidate package, and actual-game evidence for this revision
-are recorded in `docs/NATIVE-STAT-UI-V3-CANDIDATE.md`. Actual-game visual and
-interaction qualification is not yet established.
+The 0.1.13 testing prerelease remains published and unchanged. Clean
+implementation commit `252ff2f435476bdc74d051cf09358250dd3e204c`
+passed `Qualify.ps1 -Build -Package -Candidate`: release gate 20/20,
+deterministic runner 413/413, installed respec contracts 11 groups, native UI
+IL/contracts 30/30, and a zero-warning Release build. The installable ZIP is
+`artifacts/candidates/252ff2f435476bdc74d051cf09358250dd3e204c/KingmakerDiceRoller-0.1.14.zip`
+(SHA-256 `95603893a14a0b6538977070e893603ab1328f556c7893fe70d5229fbfca6d1a`).
+The exact artifact and six-item acceptance record are in
+`docs/NATIVE-STAT-UI-V3-CANDIDATE.md`. The Windows computer-use helper failed
+during initialization, before window discovery; actual-game visual and input
+checks remain **NOT RUN**. No 0.1.14 GitHub release has been requested or
+published.
 
 ## 0.1.13 revised native-stat UI candidate
 
