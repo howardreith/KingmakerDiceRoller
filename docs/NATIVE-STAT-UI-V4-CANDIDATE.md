@@ -3,10 +3,25 @@
 ## Artifact and provenance
 
 - Branch: `codex/native-stat-ui-v2`; continuation of [draft PR #7](https://github.com/howardreith/KingmakerDiceRoller/pull/7).
-- Clean implementation commit: recorded after candidate qualification.
-- Installable UMM ZIP and SHA-256: recorded after candidate qualification.
+- Clean implementation commit: `b3fa9d07042c9946af71eb8aeaa562ff94905944`.
+- Installable UMM ZIP: `artifacts/candidates/b3fa9d07042c9946af71eb8aeaa562ff94905944/KingmakerDiceRoller-0.1.15.zip`.
+- ZIP SHA-256: `e1c06ad23f290d735285227a487483dcf8a0aa5d33be738c46f48b039c63eac6`.
+- DLL SHA-256: `9be4caab5acaf9b848c6a4d4b377f7aa2b1f26fce7f8effd77bf1db41bfd9981`.
 - Target: Pathfinder: Kingmaker 2.1.7b, .NET Framework 4.7.2, UMM/Harmony12.
 - Publication: review candidate only; no 0.1.15 release requested.
+
+## Qualification
+
+| Check | Result |
+| --- | --- |
+| Clean candidate workflow | PASS — `Qualify.ps1 -Build -Package -Candidate` on the implementation commit. |
+| Source/release gate | PASS — 20/20 and repository/source validation. |
+| Deterministic C# runner | PASS — 415/415, including the two new recovery/admission cases. |
+| Installed Kingmaker/respec contracts | PASS — exact 2.1.7b binding and 11 respec checks. |
+| Native UI IL/contracts | PASS — 30/30. |
+| Release build and package | PASS — zero warnings/errors, strict six-entry ZIP allowlist and hashes above. |
+| Actual game visuals and input | NOT RUN — Windows computer-use helper exited before window discovery with `helper_unknown_error: setup refresh had errors`. |
+| Live compatibility | NOT RUN — no game run. |
 
 ## What changed
 
