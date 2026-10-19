@@ -3,9 +3,9 @@
 ## 0.1.13 revised native-stat candidate
 
 The revised UI is packaged from clean implementation commit
-`b99cbfc5eb07070c916d82e06d4a7dd72b4acc34` at
-`artifacts/candidates/b99cbfc5eb07070c916d82e06d4a7dd72b4acc34/KingmakerDiceRoller-0.1.13.zip`.
-Its SHA-256 is `819744d22fdcf1dfffca92619547b7c5c17db91390cfb9ffcb22c6b52c53e2be`.
+`46a1f2c5fdf236ef48dc4e5ffb4a78316d6bcf05` at
+`artifacts/candidates/46a1f2c5fdf236ef48dc4e5ffb4a78316d6bcf05/KingmakerDiceRoller-0.1.13.zip`.
+Its SHA-256 is `e22827efea6450a089da8e4582a5fb7b82de3909c4d5b884e6850c9729067667`.
 `Qualify.ps1 -Build -Package -Candidate` passed source, deterministic domain,
 installed-contract, Release build, and strict package checks. This candidate
 has not been published as a release or verified in a rendered game session;

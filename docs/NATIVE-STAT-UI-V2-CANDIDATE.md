@@ -3,10 +3,12 @@
 ## Artifact and provenance
 
 - Branch: `codex/native-stat-ui-v2`.
-- Clean implementation commit: `b99cbfc5eb07070c916d82e06d4a7dd72b4acc34`.
-- Installable UMM ZIP: `artifacts/candidates/b99cbfc5eb07070c916d82e06d4a7dd72b4acc34/KingmakerDiceRoller-0.1.13.zip`.
-- ZIP SHA-256: `819744d22fdcf1dfffca92619547b7c5c17db91390cfb9ffcb22c6b52c53e2be`.
-- DLL SHA-256: `47d4c894b3050c5d567ed35ed03e88317de8c72d5e62ffb376734b005492a169`.
+- Review: [draft PR #7](https://github.com/howardreith/KingmakerDiceRoller/pull/7),
+  based on the existing 0.1.12 alpha PR branch.
+- Clean implementation commit: `46a1f2c5fdf236ef48dc4e5ffb4a78316d6bcf05`.
+- Installable UMM ZIP: `artifacts/candidates/46a1f2c5fdf236ef48dc4e5ffb4a78316d6bcf05/KingmakerDiceRoller-0.1.13.zip`.
+- ZIP SHA-256: `e22827efea6450a089da8e4582a5fb7b82de3909c4d5b884e6850c9729067667`.
+- DLL SHA-256: `534d9725421341c4ca2030041356d2d8aa29544639ed3e7b36e95e850a4501c3`.
 - Target: Pathfinder: Kingmaker 2.1.7b, .NET Framework 4.7.2, UMM/Harmony12.
 - Publication: **No GitHub or official release** for 0.1.13. The published
   0.1.12 alpha is an earlier build and is not evidence for this revision.

@@ -12,7 +12,7 @@ saved recalls append one entry. The raw formula draft is validated without
 random consumption before generation. The published 0.1.12 alpha remains
 unchanged.
 
-- Implementation commit: `b99cbfc5eb07070c916d82e06d4a7dd72b4acc34`.
+- Final implementation commit: `46a1f2c5fdf236ef48dc4e5ffb4a78316d6bcf05`.
 - Source-qualified: **Yes** — source oracle, repository validation, and
   deterministic runner passed on the implementation commit.
 - Contract-qualified: **Yes** — installed 2.1.7b contract resolver, 11 respec
@@ -20,15 +20,16 @@ unchanged.
 - Build-qualified: **Yes** — Release build had zero warnings/errors.
 - Package-qualified: **Yes** — `Qualify.ps1 -Build -Package -Candidate` passed.
   The ignored ZIP is
-  `artifacts/candidates/b99cbfc5eb07070c916d82e06d4a7dd72b4acc34/KingmakerDiceRoller-0.1.13.zip`
-  (SHA-256 `819744d22fdcf1dfffca92619547b7c5c17db91390cfb9ffcb22c6b52c53e2be`).
+  `artifacts/candidates/46a1f2c5fdf236ef48dc4e5ffb4a78316d6bcf05/KingmakerDiceRoller-0.1.13.zip`
+  (SHA-256 `e22827efea6450a089da8e4582a5fb7b82de3909c4d5b884e6850c9729067667`).
 - Actual game visuals and input: **NOT RUN** for 0.1.13. The computer-use
   helper exited before it could list windows on two attempts. No after
   screenshots or in-game click/input observations were obtained.
 - Compatibility sweep: **NOT RUN** for 0.1.13.
 - Official release: **No**; this is an implementation candidate.
 See `docs/NATIVE-STAT-UI-V2-CANDIDATE.md` for the acceptance evidence and
-remaining live checks.
+remaining live checks. [Draft PR #7](https://github.com/howardreith/KingmakerDiceRoller/pull/7)
+reviews this revision against the existing 0.1.12 alpha branch.
 
 ## 0.1.12 inline native-stat UI alpha
 
