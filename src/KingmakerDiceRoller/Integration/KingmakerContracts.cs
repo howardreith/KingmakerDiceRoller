@@ -69,6 +69,10 @@ namespace KingmakerDiceRoller.Integration
             FieldInfo scoreEntryTypeField,
             FieldInfo scoreEntryUpButtonField,
             FieldInfo scoreEntryDownButtonField,
+            FieldInfo scoreEntryCostAnimatorField,
+            FieldInfo scoreEntryCostLabelField,
+            FieldInfo scoreEntryUpCostField,
+            FieldInfo scoreEntryDownCostField,
             PropertyInfo selectableInteractableProperty,
             FieldInfo abilityAllocatorMainLabelField,
             FieldInfo abilityAllocatorPointsValueField,
@@ -139,6 +143,10 @@ namespace KingmakerDiceRoller.Integration
             ScoreEntryTypeField = scoreEntryTypeField;
             ScoreEntryUpButtonField = scoreEntryUpButtonField;
             ScoreEntryDownButtonField = scoreEntryDownButtonField;
+            ScoreEntryCostAnimatorField = scoreEntryCostAnimatorField;
+            ScoreEntryCostLabelField = scoreEntryCostLabelField;
+            ScoreEntryUpCostField = scoreEntryUpCostField;
+            ScoreEntryDownCostField = scoreEntryDownCostField;
             SelectableInteractableProperty = selectableInteractableProperty;
             AbilityAllocatorMainLabelField = abilityAllocatorMainLabelField;
             AbilityAllocatorPointsValueField = abilityAllocatorPointsValueField;
@@ -210,6 +218,10 @@ namespace KingmakerDiceRoller.Integration
         public FieldInfo ScoreEntryTypeField { get; }
         public FieldInfo ScoreEntryUpButtonField { get; }
         public FieldInfo ScoreEntryDownButtonField { get; }
+        public FieldInfo ScoreEntryCostAnimatorField { get; }
+        public FieldInfo ScoreEntryCostLabelField { get; }
+        public FieldInfo ScoreEntryUpCostField { get; }
+        public FieldInfo ScoreEntryDownCostField { get; }
         public PropertyInfo SelectableInteractableProperty { get; }
         public FieldInfo AbilityAllocatorMainLabelField { get; }
         public FieldInfo AbilityAllocatorPointsValueField { get; }

@@ -2,7 +2,7 @@
 
 Mr. Bard's Kingmaker Roll For Stats UI is a standalone Unity Mod Manager mod
 for Pathfinder: Kingmaker 2.1.7b. It adds an explicit rolled-ability workflow
-to the native custom-character ability page. The 0.1.13 candidate starts with
+to the native custom-character ability page. The 0.1.14 candidate starts with
 one **Roll for Stats** button, then opens a compact formula and action workspace
 within Kingmaker's ability allocator.
 
@@ -15,6 +15,13 @@ when you press **Roll**, never because a preview, race, phase, or UI object was
 rebuilt.
 
 ## Release status
+
+**0.1.14 review candidate — native stats UI presentation.** This revision
+centers the formula selector, corrects the native Value badge and downward
+swap artwork, shares a measured parchment tooltip, hides native cost hints in
+the Roll workspace, and places Previous, Next, and Return on one row. See
+[candidate evidence](docs/NATIVE-STAT-UI-V3-CANDIDATE.md). The published
+0.1.13 testing alpha remains available while this candidate is reviewed.
 
 **0.1.13 alpha prerelease — revised native stats UI.** Ordinary Point Buy shows one
 entry button. The Roll workspace has an editable formula, a full preset menu,
@@ -153,7 +160,12 @@ Roll or Recall and restored exactly; neither 20 nor 25 is hard-coded.
 
 ## Installation
 
-For the revised UI, download **KingmakerDiceRoller-0.1.13.zip** from the
+For the 0.1.14 review candidate, use the locally qualified
+**KingmakerDiceRoller-0.1.14.zip** recorded in
+[the v3 candidate evidence](docs/NATIVE-STAT-UI-V3-CANDIDATE.md). It has not
+been published as a GitHub release.
+
+For the published earlier version, download **KingmakerDiceRoller-0.1.13.zip** from the
 [v0.1.13 alpha release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.13)
 Assets and install it with Unity Mod Manager. The package and validation
 details are in [the candidate evidence](docs/NATIVE-STAT-UI-V2-CANDIDATE.md).

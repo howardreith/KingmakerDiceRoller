@@ -498,6 +498,10 @@ namespace KingmakerDiceRoller.Integration
             }
             FieldInfo scoreEntryUpButton = scoreEntryType.GetField("UpButton", InstanceFlags);
             FieldInfo scoreEntryDownButton = scoreEntryType.GetField("DownButton", InstanceFlags);
+            FieldInfo scoreEntryCostAnimator = scoreEntryType.GetField("m_CostContainerAnimator", InstanceFlags);
+            FieldInfo scoreEntryCostLabel = scoreEntryType.GetField("m_CostLabel", InstanceFlags);
+            FieldInfo scoreEntryUpCost = scoreEntryType.GetField("m_UpCost", InstanceFlags);
+            FieldInfo scoreEntryDownCost = scoreEntryType.GetField("m_DownCost", InstanceFlags);
             FieldInfo scoreEntryStatType = scoreEntryType.GetField("Type", InstanceFlags);
             if (scoreEntryStatType == null || scoreEntryStatType.FieldType != statTypeType ||
                 !string.Equals(scoreEntryStatType.DeclaringType.FullName,
@@ -510,6 +514,16 @@ namespace KingmakerDiceRoller.Integration
                 !string.Equals(scoreEntryUpButton.FieldType.FullName, "UnityEngine.UI.Button", StringComparison.Ordinal))
             {
                 throw new ContractResolutionException("Exact CharBScoresEntry UpButton/DownButton fields were not found.");
+            }
+            if (scoreEntryCostAnimator == null ||
+                !string.Equals(scoreEntryCostAnimator.FieldType.FullName,
+                    "Kingmaker.UI.Common.Animations.FadeAnimator", StringComparison.Ordinal) ||
+                scoreEntryCostLabel == null || scoreEntryUpCost == null || scoreEntryDownCost == null ||
+                !string.Equals(scoreEntryCostLabel.FieldType.FullName, "TMPro.TextMeshProUGUI", StringComparison.Ordinal) ||
+                scoreEntryUpCost.FieldType != scoreEntryCostLabel.FieldType ||
+                scoreEntryDownCost.FieldType != scoreEntryCostLabel.FieldType)
+            {
+                throw new ContractResolutionException("Exact CharBScoresEntry cost animator/text fields were not found.");
             }
             PropertyInfo interactable = scoreEntryUpButton.FieldType.GetProperty("interactable", InstanceFlags);
             if (interactable == null || interactable.PropertyType != typeof(bool) ||
@@ -563,6 +577,8 @@ namespace KingmakerDiceRoller.Integration
                 "AbilityControls=" + abilityAllocatorType.FullName + ".m_StatEntries -> " +
                 scoreEntryType.FullName + ".UpButton + DownButton -> UnityEngine.UI.Selectable.interactable");
             evidence.Add("AbilityRowIdentity=" + scoreEntryStatType.DeclaringType.FullName + ".Type: " + statTypeType.FullName);
+            evidence.Add("AbilityCostPresentation=" + scoreEntryType.FullName +
+                ".m_CostContainerAnimator + m_CostLabel + m_UpCost + m_DownCost");
             evidence.Add(
                 "AbilityPanelStyles=" + abilityAllocatorType.FullName + ".m_MainLabel + m_Frame");
             evidence.Add("AbilityPointsBadge=" + abilityAllocatorType.FullName +
@@ -633,6 +649,10 @@ namespace KingmakerDiceRoller.Integration
                 scoreEntryStatType,
                 scoreEntryUpButton,
                 scoreEntryDownButton,
+                scoreEntryCostAnimator,
+                scoreEntryCostLabel,
+                scoreEntryUpCost,
+                scoreEntryDownCost,
                 interactable,
                 allocatorMainLabel,
                 allocatorPointsValue,

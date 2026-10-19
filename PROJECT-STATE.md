@@ -1,5 +1,19 @@
 # Project state
 
+## 0.1.14 native-stat UI presentation candidate
+
+Candidate version `0.1.14` continues draft PR #7 on
+`codex/native-stat-ui-v2`. It responds to the owner's v3 mission: centered
+formula selector and visible native chevron; full native ability badge;
+downward right-column icons; one measured, nonblocking native-style tooltip
+overlay; exact score-row cost presentation concealment; and a single compact
+Previous/Next/Return row with final-content measurement for Human.
+
+The 0.1.13 testing prerelease remains published and unchanged. Source,
+contract, build, candidate package, and actual-game evidence for this revision
+are recorded in `docs/NATIVE-STAT-UI-V3-CANDIDATE.md`. Actual-game visual and
+interaction qualification is not yet established.
+
 ## 0.1.13 revised native-stat UI candidate
 
 Candidate version `0.1.13` on branch `codex/native-stat-ui-v2` starts from the

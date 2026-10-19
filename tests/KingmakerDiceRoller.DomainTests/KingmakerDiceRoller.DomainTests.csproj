@@ -37,6 +37,8 @@
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RespecLifecycleService.cs"><Link>CharacterCreation\RespecLifecycleService.cs</Link></Compile>
     <Compile Include="CharacterCreationContextPolicyTests.cs" />
     <Compile Include="CollapsedAccessTabLayoutTests.cs" />
+    <Compile Include="InlineTooltipPlacementTests.cs" />
+    <Compile Include="..\..\src\KingmakerDiceRoller\UI\InlineTooltipPlacement.cs"><Link>UI\InlineTooltipPlacement.cs</Link></Compile>
     <Compile Include="PreviewSessionContinuityTests.cs" />
     <Compile Include="BuildIntegrityTests.cs" />
     <Compile Include="SkillsNavigationTests.cs" />

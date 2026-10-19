@@ -3,24 +3,39 @@ using UnityEngine.EventSystems;
 
 namespace KingmakerDiceRoller.UI
 {
-    // Owned hover/focus help for the vertical assignment arrows. It has no
-    // character-state authority and disappears with its owned button.
+    // Each owned control only reports pointer/focus ownership. The shared overlay
+    // is outside the allocator's clipped rows and never receives raycasts.
     public sealed class InlineArrowTooltip : MonoBehaviour,
         IPointerEnterHandler, IPointerExitHandler, ISelectHandler, IDeselectHandler
     {
-        private GameObject tooltip;
+        private InlineTooltipOverlay overlay;
+        private string message;
+        private bool pointer;
+        private bool selected;
 
-        public void Configure(GameObject value) { tooltip = value; }
-        public void OnPointerEnter(PointerEventData eventData) { Show(true); }
-        public void OnPointerExit(PointerEventData eventData) { Show(false); }
-        public void OnSelect(BaseEventData eventData) { Show(true); }
-        public void OnDeselect(BaseEventData eventData) { Show(false); }
-        private void OnDisable() { Show(false); }
-
-        private void Show(bool visible)
+        public void Configure(InlineTooltipOverlay owner, string text)
         {
-            if (tooltip != null && tooltip.activeSelf != visible)
-                tooltip.SetActive(visible);
+            overlay = owner;
+            message = text;
+        }
+
+        public void OnPointerEnter(PointerEventData eventData) { pointer = true; Refresh(); }
+        public void OnPointerExit(PointerEventData eventData) { pointer = false; Refresh(); }
+        public void OnSelect(BaseEventData eventData) { selected = true; Refresh(); }
+        public void OnDeselect(BaseEventData eventData) { selected = false; Refresh(); }
+
+        private void OnDisable()
+        {
+            pointer = selected = false;
+            if (overlay != null) overlay.Hide(transform as RectTransform);
+        }
+
+        private void Refresh()
+        {
+            if (overlay == null) return;
+            RectTransform trigger = transform as RectTransform;
+            if (pointer || selected) overlay.Show(trigger, message);
+            else overlay.Hide(trigger);
         }
     }
 }

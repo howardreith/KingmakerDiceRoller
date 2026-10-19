@@ -436,6 +436,23 @@ $applyLevelup = $controller.GetMethod('ApplyLevelup',$flags,$null,[Type[]]@($uni
         $upButton.FieldType.FullName -ne 'UnityEngine.UI.Button') {
         throw 'Exact CharBScoresEntry UpButton/DownButton instance fields were not found.'
     }
+    $costAnimator = $scoreEntry.GetField('m_CostContainerAnimator',$flags)
+    $costLabel = $scoreEntry.GetField('m_CostLabel',$flags)
+    $upCost = $scoreEntry.GetField('m_UpCost',$flags)
+    $downCost = $scoreEntry.GetField('m_DownCost',$flags)
+    $pointerEnter = $scoreEntry.GetMethod('OnPointerEnter',$flags)
+    $pointerExit = $scoreEntry.GetMethod('OnPointerExit',$flags)
+    if (-not $costAnimator -or $costAnimator.IsStatic -or
+        $costAnimator.FieldType.FullName -ne 'Kingmaker.UI.Common.Animations.FadeAnimator' -or
+        -not $costLabel -or -not $upCost -or -not $downCost -or
+        $costLabel.FieldType.FullName -ne 'TMPro.TextMeshProUGUI' -or
+        $upCost.FieldType -ne $costLabel.FieldType -or
+        $downCost.FieldType -ne $costLabel.FieldType -or
+        -not $pointerEnter -or -not $pointerExit -or
+        -not (Test-ByteSequence $pointerEnter.GetMethodBody().GetILAsByteArray() ([BitConverter]::GetBytes($costAnimator.MetadataToken))) -or
+        -not (Test-ByteSequence $pointerExit.GetMethodBody().GetILAsByteArray() ([BitConverter]::GetBytes($costAnimator.MetadataToken)))) {
+        throw 'Exact CharBScoresEntry hover cost animator/text contract changed.'
+    }
     $interactable = $upButton.FieldType.GetProperty('interactable',$flags)
     if (-not $interactable -or $interactable.PropertyType -ne [bool] -or
         -not $interactable.GetGetMethod($true) -or -not $interactable.GetSetMethod($true)) {
@@ -489,6 +506,7 @@ $applyLevelup = $controller.GetMethod('ApplyLevelup',$flags,$null,[Type[]]@($uni
             "$($abilityAllocator.FullName).m_StatEntries -> $($scoreEntry.FullName)",
             "$($rowType.DeclaringType.FullName).Type <- $($abilityAllocator.FullName).m_Types in Init()",
             "$($scoreEntry.FullName).UpButton", "$($scoreEntry.FullName).DownButton",
+            "$($scoreEntry.FullName).m_CostContainerAnimator + m_CostLabel + m_UpCost + m_DownCost; OnPointerEnter/Exit uses animator",
             "$($upButton.FieldType.FullName).interactable",
             "$($abilityAllocator.FullName).m_MainLabel", "$($abilityAllocator.FullName).m_Frame",
             "$($abilityAllocator.FullName).m_AvailibleSkillPointsLabel", "$($abilityAllocator.FullName).m_AvailibleSkillPoints",

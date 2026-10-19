@@ -4,6 +4,48 @@ Source, exact-contract, build, package, and installation qualification do not
 replace this live gate. Preserve logs/screenshots outside Git and collect
 evidence only after fully exiting Kingmaker.
 
+## 0.1.14 v3 native-stat presentation (NOT RUN)
+
+Install the exact 0.1.14 candidate from
+`docs/NATIVE-STAT-UI-V3-CANDIDATE.md`. Record commit, ZIP/DLL SHA-256,
+game version, 1920×1200 resolution and canvas scale; repeat the visual cases
+at a smaller 16:9 layout. Capture the whole ability page, including the Human
+racial selector and global bottom navigation. Keep the owner's v2 screenshots
+as before evidence, not 0.1.14 after evidence.
+
+1. Begin with partially spent Point Buy on Human. While a native cost hint is
+   visible, open Roll for Stats. Check that the six base scores, budget, and
+   history are unchanged; the full Value caption is over the original circle
+   with a dash centered in it. Hover and keyboard-navigate every former native
+   purchase/refund target, including after FillData and a race/preview refresh.
+   No cost text, container, tooltip, focus ghost, or purchase/refund may appear.
+2. Inspect the centered 400–440-unit formula group and visible native down
+   chevron in normal/hover/pressed/focus states. Open its popup and use all six
+   visible choices without scrolling. Paste a long supported draft, then an
+   invalid one; opening/choosing/editing does not roll, spend, or append history.
+3. Use legitimate fixtures yielding totals 6, 77, 120, and 720. Capture each
+   full ability badge beside native comparison text. After Roll, Previous/Next,
+   and saved Load, verify total placement and base-sum semantics with Human's
+   racial destination changed. Swap each enabled adjacent position and confirm
+   one exchange per click, downward centered icons after refresh, and the
+   disabled Charisma endpoint.
+4. Inspect a swap tooltip and the long Return tooltip at screen edges. Check
+   text wrapping, complete paper/frame/scroll end, flip/clamp, pointer exit,
+   keyboard selection, popup/workspace closure, owner replacement, and scale
+   change. The overlay must not block neighboring clicks or survive its trigger.
+5. Verify Previous, Next, and Return on one 34-unit row, with Load/Save/Roll
+   above. In Roll-ready and applied Roll, the Human heading, selected ability,
+   both racial arrows, and bottom navigation must remain fully separated and
+   usable. Repeat with a fixed-bonus race, a nondefault policy note, a visible
+   validation/operation message, page rebuild, and smaller layout.
+6. Return from Roll-ready and applied Roll. Confirm the native localized Points
+   caption, current remaining budget, and legal purchase/refund costs update.
+   Repeat after an earlier Roll/Return with further purchases, then exercise
+   new main, mercenary, editable respec and owner/allocator replacement. No
+   cost suppression or overlay remains on another page or character.
+
+Record PASS/FAIL/NOT RUN per V3-01 through V3-06 in the candidate evidence.
+
 ## 0.1.13 revised native-stat candidate (NOT RUN)
 
 Record the candidate commit, ZIP SHA-256, game version, resolution, and UI
