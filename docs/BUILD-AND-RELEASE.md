@@ -1,5 +1,18 @@
 # Build and release
 
+## 0.1.15 native-stat UI v4 alpha
+
+The owner requested a new testing alpha after the v4 candidate was qualified.
+The exact candidate ZIP from clean implementation commit
+`b3fa9d07042c9946af71eb8aeaa562ff94905944` is
+`artifacts/candidates/b3fa9d07042c9946af71eb8aeaa562ff94905944/KingmakerDiceRoller-0.1.15.zip`
+(SHA-256 `e1c06ad23f290d735285227a487483dcf8a0aa5d33be738c46f48b039c63eac6`).
+Candidate qualification passed 415/415 deterministic C# cases, 20/20
+release-gate cases, installed contract checks, a zero-warning Release build,
+and strict package validation. The owner said the full suite need not be
+rerun for publication. Actual-game visual, input, and compatibility checks
+remain unrun. See `docs/NATIVE-STAT-UI-V4-CANDIDATE.md`.
+
 ## 0.1.14 native-stat UI presentation alpha
 
 The [v0.1.14 testing alpha](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.14)

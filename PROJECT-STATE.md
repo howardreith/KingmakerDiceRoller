@@ -12,8 +12,10 @@ quarantines incomplete recovery. Native exceptions now retain their inner
 stage and stack in diagnostics. The original intermittent in-game failure
 cause is unproven because no live run or log is available.
 
-The owner requested v4 fixes and a reviewable candidate. No 0.1.15 GitHub
-release has been requested. The published 0.1.14 testing alpha is unchanged.
+The owner requested v4 fixes and a reviewable candidate, then explicitly
+requested another alpha release. Publishing `v0.1.15` as a testing prerelease
+is authorized; stable or runtime-qualified publication is not. The published
+0.1.14 testing alpha remains unchanged.
 Clean implementation commit `b3fa9d07042c9946af71eb8aeaa562ff94905944`
 passed `Qualify.ps1 -Build -Package -Candidate`: release gate 20/20,
 deterministic runner 415/415, installed respec contracts 11 checks, native
@@ -23,6 +25,7 @@ is `artifacts/candidates/b3fa9d07042c9946af71eb8aeaa562ff94905944/KingmakerDiceR
 See `docs/NATIVE-STAT-UI-V4-CANDIDATE.md` for the six-item acceptance record.
 The Windows computer-use helper failed before window discovery again;
 actual-game visual, input, and compatibility checks remain **NOT RUN**.
+The owner said the full release test suite need not be rerun for this alpha.
 
 ## 0.1.14 native-stat UI presentation alpha
 

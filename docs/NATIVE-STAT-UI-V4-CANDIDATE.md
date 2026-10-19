@@ -8,7 +8,7 @@
 - ZIP SHA-256: `e1c06ad23f290d735285227a487483dcf8a0aa5d33be738c46f48b039c63eac6`.
 - DLL SHA-256: `9be4caab5acaf9b848c6a4d4b377f7aa2b1f26fce7f8effd77bf1db41bfd9981`.
 - Target: Pathfinder: Kingmaker 2.1.7b, .NET Framework 4.7.2, UMM/Harmony12.
-- Publication: review candidate only; no 0.1.15 release requested.
+- Publication: owner authorized a `v0.1.15` testing prerelease after candidate qualification; stable/runtime-qualified release is not authorized.
 
 ## Qualification
 
