@@ -2,7 +2,11 @@
 
 ## 0.1.15 native-stat UI v4 alpha
 
-The owner requested a new testing alpha after the v4 candidate was qualified.
+The [v0.1.15 testing alpha](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.15)
+contains the exact ZIP from the qualified v4 candidate. Its annotated tag
+points to release documentation commit `73d18da6bf36fa4c785c7376f0e310a8643afd0c`
+on `codex/native-stat-ui-v2`.
+The owner requested this alpha after the v4 candidate was qualified.
 The exact candidate ZIP from clean implementation commit
 `b3fa9d07042c9946af71eb8aeaa562ff94905944` is
 `artifacts/candidates/b3fa9d07042c9946af71eb8aeaa562ff94905944/KingmakerDiceRoller-0.1.15.zip`

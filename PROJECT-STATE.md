@@ -26,6 +26,14 @@ See `docs/NATIVE-STAT-UI-V4-CANDIDATE.md` for the six-item acceptance record.
 The Windows computer-use helper failed before window discovery again;
 actual-game visual, input, and compatibility checks remain **NOT RUN**.
 The owner said the full release test suite need not be rerun for this alpha.
+The annotated `v0.1.15` tag points to release documentation commit
+`73d18da6bf36fa4c785c7376f0e310a8643afd0c` on the mission branch.
+The [GitHub testing prerelease](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.15)
+is published with the validated ZIP and `SHA256SUMS.txt`; GitHub reports ZIP
+SHA-256 `e1c06ad23f290d735285227a487483dcf8a0aa5d33be738c46f48b039c63eac6`.
+A fresh zero-warning Release rebuild reproduced the qualified DLL byte for
+byte, and strict ZIP validation passed immediately before publication. The
+full suite was not rerun for publication. v0.1.11 remains latest stable.
 
 ## 0.1.14 native-stat UI presentation alpha
 

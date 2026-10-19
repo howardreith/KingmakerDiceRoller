@@ -16,12 +16,13 @@ rebuilt.
 
 ## Release status
 
-**0.1.15 review candidate — native stats UI v4.** This revision verifies
+**0.1.15 testing alpha — native stats UI v4.** This revision verifies
 derived skill and spell restoration after a failed roll, blocks reentrant
 commands before RNG use, quarantines incomplete recovery, and refines the
 Value badge, notices, racial clearance, and tooltips. See
-[v4 candidate evidence](docs/NATIVE-STAT-UI-V4-CANDIDATE.md). Actual-game
-visuals and input remain unverified; this candidate has not been published.
+[v4 candidate evidence](docs/NATIVE-STAT-UI-V4-CANDIDATE.md). The
+[v0.1.15 alpha](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.15)
+is available for testing; actual-game visuals and input remain unverified.
 
 **0.1.14 testing alpha — native stats UI presentation.** This revision
 centers the formula selector, corrects the native Value badge and downward
@@ -167,6 +168,11 @@ creation. The current allocation and actual live budget are captured before
 Roll or Recall and restored exactly; neither 20 nor 25 is hard-coded.
 
 ## Installation
+
+For the 0.1.15 testing alpha, download **KingmakerDiceRoller-0.1.15.zip** from
+the [v0.1.15 release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.15)
+Assets and install it with Unity Mod Manager. Its qualification and remaining
+live checks are in [the v4 candidate evidence](docs/NATIVE-STAT-UI-V4-CANDIDATE.md).
 
 For the 0.1.14 testing alpha, download **KingmakerDiceRoller-0.1.14.zip** from
 the [v0.1.14 release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.14)
