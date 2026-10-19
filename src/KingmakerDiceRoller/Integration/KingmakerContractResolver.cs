@@ -498,6 +498,13 @@ namespace KingmakerDiceRoller.Integration
             }
             FieldInfo scoreEntryUpButton = scoreEntryType.GetField("UpButton", InstanceFlags);
             FieldInfo scoreEntryDownButton = scoreEntryType.GetField("DownButton", InstanceFlags);
+            FieldInfo scoreEntryStatType = scoreEntryType.GetField("Type", InstanceFlags);
+            if (scoreEntryStatType == null || scoreEntryStatType.FieldType != statTypeType ||
+                !string.Equals(scoreEntryStatType.DeclaringType.FullName,
+                    "Kingmaker.UI.ServiceWindow.CharacterScreen.CharSScoreEntry", StringComparison.Ordinal))
+            {
+                throw new ContractResolutionException("Exact CharBScoresEntry inherited Type stat key was not found.");
+            }
             if (scoreEntryUpButton == null || scoreEntryDownButton == null ||
                 scoreEntryUpButton.FieldType != scoreEntryDownButton.FieldType ||
                 !string.Equals(scoreEntryUpButton.FieldType.FullName, "UnityEngine.UI.Button", StringComparison.Ordinal))
@@ -550,6 +557,7 @@ namespace KingmakerDiceRoller.Integration
             evidence.Add(
                 "AbilityControls=" + abilityAllocatorType.FullName + ".m_StatEntries -> " +
                 scoreEntryType.FullName + ".UpButton + DownButton -> UnityEngine.UI.Selectable.interactable");
+            evidence.Add("AbilityRowIdentity=" + scoreEntryStatType.DeclaringType.FullName + ".Type: " + statTypeType.FullName);
             evidence.Add(
                 "AbilityPanelStyles=" + abilityAllocatorType.FullName + ".m_MainLabel + m_Frame");
             evidence.Add(
@@ -615,6 +623,7 @@ namespace KingmakerDiceRoller.Integration
                 allocatorSourceEntity,
                 allocatorPreviewEntity,
                 allocatorStatEntries,
+                scoreEntryStatType,
                 scoreEntryUpButton,
                 scoreEntryDownButton,
                 interactable,

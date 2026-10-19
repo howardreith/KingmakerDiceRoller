@@ -1,5 +1,19 @@
 # Native UI style reference
 
+## 0.1.12 inline use
+
+The compact toolbar reuses this document's validated Kingmaker button,
+typography, paper, input, scrollbar, and click-sound donors. Owned row arrows
+copy only the exact native score button's Image and Selectable appearance and
+its direct `Button` icon Image; they create a fresh `UnityEngine.UI.Button`
+with one owned activation listener. Original row buttons retain all native
+listeners and remain non-interactable in Roll Mode. The copied arrow icon is
+rotated vertically, and an owned parchment tooltip names the adjacent swap.
+The large drawer dimensions below apply only to degraded attachment. The
+primary toolbar is a two-row child of the native allocator layout; its menus
+are bounded to the actual toolbar/canvas geometry. Live rendered style and
+interaction acceptance is still required for this new presentation.
+
 This is the Dice Roller 0.1.7 activation repair of the existing 0.1.6 style, against
 Kingmaker 2.1.7b, Unity 2018.4.10f1. Assembly-CSharp MVID:
 `07fa1e4d-8618-41b3-9b8d-faa17d3b26f7`; SHA-256:

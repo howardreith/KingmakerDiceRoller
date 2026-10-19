@@ -7,6 +7,7 @@ namespace KingmakerDiceRoller.CharacterCreation
         RollUiSnapshot UiSnapshot { get; }
         RollSession ActiveSession { get; }
         bool CanAttachNativePanel { get; }
+        PointBuyReturnOutcome LastPointBuyReturn { get; }
         bool TryRoll(out string error);
         bool TryReroll(out string error);
         bool TryMoveAssignment(AbilityScore ability, bool moveUp, out string error);

@@ -2,8 +2,9 @@
 
 Mr. Bard's Kingmaker Roll For Stats UI is a standalone Unity Mod Manager mod
 for Pathfinder: Kingmaker 2.1.7b. It adds an explicit rolled-ability workflow
-to the native custom-character ability page through a compact native access
-tab and a responsive right-side drawer.
+to the native custom-character ability page. The 0.1.12 candidate places
+assignment arrows in Kingmaker's six score rows and a compact action strip
+directly beneath them.
 
 It was previously published as **Kingmaker Dice Roller**. Its Unity Mod
 Manager ID, DLL, `Mods/KingmakerDiceRoller` install folder and settings are
@@ -14,6 +15,15 @@ when you press **Roll**, never because a preview, race, phase, or UI object was
 rebuilt.
 
 ## Release status
+
+**0.1.12 review candidate — native stat UI.** Roll/Reroll, Save, Load,
+Return to Point Buy, Options, Details, and direct roll-method selection now
+live beside the native allocator. Session History and persistent Saved arrays
+are both reachable through Load, including from Point Buy. The prior drawer
+remains a recovery interface if exact inline attachment cannot be verified.
+The candidate passes source and installed-contract checks; its changed screen
+still needs actual-game visual and interaction qualification. 0.1.11 remains
+the latest published release.
 
 **Release 0.1.11 — cleaner settings panel (2026-10-15).** The Unity Mod
 Manager settings panel now shows where roll controls appear, one status line,
@@ -61,29 +71,26 @@ behavior and the existing roll workflow.
 
 ## Player workflow
 
-The ability page initially shows only a compact **Roll Stats** access tab. It
-is bottom-centered within verified ability/allocator geometry, above the native
-bottom-navigation inset. It does not cover the Skills page or roll
-automatically. Press the tab to open the paper **Rolled Ability Scores**
-panel. The panel provides:
+The ability page starts in native Point Buy and does not roll automatically.
+The compact strip beneath the six native scores provides:
 
 - Roll and Reroll;
 - `4d6, drop lowest`, `4d6, reroll ones, drop lowest`, `3d6`, `2d6 + 6`,
   `1d20`, and a custom expression;
 - tabletop, per-score minimum, and whole-array minimum policies;
-- position-based Move Up/Move Down assignment that handles duplicate values;
-- base-score total and informational point-buy equivalent;
+- position-based up/down arrows in the native score rows that handle duplicate values;
+- **Details** for the base-score total, informational point-buy equivalent,
+  and rule that generated the current array;
 - a 20-entry history for the current character build;
-- 10 persistent saved arrays with Store, Recall, and Delete;
+- 10 persistent saved arrays with Save, Recall, and Delete;
 - immediate Return to Point Buy.
 
-The panel starts collapsed for every supported creation or eligible respec
-build. Wide layouts show ordinary Point Buy options and the complete six-score
-Roll workflow, History, Saved and summary; measured errors can scroll. Compact
-layouts retain **Roll Options**, **History**, and **Saved** disclosures and add
-bounded vertical scrolling only for measured overflow. Press **Close** to
-remove the entire expanded surface and its click footprint; only the small
-access tab remains.
+Select the method directly from the strip's menu. **Options** contains the
+low-score policy, conditional minimum, and custom expression. **Load** shows
+session History and Saved arrays; browsing changes only the highlighted record,
+and Use/Recall applies it without rolling. Secondary menus scroll when their
+contents do not fit above the strip. If native row attachment fails, the
+earlier **Roll Stats** tab and drawer provide a recovery path.
 
 Custom syntax examples are `4d[6]kh3`, `4d[6]r[1]kh3`, and `2d[6]+6`.
 Generated scores are validated within the explicit 1-120 product boundary and
@@ -137,6 +144,11 @@ Roll or Recall and restored exactly; neither 20 nor 25 is hard-coded.
 
 ## Installation
 
+For a focused 0.1.12 candidate test, install the qualified local
+`KingmakerDiceRoller-0.1.12.zip` from `artifacts/candidates/<commit>/` with
+Unity Mod Manager. It is a review candidate, not a published release. The
+published stable download remains 0.1.11:
+
 Download **KingmakerDiceRoller-0.1.11.zip** from the
 [v0.1.11 release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.11)
 **Assets**. Drag that ZIP into Unity Mod Manager's Mods tab for Pathfinder:
@@ -170,6 +182,8 @@ arrays through a reinstall.
 
 ## Qualification
 
+The 0.1.12 candidate qualification is recorded in `PROJECT-STATE.md` and
+`docs/NATIVE-STAT-UI-CANDIDATE.md`; actual game interaction is pending.
 Offline qualification of 0.1.11 passes 397 deterministic C# cases, 30 Python
 oracle cases, 20 release-gate tests and 18 source-validation groups. Kingmaker
 2.1.7b contract checks include native derived allowances, replay/copy order,

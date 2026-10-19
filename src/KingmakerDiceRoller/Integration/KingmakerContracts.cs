@@ -66,6 +66,7 @@ namespace KingmakerDiceRoller.Integration
             FieldInfo abilityAllocatorSourceEntityField,
             FieldInfo abilityAllocatorPreviewEntityField,
             FieldInfo abilityAllocatorStatEntriesField,
+            FieldInfo scoreEntryTypeField,
             FieldInfo scoreEntryUpButtonField,
             FieldInfo scoreEntryDownButtonField,
             PropertyInfo selectableInteractableProperty,
@@ -133,6 +134,7 @@ namespace KingmakerDiceRoller.Integration
             AbilityAllocatorSourceEntityField = abilityAllocatorSourceEntityField;
             AbilityAllocatorPreviewEntityField = abilityAllocatorPreviewEntityField;
             AbilityAllocatorStatEntriesField = abilityAllocatorStatEntriesField;
+            ScoreEntryTypeField = scoreEntryTypeField;
             ScoreEntryUpButtonField = scoreEntryUpButtonField;
             ScoreEntryDownButtonField = scoreEntryDownButtonField;
             SelectableInteractableProperty = selectableInteractableProperty;
@@ -201,6 +203,7 @@ namespace KingmakerDiceRoller.Integration
         public FieldInfo AbilityAllocatorSourceEntityField { get; }
         public FieldInfo AbilityAllocatorPreviewEntityField { get; }
         public FieldInfo AbilityAllocatorStatEntriesField { get; }
+        public FieldInfo ScoreEntryTypeField { get; }
         public FieldInfo ScoreEntryUpButtonField { get; }
         public FieldInfo ScoreEntryDownButtonField { get; }
         public PropertyInfo SelectableInteractableProperty { get; }

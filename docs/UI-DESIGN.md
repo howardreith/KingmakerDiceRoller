@@ -1,8 +1,58 @@
 # Native UI design
 
+## 0.1.12 inline candidate
+
+The primary interface is part of the exact live Kingmaker ability allocator.
+Kingmaker's six native score rows remain the only score presentation. Each row
+has its own `CharSScoreEntry.Type` stat key, assigned by the allocator's `Init`
+from `m_Types` before `FillData` completes. The host verifies six unique keys
+against `StatTypeHelper.Attributes` and maps them to STR/DEX/CON/INT/WIS/CHA.
+Scene traversal order, localized labels, and numeric score contents are not
+used as identity.
+
+In Roll Mode, two fresh owned buttons sit over the native score-buy buttons
+inside each row. They borrow the installed game's button and arrow images,
+turn those arrows vertically, and call `RollUiCommand.MoveUp/MoveDown` through
+the existing router. Strength's up and Charisma's down action are disabled.
+Original point-buy buttons and handlers stay in place and remain
+non-interactable. Point Buy hides the owned arrows and native `FillData` sets
+the original buttons' current availability. Row tooltips describe the
+adjacent swap.
+
+An owned two-row toolbar is inserted immediately after the native stat
+container in the allocator's vertical layout, before the racial selector.
+The first row contains Method, Roll/Reroll, Save, and Load. The second contains
+Return to Point Buy when relevant, Options, and Details. The toolbar's native
+button theme comes from the existing validated donor path. Exact allocator,
+stat-container, toolbar, and active racial-selector bounds are checked after
+layout rebuild. If attachment or geometry fails, only the prior drawer appears
+as a recovery interface; no roll or score mutation occurs.
+
+Method opens a direct six-preset menu. Options holds low-score policy, minimum,
+and custom input in either mode. Load presents current session History and
+persistent Saved arrays with separate labels; browsing never applies a record.
+Details gives total, informational point-buy equivalent, and the rule that
+created the current array. Secondary menus share one bounded, scrollable
+native-paper surface, positioned from live toolbar and canvas geometry; only
+one is active. Closing removes its raycast footprint.
+
+Every owned command checks the captured controller, stable owner, and exact
+allocator against the current live binding before reaching the router. A
+same-owner allocator replacement rebuilds owned widgets without rolling.
+Teardown destroys only owned toolbar, row controls, menu, and fallback root;
+native rows, callbacks, and layout properties are never copied or destroyed.
+The structured Point Buy return outcome supplies concise status when derived
+values or page refresh are incomplete.
+
+The bounds and artwork contract are supported by the installed 2.1.7b
+assembly and decoded PC scenes. Actual-game placement, focus, click-through,
+audio, and resolution coverage remain a separate visual/interaction gate.
+
+## Recovery drawer retained from 0.1.11
+
 ## Host and ownership
 
-The primary interface is code-owned UI on the exact active Kingmaker
+The recovery interface is code-owned UI on the exact active Kingmaker
 Skills/ability allocator page. Its top-level object is named
 `KingmakerDiceRoller.NativeRollPanel`, contains no `Graphic` or layout, and
 therefore has no full-screen raycast footprint.

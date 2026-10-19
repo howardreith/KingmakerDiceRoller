@@ -1,5 +1,39 @@
 # Project state
 
+## 0.1.12 inline native-stat UI review candidate
+
+Mission branch `codex/inline-native-stat-ui` carries version `0.1.12` and starts from published v0.1.11
+record `ee49f10`. The unchanged UMM ID, assembly, saved-array schema, and
+starting-score ownership policy remain authoritative. The candidate uses the
+native six score rows as the primary score display, adds separate owned
+vertical swap arrows, and inserts a two-row Method/Roll/Save/Load/Point Buy/
+Options/Details strip after the native stat container. Preset selection is
+direct; Load exposes session History and persistent Saved arrays from Point
+Buy. The earlier drawer remains only when exact row/layout attachment fails.
+
+Installed 2.1.7b IL verifies that `CharBAbilityScoresAllocator.Init()` assigns
+the inherited `CharSScoreEntry.Type` from `m_Types`; the host maps six unique
+keys against the existing verified ability keys. The PC main-menu and in-game
+scene metadata show 600-by-50 score rows, 34-by-34 native arrow buttons, and
+the stat container followed by the racial selector. The new view checks live
+rect bounds before accepting inline attachment. It does not infer row identity
+from order, text, or score values.
+
+- Implemented: **Yes, as a review candidate** — source, UI, tests, and docs.
+- Source-qualified: **Yes** — the project-owned deterministic and source gates
+  pass (see `docs/NATIVE-STAT-UI-CANDIDATE.md` for the exact final candidate).
+- Contract-qualified: **Yes** — installed Kingmaker and native UI contract
+  checks pass; this does not prove a rendered screen.
+- Build-qualified: **Yes** — Release build has zero warnings/errors.
+- Package-qualified: **Pending clean committed candidate**.
+- Installed: **No** — the user's installed mod was not changed.
+- Runtime/visual-qualified: **No** — actual-game frames and interactions are
+  NOT RUN. The computer-use helper exited unexpectedly twice before window
+  inventory; no game UI was observed or driven.
+- Compatibility-qualified: **No** — no new live compatibility sweep.
+- Published: **No** — no merge, tag, stable release, or Nexus upload.
+
+
 ## Current 0.1.11 settings-panel cleanup release
 
 Version `0.1.11`; branch `z/umm-panel-simplification`, based on `main` at

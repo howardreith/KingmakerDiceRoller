@@ -47,6 +47,13 @@ namespace KingmakerDiceRoller.UI
             bindings.Add(new Binding { Capability = capability, Apply = apply, Fallback = fallback });
         }
         internal void Clear() { bindings.Clear(); applied.Clear(); }
+        internal void TrimTo(int count)
+        {
+            if (count < 0 || count > bindings.Count) throw new ArgumentOutOfRangeException(nameof(count));
+            bindings.RemoveRange(count, bindings.Count - count);
+            applied.Clear();
+        }
+        internal void InvalidateApplied() { applied.Clear(); }
         private static bool Same(NativeThemeResource first, NativeThemeResource second)
         {
             if (first == null || second == null) return first == second;

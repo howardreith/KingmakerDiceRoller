@@ -2629,6 +2629,7 @@ namespace KingmakerDiceRoller.DomainTests
                     typeof(FakeAbilityScoresAllocator).GetField("m_Unit", instance),
                     typeof(FakeAbilityScoresAllocator).GetField("m_PreviewUnit", instance),
                     typeof(FakeAbilityScoresAllocator).GetField("m_StatEntries", instance),
+                    typeof(FakeScoreEntry).GetField("Type", instance),
                     typeof(FakeScoreEntry).GetField("UpButton", instance),
                     typeof(FakeScoreEntry).GetField("DownButton", instance),
                     typeof(FakeButton).GetProperty("interactable", instance),
@@ -3017,6 +3018,7 @@ namespace KingmakerDiceRoller.DomainTests
 
         private sealed class FakeScoreEntry
         {
+            public int Type = 0;
             public readonly FakeButton UpButton = new FakeButton();
             public readonly FakeButton DownButton = new FakeButton();
         }

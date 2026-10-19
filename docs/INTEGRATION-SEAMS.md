@@ -233,6 +233,7 @@ CharBAbilityScoresAllocator.FillData() : void
 CharBAbilityScoresAllocator.m_Unit : UnitEntityData
 CharBAbilityScoresAllocator.m_PreviewUnit : UnitEntityData
 CharBAbilityScoresAllocator.m_StatEntries : List<CharBScoresEntry>
+CharBScoresEntry inherited CharSScoreEntry.Type : StatType
 CharBAbilityScoresAllocator.m_MainLabel : TMPro.TextMeshProUGUI
 CharBAbilityScoresAllocator.m_Frame : UnityEngine.UI.Image
 CharBAbilityScoresAllocator.m_RaceBonusContainer : UnityEngine.GameObject
@@ -246,6 +247,13 @@ Exact IL shows `CharBPhaseSkills.FillData(UnitDescriptor)` calls the allocator's
 parameterless `FillData()`. The allocator binds current controller source and
 preview entities, reads the current distribution, updates base/modifier rows,
 updates points, and sets native button availability.
+
+The 0.1.12 inline contract additionally verifies that allocator `Init()`
+assigns each row's inherited `Type` from `m_Types`. The UI compares those
+exact keys with the six `StatTypeHelper.Attributes` keys before creating
+owned assignment controls. Both decoded PC scenes have a direct stat-container
+child followed by the racial-selector child; the toolbar is inserted between
+them and checked against live rect bounds after layout rebuild.
 
 The panel uses a postfix on that exact parameterless method for both accepted
 creation kinds. A data-only presenter is rendered into code-owned Unity objects

@@ -1,4 +1,20 @@
-# 0.1.11 settings-panel release
+# 0.1.12 native stat UI candidate
+
+The mission branch packages a review candidate for the inline native ability
+page. The public release remains 0.1.11; this candidate has no merge, tag,
+publication, or permanent-install authorization. Use Windows PowerShell 5.1
+for the .NET Framework respec contract verifier. From a clean committed branch:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Qualify.ps1 -Build -Package -Candidate
+```
+
+The command binds the DLL, reports, and six-file ZIP to the exact clean commit
+under `artifacts/candidates/<commit>/`. It does not establish rendered UI or
+gameplay qualification. Follow `docs/SMOKE-TEST.md` before calling the new
+screen visually accepted.
+
+# Published 0.1.11 settings-panel release
 
 `0.1.11` simplifies the UMM settings panel only; v0.1.10 is published, so the
 change takes the next unused patch version. On 2026-10-15 the owner authorized

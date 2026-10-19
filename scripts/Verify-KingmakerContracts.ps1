@@ -412,6 +412,22 @@ $applyLevelup = $controller.GetMethod('ApplyLevelup',$flags,$null,[Type[]]@($uni
     if ($scoreEntry.FullName -ne 'Kingmaker.UI.LevelUp.CharBScoresEntry') {
         throw 'Ability allocator score rows are not exact CharBScoresEntry instances.'
     }
+    $rowType = $scoreEntry.GetField('Type',$flags)
+    $allocatorTypes = $abilityAllocator.GetField('m_Types',$flags)
+    $allocatorInit = $abilityAllocator.GetMethod('Init',$flags,[Reflection.Binder]$null,[Type[]]@(),[Reflection.ParameterModifier[]]$null)
+    if (-not $rowType -or $rowType.FieldType -ne $statType -or
+        $rowType.DeclaringType.FullName -ne 'Kingmaker.UI.ServiceWindow.CharacterScreen.CharSScoreEntry' -or
+        -not $allocatorTypes -or -not $allocatorTypes.FieldType.IsGenericType -or
+        $allocatorTypes.FieldType.GetGenericTypeDefinition().FullName -ne 'System.Collections.Generic.List`1' -or
+        $allocatorTypes.FieldType.GetGenericArguments()[0] -ne $statType -or
+        -not $allocatorInit) {
+        throw 'Exact score-row Type and allocator m_Types identity contract changed.'
+    }
+    $allocatorInitBytes = $allocatorInit.GetMethodBody().GetILAsByteArray()
+    if (-not (Test-ByteSequence $allocatorInitBytes ([BitConverter]::GetBytes($rowType.MetadataToken))) -or
+        -not (Test-ByteSequence $allocatorInitBytes ([BitConverter]::GetBytes($allocatorTypes.MetadataToken)))) {
+        throw 'Allocator Init no longer assigns each native row its exact StatType.'
+    }
     $upButton = $scoreEntry.GetField('UpButton',$flags)
     $downButton = $scoreEntry.GetField('DownButton',$flags)
     if (-not $upButton -or -not $downButton -or
@@ -467,6 +483,7 @@ $applyLevelup = $controller.GetMethod('ApplyLevelup',$flags,$null,[Type[]]@($uni
             "$($abilityAllocator.FullName).FillData()",
             "$($abilityAllocator.FullName).m_Unit", "$($abilityAllocator.FullName).m_PreviewUnit",
             "$($abilityAllocator.FullName).m_StatEntries -> $($scoreEntry.FullName)",
+            "$($rowType.DeclaringType.FullName).Type <- $($abilityAllocator.FullName).m_Types in Init()",
             "$($scoreEntry.FullName).UpButton", "$($scoreEntry.FullName).DownButton",
             "$($upButton.FieldType.FullName).interactable",
             "$($abilityAllocator.FullName).m_MainLabel", "$($abilityAllocator.FullName).m_Frame",

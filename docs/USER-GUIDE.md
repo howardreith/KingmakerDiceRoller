@@ -9,25 +9,20 @@ mercenary, or select an eligible native/Eddic respec that reopens all six
 starting scores. On the ability page, ordinary Point Buy appears first. The mod
 does not roll automatically.
 
-The page initially shows a compact **Roll Stats** tab at the safe bottom center
-of the ability region, above Back/Next navigation. An active Racial Bonus
-container supplies preferred horizontal geometry; if it is absent or inactive,
-the allocator frame, allocator region, or ability-page root supplies the same
-bounded bottom-center placement. There is no upper-right fallback. Press the tab
-to open the responsive right-side **Rolled Ability Scores** drawer.
-Wide layouts show ordinary controls directly and keep the six-score Roll
-workflow visible without scrolling. Constrained layouts use Compact
-disclosures and scroll only when content actually overflows. Opening, closing,
-or switching profile never rolls or changes your character. Press **Close** to
-remove the full panel and expose native Skills, Back, and Next controls; only
-the compact tab remains. Rolling happens on the ability page, not in Unity
-Mod Manager; see [Unity Mod Manager settings panel](#unity-mod-manager-settings-panel).
+The 0.1.12 candidate places Roll/Reroll, Save, Load, Return to Point Buy,
+Options, Details, and a roll-method selector immediately below the six native
+score rows. The score rows themselves carry up/down assignment arrows in Roll
+Mode. Secondary menus open from the strip and can scroll if space is tight.
+Opening a menu or changing a highlighted record does not roll or change scores.
+If the exact native row or layout contract cannot be verified, the earlier
+**Roll Stats** tab and drawer remain available as a recovery interface.
+Rolling happens on the ability page, not in Unity Mod Manager; see
+[Unity Mod Manager settings panel](#unity-mod-manager-settings-panel).
 
 ## Presets and minimum policies
 
-In Wide, low-score and custom-expression settings are visible directly when
-relevant. In Compact, open **Roll Options**; it begins collapsed. Choose a
-preset under **Roll method** with the arrow controls:
+Choose a preset directly from **Method** on the compact strip. Open **Options**
+for low-score and conditional minimum settings:
 
 - `4d6, drop lowest` (default);
 - `4d6, reroll ones, drop lowest`;
@@ -48,8 +43,8 @@ panel reports an error and preserves your prior verified state.
 
 ## Custom expressions
 
-Select Custom expression to enter a bounded dice expression. In Compact, first
-open **Roll Options**. The input appears only for that method. Examples:
+Select Custom expression, then open **Options** to enter a bounded dice
+expression. The input appears only for that method. Examples:
 
 ```text
 4d[6]kh3
@@ -71,14 +66,16 @@ the live preview and native controls verify.
 Press **Reroll** for a new raw array. A reroll does not change the captured
 point-buy origin and does not occur during navigation or preview rebuilding.
 
-In Roll Mode, Kingmaker's point-buy plus/minus buttons are disabled. A spendable
-point pool cannot be layered onto the array.
+In Roll Mode, Kingmaker's original point-buy plus/minus buttons remain disabled.
+The separate owned assignment arrows act on the current six-score assignment;
+a spendable point pool cannot be layered onto the array.
 
 ## Assigning scores
 
-Each STR, DEX, CON, INT, WIS, and CHA row shows its assigned base value. Use
-**Up** and **Down** to move the source position. Equal values remain separate
-positions, so duplicate scores can be rearranged safely.
+The six native STR, DEX, CON, INT, WIS, and CHA rows remain the primary score
+display. Use each row's up/down arrows to swap its source position with the
+adjacent ability. Strength cannot move up and Charisma cannot move down. Equal
+values remain separate positions, so duplicate scores can be rearranged safely.
 
 Assignment never rolls again. The native ability page updates immediately.
 Race and heritage bonuses remain in Kingmaker's modifier column and are not
@@ -86,7 +83,7 @@ baked into the array.
 
 ## Summary
 
-The panel displays raw score total, the actual rule/expression used to create
+**Details** displays raw score total, the actual rule/expression used to create
 the active array under **Rolled with**, and informational point-buy equivalent.
 The selected preset may differ after a roll. Scores outside Kingmaker's
 ordinary 7-18 cost table are marked `(extended)`. Race modifiers are excluded
@@ -94,19 +91,18 @@ from both numbers.
 
 ## History
 
-The current character-build session keeps the latest 20 generated arrays. Wide
-shows the current History record directly; in Compact, open **History (n)**.
-Use **Previous**, **Next**, and **Use**. Using an entry restores its array and
-assignment without rolling or replacing your point-buy origin. History is
-discarded when that main-character or mercenary build owner ends.
+The current character-build session keeps the latest 20 generated arrays. Open
+**Load** to browse session History with **Previous** and **Next**, then press
+**Use** to apply the selected record. Browsing alone does not apply it. From
+Point Buy, Use captures the current allocation as the new return origin.
+History is discarded when that character-build owner ends.
 
 ## Saved arrays
 
-Wide shows the current Saved record when relevant; in Compact, open
-**Saved (n)**. Manage up to ten arrays persisted in UMM settings:
+Manage up to ten arrays persisted in UMM settings:
 
-- **Store** saves the current raw array and assignment;
-- saved Previous/Next browses slots;
+- **Save** on the strip stores the current verified assignment;
+- **Load** shows saved Previous/Next browsing;
 - **Recall** applies the selected slot;
 - **Delete** removes it.
 
@@ -122,8 +118,8 @@ The open page should update immediately, and native plus/minus controls should
 work at once.
 
 After returning, navigation remains in Point Buy. A later explicit Roll or
-Recall captures a new origin. If safe restoration cannot be verified, the mod
-fails closed rather than leaving rolled values with a spendable budget.
+History Use/Saved Recall captures a new origin. If restoration or a derived/page
+refresh fails, the toolbar reports the actual mode and offers a recovery route.
 
 Mercenary budgets are observed exactly like main-character budgets. Vanilla's
 commonly observed 20-point mercenary allocator is not hard-coded, so a compatible

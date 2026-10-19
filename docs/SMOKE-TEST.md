@@ -4,6 +4,52 @@ Source, exact-contract, build, package, and installation qualification do not
 replace this live gate. Preserve logs/screenshots outside Git and collect
 evidence only after fully exiting Kingmaker.
 
+## 0.1.12 inline native-stat candidate (NOT RUN)
+
+Use the exact packaged candidate and record its commit, ZIP hash, game version,
+screen resolution, canvas scale, and allocator/toolbar/racial-selector rects.
+Check 1920×1200, 1920×1080, 1600×900, 1366×768, 1280×720, and 1152×720.
+At each size capture the normal Point Buy view, Roll view, and the tallest
+open Method/Options/Load menu. The six native scores, racial modifiers,
+descriptions, toolbar captions, racial selector, and Back/Next must remain
+visible, readable, and independently clickable.
+
+1. On a new main character, confirm the two-row strip appears directly after
+   native score rows in Point Buy. No roll occurs on attach, FillData, menu
+   open, or preview rebuild. Original point-buy arrows buy/refund normally.
+2. Partially spend points; choose a method directly; Roll. Confirm six native
+   rows remain, original buy buttons are disabled, owned vertical arrows swap
+   only adjacent base-score source positions, and STR up/CHA down are disabled.
+   Check equal values, a racial bonus, Intelligence, and a casting score.
+   One pointer click or keyboard Submit performs one swap and one click sound.
+3. Reroll, Save the rearranged assignment, open Load, browse History and Saved
+   without changing the character, then explicitly Use/Recall. Confirm exact
+   saved assignment and no RNG. Return to Point Buy, edit allocation, Use a
+   history or saved record directly from Point Buy, then Return again to the
+   newly captured allocation and observed remaining/total budget.
+4. In either mode, open Options. Check low-score policy, conditional minimum,
+   custom-expression entry/help, and invalid-expression error. In Details,
+   check total, informational point-buy equivalent and extended marker, and
+   the applied rule after selecting a different next-roll method.
+5. Repeat FillData, phase exit/reentry, same-owner preview replacement,
+   allocator replacement, cancel, completion, disable/unload, and a different
+   character owner. Check one control/listener set, no stale callback routing,
+   no hidden focus or click blocker, native point-buy availability after
+   return, and no implicit reroll.
+6. Repeat the positive path for player-initiated mercenary recruitment and
+   qualified six-score respec. Confirm ordinary later level-up, catch-up
+   levels, locked-base retraining, pets, and unrelated units have no inline
+   controls. Verify native completion and save/reload using disposable state.
+7. If inline attachment fails, record the contract/layout diagnostic and
+   verify the prior Roll Stats drawer is usable without score mutation. A
+   fallback on the intended supported PC screen is a failed visual scenario.
+
+Runtime screenshot and interaction results are currently NOT RUN. The
+computer-use helper in this session exited unexpectedly twice before it could
+list windows, so no screen state or game input was observed.
+
+## Legacy 0.1.11 drawer checks (fallback only)
+
 ## Resolution matrix
 
 Run the mercenary screen at 1152 by 720 first and record effective

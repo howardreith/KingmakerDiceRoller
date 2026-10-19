@@ -107,7 +107,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             bool rollMode = snapshot.Mode == RollSessionMode.Roll;
             bool wide = profile == RollPanelPresentationProfile.Wide;
             bool minimumPolicy = snapshot.Configuration.MinimumApplies;
-            bool pointBuyOptionsVisible = !rollMode && (wide || disclosure.AdvancedExpanded);
+            bool optionsVisible = wide || disclosure.AdvancedExpanded;
             var rows = new List<RollPanelAssignmentRow>();
             if (rollMode && snapshot.AssignedValues != null)
             {
@@ -150,12 +150,12 @@ namespace KingmakerDiceRoller.CharacterCreation
                 MinimumCaption = "Minimum",
                 Minimum = snapshot.Configuration.MinimumScore.ToString(),
                 MinimumEnabled = minimumPolicy,
-                MinimumVisible = pointBuyOptionsVisible && minimumPolicy,
-                CustomVisible = pointBuyOptionsVisible &&
+                MinimumVisible = optionsVisible && minimumPolicy,
+                CustomVisible = optionsVisible &&
                     snapshot.Configuration.Preset == DiceRollPreset.CustomExpression,
                 CustomExpression = snapshot.Configuration.CustomExpression,
-                AdvancedVisible = !rollMode && !wide,
-                AdvancedExpanded = pointBuyOptionsVisible,
+                AdvancedVisible = !wide,
+                AdvancedExpanded = optionsVisible,
                 RollVisible = !rollMode,
                 RerollVisible = rollMode,
                 ReturnToPointBuyVisible = rollMode,
@@ -169,8 +169,8 @@ namespace KingmakerDiceRoller.CharacterCreation
                 Summary = summary,
                 HistoryDisclosureLabel = "History (" + snapshot.HistoryCount + ") " +
                     (disclosure.HistoryExpanded ? "-" : "+"),
-                HistoryDisclosureVisible = rollMode && snapshot.HistoryCount > 0 && !wide,
-                HistoryDetailsVisible = rollMode && snapshot.HistoryCount > 0 &&
+                HistoryDisclosureVisible = snapshot.HistoryCount > 0 && !wide,
+                HistoryDetailsVisible = snapshot.HistoryCount > 0 &&
                     (wide || disclosure.HistoryExpanded),
                 History = history,
                 CanUseHistory = snapshot.CanUseHistory,

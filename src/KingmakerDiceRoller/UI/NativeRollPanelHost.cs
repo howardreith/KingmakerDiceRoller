@@ -49,6 +49,27 @@ namespace KingmakerDiceRoller.UI
         private readonly ResponsiveRollPanelLayoutCalculator layoutCalculator;
         private readonly CollapsedAccessTabLayoutCalculator accessTabLayoutCalculator;
         private readonly List<AssignmentWidgets> assignmentRows = new List<AssignmentWidgets>();
+        private readonly List<InlineRowWidgets> inlineRows = new List<InlineRowWidgets>();
+        private readonly List<GameObject> inlineOwnedArrows = new List<GameObject>();
+        private NativeViewCommandBinding viewBinding;
+        private GameObject inlineToolbar;
+        private GameObject inlineStatus;
+        private GameObject presetChoices;
+        private GameObject presetSelectorSection;
+        private GameObject policySelectorSection;
+        private TextMeshProUGUI inlineStatusLabel;
+        private TextMeshProUGUI inlinePresetLabel;
+        private Button inlinePresetButton;
+        private Button inlineRollButton;
+        private Button inlineRerollButton;
+        private Button inlineSaveButton;
+        private Button inlineLoadButton;
+        private Button inlineReturnButton;
+        private bool inlineAvailable;
+        private int inlineAttachAttempts;
+        private InlineMenuKind inlineMenu;
+
+        private enum InlineMenuKind { None, Presets, Options, Load, Details }
 
         private NativeBookTheme theme;
         private Transform attachedThemeOwner;
@@ -98,6 +119,7 @@ namespace KingmakerDiceRoller.UI
         private string commandError;
         private Button closeButton;
         private TextMeshProUGUI modeLabel;
+        private TextMeshProUGUI menuHeadingLabel;
         private TextMeshProUGUI presetLabel;
         private TextMeshProUGUI policyLabel;
         private TextMeshProUGUI minimumLabel;
@@ -240,6 +262,30 @@ namespace KingmakerDiceRoller.UI
         private void DestroyAttachedView(KingmakerContracts contracts)
         {
             nativeControls.RestoreOwnedStates(contracts);
+            foreach (GameObject arrow in inlineOwnedArrows)
+            {
+                if (arrow != null) { arrow.SetActive(false); Object.Destroy(arrow); }
+            }
+            inlineOwnedArrows.Clear();
+            inlineRows.Clear();
+            if (inlineToolbar != null) { inlineToolbar.SetActive(false); Object.Destroy(inlineToolbar); }
+            inlineToolbar = null;
+            inlineStatus = null;
+            presetChoices = null;
+            presetSelectorSection = null;
+            policySelectorSection = null;
+            inlineStatusLabel = null;
+            inlinePresetLabel = null;
+            inlinePresetButton = null;
+            inlineRollButton = null;
+            inlineRerollButton = null;
+            inlineSaveButton = null;
+            inlineLoadButton = null;
+            inlineReturnButton = null;
+            inlineAvailable = false;
+            inlineAttachAttempts = 0;
+            inlineMenu = InlineMenuKind.None;
+            viewBinding = null;
             attachedAllocator = null;
             theme = null;
             attachedThemeOwner = null;
@@ -250,6 +296,7 @@ namespace KingmakerDiceRoller.UI
             lastAccessTabAnchorSource = null;
             assignmentRows.Clear();
             modeLabel = null;
+            menuHeadingLabel = null;
             closeButton = null;
             commandError = null;
             presetLabel = null;
@@ -353,9 +400,23 @@ namespace KingmakerDiceRoller.UI
                 attachedThemeOwner == themeOwner && root.transform.parent == behaviour.transform.parent)
             {
                 RecoverTheme(behaviour, allocatorFilled);
+                if (!inlineAvailable && allocatorFilled && inlineAttachAttempts < 2)
+                {
+                    AttemptInlineAttachment(behaviour, contracts);
+                    if (inlineAvailable)
+                    {
+                        panelState.Close();
+                        if (theme != null)
+                        {
+                            themeBindings.InvalidateApplied();
+                            themeBindings.Apply(theme.Resources, ReportAttachment);
+                        }
+                    }
+                }
                 return;
             }
 
+            InlineMenuKind previousMenu = ownerChanged ? InlineMenuKind.None : inlineMenu;
             DestroyAttachedView(contracts);
             TextMeshProUGUI nativeText = contracts.AbilityAllocatorMainLabelField.GetValue(allocator) as TextMeshProUGUI;
             Image nativeFrame = contracts.AbilityAllocatorFrameField.GetValue(allocator) as Image;
@@ -369,12 +430,21 @@ namespace KingmakerDiceRoller.UI
                 // Styling can subsequently change without touching their listeners/text/state.
                 CreateOwnedView(behaviour, nativeText, nativeFrame, nativeButton);
                 attachedAllocator = allocator;
+                viewBinding = new NativeViewCommandBinding(
+                    session.Controller, session.StableOwner, allocator);
+                AttemptInlineAttachment(behaviour, contracts, nativeText, nativeButton);
+                if (inlineAvailable)
+                {
+                    inlineMenu = previousMenu;
+                    if (inlineMenu == InlineMenuKind.None && panelState.IsExpanded)
+                        panelState.Close();
+                }
                 attachedThemeOwner = themeOwner;
                 themeRecovery.Bind(allocator, themeOwner);
                 RecoverTheme(behaviour, allocatorFilled);
                 panelState.AttachView();
                 ApplySurfaceState();
-                PositionAccessTab(allocator, contracts);
+                if (!inlineAvailable) PositionAccessTab(allocator, contracts);
                 constructionBudget.Clear();
                 AttachmentCount++;
             }
@@ -382,6 +452,28 @@ namespace KingmakerDiceRoller.UI
             {
                 constructionBudget.RecordFailure();
                 throw;
+            }
+        }
+
+        private void AttemptInlineAttachment(MonoBehaviour allocator, KingmakerContracts contracts,
+            TextMeshProUGUI nativeText = null, Button nativeButton = null)
+        {
+            inlineAttachAttempts++;
+            int originalThemeBindings = themeBindings.Count;
+            try
+            {
+                if (nativeText == null)
+                    nativeText = contracts.AbilityAllocatorMainLabelField.GetValue(allocator) as TextMeshProUGUI;
+                if (nativeButton == null) nativeButton = ResolveNativeButton(allocator, contracts);
+                if (nativeText == null || nativeButton == null)
+                    throw new InvalidOperationException("Native row styling is unavailable.");
+                inlineAvailable = TryCreateInlineView(allocator, contracts, nativeText, nativeButton);
+            }
+            catch (Exception exception)
+            {
+                ReportAttachment("Native inline stats attachment unavailable; using Roll Stats drawer: " + exception.Message);
+                DestroyInlineView();
+                themeBindings.TrimTo(originalThemeBindings);
             }
         }
 
@@ -453,6 +545,233 @@ namespace KingmakerDiceRoller.UI
             CreateAccessTab(nativeText, nativeButton);
         }
 
+        private bool TryCreateInlineView(
+            MonoBehaviour allocator, KingmakerContracts contracts,
+            TextMeshProUGUI nativeText, Button nativeButton)
+        {
+            IList entries = contracts.AbilityAllocatorStatEntriesField.GetValue(allocator) as IList;
+            if (entries == null || entries.Count != Abilities.Length)
+                throw new InvalidOperationException("The live allocator does not have six native score rows.");
+            var mapped = new object[Abilities.Length];
+            var rowKeys = new object[Abilities.Length];
+            Transform statsContainer = null;
+            for (int rowIndex = 0; rowIndex < entries.Count; rowIndex++)
+            {
+                object entry = entries[rowIndex];
+                var row = entry as MonoBehaviour;
+                if (row == null || !row.isActiveAndEnabled)
+                    throw new InvalidOperationException("A native score row is unavailable.");
+                rowKeys[rowIndex] = contracts.ScoreEntryTypeField.GetValue(entry);
+                Button up = contracts.ScoreEntryUpButtonField.GetValue(entry) as Button;
+                Button down = contracts.ScoreEntryDownButtonField.GetValue(entry) as Button;
+                if (up == null || down == null || !up.transform.IsChildOf(row.transform) ||
+                    !down.transform.IsChildOf(row.transform))
+                    throw new InvalidOperationException("Native row buttons do not belong to their score row.");
+                if (statsContainer == null) statsContainer = row.transform.parent;
+                if (statsContainer != row.transform.parent || statsContainer == null ||
+                    statsContainer.parent != allocator.transform)
+                    throw new InvalidOperationException("Native score rows do not share the allocator's stat container.");
+            }
+            int[] rowIndexByAbility = NativeScoreRowIdentity.Map(contracts.AbilityStatKeys, rowKeys);
+            for (int ability = 0; ability < mapped.Length; ability++)
+                mapped[ability] = entries[rowIndexByAbility[ability]];
+
+            inlineToolbar = CreateVertical("InlineRollToolbar", allocator.transform);
+            inlineToolbar.transform.SetSiblingIndex(statsContainer.GetSiblingIndex() + 1);
+            inlineToolbar.GetComponent<RectTransform>().SetSizeWithCurrentAnchors(
+                RectTransform.Axis.Vertical, 74f);
+            var toolbarLayout = inlineToolbar.AddComponent<LayoutElement>();
+            toolbarLayout.minHeight = 74f;
+            toolbarLayout.preferredHeight = 74f;
+            toolbarLayout.flexibleWidth = 1f;
+            var toolbarGroup = inlineToolbar.GetComponent<VerticalLayoutGroup>();
+            toolbarGroup.padding = new RectOffset(8, 8, 2, 2);
+            toolbarGroup.spacing = 2f;
+
+            GameObject first = CreateHorizontal(inlineToolbar.transform, 34f);
+            first.name = "RollActions";
+            inlinePresetButton = CreateButton(first.transform, "Roll method", nativeText,
+                nativeButton, 260f, () => OpenInlineMenu(InlineMenuKind.Presets));
+            inlinePresetLabel = inlinePresetButton.GetComponentInChildren<TextMeshProUGUI>();
+            inlineRollButton = CreateButton(first.transform, "Roll", nativeText,
+                nativeButton, 76f, () => Execute(RollUiCommand.Roll));
+            inlineRerollButton = CreateButton(first.transform, "Reroll", nativeText,
+                nativeButton, 86f, () => Execute(RollUiCommand.Reroll));
+            inlineSaveButton = CreateButton(first.transform, "Save", nativeText,
+                nativeButton, 70f, () => Execute(RollUiCommand.StoreCurrent));
+            inlineLoadButton = CreateButton(first.transform, "Load", nativeText,
+                nativeButton, 70f, () => OpenInlineMenu(InlineMenuKind.Load));
+
+            GameObject second = CreateHorizontal(inlineToolbar.transform, 34f);
+            second.name = "SecondaryActions";
+            inlineReturnButton = CreateButton(second.transform, "Return to Point Buy", nativeText,
+                nativeButton, 215f, () => Execute(RollUiCommand.ReturnToPointBuy));
+            AddInlineTooltip(inlineReturnButton.gameObject, nativeText,
+                "Restore the exact Point Buy allocation and remaining points.", 380f, 42f);
+            CreateButton(second.transform, "Options", nativeText, nativeButton, 104f,
+                () => OpenInlineMenu(InlineMenuKind.Options));
+            CreateButton(second.transform, "Details", nativeText, nativeButton, 100f,
+                () => OpenInlineMenu(InlineMenuKind.Details));
+
+            inlineStatus = NewUiObject("InlineStatus", inlineToolbar.layer);
+            inlineStatus.transform.SetParent(inlineToolbar.transform, false);
+            inlineStatusLabel = CreateLabel(inlineStatus.transform, string.Empty, nativeText,
+                layout.StatusFontSize, TextAlignmentOptions.Left, 24f, -1f, ErrorText, false);
+            RectTransform inlineStatusRect = inlineStatusLabel.rectTransform;
+            inlineStatusRect.anchorMin = Vector2.zero;
+            inlineStatusRect.anchorMax = Vector2.one;
+            inlineStatusRect.offsetMin = new Vector2(4f, 0f);
+            inlineStatusRect.offsetMax = new Vector2(-4f, 0f);
+            var statusLayout = inlineStatus.AddComponent<LayoutElement>();
+            statusLayout.minHeight = 24f;
+            statusLayout.preferredHeight = 24f;
+            SetVisible(inlineStatus, false);
+
+            for (int index = 0; index < mapped.Length; index++)
+            {
+                object entry = mapped[index];
+                Button nativeUp = contracts.ScoreEntryUpButtonField.GetValue(entry) as Button;
+                Button nativeDown = contracts.ScoreEntryDownButtonField.GetValue(entry) as Button;
+                AbilityScore ability = Abilities[index];
+                Button up = CreateInlineArrow(nativeDown, nativeText,
+                    index == 0 ? "No score above" : "Swap with " + Abilities[index - 1],
+                    () => Execute(RollUiCommand.MoveUp, ability));
+                Button down = CreateInlineArrow(nativeUp, nativeText,
+                    index == Abilities.Length - 1 ? "No score below" : "Swap with " + Abilities[index + 1],
+                    () => Execute(RollUiCommand.MoveDown, ability));
+                inlineRows.Add(new InlineRowWidgets(up, down));
+            }
+            ValidateInlineGeometry(allocator, statsContainer, contracts);
+            logger.Info("Native inline stats attached to six exact CharBScoresEntry.Type keys; toolbar inserted after the native stat container.");
+            return true;
+        }
+
+        private void ValidateInlineGeometry(
+            MonoBehaviour allocator, Transform statsContainer, KingmakerContracts contracts)
+        {
+            RectTransform allocatorRect = allocator.transform as RectTransform;
+            RectTransform statsRect = statsContainer as RectTransform;
+            RectTransform toolbarRect = inlineToolbar.transform as RectTransform;
+            if (allocatorRect == null || statsRect == null || toolbarRect == null)
+                throw new InvalidOperationException("Native inline stat geometry is unavailable.");
+            LayoutRebuilder.ForceRebuildLayoutImmediate(allocatorRect);
+            LocalLayoutRect? stats = TryGetLocalBounds(statsRect, allocatorRect);
+            LocalLayoutRect? toolbar = TryGetLocalBounds(toolbarRect, allocatorRect);
+            Rect area = allocatorRect.rect;
+            if (!stats.HasValue || !toolbar.HasValue ||
+                toolbar.Value.Width < 520f ||
+                toolbar.Value.XMin < area.xMin - 1f || toolbar.Value.XMax > area.xMax + 1f ||
+                toolbar.Value.YMax > stats.Value.YMin + 2f ||
+                toolbar.Value.YMin < area.yMin - 1f)
+                throw new InvalidOperationException("The compact toolbar does not fit below the native score rows.");
+            GameObject racial = contracts.AbilityAllocatorRaceBonusContainerField.GetValue(allocator) as GameObject;
+            if (racial != null && racial.activeInHierarchy)
+            {
+                LocalLayoutRect? race = TryGetLocalBounds(racial.transform as RectTransform, allocatorRect);
+                if (!race.HasValue || toolbar.Value.YMin < race.Value.YMax - 2f ||
+                    race.Value.YMin < area.yMin - 1f)
+                    throw new InvalidOperationException("The compact toolbar would overlap the native racial selector.");
+            }
+        }
+
+        private Button CreateInlineArrow(Button source, TextMeshProUGUI nativeText,
+            string tooltip, Action action)
+        {
+            GameObject owned = NewUiObject("Assignment." + tooltip, source.gameObject.layer);
+            owned.transform.SetParent(source.transform, false);
+            var rect = owned.GetComponent<RectTransform>();
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = rect.offsetMax = Vector2.zero;
+            owned.AddComponent<LayoutElement>().ignoreLayout = true;
+            Image image = owned.AddComponent<Image>();
+            NativeBookTheme.CopyImage(source.targetGraphic as Image, image);
+            image.raycastTarget = true;
+            Button button = owned.AddComponent<Button>();
+            button.targetGraphic = image;
+            button.colors = source.colors;
+            button.spriteState = source.spriteState;
+            button.transition = source.transition;
+            button.navigation = new Navigation { mode = Navigation.Mode.Automatic };
+            button.onClick = new Button.ButtonClickedEvent();
+            button.onClick.AddListener(() =>
+            {
+                if (!CanDispatchCurrentView()) return;
+                NativeUiPresentation.Activate(action, NativeBookTheme.PlayClick, ReportAttachment);
+            });
+            Transform sourceIcon = source.transform.Find("Button");
+            Image sourceIconImage = sourceIcon == null ? null : sourceIcon.GetComponent<Image>();
+            if (sourceIconImage == null)
+                throw new InvalidOperationException("Native score-arrow icon is unavailable.");
+            GameObject iconObject = NewUiObject("ArrowIcon", owned.layer);
+            RectTransform iconRect = iconObject.GetComponent<RectTransform>();
+            RectTransform sourceRect = sourceIcon as RectTransform;
+            iconRect.SetParent(owned.transform, false);
+            iconRect.anchorMin = sourceRect.anchorMin;
+            iconRect.anchorMax = sourceRect.anchorMax;
+            iconRect.pivot = sourceRect.pivot;
+            iconRect.anchoredPosition = sourceRect.anchoredPosition;
+            iconRect.sizeDelta = sourceRect.sizeDelta;
+            iconRect.localRotation = sourceRect.localRotation * Quaternion.Euler(0f, 0f, 90f);
+            Image icon = iconObject.AddComponent<Image>();
+            NativeBookTheme.CopyImage(sourceIconImage, icon);
+            icon.raycastTarget = false;
+            AddInlineTooltip(owned, nativeText, tooltip);
+            inlineOwnedArrows.Add(owned);
+            return button;
+        }
+
+        private void AddInlineTooltip(GameObject arrow, TextMeshProUGUI nativeText, string text,
+            float width = 190f, float height = 30f)
+        {
+            GameObject tooltip = NewUiObject("Tooltip", arrow.layer);
+            RectTransform rect = tooltip.GetComponent<RectTransform>();
+            rect.SetParent(arrow.transform, false);
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 1f);
+            rect.pivot = new Vector2(0.5f, 0f);
+            rect.anchoredPosition = new Vector2(0f, 3f);
+            rect.sizeDelta = new Vector2(width, height);
+            Image background = tooltip.AddComponent<Image>();
+            background.color = Parchment;
+            background.raycastTarget = false;
+            TextMeshProUGUI label = CreateLabel(tooltip.transform, text, nativeText,
+                layout.StatusFontSize, TextAlignmentOptions.Center, -1f, -1f, BodyText, true);
+            RectTransform labelRect = label.rectTransform;
+            labelRect.anchorMin = Vector2.zero;
+            labelRect.anchorMax = Vector2.one;
+            labelRect.offsetMin = new Vector2(3f, 0f);
+            labelRect.offsetMax = new Vector2(-3f, 0f);
+            var hover = arrow.AddComponent<InlineArrowTooltip>();
+            hover.Configure(tooltip);
+            tooltip.SetActive(false);
+        }
+
+        private void DestroyInlineView()
+        {
+            foreach (GameObject arrow in inlineOwnedArrows)
+                if (arrow != null) { arrow.SetActive(false); Object.Destroy(arrow); }
+            inlineOwnedArrows.Clear();
+            inlineRows.Clear();
+            if (inlineToolbar != null)
+            {
+                RectTransform allocatorRect = inlineToolbar.transform.parent as RectTransform;
+                inlineToolbar.SetActive(false);
+                Object.Destroy(inlineToolbar);
+                if (allocatorRect != null) LayoutRebuilder.ForceRebuildLayoutImmediate(allocatorRect);
+            }
+            inlineToolbar = null;
+            inlineStatus = null;
+            inlineStatusLabel = null;
+            inlinePresetLabel = null;
+            inlinePresetButton = null;
+            inlineRollButton = null;
+            inlineRerollButton = null;
+            inlineSaveButton = null;
+            inlineLoadButton = null;
+            inlineReturnButton = null;
+            inlineAvailable = false;
+        }
+
         private void CreateExpandedSurface(
             TextMeshProUGUI nativeText,
             Image nativeFrame,
@@ -498,7 +817,7 @@ namespace KingmakerDiceRoller.UI
             headerLayout = header.GetComponent<LayoutElement>();
             GameObject heading = CreateVertical("Heading", header.transform);
             heading.AddComponent<LayoutElement>().flexibleWidth = 1f;
-            CreateLabel(
+            menuHeadingLabel = CreateLabel(
                 heading.transform, "Rolled Ability Scores", nativeText,
                 layout.TitleFontSize, TextAlignmentOptions.Left, 28f, -1f, HeadingText, true);
             modeLabel = CreateLabel(
@@ -514,7 +833,9 @@ namespace KingmakerDiceRoller.UI
                 {
                     NativeUiPresentation.CloseDrawer(panelState, commands.NotifyDrawerClosed);
                     ApplySurfaceState();
-                    if (accessTab != null) accessTab.GetComponent<Button>().Select();
+                    inlineMenu = InlineMenuKind.None;
+                    if (inlineAvailable && inlinePresetButton != null) inlinePresetButton.Select();
+                    else if (accessTab != null) accessTab.GetComponent<Button>().Select();
                 },
                 layout.CloseButtonHeight);
 
@@ -540,6 +861,14 @@ namespace KingmakerDiceRoller.UI
                 TextAlignmentOptions.Left, -1f, -1f, ErrorText, false);
             messageLabel.gameObject.name = "InlineMessage";
             SetVisible(messageLabel.gameObject, false);
+            presetChoices = CreateVertical("PresetChoices", content);
+            foreach (DiceRollPreset preset in Enum.GetValues(typeof(DiceRollPreset)))
+            {
+                DiceRollPreset choice = preset;
+                CreateButton(presetChoices.transform, RollPanelPresenter.FormatPreset(choice),
+                    nativeText, nativeButton, -1f, () => SelectInlinePreset(choice));
+            }
+            SetVisible(presetChoices, false);
             CreatePanelContent(content, nativeText, nativeButton);
         }
 
@@ -629,7 +958,7 @@ namespace KingmakerDiceRoller.UI
             TextMeshProUGUI nativeText,
             Button nativeButton)
         {
-            CreateCaptionedSelector(
+            presetSelectorSection = CreateCaptionedSelector(
                 content,
                 "Roll method",
                 nativeText,
@@ -670,7 +999,7 @@ namespace KingmakerDiceRoller.UI
             advancedLabel = advancedButton.GetComponentInChildren<TextMeshProUGUI>();
 
             advancedContent = CreateVertical("AdvancedContent", content);
-            CreateCaptionedSelector(
+            policySelectorSection = CreateCaptionedSelector(
                 advancedContent.transform,
                 "Low-score rule",
                 nativeText,
@@ -722,7 +1051,7 @@ namespace KingmakerDiceRoller.UI
             customInput = CreateInput(customSection.transform, nativeText, nativeButton);
             customInput.onValueChanged.AddListener(value =>
             {
-                if (!rendering)
+                if (!rendering && CanDispatchCurrentView())
                 {
                     commandError = null;
                     commands.SetCustomExpression(value);
@@ -768,7 +1097,7 @@ namespace KingmakerDiceRoller.UI
             CreateSavedSection(content, nativeText, nativeButton);
         }
 
-        private void CreateCaptionedSelector(
+        private GameObject CreateCaptionedSelector(
             Transform parent,
             string caption,
             TextMeshProUGUI nativeText,
@@ -812,6 +1141,7 @@ namespace KingmakerDiceRoller.UI
             valueLabel.GetComponent<LayoutElement>().preferredHeight = -1f;
             section.GetComponent<LayoutElement>().preferredHeight = -1f;
             CreateButton(section.transform, ">", nativeText, nativeButton, 42f, () => Execute(next));
+            return section;
         }
 
         private void CreateAssignmentRows(
@@ -1123,6 +1453,28 @@ namespace KingmakerDiceRoller.UI
         {
             if (root == null) return;
             RollUiSnapshot snapshot = commands.Snapshot;
+            if (inlineAvailable)
+            {
+                RollPanelModel inlineModel = presenter.Present(
+                    snapshot, panelState.Disclosure, RollPanelPresentationProfile.Compact);
+                rendering = true;
+                try
+                {
+                    ApplyModel(inlineModel);
+                    ApplyInlineModel(inlineModel, snapshot);
+                    ApplySurfaceState();
+                    if (panelState.ExpandedSurfaceActive) ApplyInlineMenuGeometry();
+                }
+                finally { rendering = false; }
+                if (snapshot.Mode == RollSessionMode.Roll ||
+                    snapshot.Mode == RollSessionMode.EnteringRollMode)
+                {
+                    string inlineError;
+                    if (!nativeControls.TrySuppressForRoll(commands.ActiveSession, contracts, out inlineError))
+                        logger.Warning("Native Roll Mode control suppression failed: " + inlineError);
+                }
+                return;
+            }
             ResponsiveRollPanelLayoutResult preliminaryLayout = CalculateResponsiveLayout(
                 lastPreferredBodyHeight >= 0f ? lastPreferredBodyHeight :
                     snapshot.Mode == RollSessionMode.Roll
@@ -1418,7 +1770,171 @@ namespace KingmakerDiceRoller.UI
         private void ApplySurfaceState()
         {
             if (expandedSurface != null) SetVisible(expandedSurface, panelState.ExpandedSurfaceActive);
-            if (accessTab != null) SetVisible(accessTab, panelState.AccessTabActive);
+            if (accessTab != null) SetVisible(accessTab, !inlineAvailable && panelState.AccessTabActive);
+        }
+
+        private void ApplyInlineModel(RollPanelModel model, RollUiSnapshot snapshot)
+        {
+            bool transitional = snapshot.Mode == RollSessionMode.EnteringRollMode ||
+                snapshot.Mode == RollSessionMode.RestoringPointBuy;
+            inlinePresetLabel.text = "Method: " + model.Preset;
+            FitButtonCaption(inlinePresetButton, inlinePresetLabel, 260f, 34f);
+            SetInteractable(inlinePresetButton, !transitional);
+            SetVisible(inlineRollButton.gameObject, model.RollVisible);
+            SetVisible(inlineRerollButton.gameObject, model.RerollVisible);
+            SetInteractable(inlineRollButton, model.CanRoll);
+            SetInteractable(inlineRerollButton, model.CanReroll);
+            SetInteractable(inlineSaveButton, model.CanStore);
+            SetInteractable(inlineLoadButton, snapshot.CanUseHistory || snapshot.CanRecall);
+            SetVisible(inlineReturnButton.gameObject, model.ReturnToPointBuyVisible ||
+                snapshot.Mode == RollSessionMode.RestoringPointBuy);
+            SetInteractable(inlineReturnButton, model.CanReturnToPointBuy);
+            for (int index = 0; index < inlineRows.Count; index++)
+            {
+                InlineRowWidgets row = inlineRows[index];
+                bool visible = model.AssignmentVisible;
+                SetVisible(row.Up.gameObject, visible);
+                SetVisible(row.Down.gameObject, visible);
+                if (!visible) continue;
+                SetInteractable(row.Up, model.AssignmentRows[index].CanMoveUp);
+                SetInteractable(row.Down, model.AssignmentRows[index].CanMoveDown);
+            }
+
+            string status = !string.IsNullOrWhiteSpace(model.Error) ? model.Error : commandError;
+            switch (commands.LastPointBuyReturn)
+            {
+                case PointBuyReturnOutcome.DerivedValuesNotRefreshed:
+                    status = "Point Buy restored; derived values need a refresh. Check Troubleshooting.";
+                    break;
+                case PointBuyReturnOutcome.PageNotRefreshed:
+                    status = "Point Buy restored; reopen this page if scores look stale.";
+                    break;
+                case PointBuyReturnOutcome.Failed:
+                    status = "Return to Point Buy failed. Try again or check Troubleshooting.";
+                    break;
+            }
+            if (string.IsNullOrWhiteSpace(status)) status = model.Status;
+            inlineStatusLabel.text = status ?? string.Empty;
+            SetVisible(inlineStatus, !string.IsNullOrWhiteSpace(status));
+            inlineToolbar.GetComponent<LayoutElement>().preferredHeight =
+                inlineStatus.activeSelf ? 112f : 74f;
+            inlineToolbar.GetComponent<RectTransform>().SetSizeWithCurrentAnchors(
+                RectTransform.Axis.Vertical, inlineStatus.activeSelf ? 112f : 74f);
+
+            // The old score list and ordinary actions are retained only for
+            // degraded attachment. A healthy inline view uses this surface as
+            // one bounded secondary menu at a time.
+            SetVisible(presetSelectorSection, false);
+            SetVisible(pointActionsRow, false);
+            SetVisible(returnRow, false);
+            SetVisible(assignmentSection, false);
+            SetVisible(advancedDisclosure, false);
+            SetVisible(historyDisclosure, false);
+            SetVisible(savedDisclosure, false);
+            SetVisible(presetChoices, inlineMenu == InlineMenuKind.Presets);
+            SetVisible(advancedContent, inlineMenu == InlineMenuKind.Options);
+            SetVisible(summarySection, inlineMenu == InlineMenuKind.Details && model.SummaryVisible);
+            if (inlineMenu == InlineMenuKind.Details)
+            {
+                summaryLabel.text = model.SummaryVisible ? model.Summary : "No rolled array is applied.";
+                SetVisible(summarySection, true);
+            }
+            SetVisible(historyDetails, inlineMenu == InlineMenuKind.Load);
+            SetVisible(savedDetails, inlineMenu == InlineMenuKind.Load);
+            SetVisible(storeButton.gameObject, false);
+            if (inlineMenu == InlineMenuKind.Load)
+            {
+                historyLabel.text = "Session history   " + model.History;
+                savedLabel.text = "Saved arrays   " + model.Saved;
+            }
+            SetVisible(messageLabel.gameObject, inlineMenu != InlineMenuKind.None &&
+                !string.IsNullOrWhiteSpace(messageLabel.text));
+            menuHeadingLabel.text = inlineMenu == InlineMenuKind.Presets ? "Roll Method" :
+                inlineMenu == InlineMenuKind.Options ? "Roll Options" :
+                inlineMenu == InlineMenuKind.Load ? "Load Scores" : "Roll Details";
+        }
+
+        private void ApplyInlineMenuGeometry()
+        {
+            RectTransform rootRect = root.GetComponent<RectTransform>();
+            RectTransform toolbarRect = inlineToolbar.GetComponent<RectTransform>();
+            LocalLayoutRect? toolbarBounds = TryGetLocalBounds(toolbarRect, rootRect);
+            if (!toolbarBounds.HasValue) return;
+            float width = Mathf.Min(460f, rootRect.rect.width - 36f);
+            float height = inlineMenu == InlineMenuKind.Load ? 420f :
+                inlineMenu == InlineMenuKind.Options ? 360f :
+                inlineMenu == InlineMenuKind.Presets ? 340f : 220f;
+            height = Mathf.Min(height, rootRect.rect.height - 110f);
+            if (width <= 0f || height <= 0f) return;
+            expandedSurfaceRect.anchorMin = expandedSurfaceRect.anchorMax = new Vector2(0.5f, 0.5f);
+            expandedSurfaceRect.pivot = new Vector2(0f, 0f);
+            expandedSurfaceRect.sizeDelta = new Vector2(width, height);
+            expandedSurfaceRect.anchoredPosition = new Vector2(
+                Mathf.Clamp(toolbarBounds.Value.XMin, rootRect.rect.xMin + 18f,
+                    rootRect.rect.xMax - width - 18f),
+                Mathf.Clamp(toolbarBounds.Value.YMax + 4f, rootRect.rect.yMin + 92f,
+                    rootRect.rect.yMax - height - 18f));
+            foreach (RectTransform paper in paperLayers)
+                paper.sizeDelta = new Vector2(width * 2f, height * 2f);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(expandedSurfaceRect);
+            float preferred = LayoutUtility.GetPreferredHeight(bodyContent);
+            bodyScroll.vertical = preferred > bodyViewport.rect.height + 2f;
+            SetVisible(bodyScrollbarObject, bodyScroll.vertical);
+            bodyViewport.offsetMax = new Vector2(bodyScroll.vertical ? -22f : 0f, 0f);
+        }
+
+        private bool CanDispatchCurrentView()
+        {
+            RollSession session = commands.ActiveSession;
+            if (session == null || viewBinding == null ||
+                !commands.CanAttachNativePanel || attachedAllocator == null || root == null)
+                return false;
+            object owner;
+            bool active;
+            object phase;
+            object allocator;
+            try
+            {
+                KingmakerContracts contracts = contractsProvider();
+                return contracts != null && contracts.TryGetAbilityPhasePresentationContext(
+                    out owner, out active, out phase, out allocator) &&
+                    viewBinding.Matches(session.Controller, session.StableOwner, allocator, active);
+            }
+            catch (Exception exception)
+            {
+                ReportAttachment("Native UI command binding unavailable: " + exception.Message);
+                return false;
+            }
+        }
+
+        private void OpenInlineMenu(InlineMenuKind menu)
+        {
+            if (!inlineAvailable) return;
+            if (inlineMenu == menu && panelState.IsExpanded)
+            {
+                NativeUiPresentation.CloseDrawer(panelState, commands.NotifyDrawerClosed);
+                inlineMenu = InlineMenuKind.None;
+            }
+            else
+            {
+                inlineMenu = menu;
+                if (menu == InlineMenuKind.Options && !panelState.AdvancedExpanded)
+                    panelState.ToggleAdvanced();
+                panelState.Open();
+            }
+            Render(contractsProvider());
+            if (panelState.IsExpanded && closeButton != null) closeButton.Select();
+        }
+
+        private void SelectInlinePreset(DiceRollPreset preset)
+        {
+            string error;
+            bool succeeded = commands.SelectPreset(preset, out error);
+            commandError = succeeded ? null : error;
+            NativeUiPresentation.CloseDrawer(panelState, commands.NotifyDrawerClosed);
+            inlineMenu = InlineMenuKind.None;
+            Render(contractsProvider());
+            if (inlinePresetButton != null) inlinePresetButton.Select();
         }
 
         private void Execute(RollUiCommand command, AbilityScore ability = AbilityScore.Strength)
@@ -1573,8 +2089,11 @@ namespace KingmakerDiceRoller.UI
                     button.transition = Selectable.Transition.ColorTint;
                 });
             button.onClick = new Button.ButtonClickedEvent();
-            button.onClick.AddListener(() => NativeUiPresentation.Activate(
-                action, NativeBookTheme.PlayClick, ReportAttachment));
+            button.onClick.AddListener(() =>
+            {
+                if (!CanDispatchCurrentView()) return;
+                NativeUiPresentation.Activate(action, NativeBookTheme.PlayClick, ReportAttachment);
+            });
 
             var layout = gameObject.AddComponent<LayoutElement>();
             if (width > 0f)
@@ -1870,6 +2389,18 @@ namespace KingmakerDiceRoller.UI
 
             internal GameObject Root { get; }
             internal TextMeshProUGUI Value { get; }
+            internal Button Up { get; }
+            internal Button Down { get; }
+        }
+
+        private sealed class InlineRowWidgets
+        {
+            internal InlineRowWidgets(Button up, Button down)
+            {
+                Up = up;
+                Down = down;
+            }
+
             internal Button Up { get; }
             internal Button Down { get; }
         }

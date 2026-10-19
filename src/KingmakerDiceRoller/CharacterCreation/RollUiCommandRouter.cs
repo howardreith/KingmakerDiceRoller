@@ -15,6 +15,7 @@ namespace KingmakerDiceRoller.CharacterCreation
         public RollUiSnapshot Snapshot => target.UiSnapshot;
         public RollSession ActiveSession => target.ActiveSession;
         public bool CanAttachNativePanel => target.CanAttachNativePanel;
+        public PointBuyReturnOutcome LastPointBuyReturn => target.LastPointBuyReturn;
 
         public void NotifyDrawerClosed()
         {
@@ -92,6 +93,26 @@ namespace KingmakerDiceRoller.CharacterCreation
         public void SetCustomExpression(string expression)
         {
             target.SetCustomExpression(expression ?? string.Empty);
+        }
+
+        public bool SelectPreset(DiceRollPreset preset, out string error)
+        {
+            if (!Enum.IsDefined(typeof(DiceRollPreset), preset))
+            {
+                error = "Choose an available roll method.";
+                return false;
+            }
+            try
+            {
+                target.SetPreset(preset);
+                error = null;
+                return true;
+            }
+            catch (Exception exception)
+            {
+                error = exception.Message;
+                return false;
+            }
         }
 
         private static DiceRollPreset CyclePreset(DiceRollPreset current, int direction)
