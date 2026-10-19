@@ -27,6 +27,11 @@ unchanged.
   screenshots or in-game click/input observations were obtained.
 - Compatibility sweep: **NOT RUN** for 0.1.13.
 - Official release: **No**; this is an implementation candidate.
+- Testing-alpha publication authorized: **Yes** — on 2026-10-19 the owner
+  requested another alpha release of the new version. The earlier instruction
+  to build and publish an alpha without rerunning the full release suite
+  remains in effect. This does not authorize a stable or runtime-qualified
+  release.
 See `docs/NATIVE-STAT-UI-V2-CANDIDATE.md` for the acceptance evidence and
 remaining live checks. [Draft PR #7](https://github.com/howardreith/KingmakerDiceRoller/pull/7)
 reviews this revision against the existing 0.1.12 alpha branch.
