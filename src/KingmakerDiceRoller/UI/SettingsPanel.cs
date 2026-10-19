@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using KingmakerDiceRoller.CharacterCreation;
 using KingmakerDiceRoller.Compatibility;
+using KingmakerDiceRoller.Domain;
 using KingmakerDiceRoller.Integration;
 
 namespace KingmakerDiceRoller.UI
@@ -86,7 +87,9 @@ namespace KingmakerDiceRoller.UI
             IReadOnlyList<PanelNotice> notices,
             RecoveryAction recovery,
             string troubleshootingButtonLabel,
-            TroubleshootingSection troubleshooting)
+            TroubleshootingSection troubleshooting,
+            LowScorePolicy lowScorePolicy,
+            int minimumScore)
         {
             Explanation = explanation;
             Status = status;
@@ -94,6 +97,8 @@ namespace KingmakerDiceRoller.UI
             Recovery = recovery;
             TroubleshootingButtonLabel = troubleshootingButtonLabel;
             Troubleshooting = troubleshooting;
+            LowScorePolicy = lowScorePolicy;
+            MinimumScore = minimumScore;
         }
 
         public string Explanation { get; }
@@ -110,6 +115,8 @@ namespace KingmakerDiceRoller.UI
         // Null while Troubleshooting is collapsed.
         public TroubleshootingSection Troubleshooting { get; }
         public bool TroubleshootingExpanded => Troubleshooting != null;
+        public LowScorePolicy LowScorePolicy { get; }
+        public int MinimumScore { get; }
     }
 
     // Unity-free presentation and interaction state for the UMM panel. Building the model only
@@ -160,6 +167,16 @@ namespace KingmakerDiceRoller.UI
             if (verboseDiagnostics() != value) setVerboseDiagnostics(value);
         }
 
+        public void SetLowScorePolicy(LowScorePolicy value)
+        {
+            coordinator.SetLowScorePolicy(value);
+        }
+
+        public void SetMinimumScore(int value)
+        {
+            coordinator.SetMinimumScore(value);
+        }
+
         public void ReturnToPointBuy()
         {
             // The emergency action's existing eligibility; the coordinator keeps every restore check.
@@ -172,13 +189,16 @@ namespace KingmakerDiceRoller.UI
         {
             RollSession session = coordinator.ActiveSession;
             KingmakerContracts contracts = contractsProvider();
+            RollConfiguration configuration = coordinator.UiSnapshot.Configuration;
             return new SettingsPanelModel(
                 Explanation,
                 BuildStatus(session, contracts),
                 BuildNotices(session),
                 BuildRecovery(session),
                 troubleshootingExpanded ? HideTroubleshootingLabel : ShowTroubleshootingLabel,
-                troubleshootingExpanded ? BuildTroubleshooting(session, contracts) : null);
+                troubleshootingExpanded ? BuildTroubleshooting(session, contracts) : null,
+                configuration.LowScorePolicy,
+                configuration.MinimumScore);
         }
 
         private PanelLine BuildStatus(RollSession session, KingmakerContracts contracts)

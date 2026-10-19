@@ -154,7 +154,11 @@ namespace KingmakerDiceRoller.DomainTests
                 new TestCase("point-buy equivalent supports score boundary", ProductWorkflowTests.PointBuyEquivalentSupportsScoreBoundary),
                 new TestCase("history adds and selects newest", ProductWorkflowTests.HistoryAddsAndSelectsNewest),
                 new TestCase("history evicts oldest at twenty", ProductWorkflowTests.HistoryEvictsOldestAtTwenty),
-                new TestCase("history navigation wraps", ProductWorkflowTests.HistoryNavigationWraps),
+                new TestCase("history navigation stops at endpoints", ProductWorkflowTests.HistoryNavigationWraps),
+                new TestCase("equal-array history preserves permutations", ProductWorkflowTests.HistorySelectionPreservesEqualArrayPermutations),
+                new TestCase("saved recall appends one history entry", ProductWorkflowTests.SavedRecallAppendsOneHistoryEntry),
+                new TestCase("formula draft validation consumes no random", ProductWorkflowTests.FormulaDraftRejectsWithoutConsumingRandom),
+                new TestCase("formula preflight rejects impossible constants", ProductWorkflowTests.FormulaPreflightRejectsImpossibleConstants),
                 new TestCase("reassignment updates history without adding", ProductWorkflowTests.ReassignmentUpdatesSelectedHistoryWithoutAdding),
                 new TestCase("different array cannot contaminate history", ProductWorkflowTests.DifferentArrayCannotContaminateSelectedHistory),
                 new TestCase("browsing history preserves active entry", ProductWorkflowTests.BrowsingHistoryDoesNotChangeActiveEntry),
@@ -425,7 +429,8 @@ namespace KingmakerDiceRoller.DomainTests
                 new TestCase("SettingsPanelFinalizationFailureStaysVisibleAfterSessionEnds", PreviewSessionContinuityTests.SettingsPanelFinalizationFailureStaysVisibleAfterSessionEnds),
                 new TestCase("SettingsPanelUnverifiedCompatibilityIsConcise", PreviewSessionContinuityTests.SettingsPanelUnverifiedCompatibilityIsConcise),
                 new TestCase("SettingsPanelTroubleshootingIsPresentationOnly", PreviewSessionContinuityTests.SettingsPanelTroubleshootingIsPresentationOnly),
-                new TestCase("SettingsPanelPreservesSavedPreferences", PreviewSessionContinuityTests.SettingsPanelPreservesSavedPreferences)
+                new TestCase("SettingsPanelPreservesSavedPreferences", PreviewSessionContinuityTests.SettingsPanelPreservesSavedPreferences),
+                new TestCase("SettingsPanelLowScoreControlsPersistWithoutRolling", PreviewSessionContinuityTests.SettingsPanelLowScoreControlsPersistWithoutRolling)
             };
 
             int passed = 0;

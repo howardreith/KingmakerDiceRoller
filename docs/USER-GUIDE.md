@@ -9,11 +9,13 @@ mercenary, or select an eligible native/Eddic respec that reopens all six
 starting scores. On the ability page, ordinary Point Buy appears first. The mod
 does not roll automatically.
 
-The 0.1.12 candidate places Roll/Reroll, Save, Load, Return to Point Buy,
-Options, Details, and a roll-method selector immediately below the six native
-score rows. The score rows themselves carry up/down assignment arrows in Roll
-Mode. Secondary menus open from the strip and can scroll if space is tight.
-Opening a menu or changing a highlighted record does not roll or change scores.
+The 0.1.13 candidate adds only **Roll for Stats** beneath the six native rows
+in ordinary Point Buy. It opens a Roll-ready workspace without changing scores
+or consuming a roll. The workspace shows an editable formula, Load, Save,
+Roll/Reroll, Previous/Next, and Return to Point Buy. The ability badge reads
+**Value** and shows a dash until rolled scores are applied; an applied array
+shows the sum of its six base scores before racial adjustments. The score rows
+then have one downward swap arrow on the right.
 If the exact native row or layout contract cannot be verified, the earlier
 **Roll Stats** tab and drawer remain available as a recovery interface.
 Rolling happens on the ability page, not in Unity Mod Manager; see
@@ -21,8 +23,9 @@ Rolling happens on the ability page, not in Unity Mod Manager; see
 
 ## Presets and minimum policies
 
-Choose a preset directly from **Method** on the compact strip. Open **Options**
-for low-score and conditional minimum settings:
+Choose a preset from the chevron next to the editable formula. The menu shows
+all five formulas and Custom at once. Use **Roll settings** in the Unity Mod
+Manager panel for low-score and conditional minimum settings:
 
 - `4d6, drop lowest` (default);
 - `4d6, reroll ones, drop lowest`;
@@ -43,8 +46,9 @@ panel reports an error and preserves your prior verified state.
 
 ## Custom expressions
 
-Select Custom expression, then open **Options** to enter a bounded dice
-expression. The input appears only for that method. Examples:
+Type directly into the formula field to use a custom expression. Enter
+validates and commits it without rolling; Escape reverts an uncommitted edit.
+An invalid draft remains visible and blocks only Roll/Reroll. Examples:
 
 ```text
 4d[6]kh3
@@ -59,7 +63,7 @@ are rejected. Results are never clamped.
 
 ## Roll and Reroll
 
-Press **Roll** from Point Buy. The mod first captures your exact current
+Open **Roll for Stats**, then press **Roll**. The mod first captures your exact current
 point-buy state, then generates six base values and enters Roll Mode only after
 the live preview and native controls verify.
 
@@ -73,28 +77,27 @@ a spendable point pool cannot be layered onto the array.
 ## Assigning scores
 
 The six native STR, DEX, CON, INT, WIS, and CHA rows remain the primary score
-display. Use each row's up/down arrows to swap its source position with the
-adjacent ability. Strength cannot move up and Charisma cannot move down. Equal
+display. Use each row's right-hand down arrow to swap its source position with
+the next ability. Charisma cannot move down. Equal
 values remain separate positions, so duplicate scores can be rearranged safely.
 
 Assignment never rolls again. The native ability page updates immediately.
 Race and heritage bonuses remain in Kingmaker's modifier column and are not
 baked into the array.
 
-## Summary
+## Value
 
-**Details** displays raw score total, the actual rule/expression used to create
-the active array under **Rolled with**, and informational point-buy equivalent.
-The selected preset may differ after a roll. Scores outside Kingmaker's
-ordinary 7-18 cost table are marked `(extended)`. Race modifiers are excluded
-from both numbers.
+The ability allocator's Value badge displays the base rolled total. Racial
+adjustments and swaps do not change it. Returning to Point Buy restores the
+native Points caption and live remaining-point display.
 
 ## History
 
-The current character-build session keeps the latest 20 generated arrays. Open
-**Load** to browse session History with **Previous** and **Next**, then press
-**Use** to apply the selected record. Browsing alone does not apply it. From
-Point Buy, Use captures the current allocation as the new return origin.
+The current character-build session keeps the latest 20 applied arrays.
+**Previous** and **Next** directly restore neighboring records without rolling
+or wrapping. After a Return to Point Buy, open Roll for Stats and press
+Previous to restore the newest retained entry; this captures the current
+allocation as the new return origin.
 History is discarded when that character-build owner ends.
 
 ## Saved arrays
@@ -102,13 +105,14 @@ History is discarded when that character-build owner ends.
 Manage up to ten arrays persisted in UMM settings:
 
 - **Save** on the strip stores the current verified assignment;
-- **Load** shows saved Previous/Next browsing;
+- **Load** shows saved Previous/Next browsing only;
 - **Recall** applies the selected slot;
 - **Delete** removes it.
 
 Recall from Point Buy captures that character's current point-buy origin before
 entering Roll Mode. Recall from Roll Mode preserves the existing origin. Saved
-slots are global mod settings, not game-save content.
+slots are global mod settings, not game-save content. A successful recall also
+adds one entry to the current session history.
 
 ## Return to Point Buy
 
@@ -118,7 +122,7 @@ The open page should update immediately, and native plus/minus controls should
 work at once.
 
 After returning, navigation remains in Point Buy. A later explicit Roll or
-History Use/Saved Recall captures a new origin. If restoration or a derived/page
+History Previous/Saved Recall captures a new origin. If restoration or a derived/page
 refresh fails, the toolbar reports the actual mode and offers a recovery route.
 
 Mercenary budgets are observed exactly like main-character budgets. Vanilla's
@@ -155,6 +159,8 @@ the name and version, so the panel itself shows:
   restore did not finish. It does the same as the ability page's control. It
   restores the point-buy scores you had before rolling. If it is blocked, the
   panel says why instead of hiding it;
+- **Roll settings** for the low-score policy and conditional minimum. These
+  affect future rolls, not the applied array;
 - **Show troubleshooting**, collapsed by default. It holds the **Verbose
   diagnostic logging** toggle, workflow and session facts, history and saved
   counts, context and finalization counters, contract/MVID status, detected

@@ -518,10 +518,15 @@ namespace KingmakerDiceRoller.Integration
                 throw new ContractResolutionException("Unity Selectable.interactable is not an exact writable Boolean property.");
             }
             FieldInfo allocatorMainLabel = abilityAllocatorType.GetField("m_MainLabel", InstanceFlags);
+            FieldInfo allocatorPointsValue = abilityAllocatorType.GetField("m_AvailibleSkillPoints", InstanceFlags);
+            FieldInfo allocatorPointsCaption = abilityAllocatorType.GetField("m_AvailibleSkillPointsLabel", InstanceFlags);
             FieldInfo allocatorFrame = abilityAllocatorType.GetField("m_Frame", InstanceFlags);
             FieldInfo allocatorRaceBonusContainer = abilityAllocatorType.GetField("m_RaceBonusContainer", InstanceFlags);
             if (allocatorMainLabel == null ||
                 !string.Equals(allocatorMainLabel.FieldType.FullName, "TMPro.TextMeshProUGUI", StringComparison.Ordinal) ||
+                allocatorPointsValue == null || allocatorPointsCaption == null ||
+                !string.Equals(allocatorPointsValue.FieldType.FullName, "TMPro.TextMeshProUGUI", StringComparison.Ordinal) ||
+                !string.Equals(allocatorPointsCaption.FieldType.FullName, "TMPro.TextMeshProUGUI", StringComparison.Ordinal) ||
                 allocatorFrame == null ||
                 !string.Equals(allocatorFrame.FieldType.FullName, "UnityEngine.UI.Image", StringComparison.Ordinal) ||
                 allocatorRaceBonusContainer == null ||
@@ -560,6 +565,8 @@ namespace KingmakerDiceRoller.Integration
             evidence.Add("AbilityRowIdentity=" + scoreEntryStatType.DeclaringType.FullName + ".Type: " + statTypeType.FullName);
             evidence.Add(
                 "AbilityPanelStyles=" + abilityAllocatorType.FullName + ".m_MainLabel + m_Frame");
+            evidence.Add("AbilityPointsBadge=" + abilityAllocatorType.FullName +
+                ".m_AvailibleSkillPointsLabel + m_AvailibleSkillPoints");
             evidence.Add(
                 "AbilityPanelAccessAnchor=" + abilityAllocatorType.FullName + ".m_RaceBonusContainer");
 
@@ -628,6 +635,8 @@ namespace KingmakerDiceRoller.Integration
                 scoreEntryDownButton,
                 interactable,
                 allocatorMainLabel,
+                allocatorPointsValue,
+                allocatorPointsCaption,
                 allocatorFrame,
                 allocatorRaceBonusContainer,
                 evidence);

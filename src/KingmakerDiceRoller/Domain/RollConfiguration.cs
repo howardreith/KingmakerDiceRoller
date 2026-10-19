@@ -68,7 +68,7 @@ namespace KingmakerDiceRoller.Domain
                         1000,
                         1000)
                     : DiceRollRule.ForPreset(Preset, LowScorePolicy, MinimumScore);
-                new DiceExpressionParser().Parse(rule.Expression);
+                new DiceExpressionParser().Parse(rule.Expression).ValidateForRule(rule);
                 return true;
             }
             catch (Exception exception)

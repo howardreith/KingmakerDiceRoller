@@ -522,6 +522,28 @@ namespace KingmakerDiceRoller.DomainTests
             AssertEx.Equal(0, coordinator.UiSnapshot.SavedCount);
         }
 
+        internal static void SettingsPanelLowScoreControlsPersistWithoutRolling()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            RuntimeDiagnostics diagnostics = ReadyDiagnostics();
+            int persists = 0;
+            var workflow = new CharacterRollWorkflow(
+                new DiceRollEngine(new DiceExpressionParser(), new SequenceRandomSource()),
+                new PointBuyEquivalentCalculator(), RollConfiguration.Default(), null,
+                () => "time", (config, saved) => persists++);
+            CharacterCreationCoordinator coordinator = environment.CreateCoordinator(
+                new PointBudgetTracker(), diagnostics, workflow);
+            var panel = new PanelHarness(coordinator, diagnostics, environment);
+            panel.Panel.SetLowScorePolicy(LowScorePolicy.RerollEntireArrayBelowMinimum);
+            panel.Panel.SetMinimumScore(8);
+            SettingsPanelModel model = panel.Build();
+            AssertEx.Equal(LowScorePolicy.RerollEntireArrayBelowMinimum, model.LowScorePolicy);
+            AssertEx.Equal(8, model.MinimumScore);
+            AssertEx.Equal(2, persists);
+            AssertEx.Equal(0, coordinator.UiSnapshot.HistoryCount);
+            AssertEx.Equal(RollSessionMode.PointBuy, coordinator.UiSnapshot.Mode);
+        }
+
         private static RuntimeDiagnostics ReadyDiagnostics()
         {
             return Ready(new RuntimeDiagnostics());

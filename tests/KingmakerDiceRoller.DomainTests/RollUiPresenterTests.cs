@@ -577,6 +577,17 @@ namespace KingmakerDiceRoller.DomainTests
             }
             public void SelectPreviousHistory() { CommandCalls++; }
             public void SelectNextHistory() { CommandCalls++; }
+            public void SelectCustomExpression(string expression)
+            {
+                Replace(DiceRollPreset.CustomExpression, UiSnapshot.Configuration.LowScorePolicy,
+                    UiSnapshot.Configuration.MinimumScore, expression);
+            }
+            public bool TryNavigateHistory(bool previous, out string error)
+            {
+                CommandCalls++;
+                error = null;
+                return true;
+            }
             public bool TryUseSelectedHistory(out string error) { return Hit(out error); }
             public bool TryStoreCurrent(out string error) { return Hit(out error); }
             public void SelectPreviousSaved() { CommandCalls++; }

@@ -2634,6 +2634,8 @@ namespace KingmakerDiceRoller.DomainTests
                     typeof(FakeScoreEntry).GetField("DownButton", instance),
                     typeof(FakeButton).GetProperty("interactable", instance),
                     typeof(FakeAbilityScoresAllocator).GetField("m_MainLabel", instance),
+                    null,
+                    null,
                     typeof(FakeAbilityScoresAllocator).GetField("m_Frame", instance),
                     typeof(FakeAbilityScoresAllocator).GetField("m_RaceBonusContainer", instance),
                     new List<string>());

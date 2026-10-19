@@ -61,14 +61,12 @@ namespace KingmakerDiceRoller.DomainTests
         {
             DiceRollRule rule;
             string error;
-            AssertEx.True(new RollConfiguration(
+            AssertEx.True(!new RollConfiguration(
                 DiceRollPreset.CustomExpression,
                 LowScorePolicy.Tabletop,
                 3,
-                "121").TryCreateRule(out rule, out error), error);
-            AssertEx.Throws<RollValidationException>(() => new DiceRollEngine(
-                new DiceExpressionParser(),
-                new SequenceRandomSource()).Generate(rule));
+                "121").TryCreateRule(out rule, out error));
+            AssertEx.True(!string.IsNullOrWhiteSpace(error));
         }
 
         internal static void InvalidCustomExpressionFailsBeforeRandomConsumption()
@@ -201,8 +199,93 @@ namespace KingmakerDiceRoller.DomainTests
             history.Add(Assignment(8), Rule(), 1, "one", Equivalent(8));
             history.Add(Assignment(9), Rule(), 2, "two", Equivalent(9));
             AssertEx.Equal(1L, history.Previous().Sequence);
-            AssertEx.Equal(2L, history.Previous().Sequence);
-            AssertEx.Equal(1L, history.Next().Sequence);
+            AssertEx.Equal(null, history.Previous());
+            AssertEx.Equal(2L, history.Next().Sequence);
+            AssertEx.Equal(null, history.Next());
+        }
+
+        internal static void HistorySelectionPreservesEqualArrayPermutations()
+        {
+            var workflow = NewWorkflow(new SequenceRandomSource(), RollConfiguration.Default());
+            RollSession session = NewSession();
+            var baseArray = new RolledStatArray(new[] { 16, 15, 14, 12, 10, 8 });
+            var first = new StatAssignment(baseArray);
+            var second = first.MoveDown(AbilityScore.Strength);
+            CommitCandidate(workflow, session, NewOrigin(),
+                new RollCandidate(first, Rule(), new PointBuyEquivalentCalculator().Calculate(baseArray), "one"), false);
+            session.BeginRollReplacement(second);
+            session.MarkApplicationStaged(1);
+            session.MarkLiveApplicationVerified(1);
+            workflow.CommitGenerated(session,
+                new RollCandidate(second, Rule(), new PointBuyEquivalentCalculator().Calculate(baseArray), "two"), true);
+            RollHistoryEntry earlier = session.History.Snapshot()[0];
+            RollHistoryEntry later = session.History.Snapshot()[1];
+            session.BeginRollReplacement(earlier.Assignment);
+            session.MarkApplicationStaged(1);
+            session.MarkLiveApplicationVerified(1);
+            workflow.CommitHistorySelection(session, earlier, 0);
+            AssertEx.True(session.History.Snapshot()[1].Assignment.Equals(later.Assignment));
+            AssertEx.True(session.History.Snapshot()[0].Assignment.Equals(first));
+            AssertEx.Equal(earlier.Sequence, session.History.ActiveSequence);
+            AssertEx.Equal(later.Sequence,
+                session.History.AdjacentActive(false, false, out int nextIndex).Sequence);
+            AssertEx.Equal(1, nextIndex);
+        }
+
+        internal static void SavedRecallAppendsOneHistoryEntry()
+        {
+            var workflow = NewWorkflow(new SequenceRandomSource(), RollConfiguration.Default());
+            RollSession session = NewSession();
+            CommitCandidate(workflow, session, NewOrigin(), Candidate(12), false);
+            var record = SavedRollArrayRecord.Create(Assignment(13), "saved-rule", "3d[6]", "time", "saved");
+            StatAssignment assignment;
+            string error;
+            AssertEx.True(record.TryCreateAssignment(out assignment, out error), error);
+            session.BeginRollReplacement(assignment);
+            session.MarkApplicationStaged(1);
+            session.MarkLiveApplicationVerified(1);
+            workflow.CommitSavedRecall(session, record, assignment);
+            AssertEx.Equal(2, session.History.Count);
+            AssertEx.True(session.History.Selected.Assignment.Equals(assignment));
+            AssertEx.Equal("saved-rule", session.History.Selected.RuleId);
+        }
+
+        internal static void FormulaDraftRejectsWithoutConsumingRandom()
+        {
+            var random = new SequenceRandomSource(4);
+            RollConfiguration configuration = RollConfiguration.Default();
+            var draft = new RollFormulaDraft(configuration);
+            draft.Edit("1d[4]+", configuration);
+            AssertEx.True(!draft.Validate(configuration, out string error));
+            AssertEx.True(!string.IsNullOrWhiteSpace(error));
+            AssertEx.Equal(0, random.Calls);
+            draft.Revert();
+            AssertEx.Equal("4d[6]kh3", draft.Text);
+            AssertEx.True(draft.Validate(configuration, out error), error);
+        }
+
+        internal static void FormulaPreflightRejectsImpossibleConstants()
+        {
+            string[] invalid =
+            {
+                "0d[6]", "1d[0]", "1d[6,1]", "4d[6]kh0",
+                "4d[6]kh5", "1d[1]r[1]", "0", "121", "2147483647+2147483647"
+            };
+            foreach (string expression in invalid)
+            {
+                var configuration = new RollConfiguration(DiceRollPreset.CustomExpression,
+                    LowScorePolicy.Tabletop, 3, expression);
+                AssertEx.True(!configuration.TryCreateRule(out DiceRollRule ignored, out string error),
+                    expression + " unexpectedly passed preflight");
+                AssertEx.True(!string.IsNullOrWhiteSpace(error), expression);
+            }
+            var impossibleMinimum = new RollConfiguration(DiceRollPreset.CustomExpression,
+                LowScorePolicy.RerollIndividualBelowMinimum, 8, "1d[6]");
+            AssertEx.True(!impossibleMinimum.TryCreateRule(out DiceRollRule unused, out string message));
+            AssertEx.True(!string.IsNullOrWhiteSpace(message));
+            var validZeroKeepTerm = new RollConfiguration(DiceRollPreset.CustomExpression,
+                LowScorePolicy.Tabletop, 3, "4d[6]kh0+18");
+            AssertEx.True(validZeroKeepTerm.TryCreateRule(out DiceRollRule valid, out message), message);
         }
 
         internal static void ReassignmentUpdatesSelectedHistoryWithoutAdding()

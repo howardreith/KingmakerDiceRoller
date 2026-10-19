@@ -1,6 +1,35 @@
 # Native UI design
 
-## 0.1.12 inline candidate
+## 0.1.13 revised candidate
+
+Ordinary Point Buy leaves the native allocator fully usable and adds only
+**Roll for Stats** below its six rows. The click opens a Roll-ready view state
+without generating or changing the point-buy model. Original purchase/refund
+buttons are visually concealed, removed from keyboard navigation, and made
+non-interactable while Roll-ready is open. Leaving Roll-ready simply restores
+the native view. After an applied roll, the existing verified Point Buy
+restoration transaction remains authoritative.
+
+The workspace orders an editable formula and chevron, three equal Load/Save/
+Roll or Reroll buttons, Previous/Next, then a separate Return button. An
+independent parchment popup shows all five canonical formulas and Custom at
+once. Load contains only the saved catalog; session history uses direct
+nonwrapping Previous/Next application. The right native score-button position
+hosts one owned downward MoveDown control per row. Both original buttons are
+restored in ordinary Point Buy.
+
+The exact ability allocator `m_AvailibleSkillPointsLabel` and
+`m_AvailibleSkillPoints` TMP bindings drive a presentation-only Value overlay.
+It displays the applied base array total, or a dash in Roll-ready. The native
+caption and live points text return in Point Buy. The skill allocator badge is
+outside the ownership scope. Low-score policy controls live in UMM settings;
+only a short active-policy note appears beneath the formula.
+
+Actual rendered alignment, keyboard focus, click audio, and popup visibility
+remain live acceptance checks; the installed-assembly contract and layout
+guards do not establish those outcomes.
+
+## 0.1.12 inline candidate (historical)
 
 The primary interface is part of the exact live Kingmaker ability allocator.
 Kingmaker's six native score rows remain the only score presentation. Each row

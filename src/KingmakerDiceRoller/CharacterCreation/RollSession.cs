@@ -228,6 +228,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             RequireCurrentGeneration(generation);
             AssignmentRevision++;
             Lifecycle.MarkPointBuyRestored();
+            History.ClearActive();
             pendingAssignment = null;
             pendingEntryFromPointBuy = false;
             ResetApplicationTracking();

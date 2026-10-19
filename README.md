@@ -2,9 +2,9 @@
 
 Mr. Bard's Kingmaker Roll For Stats UI is a standalone Unity Mod Manager mod
 for Pathfinder: Kingmaker 2.1.7b. It adds an explicit rolled-ability workflow
-to the native custom-character ability page. The 0.1.12 candidate places
-assignment arrows in Kingmaker's six score rows and a compact action strip
-directly beneath them.
+to the native custom-character ability page. The 0.1.13 candidate starts with
+one **Roll for Stats** button, then opens a compact formula and action workspace
+within Kingmaker's ability allocator.
 
 It was previously published as **Kingmaker Dice Roller**. Its Unity Mod
 Manager ID, DLL, `Mods/KingmakerDiceRoller` install folder and settings are
@@ -16,7 +16,14 @@ rebuilt.
 
 ## Release status
 
-**0.1.12 alpha prerelease — native stat UI.** Roll/Reroll, Save, Load,
+**0.1.13 revised UI candidate — not published.** Ordinary Point Buy shows one
+entry button. The Roll workspace has an editable formula, a full preset menu,
+Value in the ability badge, one downward swap column, direct Previous/Next,
+and a saved-array Load chooser. Low-score rules are in UMM settings. Source,
+build, and installed-contract checks are recorded in `PROJECT-STATE.md`;
+actual-game visual and interaction checks remain separate.
+
+**0.1.12 alpha prerelease — earlier native stat UI.** Roll/Reroll, Save, Load,
 Return to Point Buy, Options, Details, and direct roll-method selection now
 live beside the native allocator. Session History and persistent Saved arrays
 are both reachable through Load, including from Point Buy. The prior drawer
@@ -144,6 +151,11 @@ creation. The current allocation and actual live budget are captured before
 Roll or Recall and restored exactly; neither 20 nor 25 is hard-coded.
 
 ## Installation
+
+The 0.1.13 candidate ZIP is recorded in
+[the candidate evidence](docs/NATIVE-STAT-UI-V2-CANDIDATE.md). It has not been
+published as a GitHub release. Install it with Unity Mod Manager to test the
+revised UI, or use the published 0.1.12 alpha below.
 
 For a focused 0.1.12 alpha test, download **KingmakerDiceRoller-0.1.12.zip**
 from the [v0.1.12 alpha release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.12)

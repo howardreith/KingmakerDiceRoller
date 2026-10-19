@@ -1,6 +1,16 @@
 # Native UI style reference
 
-## 0.1.12 inline use
+## 0.1.13 revised inline use
+
+The revised workspace keeps native parchment, type, button states, and click
+sound donors. It uses the ability allocator's exact caption/value TMP fields
+for a presentation-only Value overlay and copies the right native score button
+image for one downward owned swap control. Original button graphics and
+navigation state are captured and restored with the inline view. Its six-row
+preset parchment is a separate root-level popup, outside the fallback drawer's
+scroll mask. Actual rendered centering and popup fit are still unverified.
+
+## 0.1.12 inline use (historical)
 
 The compact toolbar reuses this document's validated Kingmaker button,
 typography, paper, input, scrollbar, and click-sound donors. Owned row arrows

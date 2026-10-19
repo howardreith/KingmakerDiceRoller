@@ -1,5 +1,22 @@
 # Project state
 
+## 0.1.13 revised native-stat UI candidate
+
+Candidate version `0.1.13` on branch `codex/native-stat-ui-v2` starts from the
+published 0.1.12 alpha record.
+This revision makes ordinary Point Buy the single-button default, adds a
+separate Roll-ready view, binds the ability allocator's exact Value badge,
+uses one right-hand downward swap column, and moves low-score controls to UMM
+settings. Recent-roll navigation directly applies bounded history entries;
+saved recalls append one entry. The raw formula draft is validated without
+random consumption before generation. The published 0.1.12 alpha remains
+unchanged.
+
+- Source/build/package: **In progress** on this branch.
+- Actual game visuals and input: **NOT RUN** for 0.1.13.
+- Compatibility sweep: **NOT RUN** for 0.1.13.
+- Official release: **No**; this is an implementation candidate.
+
 ## 0.1.12 inline native-stat UI alpha
 
 Mission branch `codex/inline-native-stat-ui` carries version `0.1.12` and starts from published v0.1.11

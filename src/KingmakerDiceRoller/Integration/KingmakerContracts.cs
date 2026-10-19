@@ -71,6 +71,8 @@ namespace KingmakerDiceRoller.Integration
             FieldInfo scoreEntryDownButtonField,
             PropertyInfo selectableInteractableProperty,
             FieldInfo abilityAllocatorMainLabelField,
+            FieldInfo abilityAllocatorPointsValueField,
+            FieldInfo abilityAllocatorPointsCaptionField,
             FieldInfo abilityAllocatorFrameField,
             FieldInfo abilityAllocatorRaceBonusContainerField,
             IReadOnlyList<string> evidence)
@@ -139,6 +141,8 @@ namespace KingmakerDiceRoller.Integration
             ScoreEntryDownButtonField = scoreEntryDownButtonField;
             SelectableInteractableProperty = selectableInteractableProperty;
             AbilityAllocatorMainLabelField = abilityAllocatorMainLabelField;
+            AbilityAllocatorPointsValueField = abilityAllocatorPointsValueField;
+            AbilityAllocatorPointsCaptionField = abilityAllocatorPointsCaptionField;
             AbilityAllocatorFrameField = abilityAllocatorFrameField;
             AbilityAllocatorRaceBonusContainerField = abilityAllocatorRaceBonusContainerField;
             Evidence = evidence;
@@ -208,6 +212,8 @@ namespace KingmakerDiceRoller.Integration
         public FieldInfo ScoreEntryDownButtonField { get; }
         public PropertyInfo SelectableInteractableProperty { get; }
         public FieldInfo AbilityAllocatorMainLabelField { get; }
+        public FieldInfo AbilityAllocatorPointsValueField { get; }
+        public FieldInfo AbilityAllocatorPointsCaptionField { get; }
         public FieldInfo AbilityAllocatorFrameField { get; }
         public FieldInfo AbilityAllocatorRaceBonusContainerField { get; }
         public IReadOnlyList<string> Evidence { get; }

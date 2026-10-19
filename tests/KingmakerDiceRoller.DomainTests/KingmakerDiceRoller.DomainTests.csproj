@@ -91,6 +91,7 @@
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RollPanelModel.cs"><Link>CharacterCreation\RollPanelModel.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RollUiCommand.cs"><Link>CharacterCreation\RollUiCommand.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RollUiCommandRouter.cs"><Link>CharacterCreation\RollUiCommandRouter.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RollFormulaDraft.cs"><Link>CharacterCreation\RollFormulaDraft.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RollSessionMode.cs"><Link>CharacterCreation\RollSessionMode.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RollPresentationObservation.cs"><Link>CharacterCreation\RollPresentationObservation.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RollSessionManager.cs"><Link>CharacterCreation\RollSessionManager.cs</Link></Compile>

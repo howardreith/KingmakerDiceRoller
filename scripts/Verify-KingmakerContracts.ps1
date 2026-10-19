@@ -442,9 +442,13 @@ $applyLevelup = $controller.GetMethod('ApplyLevelup',$flags,$null,[Type[]]@($uni
         throw 'UnityEngine.UI.Selectable.interactable is not an exact writable Boolean contract.'
     }
     $mainLabel = $abilityAllocator.GetField('m_MainLabel',$flags)
+    $pointsValue = $abilityAllocator.GetField('m_AvailibleSkillPoints',$flags)
+    $pointsCaption = $abilityAllocator.GetField('m_AvailibleSkillPointsLabel',$flags)
     $frame = $abilityAllocator.GetField('m_Frame',$flags)
     $raceBonusContainer = $abilityAllocator.GetField('m_RaceBonusContainer',$flags)
     if (-not $mainLabel -or $mainLabel.IsStatic -or $mainLabel.FieldType.FullName -ne 'TMPro.TextMeshProUGUI' -or
+        -not $pointsValue -or $pointsValue.IsStatic -or $pointsValue.FieldType.FullName -ne 'TMPro.TextMeshProUGUI' -or
+        -not $pointsCaption -or $pointsCaption.IsStatic -or $pointsCaption.FieldType.FullName -ne 'TMPro.TextMeshProUGUI' -or
         -not $frame -or $frame.IsStatic -or $frame.FieldType.FullName -ne 'UnityEngine.UI.Image' -or
         -not $raceBonusContainer -or $raceBonusContainer.IsStatic -or $raceBonusContainer.FieldType.FullName -ne 'UnityEngine.GameObject') {
         throw 'Native ability allocator text/frame/racial-bonus UI anchors were not found.'
@@ -487,6 +491,7 @@ $applyLevelup = $controller.GetMethod('ApplyLevelup',$flags,$null,[Type[]]@($uni
             "$($scoreEntry.FullName).UpButton", "$($scoreEntry.FullName).DownButton",
             "$($upButton.FieldType.FullName).interactable",
             "$($abilityAllocator.FullName).m_MainLabel", "$($abilityAllocator.FullName).m_Frame",
+            "$($abilityAllocator.FullName).m_AvailibleSkillPointsLabel", "$($abilityAllocator.FullName).m_AvailibleSkillPoints",
             "$($abilityAllocator.FullName).m_RaceBonusContainer"
         )
         abilities = $abilityNames
@@ -525,6 +530,7 @@ $applyLevelup = $controller.GetMethod('ApplyLevelup',$flags,$null,[Type[]]@($uni
             score_rows = 'm_StatEntries -> CharBScoresEntry'
             controls = @('UpButton.interactable','DownButton.interactable')
             style_anchors = @('m_MainLabel: TMPro.TextMeshProUGUI','m_Frame: UnityEngine.UI.Image')
+            ability_badge = @('m_AvailibleSkillPointsLabel: TMPro.TextMeshProUGUI','m_AvailibleSkillPoints: TMPro.TextMeshProUGUI')
             preferred_access_tab_geometry = 'm_RaceBonusContainer: UnityEngine.GameObject'
             fallback_access_tab_geometry = @('m_Frame: UnityEngine.UI.Image','ability allocator RectTransform','ability phase root RectTransform')
         }

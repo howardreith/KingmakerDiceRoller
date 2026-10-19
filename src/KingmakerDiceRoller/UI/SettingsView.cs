@@ -1,5 +1,6 @@
 using KingmakerDiceRoller.CharacterCreation;
 using KingmakerDiceRoller.Compatibility;
+using KingmakerDiceRoller.Domain;
 using KingmakerDiceRoller.Integration;
 using UnityEngine;
 
@@ -44,6 +45,33 @@ namespace KingmakerDiceRoller.UI
             if (model.Status != null) DrawLine(model.Status);
             for (int index = 0; index < model.Notices.Count; index++) DrawLine(model.Notices[index].Line);
             if (model.Recovery != null) DrawRecovery(model.Recovery);
+
+            GUILayout.Space(8f);
+            GUILayout.Label("Roll settings", wrappedLabel);
+            GUILayout.Label("Low-score rule", wrappedLabel);
+            LowScorePolicy selected = model.LowScorePolicy;
+            if (GUILayout.Toggle(selected == LowScorePolicy.Tabletop, "Keep all rolls") &&
+                selected != LowScorePolicy.Tabletop)
+                panel.SetLowScorePolicy(LowScorePolicy.Tabletop);
+            if (GUILayout.Toggle(selected == LowScorePolicy.RerollIndividualBelowMinimum,
+                    "Reroll each low score") && selected != LowScorePolicy.RerollIndividualBelowMinimum)
+                panel.SetLowScorePolicy(LowScorePolicy.RerollIndividualBelowMinimum);
+            if (GUILayout.Toggle(selected == LowScorePolicy.RerollEntireArrayBelowMinimum,
+                    "Reroll the whole array if any score is low") &&
+                selected != LowScorePolicy.RerollEntireArrayBelowMinimum)
+                panel.SetLowScorePolicy(LowScorePolicy.RerollEntireArrayBelowMinimum);
+            if (selected != LowScorePolicy.Tabletop)
+            {
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("Minimum score: " + model.MinimumScore, GUILayout.Width(130f));
+                if (GUILayout.Button("−", GUILayout.Width(32f)) &&
+                    model.MinimumScore > RolledStatArray.MinimumScore)
+                    panel.SetMinimumScore(model.MinimumScore - 1);
+                if (GUILayout.Button("+", GUILayout.Width(32f)) &&
+                    model.MinimumScore < RolledStatArray.MaximumScore)
+                    panel.SetMinimumScore(model.MinimumScore + 1);
+                GUILayout.EndHorizontal();
+            }
 
             GUILayout.Space(6f);
             if (GUILayout.Button(model.TroubleshootingButtonLabel, GUILayout.ExpandWidth(false))) panel.ToggleTroubleshooting();

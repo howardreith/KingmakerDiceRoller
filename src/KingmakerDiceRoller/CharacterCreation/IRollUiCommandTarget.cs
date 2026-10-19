@@ -11,6 +11,7 @@ namespace KingmakerDiceRoller.CharacterCreation
         bool TryRoll(out string error);
         bool TryReroll(out string error);
         bool TryMoveAssignment(AbilityScore ability, bool moveUp, out string error);
+        bool TryNavigateHistory(bool previous, out string error);
         void SelectPreviousHistory();
         void SelectNextHistory();
         bool TryUseSelectedHistory(out string error);
@@ -25,5 +26,6 @@ namespace KingmakerDiceRoller.CharacterCreation
         void SetLowScorePolicy(LowScorePolicy policy);
         void SetMinimumScore(int minimum);
         void SetCustomExpression(string expression);
+        void SelectCustomExpression(string expression);
     }
 }

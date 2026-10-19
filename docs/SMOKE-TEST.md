@@ -4,7 +4,38 @@ Source, exact-contract, build, package, and installation qualification do not
 replace this live gate. Preserve logs/screenshots outside Git and collect
 evidence only after fully exiting Kingmaker.
 
-## 0.1.12 inline native-stat candidate (NOT RUN)
+## 0.1.13 revised native-stat candidate (NOT RUN)
+
+Record the candidate commit, ZIP SHA-256, game version, resolution, and UI
+scale. Capture actual ordinary Point Buy, Roll-ready, applied Roll, all-six-row
+preset popup, and an invalid formula at 1920×1200 and a smaller 16:9 layout.
+The owner-provided 0.1.12 screenshots and mission SVGs are comparison material,
+not after captures.
+
+1. On a new supported character, verify only Roll for Stats is added; spend and
+   refund points, then open Roll-ready. Confirm no score/budget/RNG change,
+   Value dash, hidden and non-interactable original controls, and view-only
+   Return. Repeat after an earlier roll/return and further Point Buy purchases.
+2. Roll [or load] a known array; confirm Value equals its six base scores,
+   including with a racial adjustment. Swap with one right-hand downward arrow
+   and confirm centered hover/pressed icon, one dispatch/click sound, disabled
+   Charisma, and unchanged Value. Confirm native skills badge still works.
+3. Open presets and reach all six rows without scrolling. Select Custom,
+   enter invalid text, verify it remains and blocks only generation. Test Enter,
+   Escape, popup dismissal, and keyboard focus without triggering game Next.
+4. Roll A/B/C, navigate to A and back, then generate D from A and verify
+   preserved forward history. Save an arrangement, browse Load without effect,
+   recall it once, navigate back/forward, and return to the exact observed
+   Point Buy allocation and budget.
+5. Rebuild the same owner/allocator and switch characters, phases, and
+   supported main, mercenary, and editable-respec contexts. Check native
+   controls/listeners restore once and no stale popup, arrows, or badge remain.
+   Exercise UMM low-score settings and active-policy note. Confirm unsupported
+   later level-ups and locked-base retraining have no roll entry.
+
+Mark each actual game observation PASS/FAIL/NOT RUN in the candidate evidence.
+
+## 0.1.12 inline native-stat candidate (historical, NOT RUN)
 
 Use the exact packaged candidate and record its commit, ZIP hash, game version,
 screen resolution, canvas scale, and allocator/toolbar/racial-selector rects.

@@ -777,6 +777,7 @@ namespace KingmakerDiceRoller.CharacterCreation
         {
             RollSession session = sessions.Active;
             RollHistoryEntry entry = session == null ? null : session.History.Selected;
+            int index = session == null ? -1 : session.History.SelectedIndex;
             if (session == null || entry == null ||
                 (!session.IsPointBuyMode && !session.IsRollMode))
             {
@@ -794,9 +795,30 @@ namespace KingmakerDiceRoller.CharacterCreation
                 session,
                 next,
                 origin,
-                () => workflow.CommitHistorySelection(session, entry),
+                () => workflow.CommitHistorySelection(session, entry, index),
                 "Use history",
                 out error);
+        }
+
+        public bool TryNavigateHistory(bool previous, out string error)
+        {
+            RollSession session = sessions.Active;
+            int index = -1;
+            RollHistoryEntry entry = session == null ? null :
+                session.History.AdjacentActive(previous, session.IsPointBuyMode, out index);
+            if (session == null || entry == null ||
+                (!session.IsPointBuyMode && !session.IsRollMode))
+            {
+                error = previous ? "No previous roll is available." : "No next roll is available.";
+                workflow.SetFailure(error);
+                return false;
+            }
+            PointBuyOrigin origin = null;
+            if (session.IsPointBuyMode && !TryCapturePointBuyOrigin(session, out origin, out error))
+                return false;
+            return TryApplyUserAssignment(session, entry.Assignment, origin,
+                () => workflow.CommitHistorySelection(session, entry, index),
+                previous ? "Previous roll" : "Next roll", out error);
         }
 
         public bool TryStoreCurrent(out string error)
@@ -879,6 +901,11 @@ namespace KingmakerDiceRoller.CharacterCreation
         public void SetCustomExpression(string expression)
         {
             workflow.SetCustomExpression(expression);
+        }
+
+        public void SelectCustomExpression(string expression)
+        {
+            workflow.SelectCustomExpression(expression);
         }
 
         public bool TryRestorePointBuy(out string error)
