@@ -5,9 +5,13 @@
 - Branch: `codex/inline-native-stat-ui`.
 - Baseline: `ee49f104fb38389cbba739b3900df401c59ec5c7`, published
   v0.1.11 record. The baseline deterministic runner passed 397/397.
-- Candidate version: `0.1.12`; package identity and hash are recorded in the
-  ignored `artifacts/candidates/<commit>/package-manifest.json` after clean
-  candidate qualification. This document does not authorize publication.
+- Candidate version: `0.1.12`; clean implementation commit
+  `8b8ce349e029e6c68bf52a860a37dd75e5294f6c`.
+- Candidate package: `artifacts/candidates/8b8ce349e029e6c68bf52a860a37dd75e5294f6c/KingmakerDiceRoller-0.1.12.zip`.
+  ZIP SHA-256: `53e1344d0bd1d93b52f7fadf66a20c64993363462e432d7c74302518940080c0`;
+  DLL SHA-256: `d17d9f866dbb0e3b7134ee3cbef6697064f13627b401a8b6c51b36054ce2a53a`.
+  The ignored manifest records `source_dirty: false`. This document does not
+  authorize publication.
 - Changed behavior: native row swap overlays, two-row inline toolbar, direct
   preset menu, bounded Options/Load/Details menus, structured return status,
   and legacy drawer recovery on failed inline attachment.
@@ -27,7 +31,7 @@
 | Respec contracts | PASS, 11 groups | `artifacts/contracts/respec-contracts.json` |
 | Native UI IL contracts | PASS, 30/30 | `artifacts/contracts/native-ui-contracts.json` |
 | Release build | PASS, zero warnings/errors | `scripts/Build-Local.ps1`; same log |
-| Candidate ZIP | Pending clean commit | `scripts/Qualify.ps1 -Build -Package -Candidate` |
+| Candidate ZIP | PASS for clean implementation commit | `scripts/Qualify.ps1 -Build -Package -Candidate`; ignored `artifacts/native-inline-candidate-qualification.txt` and package manifest |
 
 `CharBAbilityScoresAllocator.Init()` writes the inherited
 `CharSScoreEntry.Type` from the corresponding `m_Types` entry. The resolver

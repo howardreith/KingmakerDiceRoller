@@ -25,7 +25,11 @@ from order, text, or score values.
 - Contract-qualified: **Yes** — installed Kingmaker and native UI contract
   checks pass; this does not prove a rendered screen.
 - Build-qualified: **Yes** — Release build has zero warnings/errors.
-- Package-qualified: **Pending clean committed candidate**.
+- Package-qualified: **Yes** — `Qualify.ps1 -Build -Package -Candidate`
+  passed on clean implementation commit `8b8ce349e029e6c68bf52a860a37dd75e5294f6c`.
+  The ignored candidate ZIP is `artifacts/candidates/8b8ce349e029e6c68bf52a860a37dd75e5294f6c/KingmakerDiceRoller-0.1.12.zip`
+  (SHA-256 `53e1344d0bd1d93b52f7fadf66a20c64993363462e432d7c74302518940080c0`;
+  DLL SHA-256 `d17d9f866dbb0e3b7134ee3cbef6697064f13627b401a8b6c51b36054ce2a53a`).
 - Installed: **No** — the user's installed mod was not changed.
 - Runtime/visual-qualified: **No** — actual-game frames and interactions are
   NOT RUN. The computer-use helper exited unexpectedly twice before window
