@@ -202,7 +202,8 @@ namespace KingmakerDiceRoller.CharacterCreation
 
         public void StoreCurrent(RollSession session)
         {
-            if (session == null || !session.IsRollMode || session.Assignment == null)
+            if (session == null || !session.IsRollMode || !session.IsApplied ||
+                session.RecoveryRequired || session.Assignment == null)
             {
                 throw new InvalidOperationException("A verified Roll Mode assignment is required before storing.");
             }
@@ -276,7 +277,8 @@ namespace KingmakerDiceRoller.CharacterCreation
                 saved.Count,
                 savedLabel,
                 inlineError,
-                status);
+                status,
+                session != null && session.RecoveryRequired);
         }
 
         private void SetConfiguration(RollConfiguration configuration)

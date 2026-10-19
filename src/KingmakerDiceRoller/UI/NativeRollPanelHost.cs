@@ -60,6 +60,9 @@ namespace KingmakerDiceRoller.UI
         private GameObject inlinePointBuyEntry;
         private GameObject inlineWorkspace;
         private RectTransform inlineFormulaGroup;
+        private RectTransform inlineStatsContainer;
+        private RectTransform inlineBadgeFrame;
+        private RectTransform inlineAbilityHeading;
         private InlineTooltipOverlay inlineTooltipOverlay;
         private GameObject inlineTooltipPanel;
         private GameObject inlinePolicyNote;
@@ -87,6 +90,7 @@ namespace KingmakerDiceRoller.UI
         private float lastInlineToolbarHeight = -1f;
         private float lastInlineRaceHeight = -1f;
         private float lastInlineRaceY = float.NaN;
+        private float lastInlineRaceVisibleBottom = float.NaN;
         private bool? lastInlineRacialActive;
         private RollSessionMode? lastInlineMode;
         private GameObject inlineStatus;
@@ -95,6 +99,7 @@ namespace KingmakerDiceRoller.UI
         private GameObject policySelectorSection;
         private TextMeshProUGUI inlineStatusLabel;
         private Button inlinePresetButton;
+        private InlineArrowTooltip inlinePresetTooltip;
         private Button inlineRollButton;
         private Button inlineRerollButton;
         private Button inlineSaveButton;
@@ -623,6 +628,7 @@ namespace KingmakerDiceRoller.UI
             int[] rowIndexByAbility = NativeScoreRowIdentity.Map(contracts.AbilityStatKeys, rowKeys);
             for (int ability = 0; ability < mapped.Length; ability++)
                 mapped[ability] = entries[rowIndexByAbility[ability]];
+            inlineStatsContainer = statsContainer as RectTransform;
 
             inlineToolbar = CreateVertical("InlineRollToolbar", allocator.transform);
             inlineToolbar.transform.SetSiblingIndex(statsContainer.GetSiblingIndex() + 1);
@@ -642,8 +648,8 @@ namespace KingmakerDiceRoller.UI
 
             inlineWorkspace = CreateVertical("RollWorkspace", inlineToolbar.transform);
             var workspaceGroup = inlineWorkspace.GetComponent<VerticalLayoutGroup>();
-            workspaceGroup.spacing = 6f;
-            workspaceGroup.padding = new RectOffset(0, 0, 1, 1);
+            workspaceGroup.spacing = 2f;
+            workspaceGroup.padding = new RectOffset(0, 0, 0, 0);
             CreateInlineTooltipOverlay(nativeText);
             GameObject formulaRow = CreateHorizontal(inlineWorkspace.transform, 40f);
             formulaRow.name = "FormulaRow";
@@ -679,7 +685,8 @@ namespace KingmakerDiceRoller.UI
                 nativeButton, 42f, () => OpenInlineMenu(InlineMenuKind.Presets), 40f);
             Button firstNativeUp = contracts.ScoreEntryUpButtonField.GetValue(mapped[0]) as Button;
             CreateNativeDownIcon(firstNativeUp, inlinePresetButton.transform, 18f);
-            AddInlineTooltip(inlinePresetButton.gameObject, "Choose a roll formula");
+            inlinePresetTooltip = AddInlineTooltip(inlinePresetButton.gameObject,
+                "Choose a roll formula", () => inlineMenu != InlineMenuKind.Presets);
 
             inlinePolicyNote = NewUiObject("RollPolicyNote", inlineToolbar.layer);
             inlinePolicyNote.transform.SetParent(inlineWorkspace.transform, false);
@@ -713,23 +720,25 @@ namespace KingmakerDiceRoller.UI
                 nativeButton, 100f, () => Execute(RollUiCommand.NextHistory), 34f);
             inlineReturnButton = CreateButton(history.transform, "Return to Point Buy", nativeText,
                 nativeButton, 260f, ReturnFromWorkspace, 34f);
-            AddInlineTooltip(inlinePreviousButton.gameObject, "Restore previous roll");
-            AddInlineTooltip(inlineNextButton.gameObject, "Restore next roll");
-            AddInlineTooltip(inlineReturnButton.gameObject,
-                "Restore your exact Point Buy allocation and remaining points.");
 
             inlineStatus = NewUiObject("InlineStatus", inlineToolbar.layer);
-            inlineStatus.transform.SetParent(inlineToolbar.transform, false);
+            inlineStatus.transform.SetParent(root.transform, false);
+            inlineStatus.AddComponent<LayoutElement>().ignoreLayout = true;
+            var noticeInput = inlineStatus.AddComponent<CanvasGroup>();
+            noticeInput.interactable = false;
+            noticeInput.blocksRaycasts = false;
             inlineStatusLabel = CreateLabel(inlineStatus.transform, string.Empty, nativeText,
-                layout.StatusFontSize, TextAlignmentOptions.Left, 24f, -1f, ErrorText, false);
+                layout.StatusFontSize, TextAlignmentOptions.Center, 24f, -1f, ErrorText, false);
             RectTransform inlineStatusRect = inlineStatusLabel.rectTransform;
             inlineStatusRect.anchorMin = Vector2.zero;
             inlineStatusRect.anchorMax = Vector2.one;
             inlineStatusRect.offsetMin = new Vector2(4f, 0f);
             inlineStatusRect.offsetMax = new Vector2(-4f, 0f);
-            var statusLayout = inlineStatus.AddComponent<LayoutElement>();
-            statusLayout.minHeight = 26f;
-            statusLayout.preferredHeight = 26f;
+            inlineStatusLabel.enableWordWrapping = false;
+            inlineStatusLabel.enableAutoSizing = true;
+            inlineStatusLabel.fontSizeMin = 12f;
+            inlineStatusLabel.fontSizeMax = layout.StatusFontSize;
+            inlineStatusLabel.raycastTarget = false;
             SetVisible(inlineStatus, false);
             SetVisible(inlineWorkspace, false);
 
@@ -796,12 +805,17 @@ namespace KingmakerDiceRoller.UI
             RectTransform racialRect = racialActive ? racial.transform as RectTransform : null;
             float raceHeight = racialRect == null ? -1f : racialRect.rect.height;
             float raceY = racialRect == null ? float.NaN : racialRect.anchoredPosition.y;
+            RectTransform rootRect = root.GetComponent<RectTransform>();
+            LocalLayoutRect? visibleRace = racialRect == null ? null :
+                TryGetCompleteRacialBounds(racialRect, rootRect);
+            float visibleBottom = visibleRace.HasValue ? visibleRace.Value.YMin : float.NaN;
             if (Mathf.Abs(height - lastInlineGeometryHeight) < 0.5f &&
                 Mathf.Abs(width - lastInlineGeometryWidth) < 0.5f &&
                 Mathf.Abs(scale - lastInlineGeometryScale) < 0.001f &&
                 Mathf.Abs(toolbarHeight - lastInlineToolbarHeight) < 0.5f &&
                 Mathf.Abs(raceHeight - lastInlineRaceHeight) < 0.5f &&
                 (racialRect == null || Mathf.Abs(raceY - lastInlineRaceY) < 0.5f) &&
+                (racialRect == null || Mathf.Abs(visibleBottom - lastInlineRaceVisibleBottom) < 0.5f) &&
                 lastInlineRacialActive == racialActive) return;
             lastInlineGeometryHeight = height;
             lastInlineGeometryWidth = width;
@@ -809,6 +823,7 @@ namespace KingmakerDiceRoller.UI
             lastInlineToolbarHeight = toolbarHeight;
             lastInlineRaceHeight = raceHeight;
             lastInlineRaceY = raceY;
+            lastInlineRaceVisibleBottom = visibleBottom;
             lastInlineRacialActive = racialActive;
 
             LayoutElement formulaLayout = inlineFormulaGroup.GetComponent<LayoutElement>();
@@ -818,32 +833,35 @@ namespace KingmakerDiceRoller.UI
             Transform owner = NativeBookTheme.FindOwner(allocator);
             Transform nativeNavigation = owner == null ? null :
                 owner.Find("Body/Bottom (1)/ButtonsPlace");
-            RectTransform rootRect = root.GetComponent<RectTransform>();
-            LocalLayoutRect? raceBounds = TryGetLocalBounds(racial.transform as RectTransform, rootRect);
+            Transform book = owner == null ? null : owner.Find("Body/Content/Book/Image_Book");
+            LocalLayoutRect? bookBounds = TryGetLocalBounds(book as RectTransform, rootRect);
+            LocalLayoutRect? raceBounds = TryGetCompleteRacialBounds(racialRect, rootRect);
             LocalLayoutRect? navBounds = TryGetLocalBounds(nativeNavigation as RectTransform, rootRect);
-            if (!raceBounds.HasValue || !navBounds.HasValue) return;
-            if (raceBounds.Value.YMin >= navBounds.Value.YMax + 8f) return;
+            if (!raceBounds.HasValue || (!navBounds.HasValue && !bookBounds.HasValue)) return;
+            float safeBottom = Mathf.Max(
+                navBounds.HasValue ? navBounds.Value.YMax + 8f : float.NegativeInfinity,
+                bookBounds.HasValue ? bookBounds.Value.YMin + 14f : float.NegativeInfinity);
+            if (raceBounds.Value.YMin >= safeBottom) return;
 
-            // Recover eight to twelve more units if a late Human racial chooser
-            // or a scaled layout needs them. Keep every native row and action.
+            // Exhaust redundant owned spacing before reporting a live fit failure.
+            // This changes neither the accepted control heights nor native racial UI.
             var workspaceGroup = inlineWorkspace.GetComponent<VerticalLayoutGroup>();
-            if (workspaceGroup.spacing > 2f)
+            if (workspaceGroup.spacing > 0f)
             {
-                workspaceGroup.spacing = 2f;
+                workspaceGroup.spacing = 0f;
                 RectTransform workspaceRect = inlineWorkspace.GetComponent<RectTransform>();
                 LayoutRebuilder.ForceRebuildLayoutImmediate(workspaceRect);
                 LayoutElement toolbar = inlineToolbar.GetComponent<LayoutElement>();
-                toolbar.preferredHeight = 2f + LayoutUtility.GetPreferredHeight(workspaceRect) +
-                    (inlineStatus.activeSelf
-                        ? inlineStatus.GetComponent<LayoutElement>().preferredHeight + 6f : 0f);
+                toolbar.preferredHeight = LayoutUtility.GetPreferredHeight(workspaceRect);
                 lastInlineToolbarHeight = toolbar.preferredHeight;
                 inlineToolbar.GetComponent<RectTransform>().SetSizeWithCurrentAnchors(
                     RectTransform.Axis.Vertical, toolbar.preferredHeight);
                 LayoutRebuilder.ForceRebuildLayoutImmediate(allocatorRect);
-                raceBounds = TryGetLocalBounds(racial.transform as RectTransform, rootRect);
+                raceBounds = TryGetCompleteRacialBounds(racialRect, rootRect);
             }
-            if (raceBounds.HasValue && raceBounds.Value.YMin < navBounds.Value.YMax + 8f)
-                ReportAttachment("Native Human racial selector remains close to bottom navigation after compact inline layout.");
+            lastInlineRaceVisibleBottom = raceBounds.HasValue ? raceBounds.Value.YMin : float.NaN;
+            if (raceBounds.HasValue && raceBounds.Value.YMin < safeBottom)
+                ReportAttachment("Complete native racial section exceeds the measured book/navigation clearance after compact inline layout.");
         }
 
         private Button CreateInlineArrow(Button source,
@@ -930,22 +948,9 @@ namespace KingmakerDiceRoller.UI
             RectTransform labelRect = label.rectTransform;
             labelRect.anchorMin = Vector2.zero;
             labelRect.anchorMax = Vector2.one;
-            labelRect.offsetMin = new Vector2(14f, 16f);
+            labelRect.offsetMin = new Vector2(14f, 10f);
             labelRect.offsetMax = new Vector2(-14f, -10f);
             label.overflowMode = TextOverflowModes.Overflow;
-            GameObject rule = NewUiObject("NativeScrollEnd", inlineTooltipPanel.layer);
-            RectTransform ruleRect = rule.GetComponent<RectTransform>();
-            ruleRect.SetParent(inlineTooltipPanel.transform, false);
-            ruleRect.anchorMin = ruleRect.anchorMax = new Vector2(0.5f, 0f);
-            ruleRect.pivot = new Vector2(0.5f, 0f);
-            ruleRect.anchoredPosition = new Vector2(0f, 3f);
-            ruleRect.sizeDelta = new Vector2(92f, 11f);
-            Image ruleImage = rule.AddComponent<Image>();
-            ruleImage.raycastTarget = false;
-            ruleImage.enabled = false;
-            themeBindings.Add(NativeThemeCapability.Ornament,
-                donors => { NativeBookTheme.CopyImage((Image)donors[0], ruleImage); ruleImage.enabled = true; },
-                () => { ruleImage.sprite = null; ruleImage.enabled = false; });
             inlineTooltipOverlay = inlineTooltipPanel.AddComponent<InlineTooltipOverlay>();
             inlineTooltipOverlay.Configure(root.GetComponent<RectTransform>(), rect, label);
             themeBindings.Add(NativeThemeCapability.Body,
@@ -953,10 +958,12 @@ namespace KingmakerDiceRoller.UI
                 () => inlineTooltipOverlay.Remeasure());
         }
 
-        private void AddInlineTooltip(GameObject trigger, string text)
+        private InlineArrowTooltip AddInlineTooltip(GameObject trigger, string text,
+            Func<bool> visibility = null)
         {
             var hover = trigger.AddComponent<InlineArrowTooltip>();
-            hover.Configure(inlineTooltipOverlay, text);
+            hover.Configure(inlineTooltipOverlay, text, visibility);
+            return hover;
         }
 
         private void AddNativeCostHints(object entry, KingmakerContracts contracts)
@@ -988,6 +995,42 @@ namespace KingmakerDiceRoller.UI
             label.GetComponent<LayoutElement>().preferredHeight = height;
         }
 
+        private void PositionInlineNotice()
+        {
+            if (inlineStatus == null || !inlineStatus.activeSelf || inlineBadgeFrame == null ||
+                inlineStatsContainer == null || root == null) return;
+            RectTransform rootRect = root.GetComponent<RectTransform>();
+            LocalLayoutRect? badge = TryGetLocalBounds(inlineBadgeFrame, rootRect);
+            LocalLayoutRect? scores = TryGetLocalBounds(inlineStatsContainer, rootRect);
+            if (!badge.HasValue || !scores.HasValue) return;
+            float bottom = scores.Value.YMax + 3f;
+            float top = badge.Value.YMin - 3f;
+            float lowerBand = top - bottom;
+            LocalLayoutRect? heading = TryGetLocalBounds(inlineAbilityHeading, rootRect);
+            LocalLayoutRect? caption = badgeNativeCaption == null ? null :
+                TryGetLocalBounds(badgeNativeCaption.rectTransform, rootRect);
+            if (lowerBand < 18f && heading.HasValue && caption.HasValue &&
+                heading.Value.YMin - caption.Value.YMax > lowerBand)
+            {
+                bottom = caption.Value.YMax + 3f;
+                top = heading.Value.YMin - 3f;
+            }
+            float available = top - bottom;
+            if (available < 16f)
+                ReportAttachment("No measured free band can hold the native roll notice at this layout.");
+            float height = Mathf.Min(24f, Mathf.Max(16f, available));
+            float width = Mathf.Max(180f, Mathf.Min(scores.Value.Width - 12f,
+                rootRect.rect.width - 32f));
+            RectTransform notice = inlineStatus.GetComponent<RectTransform>();
+            notice.anchorMin = notice.anchorMax = Vector2.zero;
+            notice.pivot = new Vector2(0.5f, 0.5f);
+            notice.sizeDelta = new Vector2(width, height);
+            notice.anchoredPosition = new Vector2(
+                (scores.Value.XMin + scores.Value.XMax) * 0.5f - rootRect.rect.xMin,
+                (bottom + top) * 0.5f - rootRect.rect.yMin);
+            inlineStatus.transform.SetAsLastSibling();
+        }
+
         private void CreateBadgeOverlay(MonoBehaviour allocator, KingmakerContracts contracts)
         {
             badgeNativeCaption = contracts.AbilityAllocatorPointsCaptionField.GetValue(allocator) as TextMeshProUGUI;
@@ -1001,8 +1044,11 @@ namespace KingmakerDiceRoller.UI
                 throw new InvalidOperationException("The ability allocator's exact Points badge is unavailable.");
             badgeCaptionOriginallyEnabled = badgeNativeCaption.enabled;
             badgeValueOriginallyEnabled = badgeNativeValue.enabled;
-            badgeOwnedCaption = CreateBadgeText(badgeNativeCaption, "Value");
-            badgeOwnedValue = CreateBadgeText(badgeNativeValue, "—");
+            inlineBadgeFrame = frame.rectTransform;
+            var heading = contracts.AbilityAllocatorMainLabelField.GetValue(allocator) as Component;
+            inlineAbilityHeading = heading == null ? null : heading.transform as RectTransform;
+            badgeOwnedCaption = CreateBadgeText(badgeNativeCaption, "Value", null);
+            badgeOwnedValue = CreateBadgeText(badgeNativeValue, "—", frame.transform);
             badgeActiveBackground = NewUiObject("RolledValueBackground", frame.gameObject.layer);
             RectTransform tintRect = badgeActiveBackground.GetComponent<RectTransform>();
             tintRect.SetParent(frame.transform, false);
@@ -1010,40 +1056,59 @@ namespace KingmakerDiceRoller.UI
             tintRect.anchorMax = Vector2.one;
             tintRect.offsetMin = tintRect.offsetMax = Vector2.zero;
             tintRect.SetAsFirstSibling();
+            badgeActiveBackground.AddComponent<LayoutElement>().ignoreLayout = true;
             Image tint = badgeActiveBackground.AddComponent<Image>();
             NativeBookTheme.CopyImage(frame, tint);
             tint.color = new Color(0.725f, 0.408f, 0.408f, 1f);
             tint.raycastTarget = false;
+            tint.preserveAspect = true;
             badgeActiveBackground.SetActive(false);
         }
 
-        private static TextMeshProUGUI CreateBadgeText(TextMeshProUGUI source, string value)
+        private static TextMeshProUGUI CreateBadgeText(
+            TextMeshProUGUI source, string value, Transform circle)
         {
             // Copy only text styling and geometry from the exact native text
             // component. Creating an owned object avoids cloning native scripts.
             GameObject owned = NewUiObject("Owned" + value + "BadgeText", source.gameObject.layer);
             RectTransform rect = owned.GetComponent<RectTransform>();
             RectTransform nativeRect = source.rectTransform;
-            rect.SetParent(source.transform.parent, false);
-            rect.anchorMin = nativeRect.anchorMin;
-            rect.anchorMax = nativeRect.anchorMax;
-            rect.pivot = nativeRect.pivot;
-            rect.anchoredPosition = nativeRect.anchoredPosition;
-            rect.sizeDelta = nativeRect.sizeDelta;
-            rect.localRotation = nativeRect.localRotation;
-            rect.localScale = nativeRect.localScale;
-            rect.SetSiblingIndex(source.transform.GetSiblingIndex() + 1);
+            rect.SetParent(circle ?? source.transform.parent, false);
+            if (circle == null)
+            {
+                rect.anchorMin = nativeRect.anchorMin;
+                rect.anchorMax = nativeRect.anchorMax;
+                rect.pivot = nativeRect.pivot;
+                rect.anchoredPosition = nativeRect.anchoredPosition;
+                rect.sizeDelta = nativeRect.sizeDelta;
+                rect.localRotation = nativeRect.localRotation;
+                rect.localScale = nativeRect.localScale;
+                rect.SetSiblingIndex(source.transform.GetSiblingIndex() + 1);
+                owned.AddComponent<InlineArrowAnchor>().Bind(nativeRect);
+            }
+            else
+            {
+                // Follow the exact native circle rather than joining its layout group.
+                // A second participating Value text squeezed the 64x64 circle in v3.
+                rect.anchorMin = Vector2.zero;
+                rect.anchorMax = Vector2.one;
+                rect.pivot = new Vector2(0.5f, 0.5f);
+                rect.offsetMin = new Vector2(3f, 2f);
+                rect.offsetMax = new Vector2(-3f, -2f);
+                rect.SetAsLastSibling();
+            }
+            owned.AddComponent<LayoutElement>().ignoreLayout = true;
             TextMeshProUGUI text = owned.AddComponent<TextMeshProUGUI>();
             NativeBookTheme.CopyText(source, text);
-            text.alignment = source.alignment;
-            text.margin = source.margin;
+            text.alignment = circle == null ? source.alignment : TextAlignmentOptions.Center;
+            text.margin = circle == null ? source.margin : Vector4.zero;
             text.fontWeight = source.fontWeight;
             text.fontSize = source.fontSize;
             text.fontSizeMin = source.fontSizeMin;
             text.fontSizeMax = source.fontSizeMax;
             text.enableAutoSizing = source.enableAutoSizing;
-            text.enableWordWrapping = source.enableWordWrapping;
-            text.overflowMode = source.overflowMode;
+            text.enableWordWrapping = circle == null && source.enableWordWrapping;
+            text.overflowMode = circle == null ? source.overflowMode : TextOverflowModes.Overflow;
             text.paragraphSpacing = source.paragraphSpacing;
             text.text = value;
             text.raycastTarget = false;
@@ -1061,6 +1126,7 @@ namespace KingmakerDiceRoller.UI
                 badgeOwnedCaption.gameObject.SetActive(true);
                 badgeOwnedValue.gameObject.SetActive(true);
                 badgeActiveBackground.SetActive(true);
+                badgeOwnedValue.transform.SetAsLastSibling();
                 badgeOwnedValue.text = snapshot.Mode == RollSessionMode.Roll && snapshot.AssignedValues != null
                     ? snapshot.Total.ToString(CultureInfo.InvariantCulture)
                     : "—";
@@ -1142,7 +1208,9 @@ namespace KingmakerDiceRoller.UI
 
         private void ReturnFromWorkspace()
         {
-            if (commands.Snapshot.Mode == RollSessionMode.PointBuy)
+            if (commands.IsBusy) return;
+            if (commands.Snapshot.Mode == RollSessionMode.PointBuy &&
+                !commands.Snapshot.RecoveryRequired)
             {
                 workspaceOpen = false;
                 inlineMenu = InlineMenuKind.None;
@@ -1164,6 +1232,7 @@ namespace KingmakerDiceRoller.UI
 
         private void ExecuteGeneration()
         {
+            if (commands.IsBusy) return;
             if (!CommitFormulaDraft()) return;
             RollSessionMode mode = commands.Snapshot.Mode;
             Execute(mode == RollSessionMode.PointBuy ? RollUiCommand.Roll : RollUiCommand.Reroll);
@@ -1171,7 +1240,7 @@ namespace KingmakerDiceRoller.UI
 
         private bool CommitFormulaDraft()
         {
-            if (!CanDispatchCurrentView() || formulaDraft == null) return false;
+            if (commands.IsBusy || !CanDispatchCurrentView() || formulaDraft == null) return false;
             string error;
             if (!formulaDraft.Validate(commands.Snapshot.Configuration, out error))
             {
@@ -1197,6 +1266,7 @@ namespace KingmakerDiceRoller.UI
         private void ClosePresetPopup()
         {
             if (inlineMenu != InlineMenuKind.Presets) return;
+            if (inlinePresetTooltip != null) inlinePresetTooltip.SuppressUntilReentry();
             inlineMenu = InlineMenuKind.None;
             Render(contractsProvider());
             if (inlinePresetButton != null) inlinePresetButton.Select();
@@ -1280,6 +1350,9 @@ namespace KingmakerDiceRoller.UI
             inlinePointBuyEntry = null;
             inlineWorkspace = null;
             inlineFormulaGroup = null;
+            inlineStatsContainer = null;
+            inlineBadgeFrame = null;
+            inlineAbilityHeading = null;
             inlinePolicyNote = null;
             policyNoteLabel = null;
             formulaInput = null;
@@ -1289,6 +1362,7 @@ namespace KingmakerDiceRoller.UI
             inlineStatus = null;
             inlineStatusLabel = null;
             inlinePresetButton = null;
+            inlinePresetTooltip = null;
             inlineRollButton = null;
             inlineRerollButton = null;
             inlineSaveButton = null;
@@ -1300,6 +1374,7 @@ namespace KingmakerDiceRoller.UI
             lastInlineToolbarHeight = -1f;
             lastInlineRaceHeight = -1f;
             lastInlineRaceY = float.NaN;
+            lastInlineRaceVisibleBottom = float.NaN;
             lastInlineRacialActive = null;
         }
 
@@ -1970,6 +2045,29 @@ namespace KingmakerDiceRoller.UI
             return result.IsFinitePositive ? result : (LocalLayoutRect?)null;
         }
 
+        private static LocalLayoutRect? TryGetCompleteRacialBounds(
+            RectTransform racialRoot, RectTransform rootRect)
+        {
+            LocalLayoutRect? result = TryGetLocalBounds(racialRoot, rootRect);
+            if (!result.HasValue) return null;
+            foreach (RectTransform child in racialRoot.GetComponentsInChildren<RectTransform>(false))
+            {
+                if (child == racialRoot || !child.gameObject.activeInHierarchy) continue;
+                Graphic graphic = child.GetComponent<Graphic>();
+                Selectable control = child.GetComponent<Selectable>();
+                if ((graphic == null || !graphic.enabled) &&
+                    (control == null || !control.IsActive())) continue;
+                LocalLayoutRect? bounds = TryGetLocalBounds(child, rootRect);
+                if (!bounds.HasValue) continue;
+                result = new LocalLayoutRect(
+                    Mathf.Min(result.Value.XMin, bounds.Value.XMin),
+                    Mathf.Min(result.Value.YMin, bounds.Value.YMin),
+                    Mathf.Max(result.Value.XMax, bounds.Value.XMax),
+                    Mathf.Max(result.Value.YMax, bounds.Value.YMax));
+            }
+            return result;
+        }
+
         private void ReportAccessAnchor(CollapsedAccessTabAnchorSource source)
         {
             if (lastAccessTabAnchorSource.HasValue &&
@@ -1999,6 +2097,7 @@ namespace KingmakerDiceRoller.UI
                     ApplyInlineModel(inlineModel, snapshot);
                     ApplySurfaceState();
                     RefreshExpandedInlineGeometry((MonoBehaviour)attachedAllocator, contracts);
+                    PositionInlineNotice();
                     if (panelState.ExpandedSurfaceActive) ApplyInlineMenuGeometry();
                     if (inlineMenu == InlineMenuKind.Presets) ApplyPresetPopupGeometry();
                 }
@@ -2312,33 +2411,35 @@ namespace KingmakerDiceRoller.UI
 
         private void ApplyInlineModel(RollPanelModel model, RollUiSnapshot snapshot)
         {
+            bool busy = commands.IsBusy;
             bool transitional = snapshot.Mode == RollSessionMode.EnteringRollMode ||
                 snapshot.Mode == RollSessionMode.RestoringPointBuy;
             bool showWorkspace = workspaceOpen;
             SetVisible(inlinePointBuyEntry, !showWorkspace);
             SetVisible(inlineWorkspace, showWorkspace);
-            SetInteractable(inlineEntryButton, snapshot.Mode == RollSessionMode.PointBuy);
-            SetInteractable(inlinePresetButton, !transitional);
+            SetInteractable(inlineEntryButton, !busy && snapshot.Mode == RollSessionMode.PointBuy);
+            SetInteractable(inlinePresetButton, !busy && !transitional);
             bool rolled = snapshot.Mode == RollSessionMode.Roll;
             SetVisible(inlineRollButton.gameObject, !rolled);
             SetVisible(inlineRerollButton.gameObject, rolled);
-            SetInteractable(inlineRollButton, snapshot.CanRoll && formulaDraft.Error == null);
-            SetInteractable(inlineRerollButton, snapshot.CanReroll && formulaDraft.Error == null);
-            SetInteractable(inlineSaveButton, snapshot.CanStore);
-            SetInteractable(inlineLoadButton, snapshot.CanRecall);
+            SetInteractable(inlineRollButton, !busy && snapshot.CanRoll && formulaDraft.Error == null);
+            SetInteractable(inlineRerollButton, !busy && snapshot.CanReroll && formulaDraft.Error == null);
+            SetInteractable(inlineSaveButton, !busy && snapshot.CanStore);
+            SetInteractable(inlineLoadButton, !busy && snapshot.CanRecall);
             RollSession activeSession = commands.ActiveSession;
             int adjacent;
-            SetInteractable(inlinePreviousButton, activeSession != null && !transitional &&
+            SetInteractable(inlinePreviousButton, !busy && !snapshot.RecoveryRequired && activeSession != null && !transitional &&
                 activeSession.History.AdjacentActive(true, !rolled, out adjacent) != null);
-            SetInteractable(inlineNextButton, activeSession != null && rolled && !transitional &&
+            SetInteractable(inlineNextButton, !busy && !snapshot.RecoveryRequired && activeSession != null && rolled && !transitional &&
                 activeSession.History.AdjacentActive(false, false, out adjacent) != null);
-            SetInteractable(inlineReturnButton, !transitional &&
-                (snapshot.Mode == RollSessionMode.PointBuy || snapshot.CanReturnToPointBuy));
+            SetInteractable(inlineReturnButton, !busy && !transitional &&
+                ((snapshot.Mode == RollSessionMode.PointBuy && !snapshot.RecoveryRequired) ||
+                    snapshot.CanReturnToPointBuy));
             for (int index = 0; index < inlineDownArrows.Count; index++)
             {
                 bool visible = model.AssignmentVisible;
                 SetVisible(inlineDownArrows[index].gameObject, visible);
-                SetInteractable(inlineDownArrows[index], visible &&
+                SetInteractable(inlineDownArrows[index], !busy && visible &&
                     model.AssignmentRows[index].CanMoveDown);
             }
             SetNativeButtonPresentation(showWorkspace, snapshot.Mode == RollSessionMode.PointBuy);
@@ -2377,6 +2478,9 @@ namespace KingmakerDiceRoller.UI
                     status = "Return to Point Buy failed. Try again or check Troubleshooting.";
                     break;
             }
+            if (snapshot.RecoveryRequired &&
+                commands.LastPointBuyReturn == PointBuyReturnOutcome.None)
+                status = "Recovery incomplete. Return to Point Buy or check Troubleshooting.";
             if (string.IsNullOrWhiteSpace(status) && model.Status != null &&
                 model.Status.StartsWith("Stored ", StringComparison.Ordinal)) status = model.Status;
             inlineStatusLabel.text = status ?? string.Empty;
@@ -2385,13 +2489,10 @@ namespace KingmakerDiceRoller.UI
                 commands.LastPointBuyReturn == PointBuyReturnOutcome.Failed;
             SetVisible(inlineStatus, (showWorkspace || returnNotice) &&
                 !string.IsNullOrWhiteSpace(status));
-            if (inlineStatus.activeSelf) FitInlineMessage(inlineStatus, inlineStatusLabel);
             RectTransform contentRect = (showWorkspace ? inlineWorkspace : inlinePointBuyEntry)
                 .GetComponent<RectTransform>();
             LayoutRebuilder.ForceRebuildLayoutImmediate(contentRect);
-            float height = 2f + LayoutUtility.GetPreferredHeight(contentRect) +
-                (inlineStatus.activeSelf
-                    ? inlineStatus.GetComponent<LayoutElement>().preferredHeight + 6f : 0f);
+            float height = LayoutUtility.GetPreferredHeight(contentRect);
             inlineToolbar.GetComponent<LayoutElement>().preferredHeight = height;
             inlineToolbar.GetComponent<RectTransform>().SetSizeWithCurrentAnchors(
                 RectTransform.Axis.Vertical, height);
@@ -2474,6 +2575,7 @@ namespace KingmakerDiceRoller.UI
 
         private bool CanDispatchCurrentView()
         {
+            if (commands.IsBusy) return false;
             RollSession session = commands.ActiveSession;
             if (session == null || viewBinding == null ||
                 !commands.CanAttachNativePanel || attachedAllocator == null || root == null)
@@ -2500,6 +2602,8 @@ namespace KingmakerDiceRoller.UI
         {
             if (!inlineAvailable) return;
             if (inlineTooltipOverlay != null) inlineTooltipOverlay.HideAll();
+            if (menu == InlineMenuKind.Presets && inlinePresetTooltip != null)
+                inlinePresetTooltip.SuppressUntilReentry();
             if (inlineMenu == menu)
             {
                 if (menu == InlineMenuKind.Load)
@@ -2520,6 +2624,7 @@ namespace KingmakerDiceRoller.UI
 
         private void SelectInlinePreset(DiceRollPreset preset)
         {
+            if (inlinePresetTooltip != null) inlinePresetTooltip.SuppressUntilReentry();
             string error = null;
             bool succeeded = preset == DiceRollPreset.CustomExpression ||
                 commands.SelectPreset(preset, out error);
@@ -2544,6 +2649,7 @@ namespace KingmakerDiceRoller.UI
 
         private void Execute(RollUiCommand command, AbilityScore ability = AbilityScore.Strength)
         {
+            if (commands.IsBusy) return;
             ReleaseRollReadyBeforeApplication(command);
             string error;
             bool succeeded = commands.Execute(command, ability, out error);

@@ -120,5 +120,34 @@ namespace KingmakerDiceRoller.Domain
         {
             return entries.ToArray();
         }
+
+        internal RollHistoryCheckpoint CaptureCheckpoint()
+        {
+            return new RollHistoryCheckpoint(entries.ToArray(), selectedIndex, activeSequence);
+        }
+
+        internal void RestoreCheckpoint(RollHistoryCheckpoint checkpoint)
+        {
+            if (checkpoint == null) throw new ArgumentNullException(nameof(checkpoint));
+            entries.Clear();
+            entries.AddRange(checkpoint.Entries);
+            selectedIndex = checkpoint.SelectedIndex;
+            activeSequence = checkpoint.ActiveSequence;
+        }
+    }
+
+    internal sealed class RollHistoryCheckpoint
+    {
+        internal RollHistoryCheckpoint(
+            RollHistoryEntry[] entries, int selectedIndex, long activeSequence)
+        {
+            Entries = entries;
+            SelectedIndex = selectedIndex;
+            ActiveSequence = activeSequence;
+        }
+
+        internal RollHistoryEntry[] Entries { get; }
+        internal int SelectedIndex { get; }
+        internal long ActiveSequence { get; }
     }
 }

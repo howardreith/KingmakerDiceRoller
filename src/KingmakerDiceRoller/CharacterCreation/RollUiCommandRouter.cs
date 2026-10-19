@@ -16,6 +16,7 @@ namespace KingmakerDiceRoller.CharacterCreation
         public RollSession ActiveSession => target.ActiveSession;
         public bool CanAttachNativePanel => target.CanAttachNativePanel;
         public PointBuyReturnOutcome LastPointBuyReturn => target.LastPointBuyReturn;
+        public bool IsBusy => target.IsCommandBusy;
 
         public void NotifyDrawerClosed()
         {
@@ -27,6 +28,11 @@ namespace KingmakerDiceRoller.CharacterCreation
             AbilityScore ability,
             out string error)
         {
+            if (target.IsCommandBusy)
+            {
+                error = null;
+                return false;
+            }
             try
             {
                 switch (command)

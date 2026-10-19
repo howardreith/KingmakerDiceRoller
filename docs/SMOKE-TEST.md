@@ -4,6 +4,44 @@ Source, exact-contract, build, package, and installation qualification do not
 replace this live gate. Preserve logs/screenshots outside Git and collect
 evidence only after fully exiting Kingmaker.
 
+## 0.1.15 v4 native-stat UI (NOT RUN)
+
+Install the exact candidate ZIP recorded in
+`docs/NATIVE-STAT-UI-V4-CANDIDATE.md`. Record commit, ZIP/DLL SHA-256,
+game version, resolution, canvas scale, creation context, and race. Capture
+whole ability pages at 1920×1200 and a smaller 16:9 scale. The mission's five
+owner screenshots are before evidence, not candidate after captures.
+
+1. On a new main, mercenary, and editable respec, click Roll, then use several
+   fast, separate Reroll clicks. Repeat after changing races and opening the
+   formula menu. Record each actual error and the full troubleshooting log;
+   confirm one click makes at most one history entry and failed attempts keep
+   the previous scores, allocator, skill points, spell slots, and selections.
+   If recovery is incomplete, confirm Roll, Reroll, Save, Recall, and history
+   are unavailable until a successful Return to Point Buy rebuild/rebind.
+2. Compare the owned Value number with the original native Points circle in
+   Roll-ready, Roll, Previous/Next, Load, and Return. Use real fixtures with
+   totals 6, 50, 120, and 720. Each number must be centered, single-line,
+   legible, and in front of the intact circle at both scales.
+3. Show validation and operation notices. Verify the three accepted toolbar
+   rows stay together, the notice sits in measured space above the score rows,
+   and the complete Human racial section (heading, chooser, arrows, counter,
+   lower frame) remains above the book edge and global navigation. Repeat
+   with a fixed-bonus race and a policy note.
+4. Hover and intentionally keyboard-focus the formula control, open/select a
+   preset, move the pointer away, and rebuild/close the page. The formula help
+   appears only for hover or deliberate keyboard focus, closes with the popup
+   or owner, and has no inner scroll-end ornament. Previous, Next, and Return
+   show no owned tooltip on hover or focus. Check no ghost popups or click
+   interception after teardown.
+5. Return to Point Buy after a successful roll and after a recoverable failed
+   reroll. Confirm the native budget and cost patches still work and the exact
+   live preview's skill/spell allowances match the restored scores. Exercise
+   new main, mercenary, and editable respec; later level-ups and locked-base
+   retraining must never expose Roll.
+
+Mark each V4-01 through V4-06 PASS, FAIL, or NOT RUN in the candidate evidence.
+
 ## 0.1.14 v3 native-stat presentation (NOT RUN)
 
 Install the exact 0.1.14 candidate from

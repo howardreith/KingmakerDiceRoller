@@ -82,6 +82,8 @@ namespace KingmakerDiceRoller.DomainTests
                 new TestCase("RolledIntelligenceRefreshesNativeSkillAllowance", PreviewSessionContinuityTests.RolledIntelligenceRefreshesNativeSkillAllowance),
                 new TestCase("DerivedAllowanceRefreshIsIdempotentAcrossRerolls", PreviewSessionContinuityTests.DerivedAllowanceRefreshIsIdempotentAcrossRerolls),
                 new TestCase("FailedDerivedRefreshFailsRollAndRollsBack", PreviewSessionContinuityTests.FailedDerivedRefreshFailsRollAndRollsBack),
+                new TestCase("PartialNativeRefreshFailureRestoresPriorRollAndSpellChoices", PreviewSessionContinuityTests.PartialNativeRefreshFailureRestoresPriorRollAndSpellChoices),
+                new TestCase("ReentrantRerollIsRefusedBeforeRngDraw", PreviewSessionContinuityTests.ReentrantRerollIsRefusedBeforeRngDraw),
                 new TestCase("PointBuyReturnRefreshesDerivedAllowance", PreviewSessionContinuityTests.PointBuyReturnRefreshesDerivedAllowance),
                 new TestCase("MercenaryCommitStagesScoresBeforeNativeReplay", PreviewSessionContinuityTests.MercenaryCommitStagesScoresBeforeNativeReplay),
                 new TestCase("MercenaryReplayOverwriteFailsWithoutCorrectiveWrite", PreviewSessionContinuityTests.MercenaryReplayOverwriteFailsWithoutCorrectiveWrite),

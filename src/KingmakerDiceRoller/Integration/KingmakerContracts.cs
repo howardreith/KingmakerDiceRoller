@@ -79,7 +79,8 @@ namespace KingmakerDiceRoller.Integration
             FieldInfo abilityAllocatorPointsCaptionField,
             FieldInfo abilityAllocatorFrameField,
             FieldInfo abilityAllocatorRaceBonusContainerField,
-            IReadOnlyList<string> evidence)
+            IReadOnlyList<string> evidence,
+            KingmakerDerivedAllowanceContracts derivedAllowances = null)
         {
             GameAssembly = gameAssembly;
             LevelUpStateType = levelUpStateType;
@@ -154,6 +155,7 @@ namespace KingmakerDiceRoller.Integration
             AbilityAllocatorFrameField = abilityAllocatorFrameField;
             AbilityAllocatorRaceBonusContainerField = abilityAllocatorRaceBonusContainerField;
             Evidence = evidence;
+            DerivedAllowances = derivedAllowances;
         }
 
         public Assembly GameAssembly { get; }
@@ -179,6 +181,7 @@ namespace KingmakerDiceRoller.Integration
         public MemberInfo LevelUpControllerLevelUpActionsMember { get; }
         public MethodInfo LevelUpStateIsSkillPointsCompleteMethod { get; }
         public MemberInfo LevelUpStateSkillPointsRemainingMember { get; }
+        public KingmakerDerivedAllowanceContracts DerivedAllowances { get; }
         public MethodInfo CharacterBuildDefineAvailibleDataMethod { get; }
         public MethodInfo CharacterBuildSetupUiMethod { get; }
         public MethodInfo CharacterBuildSetPhaseMethod { get; }
@@ -369,5 +372,30 @@ namespace KingmakerDiceRoller.Integration
 
         public string AssemblyIdentity => GameAssembly.FullName;
         public Guid AssemblyMvid => GameAssembly.ManifestModule.ModuleVersionId;
+    }
+
+    // Resolved once with the exact 2.1.7b LevelUpState contract. These read-only
+    // identities let a failed command verify native skill and spell recovery.
+    public sealed class KingmakerDerivedAllowanceContracts
+    {
+        public KingmakerDerivedAllowanceContracts(
+            MemberInfo totalSkillPoints,
+            MemberInfo spellSelections,
+            MemberInfo spellLevelCount,
+            MemberInfo spellExtraMaxLevel,
+            MemberInfo selectedSpells)
+        {
+            TotalSkillPoints = totalSkillPoints ?? throw new ArgumentNullException(nameof(totalSkillPoints));
+            SpellSelections = spellSelections ?? throw new ArgumentNullException(nameof(spellSelections));
+            SpellLevelCount = spellLevelCount ?? throw new ArgumentNullException(nameof(spellLevelCount));
+            SpellExtraMaxLevel = spellExtraMaxLevel ?? throw new ArgumentNullException(nameof(spellExtraMaxLevel));
+            SelectedSpells = selectedSpells ?? throw new ArgumentNullException(nameof(selectedSpells));
+        }
+
+        public MemberInfo TotalSkillPoints { get; }
+        public MemberInfo SpellSelections { get; }
+        public MemberInfo SpellLevelCount { get; }
+        public MemberInfo SpellExtraMaxLevel { get; }
+        public MemberInfo SelectedSpells { get; }
     }
 }

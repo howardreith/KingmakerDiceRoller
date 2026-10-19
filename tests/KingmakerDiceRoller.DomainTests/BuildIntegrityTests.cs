@@ -60,9 +60,10 @@ namespace KingmakerDiceRoller.DomainTests
         {
             TestEnvironment environment = TestEnvironment.Create();
             int[] origin = { 12, 10, 10, 10, 10, 10 };
+            var random = new SequenceRandomSource(Enumerable.Repeat(6, 24).ToArray());
             CharacterCreationCoordinator coordinator = OpenProductCoordinator(
                 environment,
-                new SequenceRandomSource(Enumerable.Repeat(6, 24).ToArray()),
+                random,
                 out FakeState state);
             environment.StatAccess.WriteDistributionValues(state.StatsDistribution, origin, environment.Contracts);
             environment.StatAccess.WriteUnitBaseValues(state.Unit, origin, environment.Contracts);
@@ -70,13 +71,76 @@ namespace KingmakerDiceRoller.DomainTests
             state.ThrowOnApplyAction = true;
 
             AssertEx.True(!coordinator.TryRoll(out string error));
-            AssertEx.True(error.Contains("Roll failed without committing"));
+            AssertEx.True(error.Contains("Recovery incomplete"), error);
 
             AssertEx.SequenceEqual(origin, environment.ReadDistribution(state));
             AssertEx.SequenceEqual(origin, environment.ReadUnit(state.Unit));
             AssertEx.True(state.StatsDistribution.Available);
             AssertEx.Equal(22, state.StatsDistribution.Points);
-            AssertEx.Equal(RollSessionMode.PointBuy, coordinator.ActiveSession.Mode);
+            AssertEx.True(coordinator.ActiveSession.RecoveryRequired);
+            AssertEx.True(!coordinator.UiSnapshot.CanRoll);
+            AssertEx.True(!coordinator.UiSnapshot.CanStore);
+            int calls = random.Calls;
+            AssertEx.True(!coordinator.TryRoll(out error));
+            AssertEx.Equal(calls, random.Calls);
+            AssertEx.Equal(0, coordinator.ActiveSession.History.Count);
+            state.ThrowOnApplyAction = false;
+            AssertEx.True(coordinator.TryRestorePointBuy(out error), error);
+            AssertEx.True(!coordinator.ActiveSession.RecoveryRequired);
+        }
+
+        internal static void PartialNativeRefreshFailureRestoresPriorRollAndSpellChoices()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            var random = new SequenceRandomSource(
+                Enumerable.Repeat(6, 24).Concat(Enumerable.Repeat(2, 24))
+                    .Concat(Enumerable.Repeat(4, 24)).ToArray());
+            CharacterCreationCoordinator coordinator = OpenProductCoordinator(
+                environment, random, out FakeState state);
+            var selection = new FakeSpellSelectionData();
+            state.SpellSelections.Add(selection);
+            AssertEx.True(coordinator.TryRoll(out string error), error);
+            int[] prior = environment.ReadUnit(state.Unit);
+            int skillBefore = state.TotalSkillPoints;
+            int remainingBefore = state.SkillPointsRemaining;
+            int extraBefore = selection.ExtraMaxLevel;
+            object chosen = new object();
+            selection.LevelCount[0].SpellSelections[0] = chosen;
+            int historyBefore = coordinator.ActiveSession.History.Count;
+            state.ThrowAfterNativeEffectsCount = 1;
+
+            AssertEx.True(!coordinator.TryReroll(out error));
+            AssertEx.True(error.Contains("Previous roll kept"), error);
+            AssertEx.SequenceEqual(prior, environment.ReadUnit(state.Unit));
+            AssertEx.Equal(skillBefore, state.TotalSkillPoints);
+            AssertEx.Equal(remainingBefore, state.SkillPointsRemaining);
+            AssertEx.Equal(extraBefore, selection.ExtraMaxLevel);
+            AssertEx.True(ReferenceEquals(chosen, selection.LevelCount[0].SpellSelections[0]));
+            AssertEx.Equal(historyBefore, coordinator.ActiveSession.History.Count);
+            AssertEx.True(coordinator.ActiveSession.IsApplied);
+            AssertEx.True(!coordinator.ActiveSession.RecoveryRequired);
+            AssertEx.True(coordinator.TryReroll(out error), error);
+            AssertEx.Equal(historyBefore + 1, coordinator.ActiveSession.History.Count);
+        }
+
+        internal static void ReentrantRerollIsRefusedBeforeRngDraw()
+        {
+            TestEnvironment environment = TestEnvironment.Create();
+            var random = new SequenceRandomSource(Enumerable.Repeat(6, 72).ToArray());
+            CharacterCreationCoordinator coordinator = OpenProductCoordinator(
+                environment, random, out FakeState state);
+            AssertEx.True(coordinator.TryRoll(out string error), error);
+            bool nestedSucceeded = true;
+            string nestedError = "unexpected";
+            state.OnApplyActionHook = () =>
+            {
+                nestedSucceeded = coordinator.TryReroll(out nestedError);
+            };
+            AssertEx.True(coordinator.TryReroll(out error), error);
+            AssertEx.True(!nestedSucceeded);
+            AssertEx.True(nestedError == null);
+            AssertEx.Equal(48, random.Calls);
+            AssertEx.Equal(2, coordinator.ActiveSession.History.Count);
         }
 
         internal static void PointBuyReturnRefreshesDerivedAllowance()

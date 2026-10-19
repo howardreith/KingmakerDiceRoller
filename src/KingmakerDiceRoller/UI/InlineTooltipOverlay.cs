@@ -60,7 +60,10 @@ namespace KingmakerDiceRoller.UI
 
         private void LateUpdate()
         {
-            if (trigger == null || !trigger.gameObject.activeInHierarchy)
+            InlineArrowTooltip owner = trigger == null ? null :
+                trigger.GetComponent<InlineArrowTooltip>();
+            if (trigger == null || !trigger.gameObject.activeInHierarchy ||
+                owner == null || !owner.WantsTooltip)
             {
                 if (panel != null) panel.gameObject.SetActive(false);
                 trigger = null;
@@ -79,7 +82,7 @@ namespace KingmakerDiceRoller.UI
             Vector2 oneLine = label.GetPreferredValues(label.text);
             float width = Mathf.Clamp(oneLine.x + 28f, 160f, maximumWidth);
             Vector2 wrapped = label.GetPreferredValues(label.text, width - 28f, 0f);
-            float height = Mathf.Clamp(wrapped.y + 26f, 38f,
+            float height = Mathf.Clamp(wrapped.y + 20f, 34f,
                 Mathf.Max(38f, bounds.rect.height - 2f * Inset));
             panel.sizeDelta = new Vector2(width, height);
             measuredWidth = bounds.rect.width;

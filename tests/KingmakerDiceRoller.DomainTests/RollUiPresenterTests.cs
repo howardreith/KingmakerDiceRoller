@@ -562,6 +562,7 @@ namespace KingmakerDiceRoller.DomainTests
             public RollSession ActiveSession => null;
             public bool CanAttachNativePanel => UiSnapshot.SessionAvailable;
             public PointBuyReturnOutcome LastPointBuyReturn => PointBuyReturnOutcome.None;
+            public bool IsCommandBusy { get; set; }
             internal int CommandCalls { get; private set; }
             internal int GeneratedRolls { get; private set; }
             internal AbilityScore LastAbility { get; private set; }

@@ -162,6 +162,36 @@ namespace KingmakerDiceRoller.Integration
                     progressionType.FullName + ".TotalIntelligenceSkillPoints is not a writable Int32 contract.");
             }
 
+            MemberInfo totalSkillPoints = ReflectionAccess.RequireInstanceMember(
+                levelUpStateType, "TotalSkillPoints");
+            MemberInfo spellSelections = ReflectionAccess.RequireInstanceMember(
+                levelUpStateType, "SpellSelections");
+            Type spellListType = ReflectionAccess.GetMemberType(spellSelections);
+            if (ReflectionAccess.GetMemberType(totalSkillPoints) != typeof(int) ||
+                !spellListType.IsGenericType ||
+                spellListType.GetGenericTypeDefinition() != typeof(List<>))
+                throw new ContractResolutionException("Exact LevelUpState skill/spell allowance caches were not found.");
+            Type spellDataType = spellListType.GetGenericArguments()[0];
+            if (spellDataType.FullName != "Kingmaker.UnitLogic.Class.LevelUp.SpellSelectionData")
+                throw new ContractResolutionException("LevelUpState.SpellSelections has an unexpected element type.");
+            MemberInfo spellLevelCount = ReflectionAccess.RequireInstanceMember(spellDataType, "LevelCount");
+            MemberInfo spellExtraMaxLevel = ReflectionAccess.RequireInstanceMember(spellDataType, "ExtraMaxLevel");
+            Type spellStatesType = ReflectionAccess.GetMemberType(spellLevelCount);
+            if (!spellStatesType.IsArray ||
+                ReflectionAccess.GetMemberType(spellExtraMaxLevel) != typeof(int))
+                throw new ContractResolutionException("SpellSelectionData allowance fields have unexpected types.");
+            MemberInfo selectedSpells = ReflectionAccess.RequireInstanceMember(
+                spellStatesType.GetElementType(), "SpellSelections");
+            if (!ReflectionAccess.GetMemberType(selectedSpells).IsArray)
+                throw new ContractResolutionException("SpellSelectionState.SpellSelections is not an array.");
+            var derivedAllowances = new KingmakerDerivedAllowanceContracts(
+                totalSkillPoints, spellSelections, spellLevelCount, spellExtraMaxLevel, selectedSpells);
+            evidence.Add("DerivedAllowance=" + totalSkillPoints.DeclaringType.FullName + "." + totalSkillPoints.Name);
+            evidence.Add("DerivedAllowance=" + spellSelections.DeclaringType.FullName + "." + spellSelections.Name);
+            evidence.Add("DerivedAllowance=" + spellLevelCount.DeclaringType.FullName + "." + spellLevelCount.Name);
+            evidence.Add("DerivedAllowance=" + spellExtraMaxLevel.DeclaringType.FullName + "." + spellExtraMaxLevel.Name);
+            evidence.Add("DerivedAllowance=" + selectedSpells.DeclaringType.FullName + "." + selectedSpells.Name);
+
             MethodInfo isCustomCompanion = unitHelperType.GetMethod(
                 "IsCustomCompanion",
                 StaticFlags,
@@ -659,7 +689,8 @@ namespace KingmakerDiceRoller.Integration
                 allocatorPointsCaption,
                 allocatorFrame,
                 allocatorRaceBonusContainer,
-                evidence);
+                evidence,
+                derivedAllowances);
         }
 
         private static Type RequireType(Assembly assembly, string fullName)

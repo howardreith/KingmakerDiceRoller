@@ -17,6 +17,7 @@ namespace KingmakerDiceRoller.Domain
 
     public sealed class RollSessionLifecycle
     {
+        private RollSessionState beforeRestore;
         public RollSessionLifecycle()
         {
             State = RollSessionState.Created;
@@ -61,7 +62,11 @@ namespace KingmakerDiceRoller.Domain
 
         public void BeginPointBuyRestore()
         {
-            Transition(RollSessionState.Roll, RollSessionState.RestoringPointBuy);
+            if (State != RollSessionState.Roll && State != RollSessionState.EnteringRollMode &&
+                State != RollSessionState.PointBuy)
+                throw new InvalidOperationException("Only a live starting-score session can restore Point Buy.");
+            beforeRestore = State;
+            State = RollSessionState.RestoringPointBuy;
         }
 
         public void MarkPointBuyRestored()
@@ -71,7 +76,7 @@ namespace KingmakerDiceRoller.Domain
 
         public void AbortPointBuyRestore()
         {
-            Transition(RollSessionState.RestoringPointBuy, RollSessionState.Roll);
+            Transition(RollSessionState.RestoringPointBuy, beforeRestore);
         }
 
         public void Complete()

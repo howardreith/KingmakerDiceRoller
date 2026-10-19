@@ -37,7 +37,7 @@ namespace KingmakerDiceRoller.CharacterCreation
                 return true;
             }
 
-            if (session.IsPointBuyMode)
+            if (session.IsPointBuyMode && !session.RecoveryRequired)
             {
                 observation = ObserveRestoration(session, contracts);
                 error = observation.IsVerified
@@ -46,7 +46,9 @@ namespace KingmakerDiceRoller.CharacterCreation
                 return observation.IsVerified;
             }
 
-            if (!session.IsRollMode)
+            if (!session.IsRollMode &&
+                !(session.RecoveryRequired &&
+                  (session.IsEnteringRollMode || session.IsPointBuyMode)))
             {
                 error = "The session is already restoring point buy.";
                 return false;
@@ -109,6 +111,12 @@ namespace KingmakerDiceRoller.CharacterCreation
             catch (Exception exception)
             {
                 logger.Exception("Restore point-buy allocator on the newest live preview", exception);
+                if (session.Assignment == null)
+                {
+                    session.MarkPointBuyRestoreFailed();
+                    error = exception.Message;
+                    return false;
+                }
                 try
                 {
                     int generation = session.Generation;
@@ -148,10 +156,10 @@ namespace KingmakerDiceRoller.CharacterCreation
                 pristine.TotalPoints,
                 contracts);
 
-            int[] assignment = session.Assignment.ToAssignedArray();
-            bool rolledDistributionMatches = assignment.SequenceEqual(
+            int[] assignment = session.Assignment == null ? null : session.Assignment.ToAssignedArray();
+            bool rolledDistributionMatches = assignment != null && assignment.SequenceEqual(
                 statAccess.ReadDistributionValues(session.Distribution, contracts));
-            bool rolledUnitMatches = assignment.SequenceEqual(
+            bool rolledUnitMatches = assignment != null && assignment.SequenceEqual(
                 statAccess.ReadUnitBaseValues(session.Unit, contracts));
             bool available = statAccess.ReadDistributionAvailable(session.Distribution, contracts);
             int remaining = statAccess.ReadDistributionPoints(session.Distribution, contracts);
@@ -165,7 +173,7 @@ namespace KingmakerDiceRoller.CharacterCreation
                 rolledUnitMatches,
                 fullBudget,
                 pristine.CapturedBeforeRollOwnership && live.IsVerified &&
-                assignment.SequenceEqual(pristine.Values.DistributionValues) &&
+                assignment != null && assignment.SequenceEqual(pristine.Values.DistributionValues) &&
                 assignment.SequenceEqual(pristine.Values.UnitValues));
         }
     }

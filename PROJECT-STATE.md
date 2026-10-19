@@ -1,5 +1,23 @@
 # Project state
 
+## 0.1.15 native-stat UI v4 review candidate
+
+Candidate version `0.1.15` continues draft PR #7 on
+`codex/native-stat-ui-v2`. The v4 mission targets intermittent Reroll
+failure, the Value numeral, owned notice placement, complete racial-selector
+clearance, formula tooltip triggers, and secondary-control tooltip removal.
+The implementation captures native skill and spell allowance state before a
+candidate, verifies it after rollback, admits commands before RNG use, and
+quarantines incomplete recovery. Native exceptions now retain their inner
+stage and stack in diagnostics. The original intermittent in-game failure
+cause is unproven because no live run or log is available.
+
+The owner requested v4 fixes and a reviewable candidate. No 0.1.15 GitHub
+release has been requested. The published 0.1.14 testing alpha is unchanged.
+See `docs/NATIVE-STAT-UI-V4-CANDIDATE.md` for the exact candidate and
+qualification record. Actual-game visual, input, and compatibility checks
+remain **NOT RUN**.
+
 ## 0.1.14 native-stat UI presentation alpha
 
 Candidate version `0.1.14` continues draft PR #7 on
