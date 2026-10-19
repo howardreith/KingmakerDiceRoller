@@ -1,6 +1,6 @@
 # Project state
 
-## 0.1.12 inline native-stat UI review candidate
+## 0.1.12 inline native-stat UI alpha
 
 Mission branch `codex/inline-native-stat-ui` carries version `0.1.12` and starts from published v0.1.11
 record `ee49f10`. The unchanged UMM ID, assembly, saved-array schema, and
@@ -35,7 +35,17 @@ from order, text, or score values.
   NOT RUN. The computer-use helper exited unexpectedly twice before window
   inventory; no game UI was observed or driven.
 - Compatibility-qualified: **No** — no new live compatibility sweep.
-- Published: **No** — no merge, tag, stable release, or Nexus upload.
+- Alpha-published: **Yes** — on 2026-10-19 the owner requested an alpha on
+  GitHub for installation on another computer, with a fresh build and without
+  rerunning the full release suite. The annotated `v0.1.12` tag points to
+  `fff39292b8d8f86988a96d1ac139d1eb51213b24` on the mission branch.
+  [GitHub release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.12)
+  is a published prerelease; v0.1.11 remains latest stable. The uploaded ZIP
+  digest matches the validated candidate SHA-256 above. A fresh Release build
+  had zero warnings/errors and `Package.ps1` validated the identical ZIP;
+  the full suite was not rerun for this publication. No merge, stable release,
+  or Nexus upload occurred. Runtime/visual and compatibility qualification
+  remain **No**.
 
 
 ## Current 0.1.11 settings-panel cleanup release

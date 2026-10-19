@@ -16,14 +16,15 @@ rebuilt.
 
 ## Release status
 
-**0.1.12 review candidate — native stat UI.** Roll/Reroll, Save, Load,
+**0.1.12 alpha prerelease — native stat UI.** Roll/Reroll, Save, Load,
 Return to Point Buy, Options, Details, and direct roll-method selection now
 live beside the native allocator. Session History and persistent Saved arrays
 are both reachable through Load, including from Point Buy. The prior drawer
 remains a recovery interface if exact inline attachment cannot be verified.
 The candidate passes source and installed-contract checks; its changed screen
-still needs actual-game visual and interaction qualification. 0.1.11 remains
-the latest published release.
+still needs actual-game visual and interaction qualification. The
+[v0.1.12 alpha](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.12)
+is available for testing, while 0.1.11 remains the latest stable release.
 
 **Release 0.1.11 — cleaner settings panel (2026-10-15).** The Unity Mod
 Manager settings panel now shows where roll controls appear, one status line,
@@ -144,10 +145,10 @@ Roll or Recall and restored exactly; neither 20 nor 25 is hard-coded.
 
 ## Installation
 
-For a focused 0.1.12 candidate test, install the qualified local
-`KingmakerDiceRoller-0.1.12.zip` from `artifacts/candidates/<commit>/` with
-Unity Mod Manager. It is a review candidate, not a published release. The
-published stable download remains 0.1.11:
+For a focused 0.1.12 alpha test, download **KingmakerDiceRoller-0.1.12.zip**
+from the [v0.1.12 alpha release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.12)
+Assets and install it with Unity Mod Manager. The published stable download
+remains 0.1.11:
 
 Download **KingmakerDiceRoller-0.1.11.zip** from the
 [v0.1.11 release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.11)

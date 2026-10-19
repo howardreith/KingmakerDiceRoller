@@ -1,8 +1,12 @@
-# 0.1.12 native stat UI candidate
+# 0.1.12 native stat UI alpha
 
-The mission branch packages a review candidate for the inline native ability
-page. The public release remains 0.1.11; this candidate has no merge, tag,
-publication, or permanent-install authorization. Use Windows PowerShell 5.1
+The owner requested a GitHub alpha on 2026-10-19 for installation on another
+computer. [v0.1.12](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.12)
+is a published prerelease from the mission branch; 0.1.11 remains latest
+stable. The alpha ZIP is SHA-256
+`53e1344d0bd1d93b52f7fadf66a20c64993363462e432d7c74302518940080c0`.
+Its fresh Release build and package validation passed; actual-game interaction
+and visual qualification remain unrun. Use Windows PowerShell 5.1
 for the .NET Framework respec contract verifier. From a clean committed branch:
 
 ```powershell
