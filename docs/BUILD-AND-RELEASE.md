@@ -1,4 +1,17 @@
-# 0.1.12 native stat UI alpha
+# Build and release
+
+## 0.1.13 revised native-stat candidate
+
+The revised UI is packaged from clean implementation commit
+`b99cbfc5eb07070c916d82e06d4a7dd72b4acc34` at
+`artifacts/candidates/b99cbfc5eb07070c916d82e06d4a7dd72b4acc34/KingmakerDiceRoller-0.1.13.zip`.
+Its SHA-256 is `819744d22fdcf1dfffca92619547b7c5c17db91390cfb9ffcb22c6b52c53e2be`.
+`Qualify.ps1 -Build -Package -Candidate` passed source, deterministic domain,
+installed-contract, Release build, and strict package checks. This candidate
+has not been published as a release or verified in a rendered game session;
+see `docs/NATIVE-STAT-UI-V2-CANDIDATE.md`.
+
+## 0.1.12 native stat UI alpha (historical)
 
 The owner requested a GitHub alpha on 2026-10-19 for installation on another
 computer. [v0.1.12](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.12)
