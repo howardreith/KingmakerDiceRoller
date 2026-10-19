@@ -51,6 +51,7 @@ namespace KingmakerDiceRoller.UI
         private readonly CollapsedAccessTabLayoutCalculator accessTabLayoutCalculator;
         private readonly List<AssignmentWidgets> assignmentRows = new List<AssignmentWidgets>();
         private readonly List<Button> inlineDownArrows = new List<Button>();
+        private readonly List<Button> inlinePresetChoices = new List<Button>();
         private readonly List<GameObject> inlineOwnedArrows = new List<GameObject>();
         private readonly List<NativeButtonVisualState> nativeRowVisuals = new List<NativeButtonVisualState>();
         private NativeViewCommandBinding viewBinding;
@@ -947,12 +948,25 @@ namespace KingmakerDiceRoller.UI
                 string caption = choice == DiceRollPreset.CustomExpression
                     ? "Custom formula… — Edit the field"
                     : DiceRollRule.ForPreset(choice, LowScorePolicy.Tabletop).Expression + " — " +
-                        RollPanelPresenter.FormatPreset(choice);
-                CreateButton(presetPopup.transform, caption, nativeText, nativeButton,
-                    -1f, () => SelectInlinePreset(choice), 34f);
+                        PresetShortDescription(choice);
+                inlinePresetChoices.Add(CreateButton(presetPopup.transform, caption, nativeText,
+                    nativeButton, -1f, () => SelectInlinePreset(choice), 34f));
             }
             presetBlocker.SetActive(false);
             presetPopup.SetActive(false);
+        }
+
+        private static string PresetShortDescription(DiceRollPreset choice)
+        {
+            switch (choice)
+            {
+                case DiceRollPreset.FourD6DropLowest: return "Drop lowest";
+                case DiceRollPreset.FourD6RerollOnesDropLowest: return "Reroll ones";
+                case DiceRollPreset.ThreeD6: return "Three dice";
+                case DiceRollPreset.TwoD6PlusSix: return "Two dice + six";
+                case DiceRollPreset.OneD20: return "One d20";
+                default: return string.Empty;
+            }
         }
 
         private void OpenRollWorkspace()
@@ -1080,6 +1094,7 @@ namespace KingmakerDiceRoller.UI
                 if (arrow != null) { arrow.SetActive(false); Object.Destroy(arrow); }
             inlineOwnedArrows.Clear();
             inlineDownArrows.Clear();
+            inlinePresetChoices.Clear();
             if (presetPopup != null) { presetPopup.SetActive(false); Object.Destroy(presetPopup); }
             if (presetBlocker != null) { presetBlocker.SetActive(false); Object.Destroy(presetBlocker); }
             presetPopup = null;
@@ -2153,6 +2168,16 @@ namespace KingmakerDiceRoller.UI
             ShowValueBadge(showWorkspace, snapshot);
             SetVisible(presetBlocker, showWorkspace && inlineMenu == InlineMenuKind.Presets);
             SetVisible(presetPopup, showWorkspace && inlineMenu == InlineMenuKind.Presets);
+            DiceRollPreset selectedPreset = formulaDraft.CustomIntent
+                ? DiceRollPreset.CustomExpression : snapshot.Configuration.Preset;
+            for (int index = 0; index < inlinePresetChoices.Count; index++)
+            {
+                Button choice = inlinePresetChoices[index];
+                ColorBlock colors = choice.colors;
+                colors.normalColor = index == (int)selectedPreset
+                    ? new Color(1f, 0.83f, 0.68f, 1f) : Color.white;
+                choice.colors = colors;
+            }
             string policy = RollPanelPresenter.FormatPolicy(snapshot.Configuration.LowScorePolicy);
             bool policyActive = snapshot.Configuration.MinimumApplies;
             policyNoteLabel.text = policyActive
@@ -2249,7 +2274,8 @@ namespace KingmakerDiceRoller.UI
             LocalLayoutRect? field = TryGetLocalBounds(fieldRect, rootRect);
             if (!field.HasValue) return;
             float width = Mathf.Min(450f, rootRect.rect.width - 36f);
-            float height = 236f; // six 34px choices, 5 gaps, and 20px padding
+            LayoutRebuilder.ForceRebuildLayoutImmediate(popupRect);
+            float height = Mathf.Max(234f, LayoutUtility.GetPreferredHeight(popupRect));
             popupRect.sizeDelta = new Vector2(width, height);
             float left = Mathf.Clamp(field.Value.XMin, rootRect.rect.xMin + 18f,
                 rootRect.rect.xMax - width - 18f);
