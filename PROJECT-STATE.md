@@ -19,8 +19,11 @@ IL/contracts 30/30, and a zero-warning Release build. The installable ZIP is
 The exact artifact and six-item acceptance record are in
 `docs/NATIVE-STAT-UI-V3-CANDIDATE.md`. The Windows computer-use helper failed
 during initialization, before window discovery; actual-game visual and input
-checks remain **NOT RUN**. No 0.1.14 GitHub release has been requested or
-published.
+checks remain **NOT RUN**. On 2026-10-19 the owner requested another alpha
+release of this version. The earlier instruction to build and publish an alpha
+without rerunning the full release suite remains in effect. Testing-alpha
+publication is **authorized**; stable or runtime-qualified publication is not.
+The 0.1.14 GitHub release is pending.
 
 ## 0.1.13 revised native-stat UI candidate
 
