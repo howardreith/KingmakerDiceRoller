@@ -16,12 +16,13 @@ rebuilt.
 
 ## Release status
 
-**0.1.13 revised UI candidate — not published.** Ordinary Point Buy shows one
+**0.1.13 alpha prerelease — revised native stats UI.** Ordinary Point Buy shows one
 entry button. The Roll workspace has an editable formula, a full preset menu,
 Value in the ability badge, one downward swap column, direct Previous/Next,
 and a saved-array Load chooser. Low-score rules are in UMM settings. Source,
-build, and installed-contract checks are recorded in `PROJECT-STATE.md`;
-actual-game visual and interaction checks remain separate.
+build, and installed-contract checks are recorded in `PROJECT-STATE.md`.
+The [v0.1.13 alpha](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.13)
+is available for testing; actual-game visual and interaction checks remain open.
 
 **0.1.12 alpha prerelease — earlier native stat UI.** Roll/Reroll, Save, Load,
 Return to Point Buy, Options, Details, and direct roll-method selection now
@@ -152,10 +153,11 @@ Roll or Recall and restored exactly; neither 20 nor 25 is hard-coded.
 
 ## Installation
 
-The 0.1.13 candidate ZIP is recorded in
-[the candidate evidence](docs/NATIVE-STAT-UI-V2-CANDIDATE.md). It has not been
-published as a GitHub release. Install it with Unity Mod Manager to test the
-revised UI, or use the published 0.1.12 alpha below.
+For the revised UI, download **KingmakerDiceRoller-0.1.13.zip** from the
+[v0.1.13 alpha release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.13)
+Assets and install it with Unity Mod Manager. The package and validation
+details are in [the candidate evidence](docs/NATIVE-STAT-UI-V2-CANDIDATE.md).
+The earlier 0.1.12 alpha remains available below.
 
 For a focused 0.1.12 alpha test, download **KingmakerDiceRoller-0.1.12.zip**
 from the [v0.1.12 alpha release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.12)

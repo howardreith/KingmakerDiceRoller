@@ -26,12 +26,23 @@ unchanged.
   helper exited before it could list windows on two attempts. No after
   screenshots or in-game click/input observations were obtained.
 - Compatibility sweep: **NOT RUN** for 0.1.13.
-- Official release: **No**; this is an implementation candidate.
+- Stable/official release: **No**; this is a testing prerelease.
 - Testing-alpha publication authorized: **Yes** — on 2026-10-19 the owner
   requested another alpha release of the new version. The earlier instruction
   to build and publish an alpha without rerunning the full release suite
   remains in effect. This does not authorize a stable or runtime-qualified
   release.
+- Alpha-published: **Yes** — the annotated `v0.1.13` tag points to
+  `528b827e198769e4818d65f637a1ff1a4d4b0b9a` on the v2 feature branch.
+  The [GitHub prerelease](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.13)
+  contains the validated ZIP and `SHA256SUMS.txt`; GitHub reports the ZIP's
+  SHA-256 as `e22827efea6450a089da8e4582a5fb7b82de3909c4d5b884e6850c9729067667`.
+  A fresh Release build and package validation passed immediately before
+  publication, and the ZIP/DLL matched the fully qualified implementation
+  candidate byte-for-byte. The full suite was not rerun for publication, per
+  the owner's alpha instruction. v0.1.11 remains latest stable. No merge,
+  stable release, or Nexus upload occurred. Runtime/visual and compatibility
+  qualification remain **No**.
 See `docs/NATIVE-STAT-UI-V2-CANDIDATE.md` for the acceptance evidence and
 remaining live checks. [Draft PR #7](https://github.com/howardreith/KingmakerDiceRoller/pull/7)
 reviews this revision against the existing 0.1.12 alpha branch.

@@ -7,9 +7,12 @@ The revised UI is packaged from clean implementation commit
 `artifacts/candidates/46a1f2c5fdf236ef48dc4e5ffb4a78316d6bcf05/KingmakerDiceRoller-0.1.13.zip`.
 Its SHA-256 is `e22827efea6450a089da8e4582a5fb7b82de3909c4d5b884e6850c9729067667`.
 `Qualify.ps1 -Build -Package -Candidate` passed source, deterministic domain,
-installed-contract, Release build, and strict package checks. This candidate
-has not been published as a release or verified in a rendered game session;
-see `docs/NATIVE-STAT-UI-V2-CANDIDATE.md`.
+installed-contract, Release build, and strict package checks. A fresh Release
+build and package validation reproduced the identical ZIP for the
+[v0.1.13 testing alpha](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.13).
+The full suite was not rerun for publication, at the owner's request. Actual
+game visuals and interaction remain unverified; see
+`docs/NATIVE-STAT-UI-V2-CANDIDATE.md`.
 
 ## 0.1.12 native stat UI alpha (historical)
 

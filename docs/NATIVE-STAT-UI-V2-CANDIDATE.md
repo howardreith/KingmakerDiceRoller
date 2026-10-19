@@ -10,8 +10,10 @@
 - ZIP SHA-256: `e22827efea6450a089da8e4582a5fb7b82de3909c4d5b884e6850c9729067667`.
 - DLL SHA-256: `534d9725421341c4ca2030041356d2d8aa29544639ed3e7b36e95e850a4501c3`.
 - Target: Pathfinder: Kingmaker 2.1.7b, .NET Framework 4.7.2, UMM/Harmony12.
-- Publication: **No GitHub or official release** for 0.1.13. The published
-  0.1.12 alpha is an earlier build and is not evidence for this revision.
+- Publication: [v0.1.13 testing alpha](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.13)
+  with the byte-identical ZIP and checksum asset. It is not a stable or
+  runtime-qualified release. The published 0.1.12 alpha is an earlier build
+  and is not evidence for this revision.
 
 ## Implemented behavior
 
