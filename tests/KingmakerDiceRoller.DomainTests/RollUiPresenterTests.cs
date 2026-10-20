@@ -42,6 +42,17 @@ namespace KingmakerDiceRoller.DomainTests
             AssertEx.True(model.Summary.Contains("4d[6]kh3"));
         }
 
+        internal static void NativeValueBadgeShowsPointBuyEquivalent()
+        {
+            RollUiSnapshot rolled = Snapshot(
+                RollSessionMode.Roll, new[] { 16, 15, 14, 12, 10, 8 });
+            AssertEx.Equal(75, rolled.Total);
+            AssertEx.Equal(22, rolled.PointBuyEquivalent);
+            AssertEx.Equal("22", NativeUiPresentation.FormatValueBadge(rolled));
+            AssertEx.Equal("—", NativeUiPresentation.FormatValueBadge(
+                Snapshot(RollSessionMode.PointBuy, null)));
+        }
+
         internal static void ExtendedSummaryIsMarked()
         {
             RollUiSnapshot snapshot = new RollUiSnapshot(

@@ -1,5 +1,17 @@
 # Project state
 
+## 0.1.16 Value badge correction candidate
+
+The owner corrected the intended meaning of the native Value badge: in Roll
+Mode it should display the point-buy equivalent of the six base scores, not
+their arithmetic sum. The snapshot already calculates both; the owned badge
+now formats `PointBuyEquivalent` while Details retains both numbers. The
+Point Buy badge remains fully native. Version `0.1.16` is a review candidate
+because v0.1.15 is already published. No 0.1.16 release has been requested.
+The published v0.1.15 alpha is unchanged. See
+`docs/VALUE-BADGE-0.1.16-CANDIDATE.md` for qualification and the remaining
+live visual check.
+
 ## 0.1.15 native-stat UI v4 review candidate
 
 Candidate version `0.1.15` continues draft PR #7 on

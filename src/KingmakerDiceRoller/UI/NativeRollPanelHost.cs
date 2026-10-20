@@ -1127,9 +1127,7 @@ namespace KingmakerDiceRoller.UI
                 badgeOwnedValue.gameObject.SetActive(true);
                 badgeActiveBackground.SetActive(true);
                 badgeOwnedValue.transform.SetAsLastSibling();
-                badgeOwnedValue.text = snapshot.Mode == RollSessionMode.Roll && snapshot.AssignedValues != null
-                    ? snapshot.Total.ToString(CultureInfo.InvariantCulture)
-                    : "—";
+                badgeOwnedValue.text = NativeUiPresentation.FormatValueBadge(snapshot);
             }
             else
             {

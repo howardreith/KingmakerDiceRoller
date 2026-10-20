@@ -4,6 +4,17 @@ Source, exact-contract, build, package, and installation qualification do not
 replace this live gate. Preserve logs/screenshots outside Git and collect
 evidence only after fully exiting Kingmaker.
 
+## 0.1.16 Value badge correction (NOT RUN)
+
+Install the exact candidate from `docs/VALUE-BADGE-0.1.16-CANDIDATE.md`.
+On a supported character, roll the base array 16, 15, 14, 12, 10, 8: Value
+must show **22**, while Details shows total **75** and point-buy equivalent
+**22**. Reassign two scores, navigate away and back through History, save and
+recall the array, then Reroll; Value must always match the active array's
+point-buy equivalent, without racial modifiers. In Roll-ready it shows a
+dash. Return to Point Buy and confirm the native Points caption and remaining
+budget return. Record the full badge at 1920×1200 and a second UI scale.
+
 ## 0.1.15 v4 native-stat UI (NOT RUN)
 
 Install the exact candidate ZIP recorded in

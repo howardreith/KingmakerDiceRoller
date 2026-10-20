@@ -87,9 +87,11 @@ baked into the array.
 
 ## Value
 
-The ability allocator's Value badge displays the base rolled total. Racial
-adjustments and swaps do not change it. Returning to Point Buy restores the
-native Points caption and live remaining-point display.
+The ability allocator's Value badge displays the rolled array's point-buy
+equivalent. It is calculated from the six base scores, so racial adjustments
+and assignment swaps do not change it. The six-score total remains available
+in Details. Returning to Point Buy restores the native Points caption and
+live remaining-point display.
 
 ## History
 

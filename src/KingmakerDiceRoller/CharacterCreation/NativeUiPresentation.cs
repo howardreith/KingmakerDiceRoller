@@ -1,10 +1,19 @@
 using System;
+using System.Globalization;
 
 namespace KingmakerDiceRoller.CharacterCreation
 {
     // Cosmetic failures never enter the coordinator's mechanic recovery path.
     public static class NativeUiPresentation
     {
+        public static string FormatValueBadge(RollUiSnapshot snapshot)
+        {
+            return snapshot != null && snapshot.Mode == RollSessionMode.Roll &&
+                snapshot.AssignedValues != null
+                ? snapshot.PointBuyEquivalent.ToString(CultureInfo.InvariantCulture)
+                : "—";
+        }
+
         public static T ResolveTheme<T>(Func<T> resolve, Action<string> diagnostic) where T : class
         {
             try { return resolve(); }

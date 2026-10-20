@@ -186,6 +186,7 @@ namespace KingmakerDiceRoller.DomainTests
                 new TestCase("old UI cannot dispatch to new owner", NativeViewCommandBindingTests.OldWidgetCannotRouteToNewOwnerOrAllocator),
                 new TestCase("roll panel assignment rows", RollUiPresenterTests.RollSnapshotBuildsSixAssignmentRows),
                 new TestCase("roll panel summary", RollUiPresenterTests.RollSummaryShowsTotalEquivalentAndRule),
+                new TestCase("native Value badge shows point-buy equivalent", RollUiPresenterTests.NativeValueBadgeShowsPointBuyEquivalent),
                 new TestCase("extended panel summary", RollUiPresenterTests.ExtendedSummaryIsMarked),
                 new TestCase("custom expression panel visibility", RollUiPresenterTests.CustomExpressionVisibilityFollowsPreset),
                 new TestCase("tabletop minimum control state", RollUiPresenterTests.TabletopPolicyLeavesMinimumInactive),

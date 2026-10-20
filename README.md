@@ -2,7 +2,7 @@
 
 Mr. Bard's Kingmaker Roll For Stats UI is a standalone Unity Mod Manager mod
 for Pathfinder: Kingmaker 2.1.7b. It adds an explicit rolled-ability workflow
-to the native custom-character ability page. The 0.1.15 candidate starts with
+to the native custom-character ability page. The 0.1.16 candidate starts with
 one **Roll for Stats** button, then opens a compact formula and action workspace
 within Kingmaker's ability allocator.
 
@@ -15,6 +15,11 @@ when you press **Roll**, never because a preview, race, phase, or UI object was
 rebuilt.
 
 ## Release status
+
+**0.1.16 review candidate — Value badge correction.** In Roll Mode, the
+native Value badge now shows the six base scores' point-buy equivalent. The
+six-score total remains in Details. This candidate is not yet published;
+the 0.1.15 testing alpha remains available below.
 
 **0.1.15 testing alpha — native stats UI v4.** This revision verifies
 derived skill and spell restoration after a failed roll, blocks reentrant
