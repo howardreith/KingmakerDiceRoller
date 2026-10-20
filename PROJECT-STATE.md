@@ -15,6 +15,15 @@ is a review candidate because v0.1.16 is already published. No 0.1.17
 release has been requested. The published v0.1.16 alpha is unchanged. See
 `docs/VALUE-BADGE-COLOR-0.1.17-CANDIDATE.md` for qualification and the
 remaining live check.
+Clean implementation commit `2f480e0f3c55986756d761e5d793aeb04582e771`
+passed `Qualify.ps1 -Build -Package -Candidate`: release gate 20/20,
+deterministic C# runner 416/416, installed Kingmaker contracts, 11 respec
+checks, 30 native UI IL/contracts, zero-warning Release build, and strict
+package validation. The installable ZIP is
+`artifacts/candidates/2f480e0f3c55986756d761e5d793aeb04582e771/KingmakerDiceRoller-0.1.17.zip`
+(SHA-256 `1ea0856d5440e20390ca734093c051990ef54dbf006616d64c851a87df84f213`).
+The Windows computer-use process exited before window discovery, so the
+rendered page-return badge remains **NOT RUN**.
 
 ## 0.1.16 Value badge correction candidate
 
