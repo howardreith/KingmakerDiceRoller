@@ -2,7 +2,7 @@
 
 Mr. Bard's Kingmaker Roll For Stats UI is a standalone Unity Mod Manager mod
 for Pathfinder: Kingmaker 2.1.7b. It adds an explicit rolled-ability workflow
-to the native custom-character ability page. The 0.1.17 testing alpha starts with
+to the native custom-character ability page. Version 0.2.0 starts with
 one **Roll for Stats** button, then opens a compact formula and action workspace
 within Kingmaker's ability allocator.
 
@@ -15,6 +15,15 @@ when you press **Roll**, never because a preview, race, phase, or UI object was
 rebuilt.
 
 ## Release status
+
+**0.2.0 stable release — native stats UI.** The owner requested merging the
+native stats UI work to `main` and publishing version 0.2.0. It brings the
+Roll workspace into Kingmaker's ability allocator, including formula presets,
+Reroll, History, saved arrays, score assignment, and a Value badge showing
+the rolled array's point-buy equivalent. The badge keeps its intended color
+after returning to the ability page. Offline qualification and release
+provenance are recorded in `PROJECT-STATE.md`; in-game visual and compatibility
+checks remain unverified by the development agent.
 
 **0.1.17 testing alpha — Value badge color after page return.** The owned
 Value numeral and caption now use Kingmaker's available-points colors when
@@ -61,7 +70,7 @@ remains a recovery interface if exact inline attachment cannot be verified.
 The candidate passes source and installed-contract checks; its changed screen
 still needs actual-game visual and interaction qualification. The
 [v0.1.12 alpha](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.12)
-is available for testing, while 0.1.11 remains the latest stable release.
+is available for testing; 0.1.11 was the previous stable release.
 
 **Release 0.1.11 — cleaner settings panel (2026-10-15).** The Unity Mod
 Manager settings panel now shows where roll controls appear, one status line,
@@ -182,6 +191,11 @@ Roll or Recall and restored exactly; neither 20 nor 25 is hard-coded.
 
 ## Installation
 
+For version 0.2.0, download **KingmakerDiceRoller-0.2.0.zip** from the
+[v0.2.0 release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.2.0)
+Assets and install it with Unity Mod Manager. Use the ZIP in Assets, not
+GitHub's automatically generated source archive.
+
 For the 0.1.17 testing alpha, download **KingmakerDiceRoller-0.1.17.zip** from
 the [v0.1.17 release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.17)
 Assets and install it with Unity Mod Manager. Qualification and the remaining
@@ -210,8 +224,8 @@ The earlier 0.1.12 alpha remains available below.
 
 For a focused 0.1.12 alpha test, download **KingmakerDiceRoller-0.1.12.zip**
 from the [v0.1.12 alpha release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.12)
-Assets and install it with Unity Mod Manager. The published stable download
-remains 0.1.11:
+Assets and install it with Unity Mod Manager. The earlier stable download was
+0.1.11:
 
 Download **KingmakerDiceRoller-0.1.11.zip** from the
 [v0.1.11 release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.11)
@@ -222,7 +236,7 @@ Roller**; it is the same mod. Keep the installed UMM/Harmony libraries; no
 loader downgrade is required. GitHub's Source code archives are not mod
 packages.
 
-Version `0.1.11` is the current official release, published on 2026-10-15
+Version `0.1.11` was an earlier official release, published on 2026-10-15
 at the owner's direction without a new in-game test. Its code is the 0.1.10
 code apart from the UMM settings panel and its supporting status records.
 The new panel, the 0.1.9 caption fit and live visual, audio, runtime and

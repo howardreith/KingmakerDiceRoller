@@ -1,5 +1,19 @@
 # Build and release
 
+## 0.2.0 native stats UI stable release
+
+The owner requested merging the native stats UI mission branch into the
+default branch and publishing `v0.2.0` as a stable release. The guarded
+publisher must run from a clean `main` commit that exactly matches
+`origin/main`. It runs the full source, contract, Release build, package and
+strict validation gate, then creates the annotated tag and uploads the
+installable ZIP with `SHA256SUMS.txt`. The current `## Qualification truth`
+section in `PROJECT-STATE.md` records this specific owner authorization while
+keeping runtime qualification separate. Use
+`-Publish -ConfirmOwnerAuthorizedPreRuntimeRelease` with
+`-ReleaseNotesPath .\docs\RELEASE-NOTES-0.2.0.md`. The release remains marked
+as not runtime-qualified until live checks are recorded.
+
 ## 0.1.17 Value badge color alpha
 
 The [v0.1.17 testing alpha](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.17)

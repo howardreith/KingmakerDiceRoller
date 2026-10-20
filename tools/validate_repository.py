@@ -13,7 +13,7 @@ import xml.etree.ElementTree as ET
 ROOT = Path(__file__).resolve().parents[1]
 PUBLIC_DISPLAY_NAME = "Mr. Bard's Kingmaker Roll For Stats UI"
 PUBLIC_AUTHOR = 'Mr. Bard'
-LATEST_PUBLISHED_VERSION = '0.1.13'
+LATEST_PUBLISHED_VERSION = '0.1.17'
 REQUIRED = [
     'docs/NATIVE-UI-STYLE.md','CODEX-NATIVE-UI-RESKIN-STATE.md',
     'scripts/Verify-NativeUiContracts.ps1','tools/NativeUiContractProbe.cs',
@@ -176,19 +176,19 @@ def main():
     require(info['AssemblyName']=='KingmakerDiceRoller.dll','unexpected assembly name')
     require(info['EntryMethod']=='KingmakerDiceRoller.Main.Load','unexpected entry method')
     require(info['GameVersion']=='2.1.7','unexpected target game version')
-    require(info['Version']=='0.1.17','unexpected candidate version')
+    require(info['Version']=='0.2.0','unexpected release version')
     # Public branding changes only the displayed name and author; the identity above stays fixed.
     require(info['DisplayName']==PUBLIC_DISPLAY_NAME,'unexpected UMM display name')
     require(info['Author']==PUBLIC_AUTHOR,'unexpected UMM author')
     product_metadata=(ROOT/'src/KingmakerDiceRoller/ProductMetadata.cs').read_text(encoding='utf-8')
     assembly_info=(ROOT/'src/KingmakerDiceRoller/Properties/AssemblyInfo.cs').read_text(encoding='utf-8')
-    require('"0.1.17"' in product_metadata and '0.1.17-' not in product_metadata,
+    require('"0.2.0"' in product_metadata and '0.2.0-' not in product_metadata,
             'runtime product version is inconsistent')
     require(f'DisplayName = "{PUBLIC_DISPLAY_NAME}"' in product_metadata,
             'runtime display name is inconsistent with Info.json')
-    require('AssemblyVersion("0.1.17.0")' in assembly_info and
-            'AssemblyFileVersion("0.1.17.0")' in assembly_info and
-            'AssemblyInformationalVersion("0.1.17")' in assembly_info,
+    require('AssemblyVersion("0.2.0.0")' in assembly_info and
+            'AssemblyFileVersion("0.2.0.0")' in assembly_info and
+            'AssemblyInformationalVersion("0.2.0")' in assembly_info,
             'assembly version metadata is inconsistent')
     require(parse_umm_version('0.1.0-alpha.2') > parse_umm_version('0.1.0'),
             'UMM prerelease-ordering regression fixture is invalid')

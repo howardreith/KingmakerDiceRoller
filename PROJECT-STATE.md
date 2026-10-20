@@ -1,5 +1,46 @@
 # Project state
 
+## 0.2.0 stable release preparation
+
+On 2026-10-19 the owner requested merging the native stats UI mission branch
+into the GitHub default branch and publishing a stable `0.2.0` release. The
+0.1.17 testing alpha is the behavioral basis; the release preparation changes
+version metadata, release documentation and source validation only. The
+latest alpha's page-return badge fix and its reproducible smoke scenario
+remain included. The development agent has not completed in-game visual,
+save/reload or compatibility qualification, so runtime qualification remains
+**No**. The owner specifically authorized a stable release; the guarded
+publisher's pre-runtime path preserves that distinction. It must run full
+qualification on the final default-branch commit.
+
+## Qualification truth
+
+- Implemented: **Yes** — native stats UI work and 0.2.0 version metadata.
+- Source-qualified: **Yes** — the 0.2.0 preparation run passed release-gate
+  tests 20/20, repository validation 18 groups, the Python oracle 30/30 and
+  deterministic C# behavior cases 416/416.
+- Contract-qualified: **Yes** — installed Kingmaker 2.1.7b read-only
+  contracts, respec checks 11/11 and native UI IL/contracts 30/30 passed.
+- Build-qualified: **Yes** — 0.2.0 Release build succeeded with zero warnings
+  and zero errors; DLL SHA-256
+  `cd3b60233f348bf634e76bdea44031952700054ab0f82766ebda51342823b3a5`.
+- Package-qualified: **Yes** — strict validation passed for the six-entry
+  preparation ZIP `artifacts/packages/KingmakerDiceRoller-0.2.0.zip` (SHA-256
+  `43f99fabcdd31192ecd5deb46533c2004fa64b59a432c4b094b85290f6dadaad`).
+  The guarded publisher must regenerate and validate the final ZIP from the
+  exact merge commit; this preparation ZIP is not the release asset.
+- Installed: **No** — the development agent has not installed 0.2.0 in game.
+- Focused runtime test: **NOT RUN** — live visual, input and save/reload checks.
+- Runtime-qualified: **No**.
+- Compatibility-qualified: **No**.
+- Release-authorized: **Yes** — the owner requested merge to default and a
+  stable 0.2.0 GitHub release on 2026-10-19.
+- Owner-authorized pre-runtime release: **Yes** — the owner authorized stable
+  v0.2.0 despite the unverified runtime checks; no runtime PASS is recorded.
+- Testing-prerelease-authorized: **No** — the requested release is stable.
+- Publicly released: **No** — pending merge, default-branch qualification and
+  publication.
+
 ## 0.1.17 Value badge color alpha
 
 The owner reported that the red Value badge's numeral turns gray after
@@ -275,7 +316,7 @@ It does not cover a Nexus upload or a permanent installation.
   context policy, ownership checks, native UI, branding and identifiers. The
   Nexus copy now describes 0.1.11.
 
-## Qualification truth
+## Qualification truth (0.1.11 historical)
 
 - Implemented: **Yes** — UMM panel presentation, structured panel state and
   documentation.
