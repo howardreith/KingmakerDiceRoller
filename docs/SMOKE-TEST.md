@@ -7,7 +7,7 @@ evidence only after fully exiting Kingmaker.
 ## 0.1.16 Value badge correction (NOT RUN)
 
 Install the exact candidate from `docs/VALUE-BADGE-0.1.16-CANDIDATE.md`.
-On a supported character, roll the base array 16, 15, 14, 12, 10, 8: Value
+With a test fixture yielding base array 16, 15, 14, 12, 10, 8: Value
 must show **22**, while Details shows total **75** and point-buy equivalent
 **22**. Reassign two scores, navigate away and back through History, save and
 recall the array, then Reroll; Value must always match the active array's

@@ -11,6 +11,15 @@ because v0.1.15 is already published. No 0.1.16 release has been requested.
 The published v0.1.15 alpha is unchanged. See
 `docs/VALUE-BADGE-0.1.16-CANDIDATE.md` for qualification and the remaining
 live visual check.
+Clean implementation commit `8e9d60d00a232e327c4207317ce4cdee8b7ee49a`
+passed `Qualify.ps1 -Build -Package -Candidate`: release gate 20/20,
+deterministic C# runner 416/416, installed Kingmaker contracts, 11 respec
+checks, 30 native UI IL/contracts, zero-warning Release build, and strict
+package validation. The installable ZIP is
+`artifacts/candidates/8e9d60d00a232e327c4207317ce4cdee8b7ee49a/KingmakerDiceRoller-0.1.16.zip`
+(SHA-256 `174e21f2c2ef0f65f0dbe66a8619dc3873f37daf49b504adce94e0ec57eb03ca`).
+The Windows computer-use process exited before window discovery, so the
+rendered badge remains **NOT RUN**.
 
 ## 0.1.15 native-stat UI v4 review candidate
 
