@@ -24,6 +24,14 @@ The Windows computer-use process exited before window discovery, so the
 rendered badge remains **NOT RUN**.
 The owner's earlier instruction says the full release test suite need not be
 rerun for alpha publication.
+The annotated `v0.1.16` tag points to release documentation commit
+`98b394cf33bf44b71ff7c8af7a6e8f496ee26f52` on the mission branch.
+The [GitHub testing prerelease](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.16)
+is published with the exact qualified ZIP and `SHA256SUMS.txt`; GitHub reports
+ZIP SHA-256 `174e21f2c2ef0f65f0dbe66a8619dc3873f37daf49b504adce94e0ec57eb03ca`.
+A fresh Release rebuild reproduced the qualified DLL byte for byte and strict
+ZIP validation passed immediately before publication. The full suite was not
+rerun for publication. v0.1.11 remains latest stable.
 
 ## 0.1.15 native-stat UI v4 review candidate
 

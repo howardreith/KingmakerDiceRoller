@@ -20,8 +20,7 @@ the arithmetic base-score total and the point-buy equivalent separately.
   gate 20/20, deterministic C# runner 416/416, installed Kingmaker contracts,
   respec checks 11, native UI IL/contracts 30/30, zero-warning Release build,
   and strict six-entry package validation.
-- Publication: owner authorized a `v0.1.16` GitHub testing prerelease after
-  candidate qualification. The v0.1.15 alpha remains published and unchanged.
+- Publication: [v0.1.16 testing alpha](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.16), containing this exact qualified ZIP and `SHA256SUMS.txt`. The annotated tag points to documentation-only commit `98b394cf33bf44b71ff7c8af7a6e8f496ee26f52`; v0.1.15 remains unchanged.
 - Actual-game visual check: **NOT RUN**. The Windows computer-use process
   exited before window discovery. Inspect the badge in Kingmaker at
   1920×1200 and another UI scale; see `docs/SMOKE-TEST.md`.

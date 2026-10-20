@@ -16,10 +16,11 @@ rebuilt.
 
 ## Release status
 
-**0.1.16 review candidate — Value badge correction.** In Roll Mode, the
+**0.1.16 testing alpha — Value badge correction.** In Roll Mode, the
 native Value badge now shows the six base scores' point-buy equivalent. The
-six-score total remains in Details. This candidate is not yet published;
-the 0.1.15 testing alpha remains available below.
+six-score total remains in Details. The
+[v0.1.16 alpha](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.16)
+is available for testing; the 0.1.15 alpha remains available below.
 
 **0.1.15 testing alpha — native stats UI v4.** This revision verifies
 derived skill and spell restoration after a failed roll, blocks reentrant
@@ -173,6 +174,11 @@ creation. The current allocation and actual live budget are captured before
 Roll or Recall and restored exactly; neither 20 nor 25 is hard-coded.
 
 ## Installation
+
+For the 0.1.16 testing alpha, download **KingmakerDiceRoller-0.1.16.zip** from
+the [v0.1.16 release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.16)
+Assets and install it with Unity Mod Manager. The qualification and remaining
+live check are in [the candidate evidence](docs/VALUE-BADGE-0.1.16-CANDIDATE.md).
 
 For the 0.1.15 testing alpha, download **KingmakerDiceRoller-0.1.15.zip** from
 the [v0.1.15 release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.15)

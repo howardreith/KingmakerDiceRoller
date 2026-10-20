@@ -1,7 +1,11 @@
 # Build and release
 
-## 0.1.16 Value badge correction candidate
+## 0.1.16 Value badge correction alpha
 
+The [v0.1.16 testing alpha](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.16)
+contains the exact qualified candidate ZIP. Its annotated tag points to
+release documentation commit `98b394cf33bf44b71ff7c8af7a6e8f496ee26f52`
+on `codex/native-stat-ui-v2`.
 The published 0.1.15 alpha is unchanged. Version 0.1.16 corrects the Roll
 Mode Value badge to show the active array's point-buy equivalent. The owner
 requested a GitHub testing alpha after candidate qualification. The exact
