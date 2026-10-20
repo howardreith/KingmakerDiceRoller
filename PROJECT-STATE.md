@@ -1,6 +1,6 @@
 # Project state
 
-## 0.1.17 Value badge color candidate
+## 0.1.17 Value badge color alpha
 
 The owner reported that the red Value badge's numeral turns gray after
 rolling, navigating to an earlier character-build page, then returning to
@@ -10,9 +10,10 @@ sets the native Points numeral to `m_TextDisableColor` when the allocator is
 complete. The mod copied that live numeral color into its owned badge each
 time it reattached. The owned numeral and caption now take the allocator's
 exact `m_TextAvailibalePointsColor` and `m_LabelAvailibalePointsColor`
-instead, leaving the native color transitions untouched. Version `0.1.17`
-is a review candidate because v0.1.16 is already published. No 0.1.17
-release has been requested. The published v0.1.16 alpha is unchanged. See
+instead, leaving the native color transitions untouched. The owner explicitly
+requested a new GitHub alpha after candidate qualification. A testing
+prerelease is authorized; stable or runtime-qualified publication is not.
+The published v0.1.16 alpha is unchanged. See
 `docs/VALUE-BADGE-COLOR-0.1.17-CANDIDATE.md` for qualification and the
 remaining live check.
 Clean implementation commit `2f480e0f3c55986756d761e5d793aeb04582e771`
@@ -24,6 +25,8 @@ package validation. The installable ZIP is
 (SHA-256 `1ea0856d5440e20390ca734093c051990ef54dbf006616d64c851a87df84f213`).
 The Windows computer-use process exited before window discovery, so the
 rendered page-return badge remains **NOT RUN**.
+The owner's earlier instruction says the full release test suite need not be
+rerun for alpha publication.
 
 ## 0.1.16 Value badge correction candidate
 

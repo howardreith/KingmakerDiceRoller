@@ -22,7 +22,8 @@ It does not change the native Points text or allocator behavior.
   gate 20/20, deterministic C# runner 416/416, installed Kingmaker contracts,
   respec checks 11, native UI IL/contracts 30/30, zero-warning Release build,
   and strict six-entry package validation.
-- Publication: review candidate only; v0.1.16 remains published unchanged.
+- Publication: owner authorized a GitHub testing prerelease from this exact
+  qualified ZIP; stable publication is not authorized.
 - Actual-game visual check: **NOT RUN**. The Windows computer-use process
   exited before window discovery. Use the scenario in `docs/SMOKE-TEST.md`
   after installation.

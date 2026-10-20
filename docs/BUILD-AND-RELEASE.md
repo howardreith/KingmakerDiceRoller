@@ -1,10 +1,15 @@
 # Build and release
 
-## 0.1.17 Value badge color candidate
+## 0.1.17 Value badge color alpha
 
-The published v0.1.16 alpha is unchanged. Version 0.1.17 corrects the owned
-Value badge's color after returning to the ability page during Roll Mode.
-It remains a review candidate until a release request. See
+The owner requested a GitHub testing alpha from the qualified v0.1.17
+candidate. The published v0.1.16 alpha is unchanged. Version 0.1.17 corrects
+the owned Value badge's color after returning to the ability page during Roll
+Mode. The exact ZIP from implementation commit
+`2f480e0f3c55986756d761e5d793aeb04582e771` is
+`artifacts/candidates/2f480e0f3c55986756d761e5d793aeb04582e771/KingmakerDiceRoller-0.1.17.zip`
+(SHA-256 `1ea0856d5440e20390ca734093c051990ef54dbf006616d64c851a87df84f213`).
+The full suite need not be rerun for alpha publication. See
 `docs/VALUE-BADGE-COLOR-0.1.17-CANDIDATE.md` for artifact provenance and the
 live visual-check status.
 
