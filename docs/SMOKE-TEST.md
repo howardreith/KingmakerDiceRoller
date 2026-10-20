@@ -4,6 +4,18 @@ Source, exact-contract, build, package, and installation qualification do not
 replace this live gate. Preserve logs/screenshots outside Git and collect
 evidence only after fully exiting Kingmaker.
 
+## 0.1.17 Value badge color after navigation (NOT RUN)
+
+Install the exact candidate from
+`docs/VALUE-BADGE-COLOR-0.1.17-CANDIDATE.md`. In a supported new character,
+roll several times, then navigate back to Heritage or Race and forward to the
+ability/skills page. Verify the point-buy equivalent numeral and Value caption
+retain their normal readable colors on the red circle. Repeat after History,
+Recall, a preview rebuild, and a second page round trip. Confirm the native
+Points caption and budget color return in Point Buy, and another character's
+ability page has no retained owned tint. Capture the full badge at 1920×1200
+and a second UI scale.
+
 ## 0.1.16 Value badge correction (NOT RUN)
 
 Install the exact candidate from `docs/VALUE-BADGE-0.1.16-CANDIDATE.md`.

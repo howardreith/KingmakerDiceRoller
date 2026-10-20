@@ -1,5 +1,21 @@
 # Project state
 
+## 0.1.17 Value badge color candidate
+
+The owner reported that the red Value badge's numeral turns gray after
+rolling, navigating to an earlier character-build page, then returning to
+the ability page. Installed Kingmaker 2.1.7b IL shows
+`CharBAbilityScoresAllocator.FillData()` calls `SetupVisualMarks()`, which
+sets the native Points numeral to `m_TextDisableColor` when the allocator is
+complete. The mod copied that live numeral color into its owned badge each
+time it reattached. The owned numeral and caption now take the allocator's
+exact `m_TextAvailibalePointsColor` and `m_LabelAvailibalePointsColor`
+instead, leaving the native color transitions untouched. Version `0.1.17`
+is a review candidate because v0.1.16 is already published. No 0.1.17
+release has been requested. The published v0.1.16 alpha is unchanged. See
+`docs/VALUE-BADGE-COLOR-0.1.17-CANDIDATE.md` for qualification and the
+remaining live check.
+
 ## 0.1.16 Value badge correction candidate
 
 The owner corrected the intended meaning of the native Value badge: in Roll

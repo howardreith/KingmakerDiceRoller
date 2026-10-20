@@ -566,6 +566,8 @@ namespace KingmakerDiceRoller.Integration
             FieldInfo allocatorPointsCaption = abilityAllocatorType.GetField("m_AvailibleSkillPointsLabel", InstanceFlags);
             FieldInfo allocatorFrame = abilityAllocatorType.GetField("m_Frame", InstanceFlags);
             FieldInfo allocatorRaceBonusContainer = abilityAllocatorType.GetField("m_RaceBonusContainer", InstanceFlags);
+            FieldInfo availableValueColor = abilityAllocatorType.GetField("m_TextAvailibalePointsColor", InstanceFlags);
+            FieldInfo availableCaptionColor = abilityAllocatorType.GetField("m_LabelAvailibalePointsColor", InstanceFlags);
             if (allocatorMainLabel == null ||
                 !string.Equals(allocatorMainLabel.FieldType.FullName, "TMPro.TextMeshProUGUI", StringComparison.Ordinal) ||
                 allocatorPointsValue == null || allocatorPointsCaption == null ||
@@ -574,7 +576,10 @@ namespace KingmakerDiceRoller.Integration
                 allocatorFrame == null ||
                 !string.Equals(allocatorFrame.FieldType.FullName, "UnityEngine.UI.Image", StringComparison.Ordinal) ||
                 allocatorRaceBonusContainer == null ||
-                !string.Equals(allocatorRaceBonusContainer.FieldType.FullName, "UnityEngine.GameObject", StringComparison.Ordinal))
+                !string.Equals(allocatorRaceBonusContainer.FieldType.FullName, "UnityEngine.GameObject", StringComparison.Ordinal) ||
+                availableValueColor == null || availableCaptionColor == null ||
+                !string.Equals(availableValueColor.FieldType.FullName, "UnityEngine.Color", StringComparison.Ordinal) ||
+                !string.Equals(availableCaptionColor.FieldType.FullName, "UnityEngine.Color", StringComparison.Ordinal))
             {
                 throw new ContractResolutionException("Native allocator label/frame/racial-bonus UI anchors were not found.");
             }
@@ -613,6 +618,8 @@ namespace KingmakerDiceRoller.Integration
                 "AbilityPanelStyles=" + abilityAllocatorType.FullName + ".m_MainLabel + m_Frame");
             evidence.Add("AbilityPointsBadge=" + abilityAllocatorType.FullName +
                 ".m_AvailibleSkillPointsLabel + m_AvailibleSkillPoints");
+            evidence.Add("AbilityPointsAvailableColors=" + abilityAllocatorType.FullName +
+                ".m_LabelAvailibalePointsColor + m_TextAvailibalePointsColor");
             evidence.Add(
                 "AbilityPanelAccessAnchor=" + abilityAllocatorType.FullName + ".m_RaceBonusContainer");
 
@@ -690,7 +697,9 @@ namespace KingmakerDiceRoller.Integration
                 allocatorFrame,
                 allocatorRaceBonusContainer,
                 evidence,
-                derivedAllowances);
+                derivedAllowances,
+                availableValueColor,
+                availableCaptionColor);
         }
 
         private static Type RequireType(Assembly assembly, string fullName)

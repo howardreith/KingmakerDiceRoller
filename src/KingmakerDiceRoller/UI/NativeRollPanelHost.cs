@@ -78,6 +78,8 @@ namespace KingmakerDiceRoller.UI
         private TextMeshProUGUI badgeNativeValue;
         private TextMeshProUGUI badgeOwnedCaption;
         private TextMeshProUGUI badgeOwnedValue;
+        private Color badgeAvailableValueColor;
+        private Color badgeAvailableCaptionColor;
         private GameObject badgeActiveBackground;
         private bool badgeCaptionOriginallyEnabled;
         private bool badgeValueOriginallyEnabled;
@@ -1049,6 +1051,14 @@ namespace KingmakerDiceRoller.UI
             inlineAbilityHeading = heading == null ? null : heading.transform as RectTransform;
             badgeOwnedCaption = CreateBadgeText(badgeNativeCaption, "Value", null);
             badgeOwnedValue = CreateBadgeText(badgeNativeValue, "—", frame.transform);
+            // FillData calls SetupVisualMarks before the host attaches. An applied roll
+            // makes the native point-buy counter "complete", so that routine paints
+            // the hidden source numeral with m_TextDisableColor. Never copy that
+            // transient tint into the owned Roll badge on a page return.
+            badgeAvailableValueColor = (Color)contracts.AbilityAllocatorAvailableValueColorField.GetValue(allocator);
+            badgeAvailableCaptionColor = (Color)contracts.AbilityAllocatorAvailableCaptionColorField.GetValue(allocator);
+            badgeOwnedValue.color = badgeAvailableValueColor;
+            badgeOwnedCaption.color = badgeAvailableCaptionColor;
             badgeActiveBackground = NewUiObject("RolledValueBackground", frame.gameObject.layer);
             RectTransform tintRect = badgeActiveBackground.GetComponent<RectTransform>();
             tintRect.SetParent(frame.transform, false);
@@ -1126,6 +1136,8 @@ namespace KingmakerDiceRoller.UI
                 badgeOwnedCaption.gameObject.SetActive(true);
                 badgeOwnedValue.gameObject.SetActive(true);
                 badgeActiveBackground.SetActive(true);
+                badgeOwnedValue.color = badgeAvailableValueColor;
+                badgeOwnedCaption.color = badgeAvailableCaptionColor;
                 badgeOwnedValue.transform.SetAsLastSibling();
                 badgeOwnedValue.text = NativeUiPresentation.FormatValueBadge(snapshot);
             }

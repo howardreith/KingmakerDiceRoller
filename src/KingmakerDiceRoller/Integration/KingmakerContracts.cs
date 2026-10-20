@@ -80,7 +80,9 @@ namespace KingmakerDiceRoller.Integration
             FieldInfo abilityAllocatorFrameField,
             FieldInfo abilityAllocatorRaceBonusContainerField,
             IReadOnlyList<string> evidence,
-            KingmakerDerivedAllowanceContracts derivedAllowances = null)
+            KingmakerDerivedAllowanceContracts derivedAllowances = null,
+            FieldInfo abilityAllocatorAvailableValueColorField = null,
+            FieldInfo abilityAllocatorAvailableCaptionColorField = null)
         {
             GameAssembly = gameAssembly;
             LevelUpStateType = levelUpStateType;
@@ -154,6 +156,8 @@ namespace KingmakerDiceRoller.Integration
             AbilityAllocatorPointsCaptionField = abilityAllocatorPointsCaptionField;
             AbilityAllocatorFrameField = abilityAllocatorFrameField;
             AbilityAllocatorRaceBonusContainerField = abilityAllocatorRaceBonusContainerField;
+            AbilityAllocatorAvailableValueColorField = abilityAllocatorAvailableValueColorField;
+            AbilityAllocatorAvailableCaptionColorField = abilityAllocatorAvailableCaptionColorField;
             Evidence = evidence;
             DerivedAllowances = derivedAllowances;
         }
@@ -231,6 +235,8 @@ namespace KingmakerDiceRoller.Integration
         public FieldInfo AbilityAllocatorPointsCaptionField { get; }
         public FieldInfo AbilityAllocatorFrameField { get; }
         public FieldInfo AbilityAllocatorRaceBonusContainerField { get; }
+        public FieldInfo AbilityAllocatorAvailableValueColorField { get; }
+        public FieldInfo AbilityAllocatorAvailableCaptionColorField { get; }
         public IReadOnlyList<string> Evidence { get; }
 
         public bool TryGetLevelUpController(out object controller)
