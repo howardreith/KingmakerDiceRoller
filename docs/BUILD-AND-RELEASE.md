@@ -2,6 +2,11 @@
 
 ## 0.1.17 Value badge color alpha
 
+The [v0.1.17 testing alpha](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.17)
+contains the exact qualified candidate ZIP. Its annotated tag points to
+release documentation commit `f1493281ad19422fd7fc948a6bf5a95426d9e5c2`
+on `codex/native-stat-ui-v2`. A fresh Release rebuild reproduced the qualified
+DLL byte for byte, and strict ZIP validation passed before publication.
 The owner requested a GitHub testing alpha from the qualified v0.1.17
 candidate. The published v0.1.16 alpha is unchanged. Version 0.1.17 corrects
 the owned Value badge's color after returning to the ability page during Roll

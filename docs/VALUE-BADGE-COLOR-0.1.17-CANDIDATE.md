@@ -23,7 +23,10 @@ It does not change the native Points text or allocator behavior.
   respec checks 11, native UI IL/contracts 30/30, zero-warning Release build,
   and strict six-entry package validation.
 - Publication: owner authorized a GitHub testing prerelease from this exact
-  qualified ZIP; stable publication is not authorized.
+  qualified ZIP; the [v0.1.17 alpha](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.17)
+  is published with annotated tag target
+  `f1493281ad19422fd7fc948a6bf5a95426d9e5c2`. GitHub confirms the ZIP
+  SHA-256 above. Stable publication is not authorized.
 - Actual-game visual check: **NOT RUN**. The Windows computer-use process
   exited before window discovery. Use the scenario in `docs/SMOKE-TEST.md`
   after installation.

@@ -2,7 +2,7 @@
 
 Mr. Bard's Kingmaker Roll For Stats UI is a standalone Unity Mod Manager mod
 for Pathfinder: Kingmaker 2.1.7b. It adds an explicit rolled-ability workflow
-to the native custom-character ability page. The 0.1.17 candidate starts with
+to the native custom-character ability page. The 0.1.17 testing alpha starts with
 one **Roll for Stats** button, then opens a compact formula and action workspace
 within Kingmaker's ability allocator.
 
@@ -16,10 +16,12 @@ rebuilt.
 
 ## Release status
 
-**0.1.17 review candidate — Value badge color after page return.** The owned
+**0.1.17 testing alpha — Value badge color after page return.** The owned
 Value numeral and caption now use Kingmaker's available-points colors when
-the ability page is rebuilt after an applied roll. This candidate has not
-been published; the 0.1.16 testing alpha remains available below.
+the ability page is rebuilt after an applied roll. The
+[v0.1.17 alpha](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.17)
+is available for testing; the 0.1.16 alpha remains available below. The
+in-game page-return visual check remains open.
 
 **0.1.16 testing alpha — Value badge correction.** In Roll Mode, the
 native Value badge now shows the six base scores' point-buy equivalent. The
@@ -179,6 +181,11 @@ creation. The current allocation and actual live budget are captured before
 Roll or Recall and restored exactly; neither 20 nor 25 is hard-coded.
 
 ## Installation
+
+For the 0.1.17 testing alpha, download **KingmakerDiceRoller-0.1.17.zip** from
+the [v0.1.17 release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.17)
+Assets and install it with Unity Mod Manager. Qualification and the remaining
+live check are in [the candidate evidence](docs/VALUE-BADGE-COLOR-0.1.17-CANDIDATE.md).
 
 For the 0.1.16 testing alpha, download **KingmakerDiceRoller-0.1.16.zip** from
 the [v0.1.16 release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.16)
