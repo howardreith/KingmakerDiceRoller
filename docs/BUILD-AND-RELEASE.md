@@ -1,4 +1,120 @@
-# 0.1.11 settings-panel release
+# Build and release
+
+## 0.2.0 native stats UI stable release
+
+The owner requested merging the native stats UI mission branch into the
+default branch and publishing `v0.2.0` as a stable release. The guarded
+publisher must run from a clean `main` commit that exactly matches
+`origin/main`. It runs the full source, contract, Release build, package and
+strict validation gate, then creates the annotated tag and uploads the
+installable ZIP with `SHA256SUMS.txt`. The current `## Qualification truth`
+section in `PROJECT-STATE.md` records this specific owner authorization while
+keeping runtime qualification separate. Use
+`-Publish -ConfirmOwnerAuthorizedPreRuntimeRelease` with
+`-ReleaseNotesPath .\docs\RELEASE-NOTES-0.2.0.md`. The release remains marked
+as not runtime-qualified until live checks are recorded.
+
+## 0.1.17 Value badge color alpha
+
+The [v0.1.17 testing alpha](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.17)
+contains the exact qualified candidate ZIP. Its annotated tag points to
+release documentation commit `f1493281ad19422fd7fc948a6bf5a95426d9e5c2`
+on `codex/native-stat-ui-v2`. A fresh Release rebuild reproduced the qualified
+DLL byte for byte, and strict ZIP validation passed before publication.
+The owner requested a GitHub testing alpha from the qualified v0.1.17
+candidate. The published v0.1.16 alpha is unchanged. Version 0.1.17 corrects
+the owned Value badge's color after returning to the ability page during Roll
+Mode. The exact ZIP from implementation commit
+`2f480e0f3c55986756d761e5d793aeb04582e771` is
+`artifacts/candidates/2f480e0f3c55986756d761e5d793aeb04582e771/KingmakerDiceRoller-0.1.17.zip`
+(SHA-256 `1ea0856d5440e20390ca734093c051990ef54dbf006616d64c851a87df84f213`).
+The full suite need not be rerun for alpha publication. See
+`docs/VALUE-BADGE-COLOR-0.1.17-CANDIDATE.md` for artifact provenance and the
+live visual-check status.
+
+## 0.1.16 Value badge correction alpha
+
+The [v0.1.16 testing alpha](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.16)
+contains the exact qualified candidate ZIP. Its annotated tag points to
+release documentation commit `98b394cf33bf44b71ff7c8af7a6e8f496ee26f52`
+on `codex/native-stat-ui-v2`.
+The published 0.1.15 alpha is unchanged. Version 0.1.16 corrects the Roll
+Mode Value badge to show the active array's point-buy equivalent. The owner
+requested a GitHub testing alpha after candidate qualification. The exact
+qualified ZIP from implementation commit
+`8e9d60d00a232e327c4207317ce4cdee8b7ee49a` is
+`artifacts/candidates/8e9d60d00a232e327c4207317ce4cdee8b7ee49a/KingmakerDiceRoller-0.1.16.zip`
+(SHA-256 `174e21f2c2ef0f65f0dbe66a8619dc3873f37daf49b504adce94e0ec57eb03ca`).
+The owner said the full suite need not be rerun for alpha publication. See
+`docs/VALUE-BADGE-0.1.16-CANDIDATE.md` for the qualified artifact and live
+visual-check status.
+
+## 0.1.15 native-stat UI v4 alpha
+
+The [v0.1.15 testing alpha](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.15)
+contains the exact ZIP from the qualified v4 candidate. Its annotated tag
+points to release documentation commit `73d18da6bf36fa4c785c7376f0e310a8643afd0c`
+on `codex/native-stat-ui-v2`.
+The owner requested this alpha after the v4 candidate was qualified.
+The exact candidate ZIP from clean implementation commit
+`b3fa9d07042c9946af71eb8aeaa562ff94905944` is
+`artifacts/candidates/b3fa9d07042c9946af71eb8aeaa562ff94905944/KingmakerDiceRoller-0.1.15.zip`
+(SHA-256 `e1c06ad23f290d735285227a487483dcf8a0aa5d33be738c46f48b039c63eac6`).
+Candidate qualification passed 415/415 deterministic C# cases, 20/20
+release-gate cases, installed contract checks, a zero-warning Release build,
+and strict package validation. The owner said the full suite need not be
+rerun for publication. Actual-game visual, input, and compatibility checks
+remain unrun. See `docs/NATIVE-STAT-UI-V4-CANDIDATE.md`.
+
+## 0.1.14 native-stat UI presentation alpha
+
+The [v0.1.14 testing alpha](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.14)
+contains the exact ZIP from qualified implementation commit
+`252ff2f435476bdc74d051cf09358250dd3e204c` (SHA-256
+`95603893a14a0b6538977070e893603ab1328f556c7893fe70d5229fbfca6d1a`).
+The annotated tag points to documentation-only release commit
+`a45e5336add15dfc45aea249ee2b6d7c5e78c142` on
+`codex/native-stat-ui-v2`. A fresh zero-warning Release rebuild and strict
+package validation reproduced the qualified ZIP and DLL byte for byte. The
+full suite was not rerun for publication, at the owner's request. Actual-game
+visuals, input, and compatibility remain unverified; see
+`docs/NATIVE-STAT-UI-V3-CANDIDATE.md`. v0.1.11 remains latest stable.
+
+## 0.1.13 revised native-stat candidate
+
+The revised UI is packaged from clean implementation commit
+`46a1f2c5fdf236ef48dc4e5ffb4a78316d6bcf05` at
+`artifacts/candidates/46a1f2c5fdf236ef48dc4e5ffb4a78316d6bcf05/KingmakerDiceRoller-0.1.13.zip`.
+Its SHA-256 is `e22827efea6450a089da8e4582a5fb7b82de3909c4d5b884e6850c9729067667`.
+`Qualify.ps1 -Build -Package -Candidate` passed source, deterministic domain,
+installed-contract, Release build, and strict package checks. A fresh Release
+build and package validation reproduced the identical ZIP for the
+[v0.1.13 testing alpha](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.13).
+The full suite was not rerun for publication, at the owner's request. Actual
+game visuals and interaction remain unverified; see
+`docs/NATIVE-STAT-UI-V2-CANDIDATE.md`.
+
+## 0.1.12 native stat UI alpha (historical)
+
+The owner requested a GitHub alpha on 2026-10-19 for installation on another
+computer. [v0.1.12](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.12)
+is a published prerelease from the mission branch; 0.1.11 remains latest
+stable. The alpha ZIP is SHA-256
+`53e1344d0bd1d93b52f7fadf66a20c64993363462e432d7c74302518940080c0`.
+Its fresh Release build and package validation passed; actual-game interaction
+and visual qualification remain unrun. Use Windows PowerShell 5.1
+for the .NET Framework respec contract verifier. From a clean committed branch:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Qualify.ps1 -Build -Package -Candidate
+```
+
+The command binds the DLL, reports, and six-file ZIP to the exact clean commit
+under `artifacts/candidates/<commit>/`. It does not establish rendered UI or
+gameplay qualification. Follow `docs/SMOKE-TEST.md` before calling the new
+screen visually accepted.
+
+# Published 0.1.11 settings-panel release
 
 `0.1.11` simplifies the UMM settings panel only; v0.1.10 is published, so the
 change takes the next unused patch version. On 2026-10-15 the owner authorized

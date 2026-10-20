@@ -42,6 +42,17 @@ namespace KingmakerDiceRoller.DomainTests
             AssertEx.True(model.Summary.Contains("4d[6]kh3"));
         }
 
+        internal static void NativeValueBadgeShowsPointBuyEquivalent()
+        {
+            RollUiSnapshot rolled = Snapshot(
+                RollSessionMode.Roll, new[] { 16, 15, 14, 12, 10, 8 });
+            AssertEx.Equal(75, rolled.Total);
+            AssertEx.Equal(22, rolled.PointBuyEquivalent);
+            AssertEx.Equal("22", NativeUiPresentation.FormatValueBadge(rolled));
+            AssertEx.Equal("—", NativeUiPresentation.FormatValueBadge(
+                Snapshot(RollSessionMode.PointBuy, null)));
+        }
+
         internal static void ExtendedSummaryIsMarked()
         {
             RollUiSnapshot snapshot = new RollUiSnapshot(
@@ -228,7 +239,7 @@ namespace KingmakerDiceRoller.DomainTests
             AssertEx.True(model.ReturnToPointBuyVisible);
             AssertEx.True(model.AssignmentVisible);
             AssertEx.True(model.SummaryVisible);
-            AssertEx.True(!model.AdvancedVisible);
+            AssertEx.True(model.AdvancedVisible);
         }
 
         internal static void AdvancedOptionsBeginCollapsed()
@@ -332,6 +343,31 @@ namespace KingmakerDiceRoller.DomainTests
             AssertEx.Equal(DiceRollPreset.CustomExpression, target.UiSnapshot.Configuration.Preset);
             AssertEx.True(router.Execute(RollUiCommand.PreviousPolicy, AbilityScore.Strength, out error));
             AssertEx.Equal(LowScorePolicy.RerollEntireArrayBelowMinimum, target.UiSnapshot.Configuration.LowScorePolicy);
+        }
+
+        internal static void RouterSelectsPresetWithoutRolling()
+        {
+            var target = new FakeTarget(Snapshot(RollSessionMode.PointBuy, null));
+            var router = new RollUiCommandRouter(target);
+            string error;
+            AssertEx.True(router.SelectPreset(DiceRollPreset.TwoD6PlusSix, out error), error);
+            AssertEx.Equal(DiceRollPreset.TwoD6PlusSix, target.UiSnapshot.Configuration.Preset);
+            AssertEx.Equal(0, target.GeneratedRolls);
+            AssertEx.True(!router.SelectPreset((DiceRollPreset)999, out error));
+            AssertEx.Equal(DiceRollPreset.TwoD6PlusSix, target.UiSnapshot.Configuration.Preset);
+        }
+
+        internal static void PointBuyExposesHistoryForExplicitUse()
+        {
+            RollUiSnapshot snapshot = new RollUiSnapshot(
+                true, RollSessionMode.PointBuy, RollConfiguration.Default(), null,
+                0, 0, false, string.Empty, 1, 2, "previous roll",
+                0, 0, string.Empty, string.Empty, string.Empty);
+            RollPanelModel model = new RollPanelPresenter().Present(snapshot,
+                new RollPanelDisclosureState(false, true, false));
+            AssertEx.True(model.HistoryDisclosureVisible);
+            AssertEx.True(model.HistoryDetailsVisible);
+            AssertEx.True(model.CanUseHistory);
         }
 
         internal static void RouterKeepsMinimumWithinBoundary()
@@ -536,12 +572,15 @@ namespace KingmakerDiceRoller.DomainTests
             public RollUiSnapshot UiSnapshot { get; private set; }
             public RollSession ActiveSession => null;
             public bool CanAttachNativePanel => UiSnapshot.SessionAvailable;
+            public PointBuyReturnOutcome LastPointBuyReturn => PointBuyReturnOutcome.None;
+            public bool IsCommandBusy { get; set; }
             internal int CommandCalls { get; private set; }
+            internal int GeneratedRolls { get; private set; }
             internal AbilityScore LastAbility { get; private set; }
             internal bool LastMoveUp { get; private set; }
 
-            public bool TryRoll(out string error) { return Hit(out error); }
-            public bool TryReroll(out string error) { return Hit(out error); }
+            public bool TryRoll(out string error) { GeneratedRolls++; return Hit(out error); }
+            public bool TryReroll(out string error) { GeneratedRolls++; return Hit(out error); }
             public bool TryMoveAssignment(AbilityScore ability, bool moveUp, out string error)
             {
                 LastAbility = ability;
@@ -550,6 +589,17 @@ namespace KingmakerDiceRoller.DomainTests
             }
             public void SelectPreviousHistory() { CommandCalls++; }
             public void SelectNextHistory() { CommandCalls++; }
+            public void SelectCustomExpression(string expression)
+            {
+                Replace(DiceRollPreset.CustomExpression, UiSnapshot.Configuration.LowScorePolicy,
+                    UiSnapshot.Configuration.MinimumScore, expression);
+            }
+            public bool TryNavigateHistory(bool previous, out string error)
+            {
+                CommandCalls++;
+                error = null;
+                return true;
+            }
             public bool TryUseSelectedHistory(out string error) { return Hit(out error); }
             public bool TryStoreCurrent(out string error) { return Hit(out error); }
             public void SelectPreviousSaved() { CommandCalls++; }

@@ -66,13 +66,23 @@ namespace KingmakerDiceRoller.Integration
             FieldInfo abilityAllocatorSourceEntityField,
             FieldInfo abilityAllocatorPreviewEntityField,
             FieldInfo abilityAllocatorStatEntriesField,
+            FieldInfo scoreEntryTypeField,
             FieldInfo scoreEntryUpButtonField,
             FieldInfo scoreEntryDownButtonField,
+            FieldInfo scoreEntryCostAnimatorField,
+            FieldInfo scoreEntryCostLabelField,
+            FieldInfo scoreEntryUpCostField,
+            FieldInfo scoreEntryDownCostField,
             PropertyInfo selectableInteractableProperty,
             FieldInfo abilityAllocatorMainLabelField,
+            FieldInfo abilityAllocatorPointsValueField,
+            FieldInfo abilityAllocatorPointsCaptionField,
             FieldInfo abilityAllocatorFrameField,
             FieldInfo abilityAllocatorRaceBonusContainerField,
-            IReadOnlyList<string> evidence)
+            IReadOnlyList<string> evidence,
+            KingmakerDerivedAllowanceContracts derivedAllowances = null,
+            FieldInfo abilityAllocatorAvailableValueColorField = null,
+            FieldInfo abilityAllocatorAvailableCaptionColorField = null)
         {
             GameAssembly = gameAssembly;
             LevelUpStateType = levelUpStateType;
@@ -133,13 +143,23 @@ namespace KingmakerDiceRoller.Integration
             AbilityAllocatorSourceEntityField = abilityAllocatorSourceEntityField;
             AbilityAllocatorPreviewEntityField = abilityAllocatorPreviewEntityField;
             AbilityAllocatorStatEntriesField = abilityAllocatorStatEntriesField;
+            ScoreEntryTypeField = scoreEntryTypeField;
             ScoreEntryUpButtonField = scoreEntryUpButtonField;
             ScoreEntryDownButtonField = scoreEntryDownButtonField;
+            ScoreEntryCostAnimatorField = scoreEntryCostAnimatorField;
+            ScoreEntryCostLabelField = scoreEntryCostLabelField;
+            ScoreEntryUpCostField = scoreEntryUpCostField;
+            ScoreEntryDownCostField = scoreEntryDownCostField;
             SelectableInteractableProperty = selectableInteractableProperty;
             AbilityAllocatorMainLabelField = abilityAllocatorMainLabelField;
+            AbilityAllocatorPointsValueField = abilityAllocatorPointsValueField;
+            AbilityAllocatorPointsCaptionField = abilityAllocatorPointsCaptionField;
             AbilityAllocatorFrameField = abilityAllocatorFrameField;
             AbilityAllocatorRaceBonusContainerField = abilityAllocatorRaceBonusContainerField;
+            AbilityAllocatorAvailableValueColorField = abilityAllocatorAvailableValueColorField;
+            AbilityAllocatorAvailableCaptionColorField = abilityAllocatorAvailableCaptionColorField;
             Evidence = evidence;
+            DerivedAllowances = derivedAllowances;
         }
 
         public Assembly GameAssembly { get; }
@@ -165,6 +185,7 @@ namespace KingmakerDiceRoller.Integration
         public MemberInfo LevelUpControllerLevelUpActionsMember { get; }
         public MethodInfo LevelUpStateIsSkillPointsCompleteMethod { get; }
         public MemberInfo LevelUpStateSkillPointsRemainingMember { get; }
+        public KingmakerDerivedAllowanceContracts DerivedAllowances { get; }
         public MethodInfo CharacterBuildDefineAvailibleDataMethod { get; }
         public MethodInfo CharacterBuildSetupUiMethod { get; }
         public MethodInfo CharacterBuildSetPhaseMethod { get; }
@@ -201,12 +222,21 @@ namespace KingmakerDiceRoller.Integration
         public FieldInfo AbilityAllocatorSourceEntityField { get; }
         public FieldInfo AbilityAllocatorPreviewEntityField { get; }
         public FieldInfo AbilityAllocatorStatEntriesField { get; }
+        public FieldInfo ScoreEntryTypeField { get; }
         public FieldInfo ScoreEntryUpButtonField { get; }
         public FieldInfo ScoreEntryDownButtonField { get; }
+        public FieldInfo ScoreEntryCostAnimatorField { get; }
+        public FieldInfo ScoreEntryCostLabelField { get; }
+        public FieldInfo ScoreEntryUpCostField { get; }
+        public FieldInfo ScoreEntryDownCostField { get; }
         public PropertyInfo SelectableInteractableProperty { get; }
         public FieldInfo AbilityAllocatorMainLabelField { get; }
+        public FieldInfo AbilityAllocatorPointsValueField { get; }
+        public FieldInfo AbilityAllocatorPointsCaptionField { get; }
         public FieldInfo AbilityAllocatorFrameField { get; }
         public FieldInfo AbilityAllocatorRaceBonusContainerField { get; }
+        public FieldInfo AbilityAllocatorAvailableValueColorField { get; }
+        public FieldInfo AbilityAllocatorAvailableCaptionColorField { get; }
         public IReadOnlyList<string> Evidence { get; }
 
         public bool TryGetLevelUpController(out object controller)
@@ -348,5 +378,30 @@ namespace KingmakerDiceRoller.Integration
 
         public string AssemblyIdentity => GameAssembly.FullName;
         public Guid AssemblyMvid => GameAssembly.ManifestModule.ModuleVersionId;
+    }
+
+    // Resolved once with the exact 2.1.7b LevelUpState contract. These read-only
+    // identities let a failed command verify native skill and spell recovery.
+    public sealed class KingmakerDerivedAllowanceContracts
+    {
+        public KingmakerDerivedAllowanceContracts(
+            MemberInfo totalSkillPoints,
+            MemberInfo spellSelections,
+            MemberInfo spellLevelCount,
+            MemberInfo spellExtraMaxLevel,
+            MemberInfo selectedSpells)
+        {
+            TotalSkillPoints = totalSkillPoints ?? throw new ArgumentNullException(nameof(totalSkillPoints));
+            SpellSelections = spellSelections ?? throw new ArgumentNullException(nameof(spellSelections));
+            SpellLevelCount = spellLevelCount ?? throw new ArgumentNullException(nameof(spellLevelCount));
+            SpellExtraMaxLevel = spellExtraMaxLevel ?? throw new ArgumentNullException(nameof(spellExtraMaxLevel));
+            SelectedSpells = selectedSpells ?? throw new ArgumentNullException(nameof(selectedSpells));
+        }
+
+        public MemberInfo TotalSkillPoints { get; }
+        public MemberInfo SpellSelections { get; }
+        public MemberInfo SpellLevelCount { get; }
+        public MemberInfo SpellExtraMaxLevel { get; }
+        public MemberInfo SelectedSpells { get; }
     }
 }

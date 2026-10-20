@@ -17,6 +17,19 @@ namespace KingmakerDiceRoller.Domain
 
         public string NormalizedText { get; }
 
+        public void ValidateForRule(DiceRollRule rule)
+        {
+            if (rule == null) throw new ArgumentNullException(nameof(rule));
+            ExpressionBounds bounds = root.Analyze();
+            if (bounds.Known && (bounds.Maximum < 1 || bounds.Minimum > rule.MaximumScore))
+                throw new RollValidationException("Expression cannot produce a score in this rule's range 1-" +
+                    rule.MaximumScore + ".");
+            if (rule.LowScorePolicy != LowScorePolicy.Tabletop && bounds.Known &&
+                bounds.Maximum < rule.MinimumScore)
+                throw new RollValidationException("Expression cannot reach the configured minimum score " +
+                    rule.MinimumScore + ".");
+        }
+
         public int Evaluate(IRandomSource randomSource)
         {
             if (randomSource == null)
@@ -69,6 +82,22 @@ namespace KingmakerDiceRoller.Domain
     internal abstract class ExpressionNode
     {
         internal abstract long Evaluate(IRandomSource randomSource, EvaluationBudget budget);
+        internal abstract ExpressionBounds Analyze();
+    }
+
+    internal struct ExpressionBounds
+    {
+        internal ExpressionBounds(long minimum, long maximum, bool known)
+        {
+            Minimum = minimum;
+            Maximum = maximum;
+            Known = known;
+        }
+        internal long Minimum { get; }
+        internal long Maximum { get; }
+        internal bool Known { get; }
+        internal bool IsConstant => Known && Minimum == Maximum;
+        internal static ExpressionBounds Unknown => new ExpressionBounds(0, 0, false);
     }
 
     internal sealed class ConstantNode : ExpressionNode
@@ -85,6 +114,8 @@ namespace KingmakerDiceRoller.Domain
             budget.ConsumeOperation();
             return value;
         }
+
+        internal override ExpressionBounds Analyze() => new ExpressionBounds(value, value, true);
     }
 
     internal sealed class BinaryNode : ExpressionNode
@@ -121,6 +152,39 @@ namespace KingmakerDiceRoller.Domain
             catch (OverflowException)
             {
                 throw new DiceExpressionException("Arithmetic overflow while evaluating the expression.");
+            }
+        }
+
+        internal override ExpressionBounds Analyze()
+        {
+            ExpressionBounds a = left.Analyze();
+            ExpressionBounds b = right.Analyze();
+            if (!a.Known || !b.Known) return ExpressionBounds.Unknown;
+            try
+            {
+                checked
+                {
+                    switch (operation)
+                    {
+                        case '+': return new ExpressionBounds(a.Minimum + b.Minimum, a.Maximum + b.Maximum, true);
+                        case '-': return new ExpressionBounds(a.Minimum - b.Maximum, a.Maximum - b.Minimum, true);
+                        case '*':
+                            long first = a.Minimum * b.Minimum;
+                            long second = a.Minimum * b.Maximum;
+                            long third = a.Maximum * b.Minimum;
+                            long fourth = a.Maximum * b.Maximum;
+                            return new ExpressionBounds(
+                                Math.Min(Math.Min(first, second), Math.Min(third, fourth)),
+                                Math.Max(Math.Max(first, second), Math.Max(third, fourth)), true);
+                        default: throw new DiceExpressionException("Unsupported arithmetic operator.");
+                    }
+                }
+            }
+            catch (OverflowException)
+            {
+                if (a.IsConstant && b.IsConstant)
+                    throw new DiceExpressionException("Constant arithmetic overflows the supported range.");
+                return ExpressionBounds.Unknown;
             }
         }
     }
@@ -229,6 +293,52 @@ namespace KingmakerDiceRoller.Domain
             }
 
             return total;
+        }
+
+        internal override ExpressionBounds Analyze()
+        {
+            ExpressionBounds dice = count.Analyze();
+            ExpressionBounds low = minimum.Analyze();
+            ExpressionBounds high = maximum.Analyze();
+            if (dice.Known && (dice.Maximum < 1 || dice.Minimum > 1000))
+                throw new DiceExpressionException("Dice count must be between 1 and 1000.");
+            if (low.Known && (low.Maximum < 1 || low.Minimum > 10000))
+                throw new DiceExpressionException("Die minimum must be between 1 and 10000.");
+            if (high.Known && (high.Maximum < 1 || high.Minimum > 10000))
+                throw new DiceExpressionException("Die maximum must be between 1 and 10000.");
+            if (low.Known && high.Known && low.Minimum > high.Maximum)
+                throw new DiceExpressionException("Die minimum cannot exceed die maximum.");
+
+            var staticRerolls = new HashSet<long>();
+            bool allStaticRerolls = true;
+            foreach (ExpressionNode reroll in rerollValues)
+            {
+                ExpressionBounds value = reroll.Analyze();
+                if (value.IsConstant) staticRerolls.Add(value.Minimum);
+                else allStaticRerolls = false;
+            }
+            if (low.IsConstant && high.IsConstant && allStaticRerolls &&
+                low.Minimum >= 1 && high.Maximum <= 10000 && low.Minimum <= high.Maximum)
+            {
+                bool allFaces = true;
+                for (long face = low.Minimum; face <= high.Maximum; face++)
+                    if (!staticRerolls.Contains(face)) { allFaces = false; break; }
+                if (allFaces) throw new DiceExpressionException("Reroll values cover every possible face.");
+            }
+
+            ExpressionBounds keep = keepCount == null ? dice : keepCount.Analyze();
+            if (keepCount != null && keep.Known &&
+                (keep.Maximum < 0 || (dice.Known && keep.Minimum > dice.Maximum)))
+                throw new DiceExpressionException("Keep count cannot exceed the dice count.");
+            if (!dice.Known || !low.Known || !high.Known || !keep.Known)
+                return ExpressionBounds.Unknown;
+            long minDice = Math.Max(1, dice.Minimum);
+            long maxDice = Math.Min(1000, dice.Maximum);
+            long minKept = keepCount == null ? minDice : Math.Max(0, keep.Minimum);
+            long maxKept = keepCount == null ? maxDice : Math.Min(maxDice, keep.Maximum);
+            if (minKept > maxKept) return ExpressionBounds.Unknown;
+            return new ExpressionBounds(minKept * Math.Max(1, low.Minimum),
+                maxKept * Math.Min(10000, high.Maximum), true);
         }
 
         private static int RequireBoundedInteger(long value, int minimum, int maximum, string label)

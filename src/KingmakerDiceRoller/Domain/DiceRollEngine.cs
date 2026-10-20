@@ -17,6 +17,7 @@ namespace KingmakerDiceRoller.Domain
         {
             if (rule == null) throw new ArgumentNullException(nameof(rule));
             DiceExpression expression = parser.Parse(rule.Expression);
+            expression.ValidateForRule(rule);
 
             switch (rule.LowScorePolicy)
             {

@@ -2,8 +2,9 @@
 
 Mr. Bard's Kingmaker Roll For Stats UI is a standalone Unity Mod Manager mod
 for Pathfinder: Kingmaker 2.1.7b. It adds an explicit rolled-ability workflow
-to the native custom-character ability page through a compact native access
-tab and a responsive right-side drawer.
+to the native custom-character ability page. Version 0.2.0 starts with
+one **Roll for Stats** button, then opens a compact formula and action workspace
+within Kingmaker's ability allocator.
 
 It was previously published as **Kingmaker Dice Roller**. Its Unity Mod
 Manager ID, DLL, `Mods/KingmakerDiceRoller` install folder and settings are
@@ -14,6 +15,62 @@ when you press **Roll**, never because a preview, race, phase, or UI object was
 rebuilt.
 
 ## Release status
+
+**0.2.0 stable release — native stats UI.** The owner requested merging the
+native stats UI work to `main` and publishing version 0.2.0. It brings the
+Roll workspace into Kingmaker's ability allocator, including formula presets,
+Reroll, History, saved arrays, score assignment, and a Value badge showing
+the rolled array's point-buy equivalent. The badge keeps its intended color
+after returning to the ability page. Offline qualification and release
+provenance are recorded in `PROJECT-STATE.md`; in-game visual and compatibility
+checks remain unverified by the development agent.
+
+**0.1.17 testing alpha — Value badge color after page return.** The owned
+Value numeral and caption now use Kingmaker's available-points colors when
+the ability page is rebuilt after an applied roll. The
+[v0.1.17 alpha](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.17)
+is available for testing; the 0.1.16 alpha remains available below. The
+in-game page-return visual check remains open.
+
+**0.1.16 testing alpha — Value badge correction.** In Roll Mode, the
+native Value badge now shows the six base scores' point-buy equivalent. The
+six-score total remains in Details. The
+[v0.1.16 alpha](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.16)
+is available for testing; the 0.1.15 alpha remains available below.
+
+**0.1.15 testing alpha — native stats UI v4.** This revision verifies
+derived skill and spell restoration after a failed roll, blocks reentrant
+commands before RNG use, quarantines incomplete recovery, and refines the
+Value badge, notices, racial clearance, and tooltips. See
+[v4 candidate evidence](docs/NATIVE-STAT-UI-V4-CANDIDATE.md). The
+[v0.1.15 alpha](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.15)
+is available for testing; actual-game visuals and input remain unverified.
+
+**0.1.14 testing alpha — native stats UI presentation.** This revision
+centers the formula selector, corrects the native Value badge and downward
+swap artwork, shares a measured parchment tooltip, hides native cost hints in
+the Roll workspace, and places Previous, Next, and Return on one row. See
+[candidate evidence](docs/NATIVE-STAT-UI-V3-CANDIDATE.md). The
+[v0.1.14 alpha](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.14)
+is available for testing; actual-game visuals and input remain unverified.
+
+**0.1.13 alpha prerelease — revised native stats UI.** Ordinary Point Buy shows one
+entry button. The Roll workspace has an editable formula, a full preset menu,
+Value in the ability badge, one downward swap column, direct Previous/Next,
+and a saved-array Load chooser. Low-score rules are in UMM settings. Source,
+build, and installed-contract checks are recorded in `PROJECT-STATE.md`.
+The [v0.1.13 alpha](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.13)
+is available for testing; actual-game visual and interaction checks remain open.
+
+**0.1.12 alpha prerelease — earlier native stat UI.** Roll/Reroll, Save, Load,
+Return to Point Buy, Options, Details, and direct roll-method selection now
+live beside the native allocator. Session History and persistent Saved arrays
+are both reachable through Load, including from Point Buy. The prior drawer
+remains a recovery interface if exact inline attachment cannot be verified.
+The candidate passes source and installed-contract checks; its changed screen
+still needs actual-game visual and interaction qualification. The
+[v0.1.12 alpha](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.12)
+is available for testing; 0.1.11 was the previous stable release.
 
 **Release 0.1.11 — cleaner settings panel (2026-10-15).** The Unity Mod
 Manager settings panel now shows where roll controls appear, one status line,
@@ -61,29 +118,26 @@ behavior and the existing roll workflow.
 
 ## Player workflow
 
-The ability page initially shows only a compact **Roll Stats** access tab. It
-is bottom-centered within verified ability/allocator geometry, above the native
-bottom-navigation inset. It does not cover the Skills page or roll
-automatically. Press the tab to open the paper **Rolled Ability Scores**
-panel. The panel provides:
+The ability page starts in native Point Buy and does not roll automatically.
+The compact strip beneath the six native scores provides:
 
 - Roll and Reroll;
 - `4d6, drop lowest`, `4d6, reroll ones, drop lowest`, `3d6`, `2d6 + 6`,
   `1d20`, and a custom expression;
 - tabletop, per-score minimum, and whole-array minimum policies;
-- position-based Move Up/Move Down assignment that handles duplicate values;
-- base-score total and informational point-buy equivalent;
+- position-based up/down arrows in the native score rows that handle duplicate values;
+- **Details** for the base-score total, informational point-buy equivalent,
+  and rule that generated the current array;
 - a 20-entry history for the current character build;
-- 10 persistent saved arrays with Store, Recall, and Delete;
+- 10 persistent saved arrays with Save, Recall, and Delete;
 - immediate Return to Point Buy.
 
-The panel starts collapsed for every supported creation or eligible respec
-build. Wide layouts show ordinary Point Buy options and the complete six-score
-Roll workflow, History, Saved and summary; measured errors can scroll. Compact
-layouts retain **Roll Options**, **History**, and **Saved** disclosures and add
-bounded vertical scrolling only for measured overflow. Press **Close** to
-remove the entire expanded surface and its click footprint; only the small
-access tab remains.
+Select the method directly from the strip's menu. **Options** contains the
+low-score policy, conditional minimum, and custom expression. **Load** shows
+session History and Saved arrays; browsing changes only the highlighted record,
+and Use/Recall applies it without rolling. Secondary menus scroll when their
+contents do not fit above the strip. If native row attachment fails, the
+earlier **Roll Stats** tab and drawer provide a recovery path.
 
 Custom syntax examples are `4d[6]kh3`, `4d[6]r[1]kh3`, and `2d[6]+6`.
 Generated scores are validated within the explicit 1-120 product boundary and
@@ -137,6 +191,42 @@ Roll or Recall and restored exactly; neither 20 nor 25 is hard-coded.
 
 ## Installation
 
+For version 0.2.0, download **KingmakerDiceRoller-0.2.0.zip** from the
+[v0.2.0 release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.2.0)
+Assets and install it with Unity Mod Manager. Use the ZIP in Assets, not
+GitHub's automatically generated source archive.
+
+For the 0.1.17 testing alpha, download **KingmakerDiceRoller-0.1.17.zip** from
+the [v0.1.17 release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.17)
+Assets and install it with Unity Mod Manager. Qualification and the remaining
+live check are in [the candidate evidence](docs/VALUE-BADGE-COLOR-0.1.17-CANDIDATE.md).
+
+For the 0.1.16 testing alpha, download **KingmakerDiceRoller-0.1.16.zip** from
+the [v0.1.16 release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.16)
+Assets and install it with Unity Mod Manager. The qualification and remaining
+live check are in [the candidate evidence](docs/VALUE-BADGE-0.1.16-CANDIDATE.md).
+
+For the 0.1.15 testing alpha, download **KingmakerDiceRoller-0.1.15.zip** from
+the [v0.1.15 release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.15)
+Assets and install it with Unity Mod Manager. Its qualification and remaining
+live checks are in [the v4 candidate evidence](docs/NATIVE-STAT-UI-V4-CANDIDATE.md).
+
+For the 0.1.14 testing alpha, download **KingmakerDiceRoller-0.1.14.zip** from
+the [v0.1.14 release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.14)
+Assets and install it with Unity Mod Manager. Its qualification and remaining
+live checks are in [the v3 candidate evidence](docs/NATIVE-STAT-UI-V3-CANDIDATE.md).
+
+For the published earlier version, download **KingmakerDiceRoller-0.1.13.zip** from the
+[v0.1.13 alpha release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.13)
+Assets and install it with Unity Mod Manager. The package and validation
+details are in [the candidate evidence](docs/NATIVE-STAT-UI-V2-CANDIDATE.md).
+The earlier 0.1.12 alpha remains available below.
+
+For a focused 0.1.12 alpha test, download **KingmakerDiceRoller-0.1.12.zip**
+from the [v0.1.12 alpha release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.12)
+Assets and install it with Unity Mod Manager. The earlier stable download was
+0.1.11:
+
 Download **KingmakerDiceRoller-0.1.11.zip** from the
 [v0.1.11 release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.11)
 **Assets**. Drag that ZIP into Unity Mod Manager's Mods tab for Pathfinder:
@@ -146,7 +236,7 @@ Roller**; it is the same mod. Keep the installed UMM/Harmony libraries; no
 loader downgrade is required. GitHub's Source code archives are not mod
 packages.
 
-Version `0.1.11` is the current official release, published on 2026-10-15
+Version `0.1.11` was an earlier official release, published on 2026-10-15
 at the owner's direction without a new in-game test. Its code is the 0.1.10
 code apart from the UMM settings panel and its supporting status records.
 The new panel, the 0.1.9 caption fit and live visual, audio, runtime and
@@ -170,6 +260,8 @@ arrays through a reinstall.
 
 ## Qualification
 
+The 0.1.12 candidate qualification is recorded in `PROJECT-STATE.md` and
+`docs/NATIVE-STAT-UI-CANDIDATE.md`; actual game interaction is pending.
 Offline qualification of 0.1.11 passes 397 deterministic C# cases, 30 Python
 oracle cases, 20 release-gate tests and 18 source-validation groups. Kingmaker
 2.1.7b contract checks include native derived allowances, replay/copy order,

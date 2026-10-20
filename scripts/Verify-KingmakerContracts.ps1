@@ -412,6 +412,22 @@ $applyLevelup = $controller.GetMethod('ApplyLevelup',$flags,$null,[Type[]]@($uni
     if ($scoreEntry.FullName -ne 'Kingmaker.UI.LevelUp.CharBScoresEntry') {
         throw 'Ability allocator score rows are not exact CharBScoresEntry instances.'
     }
+    $rowType = $scoreEntry.GetField('Type',$flags)
+    $allocatorTypes = $abilityAllocator.GetField('m_Types',$flags)
+    $allocatorInit = $abilityAllocator.GetMethod('Init',$flags,[Reflection.Binder]$null,[Type[]]@(),[Reflection.ParameterModifier[]]$null)
+    if (-not $rowType -or $rowType.FieldType -ne $statType -or
+        $rowType.DeclaringType.FullName -ne 'Kingmaker.UI.ServiceWindow.CharacterScreen.CharSScoreEntry' -or
+        -not $allocatorTypes -or -not $allocatorTypes.FieldType.IsGenericType -or
+        $allocatorTypes.FieldType.GetGenericTypeDefinition().FullName -ne 'System.Collections.Generic.List`1' -or
+        $allocatorTypes.FieldType.GetGenericArguments()[0] -ne $statType -or
+        -not $allocatorInit) {
+        throw 'Exact score-row Type and allocator m_Types identity contract changed.'
+    }
+    $allocatorInitBytes = $allocatorInit.GetMethodBody().GetILAsByteArray()
+    if (-not (Test-ByteSequence $allocatorInitBytes ([BitConverter]::GetBytes($rowType.MetadataToken))) -or
+        -not (Test-ByteSequence $allocatorInitBytes ([BitConverter]::GetBytes($allocatorTypes.MetadataToken)))) {
+        throw 'Allocator Init no longer assigns each native row its exact StatType.'
+    }
     $upButton = $scoreEntry.GetField('UpButton',$flags)
     $downButton = $scoreEntry.GetField('DownButton',$flags)
     if (-not $upButton -or -not $downButton -or
@@ -420,15 +436,36 @@ $applyLevelup = $controller.GetMethod('ApplyLevelup',$flags,$null,[Type[]]@($uni
         $upButton.FieldType.FullName -ne 'UnityEngine.UI.Button') {
         throw 'Exact CharBScoresEntry UpButton/DownButton instance fields were not found.'
     }
+    $costAnimator = $scoreEntry.GetField('m_CostContainerAnimator',$flags)
+    $costLabel = $scoreEntry.GetField('m_CostLabel',$flags)
+    $upCost = $scoreEntry.GetField('m_UpCost',$flags)
+    $downCost = $scoreEntry.GetField('m_DownCost',$flags)
+    $pointerEnter = $scoreEntry.GetMethod('OnPointerEnter',$flags)
+    $pointerExit = $scoreEntry.GetMethod('OnPointerExit',$flags)
+    if (-not $costAnimator -or $costAnimator.IsStatic -or
+        $costAnimator.FieldType.FullName -ne 'Kingmaker.UI.Common.Animations.FadeAnimator' -or
+        -not $costLabel -or -not $upCost -or -not $downCost -or
+        $costLabel.FieldType.FullName -ne 'TMPro.TextMeshProUGUI' -or
+        $upCost.FieldType -ne $costLabel.FieldType -or
+        $downCost.FieldType -ne $costLabel.FieldType -or
+        -not $pointerEnter -or -not $pointerExit -or
+        -not (Test-ByteSequence $pointerEnter.GetMethodBody().GetILAsByteArray() ([BitConverter]::GetBytes($costAnimator.MetadataToken))) -or
+        -not (Test-ByteSequence $pointerExit.GetMethodBody().GetILAsByteArray() ([BitConverter]::GetBytes($costAnimator.MetadataToken)))) {
+        throw 'Exact CharBScoresEntry hover cost animator/text contract changed.'
+    }
     $interactable = $upButton.FieldType.GetProperty('interactable',$flags)
     if (-not $interactable -or $interactable.PropertyType -ne [bool] -or
         -not $interactable.GetGetMethod($true) -or -not $interactable.GetSetMethod($true)) {
         throw 'UnityEngine.UI.Selectable.interactable is not an exact writable Boolean contract.'
     }
     $mainLabel = $abilityAllocator.GetField('m_MainLabel',$flags)
+    $pointsValue = $abilityAllocator.GetField('m_AvailibleSkillPoints',$flags)
+    $pointsCaption = $abilityAllocator.GetField('m_AvailibleSkillPointsLabel',$flags)
     $frame = $abilityAllocator.GetField('m_Frame',$flags)
     $raceBonusContainer = $abilityAllocator.GetField('m_RaceBonusContainer',$flags)
     if (-not $mainLabel -or $mainLabel.IsStatic -or $mainLabel.FieldType.FullName -ne 'TMPro.TextMeshProUGUI' -or
+        -not $pointsValue -or $pointsValue.IsStatic -or $pointsValue.FieldType.FullName -ne 'TMPro.TextMeshProUGUI' -or
+        -not $pointsCaption -or $pointsCaption.IsStatic -or $pointsCaption.FieldType.FullName -ne 'TMPro.TextMeshProUGUI' -or
         -not $frame -or $frame.IsStatic -or $frame.FieldType.FullName -ne 'UnityEngine.UI.Image' -or
         -not $raceBonusContainer -or $raceBonusContainer.IsStatic -or $raceBonusContainer.FieldType.FullName -ne 'UnityEngine.GameObject') {
         throw 'Native ability allocator text/frame/racial-bonus UI anchors were not found.'
@@ -467,9 +504,12 @@ $applyLevelup = $controller.GetMethod('ApplyLevelup',$flags,$null,[Type[]]@($uni
             "$($abilityAllocator.FullName).FillData()",
             "$($abilityAllocator.FullName).m_Unit", "$($abilityAllocator.FullName).m_PreviewUnit",
             "$($abilityAllocator.FullName).m_StatEntries -> $($scoreEntry.FullName)",
+            "$($rowType.DeclaringType.FullName).Type <- $($abilityAllocator.FullName).m_Types in Init()",
             "$($scoreEntry.FullName).UpButton", "$($scoreEntry.FullName).DownButton",
+            "$($scoreEntry.FullName).m_CostContainerAnimator + m_CostLabel + m_UpCost + m_DownCost; OnPointerEnter/Exit uses animator",
             "$($upButton.FieldType.FullName).interactable",
             "$($abilityAllocator.FullName).m_MainLabel", "$($abilityAllocator.FullName).m_Frame",
+            "$($abilityAllocator.FullName).m_AvailibleSkillPointsLabel", "$($abilityAllocator.FullName).m_AvailibleSkillPoints",
             "$($abilityAllocator.FullName).m_RaceBonusContainer"
         )
         abilities = $abilityNames
@@ -508,6 +548,7 @@ $applyLevelup = $controller.GetMethod('ApplyLevelup',$flags,$null,[Type[]]@($uni
             score_rows = 'm_StatEntries -> CharBScoresEntry'
             controls = @('UpButton.interactable','DownButton.interactable')
             style_anchors = @('m_MainLabel: TMPro.TextMeshProUGUI','m_Frame: UnityEngine.UI.Image')
+            ability_badge = @('m_AvailibleSkillPointsLabel: TMPro.TextMeshProUGUI','m_AvailibleSkillPoints: TMPro.TextMeshProUGUI')
             preferred_access_tab_geometry = 'm_RaceBonusContainer: UnityEngine.GameObject'
             fallback_access_tab_geometry = @('m_Frame: UnityEngine.UI.Image','ability allocator RectTransform','ability phase root RectTransform')
         }

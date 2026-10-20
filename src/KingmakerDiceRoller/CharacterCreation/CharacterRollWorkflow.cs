@@ -89,11 +89,14 @@ namespace KingmakerDiceRoller.CharacterCreation
             ClearError();
         }
 
-        public void CommitHistorySelection(RollSession session, RollHistoryEntry entry)
+        public void CommitHistorySelection(RollSession session, RollHistoryEntry entry, int index)
         {
             if (entry == null) throw new ArgumentNullException(nameof(entry));
-            CommitAssignment(session, entry.Assignment, "History entry verified on the live preview.");
-            session.History.MarkSelectedActive();
+            // Do not update the departed active entry with the target assignment.
+            session.CommitRecallOrAssignment(entry.Assignment, false);
+            session.History.Activate(index, entry.Sequence);
+            status = "History entry verified on the live preview.";
+            ClearError();
             currentRuleId = entry.RuleId;
             currentExpression = entry.Expression;
         }
@@ -109,6 +112,8 @@ namespace KingmakerDiceRoller.CharacterCreation
             ClearError();
             currentRuleId = string.IsNullOrWhiteSpace(record.RuleId) ? "saved" : record.RuleId;
             currentExpression = record.Expression ?? string.Empty;
+            session.History.AddRecorded(assignment, currentRuleId, currentExpression,
+                nextSequence++, utcNow(), equivalentCalculator.Calculate(assignment.RolledArray));
         }
 
         public void SetPointBuyStatus()
@@ -166,6 +171,15 @@ namespace KingmakerDiceRoller.CharacterCreation
                 expression));
         }
 
+        public void SelectCustomExpression(string expression)
+        {
+            SetConfiguration(new RollConfiguration(
+                DiceRollPreset.CustomExpression,
+                Configuration.LowScorePolicy,
+                Configuration.MinimumScore,
+                expression));
+        }
+
         public RollHistoryEntry PreviousHistory(RollSession session)
         {
             return session == null ? null : session.History.Previous();
@@ -188,7 +202,8 @@ namespace KingmakerDiceRoller.CharacterCreation
 
         public void StoreCurrent(RollSession session)
         {
-            if (session == null || !session.IsRollMode || session.Assignment == null)
+            if (session == null || !session.IsRollMode || !session.IsApplied ||
+                session.RecoveryRequired || session.Assignment == null)
             {
                 throw new InvalidOperationException("A verified Roll Mode assignment is required before storing.");
             }
@@ -262,7 +277,8 @@ namespace KingmakerDiceRoller.CharacterCreation
                 saved.Count,
                 savedLabel,
                 inlineError,
-                status);
+                status,
+                session != null && session.RecoveryRequired);
         }
 
         private void SetConfiguration(RollConfiguration configuration)

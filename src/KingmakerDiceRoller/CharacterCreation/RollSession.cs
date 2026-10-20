@@ -48,6 +48,7 @@ namespace KingmakerDiceRoller.CharacterCreation
         public PointBuyOrigin PointBuyOrigin { get; private set; }
         public GenerationRollbackSnapshot GenerationRollback { get; private set; }
         public StatAssignment Assignment => pendingAssignment ?? committedAssignment;
+        public bool HasPendingAssignment => pendingAssignment != null;
         public StatAssignment AssignmentForApplication => Assignment;
         public RollSessionLifecycle Lifecycle { get; }
         public RollHistory History { get; }
@@ -65,6 +66,7 @@ namespace KingmakerDiceRoller.CharacterCreation
         public bool AuthoritativeFinalizationApplied { get; private set; }
         public bool FinalizationVerified { get; private set; }
         public bool FinalizationFailed { get; private set; }
+        public bool RecoveryRequired { get; private set; }
         public object FinalizationDescriptor { get; private set; }
         public bool ReboundPreview => Generation > 1;
 
@@ -102,6 +104,7 @@ namespace KingmakerDiceRoller.CharacterCreation
 
         public void BeginRollMode(PointBuyOrigin origin, StatAssignment assignment)
         {
+            if (RecoveryRequired) throw new InvalidOperationException("Native recovery is required before another roll.");
             if (!IsPointBuyMode) throw new InvalidOperationException("Only PointBuy mode can capture a new point-buy origin.");
             PointBuyOrigin = origin ?? throw new ArgumentNullException(nameof(origin));
             pendingAssignment = assignment ?? throw new ArgumentNullException(nameof(assignment));
@@ -114,6 +117,7 @@ namespace KingmakerDiceRoller.CharacterCreation
 
         public void BeginRollReplacement(StatAssignment assignment)
         {
+            if (RecoveryRequired) throw new InvalidOperationException("Native recovery is required before replacing the roll.");
             if (!IsRollMode) throw new InvalidOperationException("Only Roll mode can replace its current assignment.");
             pendingPriorRollWasVerified = IsApplied;
             pendingAssignment = assignment ?? throw new ArgumentNullException(nameof(assignment));
@@ -149,11 +153,32 @@ namespace KingmakerDiceRoller.CharacterCreation
             pendingEntryFromPointBuy = false;
             pendingPriorRollWasVerified = false;
             ResetApplicationTracking();
+            RecoveryRequired = false;
             if (restorePriorVerifiedRoll)
             {
                 StagedGeneration = Generation;
                 VerifiedGeneration = Generation;
             }
+        }
+
+        public void QuarantineFailedPendingRoll(StatAssignment priorCommittedAssignment)
+        {
+            AssignmentRevision++;
+            committedAssignment = priorCommittedAssignment;
+            pendingAssignment = null;
+            pendingEntryFromPointBuy = false;
+            pendingPriorRollWasVerified = false;
+            RecoveryRequired = true;
+            StagedGeneration = 0;
+            VerifiedGeneration = 0;
+            FailedGeneration = Generation;
+        }
+
+        public void RequireRecovery()
+        {
+            RecoveryRequired = true;
+            FailedGeneration = Generation;
+            VerifiedGeneration = 0;
         }
 
         public void ReplaceGenerationRollback(GenerationRollbackSnapshot snapshot)
@@ -168,6 +193,11 @@ namespace KingmakerDiceRoller.CharacterCreation
 
         public bool TryBeginApplicationAttempt(out string error)
         {
+            if (RecoveryRequired)
+            {
+                error = "Native recovery is required before applying another assignment.";
+                return false;
+            }
             if (!IsRollMode && !IsEnteringRollMode)
             {
                 error = "The session is not entering or in Roll mode.";
@@ -207,7 +237,16 @@ namespace KingmakerDiceRoller.CharacterCreation
         public void BeginPointBuyRestore()
         {
             if (PointBuyOrigin == null) throw new InvalidOperationException("No point-buy origin is available.");
+            if (IsPointBuyMode && !RecoveryRequired)
+                throw new InvalidOperationException("Point Buy is already active.");
             Lifecycle.BeginPointBuyRestore();
+        }
+
+        public void MarkPointBuyRestoreFailed()
+        {
+            if (!IsRestoringPointBuy) return;
+            Lifecycle.AbortPointBuyRestore();
+            RequireRecovery();
         }
 
         public void MarkPointBuyRollbackVerified(int generation)
@@ -220,7 +259,12 @@ namespace KingmakerDiceRoller.CharacterCreation
             }
             StagedGeneration = generation;
             Lifecycle.AbortPointBuyRestore();
-            VerifiedGeneration = generation;
+            if (RecoveryRequired)
+            {
+                FailedGeneration = generation;
+                VerifiedGeneration = 0;
+            }
+            else VerifiedGeneration = generation;
         }
 
         public void MarkPointBuyRestored(int generation)
@@ -228,8 +272,10 @@ namespace KingmakerDiceRoller.CharacterCreation
             RequireCurrentGeneration(generation);
             AssignmentRevision++;
             Lifecycle.MarkPointBuyRestored();
+            History.ClearActive();
             pendingAssignment = null;
             pendingEntryFromPointBuy = false;
+            RecoveryRequired = false;
             ResetApplicationTracking();
         }
 
@@ -332,6 +378,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             pendingEntryFromPointBuy = false;
             pendingPriorRollWasVerified = false;
             Lifecycle.CommitRollMode();
+            RecoveryRequired = false;
             VerifiedGeneration = Generation;
             FailedGeneration = 0;
         }

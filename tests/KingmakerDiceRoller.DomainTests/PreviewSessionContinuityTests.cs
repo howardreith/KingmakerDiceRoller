@@ -2629,13 +2629,26 @@ namespace KingmakerDiceRoller.DomainTests
                     typeof(FakeAbilityScoresAllocator).GetField("m_Unit", instance),
                     typeof(FakeAbilityScoresAllocator).GetField("m_PreviewUnit", instance),
                     typeof(FakeAbilityScoresAllocator).GetField("m_StatEntries", instance),
+                    typeof(FakeScoreEntry).GetField("Type", instance),
                     typeof(FakeScoreEntry).GetField("UpButton", instance),
                     typeof(FakeScoreEntry).GetField("DownButton", instance),
+                    null,
+                    null,
+                    null,
+                    null,
                     typeof(FakeButton).GetProperty("interactable", instance),
                     typeof(FakeAbilityScoresAllocator).GetField("m_MainLabel", instance),
+                    null,
+                    null,
                     typeof(FakeAbilityScoresAllocator).GetField("m_Frame", instance),
                     typeof(FakeAbilityScoresAllocator).GetField("m_RaceBonusContainer", instance),
-                    new List<string>());
+                    new List<string>(),
+                    new KingmakerDerivedAllowanceContracts(
+                        typeof(FakeState).GetProperty("TotalSkillPoints", instance),
+                        typeof(FakeState).GetProperty("SpellSelections", instance),
+                        typeof(FakeSpellSelectionData).GetProperty("LevelCount", instance),
+                        typeof(FakeSpellSelectionData).GetProperty("ExtraMaxLevel", instance),
+                        typeof(FakeSpellSelectionState).GetProperty("SpellSelections", instance)));
             }
         }
 
@@ -2806,6 +2819,7 @@ namespace KingmakerDiceRoller.DomainTests
                 IsFirstLevel = isFirstLevel;
                 Mode = FakeMode.CharGen;
                 NextLevel = 1;
+                TotalSkillPoints = 1;
             }
 
             public FakeUnitDescriptor Unit { get; }
@@ -2819,9 +2833,13 @@ namespace KingmakerDiceRoller.DomainTests
             public int ExtraSkillPoints { get; set; }
             public int TotalSkillPoints { get; set; }
             public int SpentSkillPoints { get; set; }
+            public List<FakeSpellSelectionData> SpellSelections { get; } =
+                new List<FakeSpellSelectionData>();
             internal bool AllSkillRanksCapped { get; set; }
             internal int OnApplyActionCalls { get; private set; }
             internal bool ThrowOnApplyAction { get; set; }
+            internal int ThrowAfterNativeEffectsCount { get; set; }
+            internal Action OnApplyActionHook { get; set; }
 
             public int SkillPointsRemaining => TotalSkillPoints - SpentSkillPoints;
 
@@ -2835,6 +2853,21 @@ namespace KingmakerDiceRoller.DomainTests
                 // Mirrors native OnApplyAction: TotalSkillPoints from the cached allowance,
                 // class points, and extras, with the native minimum of one.
                 TotalSkillPoints = Math.Max(IntelligenceSkillPoints + ClassSkillPoints, 1) + ExtraSkillPoints;
+                int bonusSlots = Math.Max(0, (Unit.Stats.GetStat(3).BaseValue - 10) / 2);
+                foreach (FakeSpellSelectionData selection in SpellSelections)
+                {
+                    selection.ExtraMaxLevel = bonusSlots > 0 ? 1 : 0;
+                    FakeSpellSelectionState level = selection.LevelCount[0];
+                    object[] slots = level.SpellSelections;
+                    Array.Resize(ref slots, bonusSlots);
+                    level.SpellSelections = slots;
+                }
+                OnApplyActionHook?.Invoke();
+                if (ThrowAfterNativeEffectsCount > 0)
+                {
+                    ThrowAfterNativeEffectsCount--;
+                    throw new InvalidOperationException("simulated native failure after partial allowance effects");
+                }
             }
 
             public bool IsSkillPointsComplete()
@@ -2843,6 +2876,18 @@ namespace KingmakerDiceRoller.DomainTests
                 if (SpentSkillPoints == TotalSkillPoints) return true;
                 return AllSkillRanksCapped;
             }
+        }
+
+        private sealed class FakeSpellSelectionData
+        {
+            public int ExtraMaxLevel { get; set; }
+            public FakeSpellSelectionState[] LevelCount { get; set; } =
+                new[] { new FakeSpellSelectionState() };
+        }
+
+        private sealed class FakeSpellSelectionState
+        {
+            public object[] SpellSelections { get; set; } = new object[0];
         }
 
         private sealed class FakeProgression
@@ -3017,6 +3062,7 @@ namespace KingmakerDiceRoller.DomainTests
 
         private sealed class FakeScoreEntry
         {
+            public int Type = 0;
             public readonly FakeButton UpButton = new FakeButton();
             public readonly FakeButton DownButton = new FakeButton();
         }

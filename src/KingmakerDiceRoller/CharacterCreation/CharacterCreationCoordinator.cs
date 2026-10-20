@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using KingmakerDiceRoller.Domain;
 using KingmakerDiceRoller.Integration;
 using KingmakerDiceRoller.Logging;
@@ -31,6 +32,10 @@ namespace KingmakerDiceRoller.CharacterCreation
         private int pointBuyReturnRevision;
         private PointBuyReturnOutcome pointBuyReturnOutcome;
         private string pointBuyReturnDetail;
+        private bool commandInProgress;
+        private long commandSequence;
+        private long activeCommandSequence;
+        private RollSession commandSession;
 
         public CharacterCreationCoordinator(
             CharacterCreationContextPolicy contextPolicy,
@@ -109,7 +114,34 @@ namespace KingmakerDiceRoller.CharacterCreation
         }
 
         public bool HasActiveSession => sessions.Active != null;
-        public bool CanRestorePointBuy => sessions.Active != null && sessions.Active.IsRollMode;
+        public bool IsCommandBusy => commandInProgress;
+
+        private bool TryAdmitCommand(string name, out string error)
+        {
+            if (commandInProgress)
+            {
+                // Reentrant native/UI input is a quiet refusal, before any RNG draw.
+                error = null;
+                return false;
+            }
+            commandInProgress = true;
+            commandSession = sessions.Active;
+            activeCommandSequence = ++commandSequence;
+            RecordEvent("Command admitted: sequence=" + activeCommandSequence +
+                ", name=" + name + ", " +
+                (commandSession == null ? "no active session" : BuildSessionFacts(commandSession)));
+            error = null;
+            return true;
+        }
+
+        private void ReleaseCommand()
+        {
+            commandInProgress = false;
+            commandSession = null;
+            activeCommandSequence = 0;
+        }
+        public bool CanRestorePointBuy => sessions.Active != null &&
+            (sessions.Active.IsRollMode || sessions.Active.RecoveryRequired);
         public RollSession ActiveSession => sessions.Active;
         public RollUiSnapshot UiSnapshot => workflow.Snapshot(sessions.Active);
 
@@ -652,7 +684,7 @@ namespace KingmakerDiceRoller.CharacterCreation
 
             session = sessions.Active;
             SynchronizeSkillsPresentation(sessions.Active, "update");
-            if (session == null ||
+            if (session == null || commandInProgress || session.RecoveryRequired ||
                 (!session.IsRollMode && !session.IsEnteringRollMode) ||
                 session.IsApplied ||
                 session.IsApplicationFailed ||
@@ -697,8 +729,15 @@ namespace KingmakerDiceRoller.CharacterCreation
 
         public bool TryRoll(out string error)
         {
+            if (!TryAdmitCommand("Roll", out error)) return false;
+            try { return TryRollCore(out error); }
+            finally { ReleaseCommand(); }
+        }
+
+        private bool TryRollCore(out string error)
+        {
             RollSession session = sessions.Active;
-            if (session == null || !session.IsPointBuyMode)
+            if (session == null || !session.IsPointBuyMode || session.RecoveryRequired)
             {
                 error = "Roll is available only for an active new-character Point Buy session.";
                 workflow.SetFailure(error);
@@ -719,8 +758,15 @@ namespace KingmakerDiceRoller.CharacterCreation
 
         public bool TryReroll(out string error)
         {
+            if (!TryAdmitCommand("Reroll", out error)) return false;
+            try { return TryRerollCore(out error); }
+            finally { ReleaseCommand(); }
+        }
+
+        private bool TryRerollCore(out string error)
+        {
             RollSession session = sessions.Active;
-            if (session == null || !session.IsRollMode)
+            if (session == null || !session.IsRollMode || session.RecoveryRequired)
             {
                 error = "Reroll is available only while Roll Mode is active.";
                 workflow.SetFailure(error);
@@ -739,8 +785,16 @@ namespace KingmakerDiceRoller.CharacterCreation
 
         public bool TryMoveAssignment(AbilityScore ability, bool moveUp, out string error)
         {
+            if (!TryAdmitCommand("Reassign", out error)) return false;
+            try { return TryMoveAssignmentCore(ability, moveUp, out error); }
+            finally { ReleaseCommand(); }
+        }
+
+        private bool TryMoveAssignmentCore(AbilityScore ability, bool moveUp, out string error)
+        {
             RollSession session = sessions.Active;
-            if (session == null || !session.IsRollMode || session.Assignment == null)
+            if (session == null || !session.IsApplied || session.RecoveryRequired ||
+                session.Assignment == null)
             {
                 error = "Assignment controls require an active verified Roll Mode array.";
                 workflow.SetFailure(error);
@@ -765,19 +819,29 @@ namespace KingmakerDiceRoller.CharacterCreation
 
         public void SelectPreviousHistory()
         {
+            if (commandInProgress) return;
             workflow.PreviousHistory(sessions.Active);
         }
 
         public void SelectNextHistory()
         {
+            if (commandInProgress) return;
             workflow.NextHistory(sessions.Active);
         }
 
         public bool TryUseSelectedHistory(out string error)
         {
+            if (!TryAdmitCommand("Use history", out error)) return false;
+            try { return TryUseSelectedHistoryCore(out error); }
+            finally { ReleaseCommand(); }
+        }
+
+        private bool TryUseSelectedHistoryCore(out string error)
+        {
             RollSession session = sessions.Active;
             RollHistoryEntry entry = session == null ? null : session.History.Selected;
-            if (session == null || entry == null ||
+            int index = session == null ? -1 : session.History.SelectedIndex;
+            if (session == null || session.RecoveryRequired || entry == null ||
                 (!session.IsPointBuyMode && !session.IsRollMode))
             {
                 error = "No usable history entry is selected.";
@@ -794,12 +858,47 @@ namespace KingmakerDiceRoller.CharacterCreation
                 session,
                 next,
                 origin,
-                () => workflow.CommitHistorySelection(session, entry),
+                () => workflow.CommitHistorySelection(session, entry, index),
                 "Use history",
                 out error);
         }
 
+        public bool TryNavigateHistory(bool previous, out string error)
+        {
+            if (!TryAdmitCommand(previous ? "Previous roll" : "Next roll", out error)) return false;
+            try { return TryNavigateHistoryCore(previous, out error); }
+            finally { ReleaseCommand(); }
+        }
+
+        private bool TryNavigateHistoryCore(bool previous, out string error)
+        {
+            RollSession session = sessions.Active;
+            int index = -1;
+            RollHistoryEntry entry = session == null ? null :
+                session.History.AdjacentActive(previous, session.IsPointBuyMode, out index);
+            if (session == null || session.RecoveryRequired || entry == null ||
+                (!session.IsPointBuyMode && !session.IsRollMode))
+            {
+                error = previous ? "No previous roll is available." : "No next roll is available.";
+                workflow.SetFailure(error);
+                return false;
+            }
+            PointBuyOrigin origin = null;
+            if (session.IsPointBuyMode && !TryCapturePointBuyOrigin(session, out origin, out error))
+                return false;
+            return TryApplyUserAssignment(session, entry.Assignment, origin,
+                () => workflow.CommitHistorySelection(session, entry, index),
+                previous ? "Previous roll" : "Next roll", out error);
+        }
+
         public bool TryStoreCurrent(out string error)
+        {
+            if (!TryAdmitCommand("Save", out error)) return false;
+            try { return TryStoreCurrentCore(out error); }
+            finally { ReleaseCommand(); }
+        }
+
+        private bool TryStoreCurrentCore(out string error)
         {
             try
             {
@@ -817,19 +916,28 @@ namespace KingmakerDiceRoller.CharacterCreation
 
         public void SelectPreviousSaved()
         {
+            if (commandInProgress) return;
             workflow.PreviousSaved();
         }
 
         public void SelectNextSaved()
         {
+            if (commandInProgress) return;
             workflow.NextSaved();
         }
 
         public bool TryRecallSelectedSaved(out string error)
         {
+            if (!TryAdmitCommand("Recall", out error)) return false;
+            try { return TryRecallSelectedSavedCore(out error); }
+            finally { ReleaseCommand(); }
+        }
+
+        private bool TryRecallSelectedSavedCore(out string error)
+        {
             RollSession session = sessions.Active;
             SavedRollArrayRecord record = workflow.Saved.Selected;
-            if (session == null || record == null ||
+            if (session == null || session.RecoveryRequired || record == null ||
                 (!session.IsPointBuyMode && !session.IsRollMode))
             {
                 error = "No saved array can be recalled in the current session.";
@@ -858,30 +966,48 @@ namespace KingmakerDiceRoller.CharacterCreation
 
         public bool DeleteSelectedSaved()
         {
+            if (commandInProgress) return false;
             return workflow.DeleteSelectedSaved();
         }
 
         public void SetPreset(DiceRollPreset preset)
         {
+            if (commandInProgress) return;
             workflow.SetPreset(preset);
         }
 
         public void SetLowScorePolicy(LowScorePolicy policy)
         {
+            if (commandInProgress) return;
             workflow.SetLowScorePolicy(policy);
         }
 
         public void SetMinimumScore(int minimum)
         {
+            if (commandInProgress) return;
             workflow.SetMinimumScore(minimum);
         }
 
         public void SetCustomExpression(string expression)
         {
+            if (commandInProgress) return;
             workflow.SetCustomExpression(expression);
         }
 
+        public void SelectCustomExpression(string expression)
+        {
+            if (commandInProgress) return;
+            workflow.SelectCustomExpression(expression);
+        }
+
         public bool TryRestorePointBuy(out string error)
+        {
+            if (!TryAdmitCommand("Return to Point Buy", out error)) return false;
+            try { return TryRestorePointBuyCore(out error); }
+            finally { ReleaseCommand(); }
+        }
+
+        private bool TryRestorePointBuyCore(out string error)
         {
             RollSession session = sessions.Active;
             if (session == null)
@@ -921,6 +1047,7 @@ namespace KingmakerDiceRoller.CharacterCreation
                 {
                     RestoreDerivedAllowances(session, contracts, derivedPrevious, "Return to Point Buy");
                 }
+                session.RequireRecovery();
                 error = "Point-buy restoration verified, but the native derived allowances did not refresh: " +
                     "restoration=" + restored.BuildFacts(session, application.RefreshInProgress) + " " +
                     BuildSessionFacts(session);
@@ -966,6 +1093,11 @@ namespace KingmakerDiceRoller.CharacterCreation
 
         public bool TryPrepareDisable(out string error)
         {
+            if (commandInProgress)
+            {
+                error = "A starting-score command is still active.";
+                return false;
+            }
             if (sessions.Active != null && sessions.Active.CreationKind == SupportedCharacterCreationKind.Respec &&
                 (respec.Active == null || !respec.Active.IsCurrent)) OnBuildCanceled(sessions.Active.Controller);
             if (sessions.Active == null) respec.Abort(null, "Disabled or unloaded.");
@@ -1052,15 +1184,27 @@ namespace KingmakerDiceRoller.CharacterCreation
                 return false;
             }
 
+            int commandGeneration = session.Generation;
+            object commandState = session.State;
+            object commandUnit = session.Unit;
+            object commandDistribution = session.Distribution;
+            StatAssignment priorAssignment = session.Assignment;
+            bool priorApplied = session.IsApplied;
+            RollHistoryCheckpoint historyBefore = session.History.CaptureCheckpoint();
             GenerationRollbackSnapshot rollback;
+            DerivedAllowanceSnapshot derivedPrevious;
             try
             {
                 rollback = GenerationRollbackSnapshot.Capture(
-                    session.Generation,
-                    session.Distribution,
-                    session.Unit,
+                    commandGeneration,
+                    commandDistribution,
+                    commandUnit,
                     contracts,
                     statAccess);
+                string captureError;
+                if (!derivedRefresh.TryCapture(commandState, commandUnit, contracts,
+                    out derivedPrevious, out captureError))
+                    throw new InvalidOperationException(captureError);
                 session.ReplaceGenerationRollback(rollback);
                 if (capturedOrigin != null)
                 {
@@ -1073,26 +1217,43 @@ namespace KingmakerDiceRoller.CharacterCreation
             }
             catch (Exception exception)
             {
-                error = exception.Message;
+                error = commandName + " unavailable. Check Troubleshooting.";
                 workflow.SetFailure(error);
                 logger.Exception(commandName + " preparation", exception);
+                diagnostics.SetStatus(commandName + " preparation failed: " + exception + " " +
+                    BuildCommandFacts(session, commandGeneration, commandState, commandUnit,
+                        commandDistribution, next, priorAssignment));
                 return false;
             }
 
+            RecordEvent("Candidate staged for command sequence=" + activeCommandSequence +
+                "; " + BuildCommandFacts(session, commandGeneration, commandState,
+                    commandUnit, commandDistribution, next, priorAssignment) +
+                "; skillBefore=" + derivedPrevious.TotalSkillPoints +
+                ", skillRemainingBefore=" + derivedPrevious.SkillPointsRemaining +
+                ", spellbooksBefore=" + derivedPrevious.Spells.Length + ".");
+
             LivePreviewObservation live = null;
             RollPresentationObservation presentation = null;
-            DerivedAllowanceSnapshot derivedPrevious = null;
             try
             {
                 if (!application.TryStageCurrentGeneration(session, contracts, out error))
                 {
                     throw new InvalidOperationException(error);
                 }
-                if (!RefreshDerivedAllowances(session, contracts, commandName, out derivedPrevious))
+                if (!IsExactCommandBinding(session, contracts, commandGeneration,
+                    commandState, commandUnit, commandDistribution))
+                    throw new InvalidOperationException("The command owner or preview changed after score staging.");
+                DerivedAllowanceSnapshot refreshPrevious;
+                string refreshError;
+                if (!RefreshDerivedAllowances(session, contracts, commandName,
+                    out refreshPrevious, out refreshError))
                 {
-                    throw new InvalidOperationException(
-                        "The native derived allowances (skill points/spell slots) did not refresh from the staged scores.");
+                    throw new InvalidOperationException("Native derived refresh: " + refreshError);
                 }
+                if (!IsExactCommandBinding(session, contracts, commandGeneration,
+                    commandState, commandUnit, commandDistribution))
+                    throw new InvalidOperationException("The command owner or preview changed during native allowance refresh.");
                 if (!application.TryMarkLiveVerified(session, contracts, out live, out error))
                 {
                     throw new InvalidOperationException(error);
@@ -1106,6 +1267,9 @@ namespace KingmakerDiceRoller.CharacterCreation
                     throw new InvalidOperationException(error);
                 }
 
+                if (!IsExactCommandBinding(session, contracts, commandGeneration,
+                    commandState, commandUnit, commandDistribution))
+                    throw new InvalidOperationException("The command owner or preview changed before commit.");
                 commit();
                 string facts = live.BuildFacts(session, application.RefreshInProgress) + " " +
                     presentation.BuildFacts();
@@ -1118,37 +1282,81 @@ namespace KingmakerDiceRoller.CharacterCreation
             }
             catch (Exception exception)
             {
-                string primary = exception.Message;
-                bool rollbackVerified = false;
+                string primary = exception.ToString();
+                bool valuesVerified = false;
+                bool derivedVerified = false;
+                bool historyVerified = false;
+                bool recovered = false;
+                string recoveryDetail = null;
                 try
                 {
-                    rollback.Restore(session.Distribution, session.Unit, contracts, statAccess);
-                    rollbackVerified = rollback.Values.DistributionValues.SequenceEqual(
-                            statAccess.ReadDistributionValues(session.Distribution, contracts)) &&
+                    if (!IsExactCommandBinding(session, contracts, commandGeneration,
+                        commandState, commandUnit, commandDistribution))
+                        throw new InvalidOperationException(
+                            "The captured generation is detached; rollback cannot retarget a replacement preview.");
+                    rollback.Restore(commandDistribution, commandUnit, contracts, statAccess);
+                    if (!IsExactCommandBinding(session, contracts, commandGeneration,
+                        commandState, commandUnit, commandDistribution))
+                        throw new InvalidOperationException("The owner changed during score rollback.");
+                    valuesVerified = rollback.Values.DistributionValues.SequenceEqual(
+                            statAccess.ReadDistributionValues(commandDistribution, contracts)) &&
                         rollback.Values.UnitValues.SequenceEqual(
-                            statAccess.ReadUnitBaseValues(session.Unit, contracts)) &&
-                        statAccess.ReadDistributionAvailable(session.Distribution, contracts) == rollback.AllocatorAvailable &&
-                        statAccess.ReadDistributionPoints(session.Distribution, contracts) == rollback.RemainingPoints &&
-                        statAccess.ReadDistributionTotalPoints(session.Distribution, contracts) == rollback.TotalPoints;
-                    if (!rollbackVerified)
-                    {
-                        throw new InvalidOperationException("The command rollback did not verify on the current live preview.");
-                    }
-                    // Rollback covers the semantic effect: derived allowances too, not only six numbers.
-                    RestoreDerivedAllowances(session, contracts, derivedPrevious, commandName);
-                    session.AbortPendingRoll();
+                            statAccess.ReadUnitBaseValues(commandUnit, contracts)) &&
+                        statAccess.ReadDistributionAvailable(commandDistribution, contracts) == rollback.AllocatorAvailable &&
+                        statAccess.ReadDistributionPoints(commandDistribution, contracts) == rollback.RemainingPoints &&
+                        statAccess.ReadDistributionTotalPoints(commandDistribution, contracts) == rollback.TotalPoints;
+                    if (!valuesVerified)
+                        throw new InvalidOperationException("The prior scores or allocator did not verify after rollback.");
+                    string derivedError;
+                    derivedVerified = derivedRefresh.TryRestore(derivedPrevious,
+                        commandState, commandUnit, contracts, out derivedError);
+                    if (!derivedVerified)
+                        throw new InvalidOperationException("Derived restoration: " + derivedError);
+                    if (!IsExactCommandBinding(session, contracts, commandGeneration,
+                        commandState, commandUnit, commandDistribution))
+                        throw new InvalidOperationException("The owner changed during native derived restoration.");
+                    if (!session.HasPendingAssignment || !HistoryMatches(session.History, historyBefore))
+                        throw new InvalidOperationException(
+                            "The pending assignment or history changed before recovery completed.");
                     string ignored;
-                    pointBuyPresentation.TryRefreshCurrentAbilityPhase(contracts, out ignored);
+                    if (!pointBuyPresentation.TryRefreshCurrentAbilityPhase(contracts, out ignored))
+                        RecordEvent("Native ability-page repaint after rollback was unavailable: " + ignored);
+                    session.AbortPendingRoll();
+                    historyVerified = HistoryMatches(session.History, historyBefore) &&
+                        ReferenceEquals(session.Assignment, priorAssignment) &&
+                        session.IsApplied == priorApplied && !session.RecoveryRequired;
+                    if (!historyVerified)
+                        throw new InvalidOperationException(
+                            "The prior committed assignment or history did not verify after pending rollback.");
+                    recovered = true;
                 }
                 catch (Exception rollbackException)
                 {
                     logger.Exception(commandName + " rollback", rollbackException);
-                    primary += " Recovery also failed: " + rollbackException.Message;
+                    recoveryDetail = rollbackException.ToString();
                 }
-                error = commandName + " failed without committing: " + primary;
+                if (!recovered && ReferenceEquals(sessions.Active, session))
+                {
+                    session.History.RestoreCheckpoint(historyBefore);
+                    session.QuarantineFailedPendingRoll(priorAssignment);
+                }
+                error = recovered
+                    ? commandName + " failed. " +
+                        (priorApplied ? "Previous roll kept." : "Point Buy kept.")
+                    : "Recovery incomplete. Return to Point Buy or check Troubleshooting.";
                 workflow.SetFailure(error);
-                diagnostics.SetStatus(error);
-                RecordEvent("FAIL " + error + " rollbackVerified=" + BooleanText(rollbackVerified) + ".");
+                string detail = "FAIL command sequence=" + activeCommandSequence +
+                    ", name=" + commandName + ", recovered=" + BooleanText(recovered) +
+                    ", valuesVerified=" + BooleanText(valuesVerified) +
+                    ", derivedVerified=" + BooleanText(derivedVerified) +
+                    ", historyVerified=" + BooleanText(historyVerified) +
+                    "; cause=" + primary + "; recovery=" +
+                    (recoveryDetail ?? "verified") + "; " +
+                    BuildCommandFacts(session, commandGeneration, commandState,
+                        commandUnit, commandDistribution, next, priorAssignment);
+                diagnostics.SetStatus(detail);
+                logger.Error(detail);
+                RecordEvent(detail);
                 return false;
             }
         }
@@ -1159,8 +1367,18 @@ namespace KingmakerDiceRoller.CharacterCreation
             string commandName,
             out DerivedAllowanceSnapshot previous)
         {
+            string ignored;
+            return RefreshDerivedAllowances(session, contracts, commandName, out previous, out ignored);
+        }
+
+        private bool RefreshDerivedAllowances(
+            RollSession session,
+            KingmakerContracts contracts,
+            string commandName,
+            out DerivedAllowanceSnapshot previous,
+            out string refreshError)
+        {
             int granted;
-            string refreshError;
             if (derivedRefresh.TryRefresh(session.State, session.Unit, contracts, out previous, out granted, out refreshError))
             {
                 RecordEvent(
@@ -1209,6 +1427,47 @@ namespace KingmakerDiceRoller.CharacterCreation
             if (session.CreationKind == SupportedCharacterCreationKind.Respec && session.IsPointBuyMode &&
                 !statAccess.ReadDistributionAvailable(distribution, contracts)) return false;
             return session.OwnsDistribution(distribution);
+        }
+
+        private bool IsExactCommandBinding(RollSession session, KingmakerContracts contracts,
+            int generation, object state, object unit, object distribution)
+        {
+            return ReferenceEquals(sessions.Active, session) &&
+                session.Generation == generation &&
+                ReferenceEquals(session.State, state) &&
+                ReferenceEquals(session.Unit, unit) &&
+                ReferenceEquals(session.Distribution, distribution) &&
+                HasCurrentLiveBinding(session, contracts);
+        }
+
+        private static bool HistoryMatches(RollHistory history, RollHistoryCheckpoint checkpoint)
+        {
+            if (history.Count != checkpoint.Entries.Length ||
+                history.SelectedIndex != checkpoint.SelectedIndex ||
+                history.ActiveSequence != checkpoint.ActiveSequence) return false;
+            RollHistoryEntry[] current = history.Snapshot();
+            for (int index = 0; index < checkpoint.Entries.Length; index++)
+                if (!ReferenceEquals(current[index], checkpoint.Entries[index])) return false;
+            return true;
+        }
+
+        private static string BuildCommandFacts(RollSession session, int generation,
+            object state, object unit, object distribution, StatAssignment candidate,
+            StatAssignment previous)
+        {
+            return "kind=" + session.CreationKind +
+                ", capturedGeneration=" + generation +
+                ", currentGeneration=" + session.Generation +
+                ", state=" + Identity(state) +
+                ", unit=" + Identity(unit) +
+                ", distribution=" + Identity(distribution) +
+                ", candidate=" + (candidate == null ? "none" : DescribeValues(candidate.ToAssignedArray())) +
+                ", previous=" + (previous == null ? "none" : DescribeValues(previous.ToAssignedArray()));
+        }
+
+        private static string Identity(object value)
+        {
+            return value == null ? "none" : RuntimeHelpers.GetHashCode(value).ToString("X8");
         }
 
         private static string BuildSessionFacts(RollSession session)

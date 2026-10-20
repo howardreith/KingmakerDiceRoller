@@ -1,5 +1,278 @@
 # Project state
 
+## 0.2.0 stable release preparation
+
+On 2026-10-19 the owner requested merging the native stats UI mission branch
+into the GitHub default branch and publishing a stable `0.2.0` release. The
+0.1.17 testing alpha is the behavioral basis; the release preparation changes
+version metadata, release documentation and source validation only. The
+latest alpha's page-return badge fix and its reproducible smoke scenario
+remain included. The development agent has not completed in-game visual,
+save/reload or compatibility qualification, so runtime qualification remains
+**No**. The owner specifically authorized a stable release; the guarded
+publisher's pre-runtime path preserves that distinction. It must run full
+qualification on the final default-branch commit.
+
+## Qualification truth
+
+- Implemented: **Yes** — native stats UI work and 0.2.0 version metadata.
+- Source-qualified: **Yes** — the 0.2.0 preparation run passed release-gate
+  tests 20/20, repository validation 18 groups, the Python oracle 30/30 and
+  deterministic C# behavior cases 416/416.
+- Contract-qualified: **Yes** — installed Kingmaker 2.1.7b read-only
+  contracts, respec checks 11/11 and native UI IL/contracts 30/30 passed.
+- Build-qualified: **Yes** — 0.2.0 Release build succeeded with zero warnings
+  and zero errors; DLL SHA-256
+  `cd3b60233f348bf634e76bdea44031952700054ab0f82766ebda51342823b3a5`.
+- Package-qualified: **Yes** — strict validation passed for the six-entry
+  preparation ZIP `artifacts/packages/KingmakerDiceRoller-0.2.0.zip` (SHA-256
+  `43f99fabcdd31192ecd5deb46533c2004fa64b59a432c4b094b85290f6dadaad`).
+  The guarded publisher must regenerate and validate the final ZIP from the
+  exact merge commit; this preparation ZIP is not the release asset.
+- Installed: **No** — the development agent has not installed 0.2.0 in game.
+- Focused runtime test: **NOT RUN** — live visual, input and save/reload checks.
+- Runtime-qualified: **No**.
+- Compatibility-qualified: **No**.
+- Release-authorized: **Yes** — the owner requested merge to default and a
+  stable 0.2.0 GitHub release on 2026-10-19.
+- Owner-authorized pre-runtime release: **Yes** — the owner authorized stable
+  v0.2.0 despite the unverified runtime checks; no runtime PASS is recorded.
+- Testing-prerelease-authorized: **No** — the requested release is stable.
+- Publicly released: **No** — pending merge, default-branch qualification and
+  publication.
+
+## 0.1.17 Value badge color alpha
+
+The owner reported that the red Value badge's numeral turns gray after
+rolling, navigating to an earlier character-build page, then returning to
+the ability page. Installed Kingmaker 2.1.7b IL shows
+`CharBAbilityScoresAllocator.FillData()` calls `SetupVisualMarks()`, which
+sets the native Points numeral to `m_TextDisableColor` when the allocator is
+complete. The mod copied that live numeral color into its owned badge each
+time it reattached. The owned numeral and caption now take the allocator's
+exact `m_TextAvailibalePointsColor` and `m_LabelAvailibalePointsColor`
+instead, leaving the native color transitions untouched. The owner explicitly
+requested a new GitHub alpha after candidate qualification. A testing
+prerelease is authorized; stable or runtime-qualified publication is not.
+The published v0.1.16 alpha is unchanged. See
+`docs/VALUE-BADGE-COLOR-0.1.17-CANDIDATE.md` for qualification and the
+remaining live check.
+Clean implementation commit `2f480e0f3c55986756d761e5d793aeb04582e771`
+passed `Qualify.ps1 -Build -Package -Candidate`: release gate 20/20,
+deterministic C# runner 416/416, installed Kingmaker contracts, 11 respec
+checks, 30 native UI IL/contracts, zero-warning Release build, and strict
+package validation. The installable ZIP is
+`artifacts/candidates/2f480e0f3c55986756d761e5d793aeb04582e771/KingmakerDiceRoller-0.1.17.zip`
+(SHA-256 `1ea0856d5440e20390ca734093c051990ef54dbf006616d64c851a87df84f213`).
+The Windows computer-use process exited before window discovery, so the
+rendered page-return badge remains **NOT RUN**.
+The owner's earlier instruction says the full release test suite need not be
+rerun for alpha publication.
+The annotated `v0.1.17` tag points to release documentation commit
+`f1493281ad19422fd7fc948a6bf5a95426d9e5c2` on the mission branch.
+The [GitHub testing prerelease](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.17)
+is published with the exact qualified ZIP and `SHA256SUMS.txt`; GitHub reports
+ZIP SHA-256 `1ea0856d5440e20390ca734093c051990ef54dbf006616d64c851a87df84f213`.
+A fresh Release rebuild reproduced the qualified DLL byte for byte and strict
+ZIP validation passed immediately before publication. The full suite was not
+rerun for publication. v0.1.11 remains latest stable.
+
+## 0.1.16 Value badge correction candidate
+
+The owner corrected the intended meaning of the native Value badge: in Roll
+Mode it should display the point-buy equivalent of the six base scores, not
+their arithmetic sum. The snapshot already calculates both; the owned badge
+now formats `PointBuyEquivalent` while Details retains both numbers. The
+Point Buy badge remains fully native. Version `0.1.16` was qualified as a
+review candidate because v0.1.15 was already published. The owner then
+explicitly requested another GitHub alpha. Publishing `v0.1.16` as a testing
+prerelease is authorized; stable or runtime-qualified publication is not.
+The published v0.1.15 alpha remains unchanged. See
+`docs/VALUE-BADGE-0.1.16-CANDIDATE.md` for qualification and the remaining
+live visual check.
+Clean implementation commit `8e9d60d00a232e327c4207317ce4cdee8b7ee49a`
+passed `Qualify.ps1 -Build -Package -Candidate`: release gate 20/20,
+deterministic C# runner 416/416, installed Kingmaker contracts, 11 respec
+checks, 30 native UI IL/contracts, zero-warning Release build, and strict
+package validation. The installable ZIP is
+`artifacts/candidates/8e9d60d00a232e327c4207317ce4cdee8b7ee49a/KingmakerDiceRoller-0.1.16.zip`
+(SHA-256 `174e21f2c2ef0f65f0dbe66a8619dc3873f37daf49b504adce94e0ec57eb03ca`).
+The Windows computer-use process exited before window discovery, so the
+rendered badge remains **NOT RUN**.
+The owner's earlier instruction says the full release test suite need not be
+rerun for alpha publication.
+The annotated `v0.1.16` tag points to release documentation commit
+`98b394cf33bf44b71ff7c8af7a6e8f496ee26f52` on the mission branch.
+The [GitHub testing prerelease](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.16)
+is published with the exact qualified ZIP and `SHA256SUMS.txt`; GitHub reports
+ZIP SHA-256 `174e21f2c2ef0f65f0dbe66a8619dc3873f37daf49b504adce94e0ec57eb03ca`.
+A fresh Release rebuild reproduced the qualified DLL byte for byte and strict
+ZIP validation passed immediately before publication. The full suite was not
+rerun for publication. v0.1.11 remains latest stable.
+
+## 0.1.15 native-stat UI v4 review candidate
+
+Candidate version `0.1.15` continues draft PR #7 on
+`codex/native-stat-ui-v2`. The v4 mission targets intermittent Reroll
+failure, the Value numeral, owned notice placement, complete racial-selector
+clearance, formula tooltip triggers, and secondary-control tooltip removal.
+The implementation captures native skill and spell allowance state before a
+candidate, verifies it after rollback, admits commands before RNG use, and
+quarantines incomplete recovery. Native exceptions now retain their inner
+stage and stack in diagnostics. The original intermittent in-game failure
+cause is unproven because no live run or log is available.
+
+The owner requested v4 fixes and a reviewable candidate, then explicitly
+requested another alpha release. Publishing `v0.1.15` as a testing prerelease
+is authorized; stable or runtime-qualified publication is not. The published
+0.1.14 testing alpha remains unchanged.
+Clean implementation commit `b3fa9d07042c9946af71eb8aeaa562ff94905944`
+passed `Qualify.ps1 -Build -Package -Candidate`: release gate 20/20,
+deterministic runner 415/415, installed respec contracts 11 checks, native
+UI IL/contracts 30/30, and a zero-warning Release build. The installable ZIP
+is `artifacts/candidates/b3fa9d07042c9946af71eb8aeaa562ff94905944/KingmakerDiceRoller-0.1.15.zip`
+(SHA-256 `e1c06ad23f290d735285227a487483dcf8a0aa5d33be738c46f48b039c63eac6`).
+See `docs/NATIVE-STAT-UI-V4-CANDIDATE.md` for the six-item acceptance record.
+The Windows computer-use helper failed before window discovery again;
+actual-game visual, input, and compatibility checks remain **NOT RUN**.
+The owner said the full release test suite need not be rerun for this alpha.
+The annotated `v0.1.15` tag points to release documentation commit
+`73d18da6bf36fa4c785c7376f0e310a8643afd0c` on the mission branch.
+The [GitHub testing prerelease](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.15)
+is published with the validated ZIP and `SHA256SUMS.txt`; GitHub reports ZIP
+SHA-256 `e1c06ad23f290d735285227a487483dcf8a0aa5d33be738c46f48b039c63eac6`.
+A fresh zero-warning Release rebuild reproduced the qualified DLL byte for
+byte, and strict ZIP validation passed immediately before publication. The
+full suite was not rerun for publication. v0.1.11 remains latest stable.
+
+## 0.1.14 native-stat UI presentation alpha
+
+Candidate version `0.1.14` continues draft PR #7 on
+`codex/native-stat-ui-v2`. It responds to the owner's v3 mission: centered
+formula selector and visible native chevron; full native ability badge;
+downward right-column icons; one measured, nonblocking native-style tooltip
+overlay; exact score-row cost presentation concealment; and a single compact
+Previous/Next/Return row with final-content measurement for Human.
+
+The 0.1.13 testing prerelease remains published and unchanged. Clean
+implementation commit `252ff2f435476bdc74d051cf09358250dd3e204c`
+passed `Qualify.ps1 -Build -Package -Candidate`: release gate 20/20,
+deterministic runner 413/413, installed respec contracts 11 groups, native UI
+IL/contracts 30/30, and a zero-warning Release build. The installable ZIP is
+`artifacts/candidates/252ff2f435476bdc74d051cf09358250dd3e204c/KingmakerDiceRoller-0.1.14.zip`
+(SHA-256 `95603893a14a0b6538977070e893603ab1328f556c7893fe70d5229fbfca6d1a`).
+The exact artifact and six-item acceptance record are in
+`docs/NATIVE-STAT-UI-V3-CANDIDATE.md`. The Windows computer-use helper failed
+during initialization, before window discovery; actual-game visual and input
+checks remain **NOT RUN**. On 2026-10-19 the owner requested another alpha
+release of this version. The earlier instruction to build and publish an alpha
+without rerunning the full release suite remains in effect. Testing-alpha
+publication is **authorized**; stable or runtime-qualified publication is not.
+The annotated `v0.1.14` tag points to
+`a45e5336add15dfc45aea249ee2b6d7c5e78c142` on the mission branch. The
+[GitHub testing prerelease](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.14)
+is published with the validated ZIP and `SHA256SUMS.txt`; GitHub reports ZIP
+SHA-256 `95603893a14a0b6538977070e893603ab1328f556c7893fe70d5229fbfca6d1a`.
+A fresh zero-warning Release rebuild and strict package validation reproduced
+the qualified candidate ZIP and DLL byte for byte. The full suite was not
+rerun for publication, per the owner's alpha instruction. v0.1.11 remains
+latest stable. Actual-game visuals, input, and compatibility remain **NOT RUN**.
+
+## 0.1.13 revised native-stat UI candidate
+
+Candidate version `0.1.13` on branch `codex/native-stat-ui-v2` starts from the
+published 0.1.12 alpha record.
+This revision makes ordinary Point Buy the single-button default, adds a
+separate Roll-ready view, binds the ability allocator's exact Value badge,
+uses one right-hand downward swap column, and moves low-score controls to UMM
+settings. Recent-roll navigation directly applies bounded history entries;
+saved recalls append one entry. The raw formula draft is validated without
+random consumption before generation. The published 0.1.12 alpha remains
+unchanged.
+
+- Final implementation commit: `46a1f2c5fdf236ef48dc4e5ffb4a78316d6bcf05`.
+- Source-qualified: **Yes** — source oracle, repository validation, and
+  deterministic runner passed on the implementation commit.
+- Contract-qualified: **Yes** — installed 2.1.7b contract resolver, 11 respec
+  groups, and 30 native UI IL/contracts passed.
+- Build-qualified: **Yes** — Release build had zero warnings/errors.
+- Package-qualified: **Yes** — `Qualify.ps1 -Build -Package -Candidate` passed.
+  The ignored ZIP is
+  `artifacts/candidates/46a1f2c5fdf236ef48dc4e5ffb4a78316d6bcf05/KingmakerDiceRoller-0.1.13.zip`
+  (SHA-256 `e22827efea6450a089da8e4582a5fb7b82de3909c4d5b884e6850c9729067667`).
+- Actual game visuals and input: **NOT RUN** for 0.1.13. The computer-use
+  helper exited before it could list windows on two attempts. No after
+  screenshots or in-game click/input observations were obtained.
+- Compatibility sweep: **NOT RUN** for 0.1.13.
+- Stable/official release: **No**; this is a testing prerelease.
+- Testing-alpha publication authorized: **Yes** — on 2026-10-19 the owner
+  requested another alpha release of the new version. The earlier instruction
+  to build and publish an alpha without rerunning the full release suite
+  remains in effect. This does not authorize a stable or runtime-qualified
+  release.
+- Alpha-published: **Yes** — the annotated `v0.1.13` tag points to
+  `528b827e198769e4818d65f637a1ff1a4d4b0b9a` on the v2 feature branch.
+  The [GitHub prerelease](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.13)
+  contains the validated ZIP and `SHA256SUMS.txt`; GitHub reports the ZIP's
+  SHA-256 as `e22827efea6450a089da8e4582a5fb7b82de3909c4d5b884e6850c9729067667`.
+  A fresh Release build and package validation passed immediately before
+  publication, and the ZIP/DLL matched the fully qualified implementation
+  candidate byte-for-byte. The full suite was not rerun for publication, per
+  the owner's alpha instruction. v0.1.11 remains latest stable. No merge,
+  stable release, or Nexus upload occurred. Runtime/visual and compatibility
+  qualification remain **No**.
+See `docs/NATIVE-STAT-UI-V2-CANDIDATE.md` for the acceptance evidence and
+remaining live checks. [Draft PR #7](https://github.com/howardreith/KingmakerDiceRoller/pull/7)
+reviews this revision against the existing 0.1.12 alpha branch.
+
+## 0.1.12 inline native-stat UI alpha
+
+Mission branch `codex/inline-native-stat-ui` carries version `0.1.12` and starts from published v0.1.11
+record `ee49f10`. The unchanged UMM ID, assembly, saved-array schema, and
+starting-score ownership policy remain authoritative. The candidate uses the
+native six score rows as the primary score display, adds separate owned
+vertical swap arrows, and inserts a two-row Method/Roll/Save/Load/Point Buy/
+Options/Details strip after the native stat container. Preset selection is
+direct; Load exposes session History and persistent Saved arrays from Point
+Buy. The earlier drawer remains only when exact row/layout attachment fails.
+
+Installed 2.1.7b IL verifies that `CharBAbilityScoresAllocator.Init()` assigns
+the inherited `CharSScoreEntry.Type` from `m_Types`; the host maps six unique
+keys against the existing verified ability keys. The PC main-menu and in-game
+scene metadata show 600-by-50 score rows, 34-by-34 native arrow buttons, and
+the stat container followed by the racial selector. The new view checks live
+rect bounds before accepting inline attachment. It does not infer row identity
+from order, text, or score values.
+
+- Implemented: **Yes, as a review candidate** — source, UI, tests, and docs.
+- Source-qualified: **Yes** — the project-owned deterministic and source gates
+  pass (see `docs/NATIVE-STAT-UI-CANDIDATE.md` for the exact final candidate).
+- Contract-qualified: **Yes** — installed Kingmaker and native UI contract
+  checks pass; this does not prove a rendered screen.
+- Build-qualified: **Yes** — Release build has zero warnings/errors.
+- Package-qualified: **Yes** — `Qualify.ps1 -Build -Package -Candidate`
+  passed on clean implementation commit `8b8ce349e029e6c68bf52a860a37dd75e5294f6c`.
+  The ignored candidate ZIP is `artifacts/candidates/8b8ce349e029e6c68bf52a860a37dd75e5294f6c/KingmakerDiceRoller-0.1.12.zip`
+  (SHA-256 `53e1344d0bd1d93b52f7fadf66a20c64993363462e432d7c74302518940080c0`;
+  DLL SHA-256 `d17d9f866dbb0e3b7134ee3cbef6697064f13627b401a8b6c51b36054ce2a53a`).
+- Installed: **No** — the user's installed mod was not changed.
+- Runtime/visual-qualified: **No** — actual-game frames and interactions are
+  NOT RUN. The computer-use helper exited unexpectedly twice before window
+  inventory; no game UI was observed or driven.
+- Compatibility-qualified: **No** — no new live compatibility sweep.
+- Alpha-published: **Yes** — on 2026-10-19 the owner requested an alpha on
+  GitHub for installation on another computer, with a fresh build and without
+  rerunning the full release suite. The annotated `v0.1.12` tag points to
+  `fff39292b8d8f86988a96d1ac139d1eb51213b24` on the mission branch.
+  [GitHub release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.1.12)
+  is a published prerelease; v0.1.11 remains latest stable. The uploaded ZIP
+  digest matches the validated candidate SHA-256 above. A fresh Release build
+  had zero warnings/errors and `Package.ps1` validated the identical ZIP;
+  the full suite was not rerun for this publication. No merge, stable release,
+  or Nexus upload occurred. Runtime/visual and compatibility qualification
+  remain **No**.
+
+
 ## Current 0.1.11 settings-panel cleanup release
 
 Version `0.1.11`; branch `z/umm-panel-simplification`, based on `main` at
@@ -43,7 +316,7 @@ It does not cover a Nexus upload or a permanent installation.
   context policy, ownership checks, native UI, branding and identifiers. The
   Nexus copy now describes 0.1.11.
 
-## Qualification truth
+## Qualification truth (0.1.11 historical)
 
 - Implemented: **Yes** — UMM panel presentation, structured panel state and
   documentation.

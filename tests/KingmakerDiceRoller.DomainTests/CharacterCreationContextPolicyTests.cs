@@ -569,6 +569,13 @@ namespace KingmakerDiceRoller.DomainTests
                 null,
                 null,
                 null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
                 new List<string>());
         }
 

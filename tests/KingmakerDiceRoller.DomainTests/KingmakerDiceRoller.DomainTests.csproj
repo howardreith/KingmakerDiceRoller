@@ -37,12 +37,16 @@
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RespecLifecycleService.cs"><Link>CharacterCreation\RespecLifecycleService.cs</Link></Compile>
     <Compile Include="CharacterCreationContextPolicyTests.cs" />
     <Compile Include="CollapsedAccessTabLayoutTests.cs" />
+    <Compile Include="InlineTooltipPlacementTests.cs" />
+    <Compile Include="..\..\src\KingmakerDiceRoller\UI\InlineTooltipPlacement.cs"><Link>UI\InlineTooltipPlacement.cs</Link></Compile>
     <Compile Include="PreviewSessionContinuityTests.cs" />
     <Compile Include="BuildIntegrityTests.cs" />
     <Compile Include="SkillsNavigationTests.cs" />
     <Compile Include="ProductWorkflowTests.cs" />
     <Compile Include="NativePanelLifecycleTests.cs" />
     <Compile Include="NativePanelUsabilityTests.cs" />
+    <Compile Include="NativeScoreRowIdentityTests.cs" />
+    <Compile Include="NativeViewCommandBindingTests.cs" />
     <Compile Include="RollUiPresenterTests.cs" />
     <Compile Include="ResponsiveRollPanelLayoutTests.cs" />
     <Compile Include="Program.cs" />
@@ -72,6 +76,8 @@
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\NativePanelAttachmentLifecycle.cs"><Link>CharacterCreation\NativePanelAttachmentLifecycle.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\NativeRollPanelLayoutSpec.cs"><Link>CharacterCreation\NativeRollPanelLayoutSpec.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\NativeRollPanelState.cs"><Link>CharacterCreation\NativeRollPanelState.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\NativeScoreRowIdentity.cs"><Link>CharacterCreation\NativeScoreRowIdentity.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\NativeViewCommandBinding.cs"><Link>CharacterCreation\NativeViewCommandBinding.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\GenerationRollbackSnapshot.cs"><Link>CharacterCreation\GenerationRollbackSnapshot.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\PointBuyOrigin.cs"><Link>CharacterCreation\PointBuyOrigin.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\PointBudgetResolver.cs"><Link>CharacterCreation\PointBudgetResolver.cs</Link></Compile>
@@ -87,6 +93,7 @@
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RollPanelModel.cs"><Link>CharacterCreation\RollPanelModel.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RollUiCommand.cs"><Link>CharacterCreation\RollUiCommand.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RollUiCommandRouter.cs"><Link>CharacterCreation\RollUiCommandRouter.cs</Link></Compile>
+    <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RollFormulaDraft.cs"><Link>CharacterCreation\RollFormulaDraft.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RollSessionMode.cs"><Link>CharacterCreation\RollSessionMode.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RollPresentationObservation.cs"><Link>CharacterCreation\RollPresentationObservation.cs</Link></Compile>
     <Compile Include="..\..\src\KingmakerDiceRoller\CharacterCreation\RollSessionManager.cs"><Link>CharacterCreation\RollSessionManager.cs</Link></Compile>

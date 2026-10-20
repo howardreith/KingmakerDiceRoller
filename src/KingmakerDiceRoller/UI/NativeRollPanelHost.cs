@@ -8,6 +8,7 @@ using KingmakerDiceRoller.Integration;
 using KingmakerDiceRoller.Logging;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
@@ -49,6 +50,68 @@ namespace KingmakerDiceRoller.UI
         private readonly ResponsiveRollPanelLayoutCalculator layoutCalculator;
         private readonly CollapsedAccessTabLayoutCalculator accessTabLayoutCalculator;
         private readonly List<AssignmentWidgets> assignmentRows = new List<AssignmentWidgets>();
+        private readonly List<Button> inlineDownArrows = new List<Button>();
+        private readonly List<Button> inlinePresetChoices = new List<Button>();
+        private readonly List<GameObject> inlineOwnedArrows = new List<GameObject>();
+        private readonly List<NativeButtonVisualState> nativeRowVisuals = new List<NativeButtonVisualState>();
+        private readonly List<NativeCostHintVisualState> nativeCostHints = new List<NativeCostHintVisualState>();
+        private NativeViewCommandBinding viewBinding;
+        private GameObject inlineToolbar;
+        private GameObject inlinePointBuyEntry;
+        private GameObject inlineWorkspace;
+        private RectTransform inlineFormulaGroup;
+        private RectTransform inlineStatsContainer;
+        private RectTransform inlineBadgeFrame;
+        private RectTransform inlineAbilityHeading;
+        private InlineTooltipOverlay inlineTooltipOverlay;
+        private GameObject inlineTooltipPanel;
+        private GameObject inlinePolicyNote;
+        private GameObject presetPopup;
+        private GameObject presetBlocker;
+        private TextMeshProUGUI policyNoteLabel;
+        private TMP_InputField formulaInput;
+        private RollFormulaDraft formulaDraft;
+        private Button inlineEntryButton;
+        private Button inlinePreviousButton;
+        private Button inlineNextButton;
+        private TextMeshProUGUI badgeNativeCaption;
+        private TextMeshProUGUI badgeNativeValue;
+        private TextMeshProUGUI badgeOwnedCaption;
+        private TextMeshProUGUI badgeOwnedValue;
+        private Color badgeAvailableValueColor;
+        private Color badgeAvailableCaptionColor;
+        private GameObject badgeActiveBackground;
+        private bool badgeCaptionOriginallyEnabled;
+        private bool badgeValueOriginallyEnabled;
+        private bool workspaceOpen;
+        private bool nativeVisualsHidden;
+        private bool readyControlsSuppressed;
+        private float lastInlineGeometryHeight = -1f;
+        private float lastInlineGeometryWidth = -1f;
+        private float lastInlineGeometryScale = -1f;
+        private float lastInlineToolbarHeight = -1f;
+        private float lastInlineRaceHeight = -1f;
+        private float lastInlineRaceY = float.NaN;
+        private float lastInlineRaceVisibleBottom = float.NaN;
+        private bool? lastInlineRacialActive;
+        private RollSessionMode? lastInlineMode;
+        private GameObject inlineStatus;
+        private GameObject presetChoices;
+        private GameObject presetSelectorSection;
+        private GameObject policySelectorSection;
+        private TextMeshProUGUI inlineStatusLabel;
+        private Button inlinePresetButton;
+        private InlineArrowTooltip inlinePresetTooltip;
+        private Button inlineRollButton;
+        private Button inlineRerollButton;
+        private Button inlineSaveButton;
+        private Button inlineLoadButton;
+        private Button inlineReturnButton;
+        private bool inlineAvailable;
+        private int inlineAttachAttempts;
+        private InlineMenuKind inlineMenu;
+
+        private enum InlineMenuKind { None, Presets, Load }
 
         private NativeBookTheme theme;
         private Transform attachedThemeOwner;
@@ -98,6 +161,7 @@ namespace KingmakerDiceRoller.UI
         private string commandError;
         private Button closeButton;
         private TextMeshProUGUI modeLabel;
+        private TextMeshProUGUI menuHeadingLabel;
         private TextMeshProUGUI presetLabel;
         private TextMeshProUGUI policyLabel;
         private TextMeshProUGUI minimumLabel;
@@ -182,6 +246,21 @@ namespace KingmakerDiceRoller.UI
 
         public void Update()
         {
+            if (inlineAvailable && Input.GetKeyDown(KeyCode.Escape) &&
+                inlineMenu == InlineMenuKind.Presets)
+            {
+                ClosePresetPopup();
+            }
+            else if (inlineAvailable && formulaInput != null && formulaInput.isFocused &&
+                Input.GetKeyDown(KeyCode.Escape) && formulaDraft != null)
+            {
+                formulaDraft.Revert();
+                rendering = true;
+                try { formulaInput.text = formulaDraft.Text; }
+                finally { rendering = false; }
+                formulaInput.DeactivateInputField();
+                commandError = null;
+            }
             KingmakerContracts contracts = contractsProvider();
             object characterBuild;
             bool active;
@@ -230,16 +309,31 @@ namespace KingmakerDiceRoller.UI
             lifecycle.Reset();
             DestroyAttachedView(contracts);
             panelState.EndOwner();
+            workspaceOpen = false;
+            formulaDraft = null;
+            lastInlineMode = null;
         }
 
         private void EndOwnerIfSessionEnded()
         {
-            if (commands.ActiveSession == null) panelState.EndOwner();
+            if (commands.ActiveSession == null)
+            {
+                panelState.EndOwner();
+                workspaceOpen = false;
+                formulaDraft = null;
+                lastInlineMode = null;
+            }
         }
 
         private void DestroyAttachedView(KingmakerContracts contracts)
         {
             nativeControls.RestoreOwnedStates(contracts);
+            DestroyInlineView();
+            presetChoices = null;
+            presetSelectorSection = null;
+            policySelectorSection = null;
+            inlineAttachAttempts = 0;
+            viewBinding = null;
             attachedAllocator = null;
             theme = null;
             attachedThemeOwner = null;
@@ -250,6 +344,7 @@ namespace KingmakerDiceRoller.UI
             lastAccessTabAnchorSource = null;
             assignmentRows.Clear();
             modeLabel = null;
+            menuHeadingLabel = null;
             closeButton = null;
             commandError = null;
             presetLabel = null;
@@ -348,14 +443,35 @@ namespace KingmakerDiceRoller.UI
             if (constructionBudget.Exhausted) return;
 
             bool ownerChanged = panelState.ObserveOwner(session.Controller, session.StableOwner);
+            if (ownerChanged || formulaDraft == null)
+            {
+                workspaceOpen = false;
+                formulaDraft = new RollFormulaDraft(commands.Snapshot.Configuration);
+                lastInlineMode = null;
+                inlineMenu = InlineMenuKind.None;
+            }
             Transform themeOwner = NativeBookTheme.FindOwner(behaviour);
             if (!ownerChanged && root != null && ReferenceEquals(attachedAllocator, allocator) &&
                 attachedThemeOwner == themeOwner && root.transform.parent == behaviour.transform.parent)
             {
                 RecoverTheme(behaviour, allocatorFilled);
+                if (!inlineAvailable && allocatorFilled && inlineAttachAttempts < 2)
+                {
+                    AttemptInlineAttachment(behaviour, contracts);
+                    if (inlineAvailable)
+                    {
+                        panelState.Close();
+                        if (theme != null)
+                        {
+                            themeBindings.InvalidateApplied();
+                            themeBindings.Apply(theme.Resources, ReportAttachment);
+                        }
+                    }
+                }
                 return;
             }
 
+            InlineMenuKind previousMenu = ownerChanged ? InlineMenuKind.None : inlineMenu;
             DestroyAttachedView(contracts);
             TextMeshProUGUI nativeText = contracts.AbilityAllocatorMainLabelField.GetValue(allocator) as TextMeshProUGUI;
             Image nativeFrame = contracts.AbilityAllocatorFrameField.GetValue(allocator) as Image;
@@ -369,12 +485,21 @@ namespace KingmakerDiceRoller.UI
                 // Styling can subsequently change without touching their listeners/text/state.
                 CreateOwnedView(behaviour, nativeText, nativeFrame, nativeButton);
                 attachedAllocator = allocator;
+                viewBinding = new NativeViewCommandBinding(
+                    session.Controller, session.StableOwner, allocator);
+                AttemptInlineAttachment(behaviour, contracts, nativeText, nativeButton);
+                if (inlineAvailable)
+                {
+                    inlineMenu = previousMenu;
+                    if (inlineMenu == InlineMenuKind.None && panelState.IsExpanded)
+                        panelState.Close();
+                }
                 attachedThemeOwner = themeOwner;
                 themeRecovery.Bind(allocator, themeOwner);
                 RecoverTheme(behaviour, allocatorFilled);
                 panelState.AttachView();
                 ApplySurfaceState();
-                PositionAccessTab(allocator, contracts);
+                if (!inlineAvailable) PositionAccessTab(allocator, contracts);
                 constructionBudget.Clear();
                 AttachmentCount++;
             }
@@ -382,6 +507,28 @@ namespace KingmakerDiceRoller.UI
             {
                 constructionBudget.RecordFailure();
                 throw;
+            }
+        }
+
+        private void AttemptInlineAttachment(MonoBehaviour allocator, KingmakerContracts contracts,
+            TextMeshProUGUI nativeText = null, Button nativeButton = null)
+        {
+            inlineAttachAttempts++;
+            int originalThemeBindings = themeBindings.Count;
+            try
+            {
+                if (nativeText == null)
+                    nativeText = contracts.AbilityAllocatorMainLabelField.GetValue(allocator) as TextMeshProUGUI;
+                if (nativeButton == null) nativeButton = ResolveNativeButton(allocator, contracts);
+                if (nativeText == null || nativeButton == null)
+                    throw new InvalidOperationException("Native row styling is unavailable.");
+                inlineAvailable = TryCreateInlineView(allocator, contracts, nativeText, nativeButton);
+            }
+            catch (Exception exception)
+            {
+                ReportAttachment("Native inline stats attachment unavailable; using Roll Stats drawer: " + exception.Message);
+                DestroyInlineView();
+                themeBindings.TrimTo(originalThemeBindings);
             }
         }
 
@@ -453,6 +600,794 @@ namespace KingmakerDiceRoller.UI
             CreateAccessTab(nativeText, nativeButton);
         }
 
+        private bool TryCreateInlineView(
+            MonoBehaviour allocator, KingmakerContracts contracts,
+            TextMeshProUGUI nativeText, Button nativeButton)
+        {
+            IList entries = contracts.AbilityAllocatorStatEntriesField.GetValue(allocator) as IList;
+            if (entries == null || entries.Count != Abilities.Length)
+                throw new InvalidOperationException("The live allocator does not have six native score rows.");
+            var mapped = new object[Abilities.Length];
+            var rowKeys = new object[Abilities.Length];
+            Transform statsContainer = null;
+            for (int rowIndex = 0; rowIndex < entries.Count; rowIndex++)
+            {
+                object entry = entries[rowIndex];
+                var row = entry as MonoBehaviour;
+                if (row == null || !row.isActiveAndEnabled)
+                    throw new InvalidOperationException("A native score row is unavailable.");
+                rowKeys[rowIndex] = contracts.ScoreEntryTypeField.GetValue(entry);
+                Button up = contracts.ScoreEntryUpButtonField.GetValue(entry) as Button;
+                Button down = contracts.ScoreEntryDownButtonField.GetValue(entry) as Button;
+                if (up == null || down == null || !up.transform.IsChildOf(row.transform) ||
+                    !down.transform.IsChildOf(row.transform))
+                    throw new InvalidOperationException("Native row buttons do not belong to their score row.");
+                if (statsContainer == null) statsContainer = row.transform.parent;
+                if (statsContainer != row.transform.parent || statsContainer == null ||
+                    statsContainer.parent != allocator.transform)
+                    throw new InvalidOperationException("Native score rows do not share the allocator's stat container.");
+            }
+            int[] rowIndexByAbility = NativeScoreRowIdentity.Map(contracts.AbilityStatKeys, rowKeys);
+            for (int ability = 0; ability < mapped.Length; ability++)
+                mapped[ability] = entries[rowIndexByAbility[ability]];
+            inlineStatsContainer = statsContainer as RectTransform;
+
+            inlineToolbar = CreateVertical("InlineRollToolbar", allocator.transform);
+            inlineToolbar.transform.SetSiblingIndex(statsContainer.GetSiblingIndex() + 1);
+            var toolbarLayout = inlineToolbar.AddComponent<LayoutElement>();
+            toolbarLayout.minHeight = 42f;
+            toolbarLayout.preferredHeight = 42f;
+            toolbarLayout.flexibleWidth = 1f;
+            var toolbarGroup = inlineToolbar.GetComponent<VerticalLayoutGroup>();
+            toolbarGroup.padding = new RectOffset(8, 8, 1, 1);
+            toolbarGroup.spacing = 0f;
+
+            inlinePointBuyEntry = CreateHorizontal(inlineToolbar.transform, 40f);
+            inlinePointBuyEntry.name = "PointBuyEntry";
+            inlinePointBuyEntry.GetComponent<HorizontalLayoutGroup>().childAlignment = TextAnchor.MiddleCenter;
+            inlineEntryButton = CreateButton(inlinePointBuyEntry.transform, "Roll for Stats", nativeText,
+                nativeButton, 245f, OpenRollWorkspace, 38f);
+
+            inlineWorkspace = CreateVertical("RollWorkspace", inlineToolbar.transform);
+            var workspaceGroup = inlineWorkspace.GetComponent<VerticalLayoutGroup>();
+            workspaceGroup.spacing = 2f;
+            workspaceGroup.padding = new RectOffset(0, 0, 0, 0);
+            CreateInlineTooltipOverlay(nativeText);
+            GameObject formulaRow = CreateHorizontal(inlineWorkspace.transform, 40f);
+            formulaRow.name = "FormulaRow";
+            formulaRow.GetComponent<HorizontalLayoutGroup>().childAlignment = TextAnchor.MiddleCenter;
+            GameObject formulaGroup = CreateHorizontal(formulaRow.transform, 40f);
+            formulaGroup.name = "FormulaSelector";
+            inlineFormulaGroup = formulaGroup.GetComponent<RectTransform>();
+            var formulaGroupLayout = formulaGroup.GetComponent<LayoutElement>();
+            formulaGroupLayout.preferredWidth = 430f;
+            formulaGroupLayout.minWidth = 0f;
+            formulaGroupLayout.flexibleWidth = 0f;
+            formulaInput = CreateInput(formulaGroup.transform, nativeText, nativeButton);
+            formulaInput.gameObject.name = "RollFormula";
+            var formulaLayout = formulaInput.GetComponent<LayoutElement>();
+            formulaLayout.minHeight = formulaLayout.preferredHeight = 40f;
+            formulaInput.text = formulaDraft.Text;
+            formulaInput.onValueChanged.AddListener(value =>
+            {
+                if (!rendering && CanDispatchCurrentView())
+                {
+                    formulaDraft.Edit(value, commands.Snapshot.Configuration);
+                    commandError = null;
+                    Render(contractsProvider());
+                }
+            });
+            formulaInput.onSubmit.AddListener(value => CommitFormulaDraft());
+            formulaInput.onEndEdit.AddListener(value =>
+            {
+                if (!rendering && !Input.GetKeyDown(KeyCode.Escape) &&
+                    formulaDraft.HasUncommittedEdit) CommitFormulaDraft();
+            });
+            inlinePresetButton = CreateButton(formulaGroup.transform, string.Empty, nativeText,
+                nativeButton, 42f, () => OpenInlineMenu(InlineMenuKind.Presets), 40f);
+            Button firstNativeUp = contracts.ScoreEntryUpButtonField.GetValue(mapped[0]) as Button;
+            CreateNativeDownIcon(firstNativeUp, inlinePresetButton.transform, 18f);
+            inlinePresetTooltip = AddInlineTooltip(inlinePresetButton.gameObject,
+                "Choose a roll formula", () => inlineMenu != InlineMenuKind.Presets);
+
+            inlinePolicyNote = NewUiObject("RollPolicyNote", inlineToolbar.layer);
+            inlinePolicyNote.transform.SetParent(inlineWorkspace.transform, false);
+            policyNoteLabel = CreateLabel(inlinePolicyNote.transform, string.Empty, nativeText,
+                layout.StatusFontSize, TextAlignmentOptions.Left, 26f, -1f, BodyText, false);
+            inlinePolicyNote.AddComponent<LayoutElement>().preferredHeight = 26f;
+            SetVisible(inlinePolicyNote, false);
+
+            GameObject primary = CreateHorizontal(inlineWorkspace.transform, 48f);
+            primary.name = "PrimaryActions";
+            primary.GetComponent<HorizontalLayoutGroup>().spacing = 9f;
+            inlineLoadButton = CreateButton(primary.transform, "Load", nativeText,
+                nativeButton, 160f, () => OpenInlineMenu(InlineMenuKind.Load), 48f);
+            inlineSaveButton = CreateButton(primary.transform, "Save", nativeText,
+                nativeButton, 160f, () => Execute(RollUiCommand.StoreCurrent), 48f);
+            inlineRollButton = CreateButton(primary.transform, "Roll", nativeText,
+                nativeButton, 160f, ExecuteGeneration, 48f);
+            inlineRerollButton = CreateButton(primary.transform, "Reroll", nativeText,
+                nativeButton, 160f, ExecuteGeneration, 48f);
+            foreach (Button button in new[] { inlineLoadButton, inlineSaveButton, inlineRollButton, inlineRerollButton })
+                button.GetComponent<LayoutElement>().flexibleWidth = 1f;
+
+            GameObject history = CreateHorizontal(inlineWorkspace.transform, 34f);
+            history.name = "RecentRollNavigation";
+            var historyGroup = history.GetComponent<HorizontalLayoutGroup>();
+            historyGroup.childAlignment = TextAnchor.MiddleCenter;
+            historyGroup.spacing = 8f;
+            inlinePreviousButton = CreateButton(history.transform, "Previous", nativeText,
+                nativeButton, 140f, () => Execute(RollUiCommand.PreviousHistory), 34f);
+            inlineNextButton = CreateButton(history.transform, "Next", nativeText,
+                nativeButton, 100f, () => Execute(RollUiCommand.NextHistory), 34f);
+            inlineReturnButton = CreateButton(history.transform, "Return to Point Buy", nativeText,
+                nativeButton, 260f, ReturnFromWorkspace, 34f);
+
+            inlineStatus = NewUiObject("InlineStatus", inlineToolbar.layer);
+            inlineStatus.transform.SetParent(root.transform, false);
+            inlineStatus.AddComponent<LayoutElement>().ignoreLayout = true;
+            var noticeInput = inlineStatus.AddComponent<CanvasGroup>();
+            noticeInput.interactable = false;
+            noticeInput.blocksRaycasts = false;
+            inlineStatusLabel = CreateLabel(inlineStatus.transform, string.Empty, nativeText,
+                layout.StatusFontSize, TextAlignmentOptions.Center, 24f, -1f, ErrorText, false);
+            RectTransform inlineStatusRect = inlineStatusLabel.rectTransform;
+            inlineStatusRect.anchorMin = Vector2.zero;
+            inlineStatusRect.anchorMax = Vector2.one;
+            inlineStatusRect.offsetMin = new Vector2(4f, 0f);
+            inlineStatusRect.offsetMax = new Vector2(-4f, 0f);
+            inlineStatusLabel.enableWordWrapping = false;
+            inlineStatusLabel.enableAutoSizing = true;
+            inlineStatusLabel.fontSizeMin = 12f;
+            inlineStatusLabel.fontSizeMax = layout.StatusFontSize;
+            inlineStatusLabel.raycastTarget = false;
+            SetVisible(inlineStatus, false);
+            SetVisible(inlineWorkspace, false);
+
+            for (int index = 0; index < mapped.Length; index++)
+            {
+                object entry = mapped[index];
+                Button nativeUp = contracts.ScoreEntryUpButtonField.GetValue(entry) as Button;
+                Button nativeDown = contracts.ScoreEntryDownButtonField.GetValue(entry) as Button;
+                AbilityScore ability = Abilities[index];
+                Button down = CreateInlineArrow(nativeUp,
+                    index == Abilities.Length - 1 ? "No score below" : "Swap with " + Abilities[index + 1],
+                    () => Execute(RollUiCommand.MoveDown, ability));
+                inlineDownArrows.Add(down);
+                nativeRowVisuals.Add(new NativeButtonVisualState(nativeUp));
+                nativeRowVisuals.Add(new NativeButtonVisualState(nativeDown));
+                AddNativeCostHints(entry, contracts);
+            }
+            CreateBadgeOverlay(allocator, contracts);
+            CreatePresetPopup(nativeText, nativeButton);
+            ValidateInlineGeometry(allocator, statsContainer, contracts);
+            logger.Info("Native roll workspace attached to six exact score keys and the allocator's own Points badge.");
+            return true;
+        }
+
+        private void ValidateInlineGeometry(
+            MonoBehaviour allocator, Transform statsContainer, KingmakerContracts contracts)
+        {
+            RectTransform allocatorRect = allocator.transform as RectTransform;
+            RectTransform statsRect = statsContainer as RectTransform;
+            RectTransform toolbarRect = inlineToolbar.transform as RectTransform;
+            if (allocatorRect == null || statsRect == null || toolbarRect == null)
+                throw new InvalidOperationException("Native inline stat geometry is unavailable.");
+            LayoutRebuilder.ForceRebuildLayoutImmediate(allocatorRect);
+            LocalLayoutRect? stats = TryGetLocalBounds(statsRect, allocatorRect);
+            LocalLayoutRect? toolbar = TryGetLocalBounds(toolbarRect, allocatorRect);
+            Rect area = allocatorRect.rect;
+            if (!stats.HasValue || !toolbar.HasValue ||
+                toolbar.Value.Width < 520f ||
+                toolbar.Value.XMin < area.xMin - 1f || toolbar.Value.XMax > area.xMax + 1f ||
+                toolbar.Value.YMax > stats.Value.YMin + 2f ||
+                toolbar.Value.YMin < area.yMin - 1f)
+                throw new InvalidOperationException("The compact toolbar does not fit below the native score rows.");
+            GameObject racial = contracts.AbilityAllocatorRaceBonusContainerField.GetValue(allocator) as GameObject;
+            if (racial != null && racial.activeInHierarchy)
+            {
+                LocalLayoutRect? race = TryGetLocalBounds(racial.transform as RectTransform, allocatorRect);
+                if (!race.HasValue || toolbar.Value.YMin < race.Value.YMax - 2f ||
+                    race.Value.YMin < area.yMin - 1f)
+                    throw new InvalidOperationException("The compact toolbar would overlap the native racial selector.");
+            }
+        }
+
+        private void RefreshExpandedInlineGeometry(MonoBehaviour allocator, KingmakerContracts contracts)
+        {
+            if (allocator == null || inlineToolbar == null || inlineFormulaGroup == null) return;
+            RectTransform allocatorRect = allocator.transform as RectTransform;
+            if (allocatorRect == null) return;
+            GameObject racial = contracts.AbilityAllocatorRaceBonusContainerField.GetValue(allocator) as GameObject;
+            bool racialActive = racial != null && racial.activeInHierarchy;
+            float width = allocatorRect.rect.width;
+            float height = allocatorRect.rect.height;
+            float scale = allocatorRect.lossyScale.y;
+            float toolbarHeight = inlineToolbar.GetComponent<LayoutElement>().preferredHeight;
+            RectTransform racialRect = racialActive ? racial.transform as RectTransform : null;
+            float raceHeight = racialRect == null ? -1f : racialRect.rect.height;
+            float raceY = racialRect == null ? float.NaN : racialRect.anchoredPosition.y;
+            RectTransform rootRect = root.GetComponent<RectTransform>();
+            LocalLayoutRect? visibleRace = racialRect == null ? null :
+                TryGetCompleteRacialBounds(racialRect, rootRect);
+            float visibleBottom = visibleRace.HasValue ? visibleRace.Value.YMin : float.NaN;
+            if (Mathf.Abs(height - lastInlineGeometryHeight) < 0.5f &&
+                Mathf.Abs(width - lastInlineGeometryWidth) < 0.5f &&
+                Mathf.Abs(scale - lastInlineGeometryScale) < 0.001f &&
+                Mathf.Abs(toolbarHeight - lastInlineToolbarHeight) < 0.5f &&
+                Mathf.Abs(raceHeight - lastInlineRaceHeight) < 0.5f &&
+                (racialRect == null || Mathf.Abs(raceY - lastInlineRaceY) < 0.5f) &&
+                (racialRect == null || Mathf.Abs(visibleBottom - lastInlineRaceVisibleBottom) < 0.5f) &&
+                lastInlineRacialActive == racialActive) return;
+            lastInlineGeometryHeight = height;
+            lastInlineGeometryWidth = width;
+            lastInlineGeometryScale = scale;
+            lastInlineToolbarHeight = toolbarHeight;
+            lastInlineRaceHeight = raceHeight;
+            lastInlineRaceY = raceY;
+            lastInlineRaceVisibleBottom = visibleBottom;
+            lastInlineRacialActive = racialActive;
+
+            LayoutElement formulaLayout = inlineFormulaGroup.GetComponent<LayoutElement>();
+            formulaLayout.preferredWidth = Mathf.Max(190f, Mathf.Min(430f, width - 24f));
+            LayoutRebuilder.ForceRebuildLayoutImmediate(allocatorRect);
+            if (!workspaceOpen || !racialActive) return;
+            Transform owner = NativeBookTheme.FindOwner(allocator);
+            Transform nativeNavigation = owner == null ? null :
+                owner.Find("Body/Bottom (1)/ButtonsPlace");
+            Transform book = owner == null ? null : owner.Find("Body/Content/Book/Image_Book");
+            LocalLayoutRect? bookBounds = TryGetLocalBounds(book as RectTransform, rootRect);
+            LocalLayoutRect? raceBounds = TryGetCompleteRacialBounds(racialRect, rootRect);
+            LocalLayoutRect? navBounds = TryGetLocalBounds(nativeNavigation as RectTransform, rootRect);
+            if (!raceBounds.HasValue || (!navBounds.HasValue && !bookBounds.HasValue)) return;
+            float safeBottom = Mathf.Max(
+                navBounds.HasValue ? navBounds.Value.YMax + 8f : float.NegativeInfinity,
+                bookBounds.HasValue ? bookBounds.Value.YMin + 14f : float.NegativeInfinity);
+            if (raceBounds.Value.YMin >= safeBottom) return;
+
+            // Exhaust redundant owned spacing before reporting a live fit failure.
+            // This changes neither the accepted control heights nor native racial UI.
+            var workspaceGroup = inlineWorkspace.GetComponent<VerticalLayoutGroup>();
+            if (workspaceGroup.spacing > 0f)
+            {
+                workspaceGroup.spacing = 0f;
+                RectTransform workspaceRect = inlineWorkspace.GetComponent<RectTransform>();
+                LayoutRebuilder.ForceRebuildLayoutImmediate(workspaceRect);
+                LayoutElement toolbar = inlineToolbar.GetComponent<LayoutElement>();
+                toolbar.preferredHeight = LayoutUtility.GetPreferredHeight(workspaceRect);
+                lastInlineToolbarHeight = toolbar.preferredHeight;
+                inlineToolbar.GetComponent<RectTransform>().SetSizeWithCurrentAnchors(
+                    RectTransform.Axis.Vertical, toolbar.preferredHeight);
+                LayoutRebuilder.ForceRebuildLayoutImmediate(allocatorRect);
+                raceBounds = TryGetCompleteRacialBounds(racialRect, rootRect);
+            }
+            lastInlineRaceVisibleBottom = raceBounds.HasValue ? raceBounds.Value.YMin : float.NaN;
+            if (raceBounds.HasValue && raceBounds.Value.YMin < safeBottom)
+                ReportAttachment("Complete native racial section exceeds the measured book/navigation clearance after compact inline layout.");
+        }
+
+        private Button CreateInlineArrow(Button source,
+            string tooltip, Action action)
+        {
+            GameObject owned = NewUiObject("Assignment." + tooltip, source.gameObject.layer);
+            owned.transform.SetParent(source.transform.parent, false);
+            var rect = owned.GetComponent<RectTransform>();
+            RectTransform donorRect = source.GetComponent<RectTransform>();
+            rect.anchorMin = donorRect.anchorMin;
+            rect.anchorMax = donorRect.anchorMax;
+            rect.pivot = donorRect.pivot;
+            rect.anchoredPosition = donorRect.anchoredPosition;
+            rect.sizeDelta = donorRect.sizeDelta;
+            rect.localRotation = donorRect.localRotation;
+            rect.SetSiblingIndex(source.transform.GetSiblingIndex() + 1);
+            owned.AddComponent<LayoutElement>().ignoreLayout = true;
+            owned.AddComponent<InlineArrowAnchor>().Bind(donorRect);
+            Image image = owned.AddComponent<Image>();
+            NativeBookTheme.CopyImage(source.targetGraphic as Image, image);
+            image.raycastTarget = true;
+            Button button = owned.AddComponent<Button>();
+            button.targetGraphic = image;
+            button.colors = source.colors;
+            button.spriteState = source.spriteState;
+            button.transition = source.transition;
+            button.navigation = new Navigation { mode = Navigation.Mode.Automatic };
+            button.onClick = new Button.ButtonClickedEvent();
+            button.onClick.AddListener(() =>
+            {
+                if (!CanDispatchCurrentView()) return;
+                NativeUiPresentation.Activate(action, NativeBookTheme.PlayClick, ReportAttachment);
+            });
+            CreateNativeDownIcon(source, owned.transform, 26f);
+            AddInlineTooltip(owned, tooltip);
+            owned.SetActive(false);
+            inlineOwnedArrows.Add(owned);
+            return button;
+        }
+
+        private static void CreateNativeDownIcon(Button source, Transform parent, float maximumExtent)
+        {
+            Transform donor = source == null ? null : source.transform.Find("Button");
+            Image donorImage = donor == null ? null : donor.GetComponent<Image>();
+            RectTransform donorRect = donor as RectTransform;
+            if (donorImage == null || donorImage.sprite == null || donorRect == null)
+                throw new InvalidOperationException("Native score-arrow icon is unavailable.");
+            GameObject iconObject = NewUiObject("DownChevron", parent.gameObject.layer);
+            RectTransform iconRect = iconObject.GetComponent<RectTransform>();
+            iconRect.SetParent(parent, false);
+            iconRect.anchorMin = iconRect.anchorMax = new Vector2(0.5f, 0.5f);
+            iconRect.pivot = new Vector2(0.5f, 0.5f);
+            iconRect.anchoredPosition = Vector2.zero;
+            float extent = Mathf.Min(maximumExtent, Mathf.Max(18f,
+                Mathf.Min(donorRect.rect.width, donorRect.rect.height)));
+            iconRect.sizeDelta = new Vector2(extent, extent);
+            // In the captured prefab the donor sprite is horizontal. The previous
+            // 180-degree turn produced a left arrow; -90 turns it down on screen.
+            iconRect.localRotation = donorRect.localRotation * Quaternion.Euler(0f, 0f, -90f);
+            Image icon = iconObject.AddComponent<Image>();
+            NativeBookTheme.CopyImage(donorImage, icon);
+            icon.raycastTarget = false;
+            iconObject.AddComponent<LayoutElement>().ignoreLayout = true;
+        }
+
+        private void CreateInlineTooltipOverlay(TextMeshProUGUI nativeText)
+        {
+            inlineTooltipPanel = NewUiObject("InlineHelp", root.layer);
+            RectTransform rect = inlineTooltipPanel.GetComponent<RectTransform>();
+            rect.SetParent(root.transform, false);
+            rect.anchorMin = rect.anchorMax = Vector2.zero;
+            rect.pivot = Vector2.zero;
+            Image paper = inlineTooltipPanel.AddComponent<Image>();
+            paper.color = Parchment;
+            paper.raycastTarget = false;
+            var outline = inlineTooltipPanel.AddComponent<Outline>();
+            outline.effectColor = new Color(0.34f, 0.12f, 0.075f, 0.9f);
+            outline.effectDistance = new Vector2(1f, -1f);
+            themeBindings.Add(NativeThemeCapability.Paper,
+                donors => NativeBookTheme.CopyImage((Image)donors[0], paper),
+                () => { ResetFallbackImage(paper, null, Parchment); paper.raycastTarget = false; });
+            TextMeshProUGUI label = CreateLabel(inlineTooltipPanel.transform, string.Empty, nativeText,
+                layout.StatusFontSize, TextAlignmentOptions.Center, -1f, -1f, BodyText, false);
+            RectTransform labelRect = label.rectTransform;
+            labelRect.anchorMin = Vector2.zero;
+            labelRect.anchorMax = Vector2.one;
+            labelRect.offsetMin = new Vector2(14f, 10f);
+            labelRect.offsetMax = new Vector2(-14f, -10f);
+            label.overflowMode = TextOverflowModes.Overflow;
+            inlineTooltipOverlay = inlineTooltipPanel.AddComponent<InlineTooltipOverlay>();
+            inlineTooltipOverlay.Configure(root.GetComponent<RectTransform>(), rect, label);
+            themeBindings.Add(NativeThemeCapability.Body,
+                donors => inlineTooltipOverlay.Remeasure(),
+                () => inlineTooltipOverlay.Remeasure());
+        }
+
+        private InlineArrowTooltip AddInlineTooltip(GameObject trigger, string text,
+            Func<bool> visibility = null)
+        {
+            var hover = trigger.AddComponent<InlineArrowTooltip>();
+            hover.Configure(inlineTooltipOverlay, text, visibility);
+            return hover;
+        }
+
+        private void AddNativeCostHints(object entry, KingmakerContracts contracts)
+        {
+            Component animator = contracts.ScoreEntryCostAnimatorField.GetValue(entry) as Component;
+            TextMeshProUGUI[] labels =
+            {
+                contracts.ScoreEntryCostLabelField.GetValue(entry) as TextMeshProUGUI,
+                contracts.ScoreEntryUpCostField.GetValue(entry) as TextMeshProUGUI,
+                contracts.ScoreEntryDownCostField.GetValue(entry) as TextMeshProUGUI
+            };
+            MonoBehaviour row = entry as MonoBehaviour;
+            if (row == null || animator == null || !animator.transform.IsChildOf(row.transform))
+                throw new InvalidOperationException("Exact native row cost animator is unavailable.");
+            foreach (TextMeshProUGUI label in labels)
+                if (label == null || !label.transform.IsChildOf(animator.transform))
+                    throw new InvalidOperationException("Exact native row cost text is unavailable.");
+            var state = new NativeCostHintVisualState(animator.gameObject, labels,
+                row.gameObject.AddComponent<NativeCostHintGuard>());
+            nativeCostHints.Add(state);
+        }
+
+        private void FitInlineMessage(GameObject section, TextMeshProUGUI label)
+        {
+            float width = Mathf.Max(200f, inlineToolbar.GetComponent<RectTransform>().rect.width - 24f);
+            float preferred = label.GetPreferredValues(label.text, width, 0f).y + 4f;
+            float height = Mathf.Max(26f, preferred);
+            section.GetComponent<LayoutElement>().preferredHeight = height;
+            label.GetComponent<LayoutElement>().preferredHeight = height;
+        }
+
+        private void PositionInlineNotice()
+        {
+            if (inlineStatus == null || !inlineStatus.activeSelf || inlineBadgeFrame == null ||
+                inlineStatsContainer == null || root == null) return;
+            RectTransform rootRect = root.GetComponent<RectTransform>();
+            LocalLayoutRect? badge = TryGetLocalBounds(inlineBadgeFrame, rootRect);
+            LocalLayoutRect? scores = TryGetLocalBounds(inlineStatsContainer, rootRect);
+            if (!badge.HasValue || !scores.HasValue) return;
+            float bottom = scores.Value.YMax + 3f;
+            float top = badge.Value.YMin - 3f;
+            float lowerBand = top - bottom;
+            LocalLayoutRect? heading = TryGetLocalBounds(inlineAbilityHeading, rootRect);
+            LocalLayoutRect? caption = badgeNativeCaption == null ? null :
+                TryGetLocalBounds(badgeNativeCaption.rectTransform, rootRect);
+            if (lowerBand < 18f && heading.HasValue && caption.HasValue &&
+                heading.Value.YMin - caption.Value.YMax > lowerBand)
+            {
+                bottom = caption.Value.YMax + 3f;
+                top = heading.Value.YMin - 3f;
+            }
+            float available = top - bottom;
+            if (available < 16f)
+                ReportAttachment("No measured free band can hold the native roll notice at this layout.");
+            float height = Mathf.Min(24f, Mathf.Max(16f, available));
+            float width = Mathf.Max(180f, Mathf.Min(scores.Value.Width - 12f,
+                rootRect.rect.width - 32f));
+            RectTransform notice = inlineStatus.GetComponent<RectTransform>();
+            notice.anchorMin = notice.anchorMax = Vector2.zero;
+            notice.pivot = new Vector2(0.5f, 0.5f);
+            notice.sizeDelta = new Vector2(width, height);
+            notice.anchoredPosition = new Vector2(
+                (scores.Value.XMin + scores.Value.XMax) * 0.5f - rootRect.rect.xMin,
+                (bottom + top) * 0.5f - rootRect.rect.yMin);
+            inlineStatus.transform.SetAsLastSibling();
+        }
+
+        private void CreateBadgeOverlay(MonoBehaviour allocator, KingmakerContracts contracts)
+        {
+            badgeNativeCaption = contracts.AbilityAllocatorPointsCaptionField.GetValue(allocator) as TextMeshProUGUI;
+            badgeNativeValue = contracts.AbilityAllocatorPointsValueField.GetValue(allocator) as TextMeshProUGUI;
+            Image frame = contracts.AbilityAllocatorFrameField.GetValue(allocator) as Image;
+            if (badgeNativeCaption == null || badgeNativeValue == null || frame == null ||
+                badgeNativeCaption.transform.parent != badgeNativeValue.transform.parent.parent ||
+                !badgeNativeCaption.transform.IsChildOf(allocator.transform) ||
+                !badgeNativeValue.transform.IsChildOf(allocator.transform) ||
+                !frame.transform.IsChildOf(allocator.transform))
+                throw new InvalidOperationException("The ability allocator's exact Points badge is unavailable.");
+            badgeCaptionOriginallyEnabled = badgeNativeCaption.enabled;
+            badgeValueOriginallyEnabled = badgeNativeValue.enabled;
+            inlineBadgeFrame = frame.rectTransform;
+            var heading = contracts.AbilityAllocatorMainLabelField.GetValue(allocator) as Component;
+            inlineAbilityHeading = heading == null ? null : heading.transform as RectTransform;
+            badgeOwnedCaption = CreateBadgeText(badgeNativeCaption, "Value", null);
+            badgeOwnedValue = CreateBadgeText(badgeNativeValue, "—", frame.transform);
+            // FillData calls SetupVisualMarks before the host attaches. An applied roll
+            // makes the native point-buy counter "complete", so that routine paints
+            // the hidden source numeral with m_TextDisableColor. Never copy that
+            // transient tint into the owned Roll badge on a page return.
+            badgeAvailableValueColor = (Color)contracts.AbilityAllocatorAvailableValueColorField.GetValue(allocator);
+            badgeAvailableCaptionColor = (Color)contracts.AbilityAllocatorAvailableCaptionColorField.GetValue(allocator);
+            badgeOwnedValue.color = badgeAvailableValueColor;
+            badgeOwnedCaption.color = badgeAvailableCaptionColor;
+            badgeActiveBackground = NewUiObject("RolledValueBackground", frame.gameObject.layer);
+            RectTransform tintRect = badgeActiveBackground.GetComponent<RectTransform>();
+            tintRect.SetParent(frame.transform, false);
+            tintRect.anchorMin = Vector2.zero;
+            tintRect.anchorMax = Vector2.one;
+            tintRect.offsetMin = tintRect.offsetMax = Vector2.zero;
+            tintRect.SetAsFirstSibling();
+            badgeActiveBackground.AddComponent<LayoutElement>().ignoreLayout = true;
+            Image tint = badgeActiveBackground.AddComponent<Image>();
+            NativeBookTheme.CopyImage(frame, tint);
+            tint.color = new Color(0.725f, 0.408f, 0.408f, 1f);
+            tint.raycastTarget = false;
+            tint.preserveAspect = true;
+            badgeActiveBackground.SetActive(false);
+        }
+
+        private static TextMeshProUGUI CreateBadgeText(
+            TextMeshProUGUI source, string value, Transform circle)
+        {
+            // Copy only text styling and geometry from the exact native text
+            // component. Creating an owned object avoids cloning native scripts.
+            GameObject owned = NewUiObject("Owned" + value + "BadgeText", source.gameObject.layer);
+            RectTransform rect = owned.GetComponent<RectTransform>();
+            RectTransform nativeRect = source.rectTransform;
+            rect.SetParent(circle ?? source.transform.parent, false);
+            if (circle == null)
+            {
+                rect.anchorMin = nativeRect.anchorMin;
+                rect.anchorMax = nativeRect.anchorMax;
+                rect.pivot = nativeRect.pivot;
+                rect.anchoredPosition = nativeRect.anchoredPosition;
+                rect.sizeDelta = nativeRect.sizeDelta;
+                rect.localRotation = nativeRect.localRotation;
+                rect.localScale = nativeRect.localScale;
+                rect.SetSiblingIndex(source.transform.GetSiblingIndex() + 1);
+                owned.AddComponent<InlineArrowAnchor>().Bind(nativeRect);
+            }
+            else
+            {
+                // Follow the exact native circle rather than joining its layout group.
+                // A second participating Value text squeezed the 64x64 circle in v3.
+                rect.anchorMin = Vector2.zero;
+                rect.anchorMax = Vector2.one;
+                rect.pivot = new Vector2(0.5f, 0.5f);
+                rect.offsetMin = new Vector2(3f, 2f);
+                rect.offsetMax = new Vector2(-3f, -2f);
+                rect.SetAsLastSibling();
+            }
+            owned.AddComponent<LayoutElement>().ignoreLayout = true;
+            TextMeshProUGUI text = owned.AddComponent<TextMeshProUGUI>();
+            NativeBookTheme.CopyText(source, text);
+            text.alignment = circle == null ? source.alignment : TextAlignmentOptions.Center;
+            text.margin = circle == null ? source.margin : Vector4.zero;
+            text.fontWeight = source.fontWeight;
+            text.fontSize = source.fontSize;
+            text.fontSizeMin = source.fontSizeMin;
+            text.fontSizeMax = source.fontSizeMax;
+            text.enableAutoSizing = source.enableAutoSizing;
+            text.enableWordWrapping = circle == null && source.enableWordWrapping;
+            text.overflowMode = circle == null ? source.overflowMode : TextOverflowModes.Overflow;
+            text.paragraphSpacing = source.paragraphSpacing;
+            text.text = value;
+            text.raycastTarget = false;
+            owned.SetActive(false);
+            return text;
+        }
+
+        private void ShowValueBadge(bool show, RollUiSnapshot snapshot)
+        {
+            if (badgeNativeCaption == null || badgeNativeValue == null) return;
+            if (show)
+            {
+                badgeNativeCaption.enabled = false;
+                badgeNativeValue.enabled = false;
+                badgeOwnedCaption.gameObject.SetActive(true);
+                badgeOwnedValue.gameObject.SetActive(true);
+                badgeActiveBackground.SetActive(true);
+                badgeOwnedValue.color = badgeAvailableValueColor;
+                badgeOwnedCaption.color = badgeAvailableCaptionColor;
+                badgeOwnedValue.transform.SetAsLastSibling();
+                badgeOwnedValue.text = NativeUiPresentation.FormatValueBadge(snapshot);
+            }
+            else
+            {
+                badgeOwnedCaption.gameObject.SetActive(false);
+                badgeOwnedValue.gameObject.SetActive(false);
+                badgeActiveBackground.SetActive(false);
+                badgeNativeCaption.enabled = badgeCaptionOriginallyEnabled;
+                badgeNativeValue.enabled = badgeValueOriginallyEnabled;
+            }
+        }
+
+        private void CreatePresetPopup(TextMeshProUGUI nativeText, Button nativeButton)
+        {
+            presetBlocker = NewUiObject("PresetDismissBlocker", root.layer);
+            RectTransform blockerRect = presetBlocker.GetComponent<RectTransform>();
+            blockerRect.SetParent(root.transform, false);
+            blockerRect.anchorMin = Vector2.zero;
+            blockerRect.anchorMax = Vector2.one;
+            blockerRect.offsetMin = blockerRect.offsetMax = Vector2.zero;
+            Image blockerImage = presetBlocker.AddComponent<Image>();
+            blockerImage.color = Color.clear;
+            blockerImage.raycastTarget = true;
+            Button blockerButton = presetBlocker.AddComponent<Button>();
+            blockerButton.transition = Selectable.Transition.None;
+            blockerButton.onClick = new Button.ButtonClickedEvent();
+            blockerButton.onClick.AddListener(ClosePresetPopup);
+
+            presetPopup = CreateVertical("FormulaPresets", root.transform);
+            var popupRect = presetPopup.GetComponent<RectTransform>();
+            popupRect.anchorMin = popupRect.anchorMax = new Vector2(0.5f, 0.5f);
+            popupRect.pivot = new Vector2(0f, 1f);
+            popupRect.sizeDelta = new Vector2(450f, 236f);
+            Image popupImage = presetPopup.AddComponent<Image>();
+            popupImage.color = Parchment;
+            popupImage.raycastTarget = true;
+            themeBindings.Add(NativeThemeCapability.Paper,
+                donors => NativeBookTheme.CopyImage((Image)donors[0], popupImage),
+                () => { popupImage.sprite = null; popupImage.color = Parchment; });
+            VerticalLayoutGroup group = presetPopup.GetComponent<VerticalLayoutGroup>();
+            group.padding = new RectOffset(10, 10, 10, 10);
+            group.spacing = 2f;
+            foreach (DiceRollPreset preset in Enum.GetValues(typeof(DiceRollPreset)))
+            {
+                DiceRollPreset choice = preset;
+                string caption = choice == DiceRollPreset.CustomExpression
+                    ? "Custom formula… — Edit the field"
+                    : DiceRollRule.ForPreset(choice, LowScorePolicy.Tabletop).Expression + " — " +
+                        PresetShortDescription(choice);
+                inlinePresetChoices.Add(CreateButton(presetPopup.transform, caption, nativeText,
+                    nativeButton, -1f, () => SelectInlinePreset(choice), 34f));
+            }
+            presetBlocker.SetActive(false);
+            presetPopup.SetActive(false);
+        }
+
+        private static string PresetShortDescription(DiceRollPreset choice)
+        {
+            switch (choice)
+            {
+                case DiceRollPreset.FourD6DropLowest: return "Drop lowest";
+                case DiceRollPreset.FourD6RerollOnesDropLowest: return "Reroll ones";
+                case DiceRollPreset.ThreeD6: return "Three dice";
+                case DiceRollPreset.TwoD6PlusSix: return "Two dice + six";
+                case DiceRollPreset.OneD20: return "One d20";
+                default: return string.Empty;
+            }
+        }
+
+        private void OpenRollWorkspace()
+        {
+            if (commands.Snapshot.Mode != RollSessionMode.PointBuy) return;
+            workspaceOpen = true;
+            commandError = null;
+            Render(contractsProvider());
+        }
+
+        private void ReturnFromWorkspace()
+        {
+            if (commands.IsBusy) return;
+            if (commands.Snapshot.Mode == RollSessionMode.PointBuy &&
+                !commands.Snapshot.RecoveryRequired)
+            {
+                workspaceOpen = false;
+                inlineMenu = InlineMenuKind.None;
+                Render(contractsProvider());
+                // Re-observe native point-buy availability after the view-only
+                // Roll-ready state, including race-dependent button admission.
+                if (attachedAllocator != null)
+                {
+                    try { contractsProvider().AbilityAllocatorFillDataMethod.Invoke(attachedAllocator, null); }
+                    catch (Exception exception)
+                    {
+                        logger.Warning("Native Point Buy refresh failed: " + exception.Message);
+                    }
+                }
+                return;
+            }
+            Execute(RollUiCommand.ReturnToPointBuy);
+        }
+
+        private void ExecuteGeneration()
+        {
+            if (commands.IsBusy) return;
+            if (!CommitFormulaDraft()) return;
+            RollSessionMode mode = commands.Snapshot.Mode;
+            Execute(mode == RollSessionMode.PointBuy ? RollUiCommand.Roll : RollUiCommand.Reroll);
+        }
+
+        private bool CommitFormulaDraft()
+        {
+            if (commands.IsBusy || !CanDispatchCurrentView() || formulaDraft == null) return false;
+            string error;
+            if (!formulaDraft.Validate(commands.Snapshot.Configuration, out error))
+            {
+                commandError = error;
+                Render(contractsProvider());
+                return false;
+            }
+            if (formulaDraft.HasUncommittedEdit)
+            {
+                if (!commands.SelectCustomExpression(formulaDraft.Text, out error))
+                {
+                    commandError = error;
+                    Render(contractsProvider());
+                    return false;
+                }
+                formulaDraft.CommitCustom();
+            }
+            commandError = null;
+            Render(contractsProvider());
+            return true;
+        }
+
+        private void ClosePresetPopup()
+        {
+            if (inlineMenu != InlineMenuKind.Presets) return;
+            if (inlinePresetTooltip != null) inlinePresetTooltip.SuppressUntilReentry();
+            inlineMenu = InlineMenuKind.None;
+            Render(contractsProvider());
+            if (inlinePresetButton != null) inlinePresetButton.Select();
+        }
+
+        private void SetNativeButtonPresentation(bool hide, bool rollReady)
+        {
+            if (hide)
+            {
+                foreach (NativeButtonVisualState state in nativeRowVisuals)
+                {
+                    if (!nativeVisualsHidden) state.Conceal(rollReady);
+                    else state.KeepConcealed(rollReady);
+                }
+                foreach (NativeCostHintVisualState hint in nativeCostHints) hint.Conceal();
+                nativeVisualsHidden = true;
+                if (rollReady) readyControlsSuppressed = true;
+            }
+            else
+            {
+                RestoreNativeButtonPresentation();
+            }
+        }
+
+        private void RestoreNativeButtonPresentation()
+        {
+            if (!nativeVisualsHidden) return;
+            foreach (NativeButtonVisualState state in nativeRowVisuals)
+                state.Restore(readyControlsSuppressed);
+            foreach (NativeCostHintVisualState hint in nativeCostHints) hint.Restore();
+            nativeVisualsHidden = false;
+            readyControlsSuppressed = false;
+        }
+
+        private void ReleaseRollReadyBeforeApplication(RollUiCommand command)
+        {
+            if (commands.Snapshot.Mode != RollSessionMode.PointBuy || !workspaceOpen) return;
+            if (command != RollUiCommand.Roll && command != RollUiCommand.PreviousHistory &&
+                command != RollUiCommand.NextHistory && command != RollUiCommand.RecallSaved &&
+                command != RollUiCommand.UseHistory) return;
+            RestoreNativeButtonPresentation();
+            ShowValueBadge(false, commands.Snapshot);
+        }
+
+        private void DestroyInlineView()
+        {
+            RestoreNativeButtonPresentation();
+            if (badgeNativeCaption != null) badgeNativeCaption.enabled = badgeCaptionOriginallyEnabled;
+            if (badgeNativeValue != null) badgeNativeValue.enabled = badgeValueOriginallyEnabled;
+            if (badgeOwnedCaption != null) badgeOwnedCaption.gameObject.SetActive(false);
+            if (badgeOwnedValue != null) badgeOwnedValue.gameObject.SetActive(false);
+            if (badgeActiveBackground != null) badgeActiveBackground.SetActive(false);
+            if (badgeOwnedCaption != null) Object.Destroy(badgeOwnedCaption.gameObject);
+            if (badgeOwnedValue != null) Object.Destroy(badgeOwnedValue.gameObject);
+            if (badgeActiveBackground != null) Object.Destroy(badgeActiveBackground);
+            badgeNativeCaption = badgeNativeValue = badgeOwnedCaption = badgeOwnedValue = null;
+            badgeActiveBackground = null;
+            foreach (NativeCostHintVisualState hint in nativeCostHints) hint.Dispose();
+            nativeCostHints.Clear();
+            nativeRowVisuals.Clear();
+            foreach (GameObject arrow in inlineOwnedArrows)
+                if (arrow != null) { arrow.SetActive(false); Object.Destroy(arrow); }
+            inlineOwnedArrows.Clear();
+            inlineDownArrows.Clear();
+            inlinePresetChoices.Clear();
+            if (presetPopup != null) { presetPopup.SetActive(false); Object.Destroy(presetPopup); }
+            if (presetBlocker != null) { presetBlocker.SetActive(false); Object.Destroy(presetBlocker); }
+            if (inlineTooltipPanel != null) { inlineTooltipPanel.SetActive(false); Object.Destroy(inlineTooltipPanel); }
+            inlineTooltipPanel = null;
+            inlineTooltipOverlay = null;
+            presetPopup = null;
+            presetBlocker = null;
+            if (inlineToolbar != null)
+            {
+                RectTransform allocatorRect = inlineToolbar.transform.parent as RectTransform;
+                inlineToolbar.SetActive(false);
+                Object.Destroy(inlineToolbar);
+                if (allocatorRect != null) LayoutRebuilder.ForceRebuildLayoutImmediate(allocatorRect);
+            }
+            inlineToolbar = null;
+            inlinePointBuyEntry = null;
+            inlineWorkspace = null;
+            inlineFormulaGroup = null;
+            inlineStatsContainer = null;
+            inlineBadgeFrame = null;
+            inlineAbilityHeading = null;
+            inlinePolicyNote = null;
+            policyNoteLabel = null;
+            formulaInput = null;
+            inlineEntryButton = null;
+            inlinePreviousButton = null;
+            inlineNextButton = null;
+            inlineStatus = null;
+            inlineStatusLabel = null;
+            inlinePresetButton = null;
+            inlinePresetTooltip = null;
+            inlineRollButton = null;
+            inlineRerollButton = null;
+            inlineSaveButton = null;
+            inlineLoadButton = null;
+            inlineReturnButton = null;
+            inlineAvailable = false;
+            inlineMenu = InlineMenuKind.None;
+            lastInlineGeometryHeight = lastInlineGeometryWidth = lastInlineGeometryScale = -1f;
+            lastInlineToolbarHeight = -1f;
+            lastInlineRaceHeight = -1f;
+            lastInlineRaceY = float.NaN;
+            lastInlineRaceVisibleBottom = float.NaN;
+            lastInlineRacialActive = null;
+        }
+
         private void CreateExpandedSurface(
             TextMeshProUGUI nativeText,
             Image nativeFrame,
@@ -498,7 +1433,7 @@ namespace KingmakerDiceRoller.UI
             headerLayout = header.GetComponent<LayoutElement>();
             GameObject heading = CreateVertical("Heading", header.transform);
             heading.AddComponent<LayoutElement>().flexibleWidth = 1f;
-            CreateLabel(
+            menuHeadingLabel = CreateLabel(
                 heading.transform, "Rolled Ability Scores", nativeText,
                 layout.TitleFontSize, TextAlignmentOptions.Left, 28f, -1f, HeadingText, true);
             modeLabel = CreateLabel(
@@ -514,7 +1449,9 @@ namespace KingmakerDiceRoller.UI
                 {
                     NativeUiPresentation.CloseDrawer(panelState, commands.NotifyDrawerClosed);
                     ApplySurfaceState();
-                    if (accessTab != null) accessTab.GetComponent<Button>().Select();
+                    inlineMenu = InlineMenuKind.None;
+                    if (inlineAvailable && inlinePresetButton != null) inlinePresetButton.Select();
+                    else if (accessTab != null) accessTab.GetComponent<Button>().Select();
                 },
                 layout.CloseButtonHeight);
 
@@ -540,6 +1477,14 @@ namespace KingmakerDiceRoller.UI
                 TextAlignmentOptions.Left, -1f, -1f, ErrorText, false);
             messageLabel.gameObject.name = "InlineMessage";
             SetVisible(messageLabel.gameObject, false);
+            presetChoices = CreateVertical("PresetChoices", content);
+            foreach (DiceRollPreset preset in Enum.GetValues(typeof(DiceRollPreset)))
+            {
+                DiceRollPreset choice = preset;
+                CreateButton(presetChoices.transform, RollPanelPresenter.FormatPreset(choice),
+                    nativeText, nativeButton, -1f, () => SelectInlinePreset(choice));
+            }
+            SetVisible(presetChoices, false);
             CreatePanelContent(content, nativeText, nativeButton);
         }
 
@@ -629,7 +1574,7 @@ namespace KingmakerDiceRoller.UI
             TextMeshProUGUI nativeText,
             Button nativeButton)
         {
-            CreateCaptionedSelector(
+            presetSelectorSection = CreateCaptionedSelector(
                 content,
                 "Roll method",
                 nativeText,
@@ -670,7 +1615,7 @@ namespace KingmakerDiceRoller.UI
             advancedLabel = advancedButton.GetComponentInChildren<TextMeshProUGUI>();
 
             advancedContent = CreateVertical("AdvancedContent", content);
-            CreateCaptionedSelector(
+            policySelectorSection = CreateCaptionedSelector(
                 advancedContent.transform,
                 "Low-score rule",
                 nativeText,
@@ -722,7 +1667,7 @@ namespace KingmakerDiceRoller.UI
             customInput = CreateInput(customSection.transform, nativeText, nativeButton);
             customInput.onValueChanged.AddListener(value =>
             {
-                if (!rendering)
+                if (!rendering && CanDispatchCurrentView())
                 {
                     commandError = null;
                     commands.SetCustomExpression(value);
@@ -768,7 +1713,7 @@ namespace KingmakerDiceRoller.UI
             CreateSavedSection(content, nativeText, nativeButton);
         }
 
-        private void CreateCaptionedSelector(
+        private GameObject CreateCaptionedSelector(
             Transform parent,
             string caption,
             TextMeshProUGUI nativeText,
@@ -812,6 +1757,7 @@ namespace KingmakerDiceRoller.UI
             valueLabel.GetComponent<LayoutElement>().preferredHeight = -1f;
             section.GetComponent<LayoutElement>().preferredHeight = -1f;
             CreateButton(section.transform, ">", nativeText, nativeButton, 42f, () => Execute(next));
+            return section;
         }
 
         private void CreateAssignmentRows(
@@ -1109,6 +2055,29 @@ namespace KingmakerDiceRoller.UI
             return result.IsFinitePositive ? result : (LocalLayoutRect?)null;
         }
 
+        private static LocalLayoutRect? TryGetCompleteRacialBounds(
+            RectTransform racialRoot, RectTransform rootRect)
+        {
+            LocalLayoutRect? result = TryGetLocalBounds(racialRoot, rootRect);
+            if (!result.HasValue) return null;
+            foreach (RectTransform child in racialRoot.GetComponentsInChildren<RectTransform>(false))
+            {
+                if (child == racialRoot || !child.gameObject.activeInHierarchy) continue;
+                Graphic graphic = child.GetComponent<Graphic>();
+                Selectable control = child.GetComponent<Selectable>();
+                if ((graphic == null || !graphic.enabled) &&
+                    (control == null || !control.IsActive())) continue;
+                LocalLayoutRect? bounds = TryGetLocalBounds(child, rootRect);
+                if (!bounds.HasValue) continue;
+                result = new LocalLayoutRect(
+                    Mathf.Min(result.Value.XMin, bounds.Value.XMin),
+                    Mathf.Min(result.Value.YMin, bounds.Value.YMin),
+                    Mathf.Max(result.Value.XMax, bounds.Value.XMax),
+                    Mathf.Max(result.Value.YMax, bounds.Value.YMax));
+            }
+            return result;
+        }
+
         private void ReportAccessAnchor(CollapsedAccessTabAnchorSource source)
         {
             if (lastAccessTabAnchorSource.HasValue &&
@@ -1123,6 +2092,35 @@ namespace KingmakerDiceRoller.UI
         {
             if (root == null) return;
             RollUiSnapshot snapshot = commands.Snapshot;
+            if (inlineAvailable)
+            {
+                if (lastInlineMode.HasValue && lastInlineMode.Value != RollSessionMode.PointBuy &&
+                    snapshot.Mode == RollSessionMode.PointBuy) workspaceOpen = false;
+                if (snapshot.Mode != RollSessionMode.PointBuy) workspaceOpen = true;
+                lastInlineMode = snapshot.Mode;
+                RollPanelModel inlineModel = presenter.Present(
+                    snapshot, panelState.Disclosure, RollPanelPresentationProfile.Compact);
+                rendering = true;
+                try
+                {
+                    ApplyModel(inlineModel);
+                    ApplyInlineModel(inlineModel, snapshot);
+                    ApplySurfaceState();
+                    RefreshExpandedInlineGeometry((MonoBehaviour)attachedAllocator, contracts);
+                    PositionInlineNotice();
+                    if (panelState.ExpandedSurfaceActive) ApplyInlineMenuGeometry();
+                    if (inlineMenu == InlineMenuKind.Presets) ApplyPresetPopupGeometry();
+                }
+                finally { rendering = false; }
+                if (snapshot.Mode == RollSessionMode.Roll ||
+                    snapshot.Mode == RollSessionMode.EnteringRollMode)
+                {
+                    string inlineError;
+                    if (!nativeControls.TrySuppressForRoll(commands.ActiveSession, contracts, out inlineError))
+                        logger.Warning("Native Roll Mode control suppression failed: " + inlineError);
+                }
+                return;
+            }
             ResponsiveRollPanelLayoutResult preliminaryLayout = CalculateResponsiveLayout(
                 lastPreferredBodyHeight >= 0f ? lastPreferredBodyHeight :
                     snapshot.Mode == RollSessionMode.Roll
@@ -1418,11 +2416,251 @@ namespace KingmakerDiceRoller.UI
         private void ApplySurfaceState()
         {
             if (expandedSurface != null) SetVisible(expandedSurface, panelState.ExpandedSurfaceActive);
-            if (accessTab != null) SetVisible(accessTab, panelState.AccessTabActive);
+            if (accessTab != null) SetVisible(accessTab, !inlineAvailable && panelState.AccessTabActive);
+        }
+
+        private void ApplyInlineModel(RollPanelModel model, RollUiSnapshot snapshot)
+        {
+            bool busy = commands.IsBusy;
+            bool transitional = snapshot.Mode == RollSessionMode.EnteringRollMode ||
+                snapshot.Mode == RollSessionMode.RestoringPointBuy;
+            bool showWorkspace = workspaceOpen;
+            SetVisible(inlinePointBuyEntry, !showWorkspace);
+            SetVisible(inlineWorkspace, showWorkspace);
+            SetInteractable(inlineEntryButton, !busy && snapshot.Mode == RollSessionMode.PointBuy);
+            SetInteractable(inlinePresetButton, !busy && !transitional);
+            bool rolled = snapshot.Mode == RollSessionMode.Roll;
+            SetVisible(inlineRollButton.gameObject, !rolled);
+            SetVisible(inlineRerollButton.gameObject, rolled);
+            SetInteractable(inlineRollButton, !busy && snapshot.CanRoll && formulaDraft.Error == null);
+            SetInteractable(inlineRerollButton, !busy && snapshot.CanReroll && formulaDraft.Error == null);
+            SetInteractable(inlineSaveButton, !busy && snapshot.CanStore);
+            SetInteractable(inlineLoadButton, !busy && snapshot.CanRecall);
+            RollSession activeSession = commands.ActiveSession;
+            int adjacent;
+            SetInteractable(inlinePreviousButton, !busy && !snapshot.RecoveryRequired && activeSession != null && !transitional &&
+                activeSession.History.AdjacentActive(true, !rolled, out adjacent) != null);
+            SetInteractable(inlineNextButton, !busy && !snapshot.RecoveryRequired && activeSession != null && rolled && !transitional &&
+                activeSession.History.AdjacentActive(false, false, out adjacent) != null);
+            SetInteractable(inlineReturnButton, !busy && !transitional &&
+                ((snapshot.Mode == RollSessionMode.PointBuy && !snapshot.RecoveryRequired) ||
+                    snapshot.CanReturnToPointBuy));
+            for (int index = 0; index < inlineDownArrows.Count; index++)
+            {
+                bool visible = model.AssignmentVisible;
+                SetVisible(inlineDownArrows[index].gameObject, visible);
+                SetInteractable(inlineDownArrows[index], !busy && visible &&
+                    model.AssignmentRows[index].CanMoveDown);
+            }
+            SetNativeButtonPresentation(showWorkspace, snapshot.Mode == RollSessionMode.PointBuy);
+            ShowValueBadge(showWorkspace, snapshot);
+            SetVisible(presetBlocker, showWorkspace && inlineMenu == InlineMenuKind.Presets);
+            SetVisible(presetPopup, showWorkspace && inlineMenu == InlineMenuKind.Presets);
+            DiceRollPreset selectedPreset = formulaDraft.CustomIntent
+                ? DiceRollPreset.CustomExpression : snapshot.Configuration.Preset;
+            for (int index = 0; index < inlinePresetChoices.Count; index++)
+            {
+                Button choice = inlinePresetChoices[index];
+                ColorBlock colors = choice.colors;
+                colors.normalColor = index == (int)selectedPreset
+                    ? new Color(1f, 0.83f, 0.68f, 1f) : Color.white;
+                choice.colors = colors;
+            }
+            string policy = RollPanelPresenter.FormatPolicy(snapshot.Configuration.LowScorePolicy);
+            bool policyActive = snapshot.Configuration.MinimumApplies;
+            policyNoteLabel.text = policyActive
+                ? policy + " below " + snapshot.Configuration.MinimumScore + " (change in Mod Manager settings)"
+                : "";
+            SetVisible(inlinePolicyNote, showWorkspace && policyActive);
+            if (inlinePolicyNote.activeSelf) FitInlineMessage(inlinePolicyNote, policyNoteLabel);
+
+            string status = !string.IsNullOrWhiteSpace(formulaDraft.Error) ? formulaDraft.Error :
+                !string.IsNullOrWhiteSpace(model.Error) ? model.Error : commandError;
+            switch (commands.LastPointBuyReturn)
+            {
+                case PointBuyReturnOutcome.DerivedValuesNotRefreshed:
+                    status = "Point Buy restored; derived values need a refresh. Check Troubleshooting.";
+                    break;
+                case PointBuyReturnOutcome.PageNotRefreshed:
+                    status = "Point Buy restored; reopen this page if scores look stale.";
+                    break;
+                case PointBuyReturnOutcome.Failed:
+                    status = "Return to Point Buy failed. Try again or check Troubleshooting.";
+                    break;
+            }
+            if (snapshot.RecoveryRequired &&
+                commands.LastPointBuyReturn == PointBuyReturnOutcome.None)
+                status = "Recovery incomplete. Return to Point Buy or check Troubleshooting.";
+            if (string.IsNullOrWhiteSpace(status) && model.Status != null &&
+                model.Status.StartsWith("Stored ", StringComparison.Ordinal)) status = model.Status;
+            inlineStatusLabel.text = status ?? string.Empty;
+            bool returnNotice = commands.LastPointBuyReturn == PointBuyReturnOutcome.DerivedValuesNotRefreshed ||
+                commands.LastPointBuyReturn == PointBuyReturnOutcome.PageNotRefreshed ||
+                commands.LastPointBuyReturn == PointBuyReturnOutcome.Failed;
+            SetVisible(inlineStatus, (showWorkspace || returnNotice) &&
+                !string.IsNullOrWhiteSpace(status));
+            RectTransform contentRect = (showWorkspace ? inlineWorkspace : inlinePointBuyEntry)
+                .GetComponent<RectTransform>();
+            LayoutRebuilder.ForceRebuildLayoutImmediate(contentRect);
+            float height = LayoutUtility.GetPreferredHeight(contentRect);
+            inlineToolbar.GetComponent<LayoutElement>().preferredHeight = height;
+            inlineToolbar.GetComponent<RectTransform>().SetSizeWithCurrentAnchors(
+                RectTransform.Axis.Vertical, height);
+
+            // The old score list and ordinary actions are retained only for
+            // degraded attachment. A healthy inline view uses this surface as
+            // one bounded secondary menu at a time.
+            SetVisible(presetSelectorSection, false);
+            SetVisible(pointActionsRow, false);
+            SetVisible(returnRow, false);
+            SetVisible(assignmentSection, false);
+            SetVisible(advancedDisclosure, false);
+            SetVisible(historyDisclosure, false);
+            SetVisible(savedDisclosure, false);
+            SetVisible(presetChoices, false);
+            SetVisible(advancedContent, false);
+            SetVisible(summarySection, false);
+            SetVisible(historyDetails, false);
+            SetVisible(savedDetails, inlineMenu == InlineMenuKind.Load);
+            SetVisible(storeButton.gameObject, false);
+            if (inlineMenu == InlineMenuKind.Load)
+            {
+                savedLabel.text = "Saved arrays   " + model.Saved;
+            }
+            SetVisible(messageLabel.gameObject, inlineMenu == InlineMenuKind.Load &&
+                !string.IsNullOrWhiteSpace(messageLabel.text));
+            menuHeadingLabel.text = "Load Scores";
+        }
+
+        private void ApplyInlineMenuGeometry()
+        {
+            RectTransform rootRect = root.GetComponent<RectTransform>();
+            RectTransform toolbarRect = inlineToolbar.GetComponent<RectTransform>();
+            LocalLayoutRect? toolbarBounds = TryGetLocalBounds(toolbarRect, rootRect);
+            if (!toolbarBounds.HasValue) return;
+            float width = Mathf.Min(460f, rootRect.rect.width - 36f);
+            float height = 360f;
+            height = Mathf.Min(height, rootRect.rect.height - 110f);
+            if (width <= 0f || height <= 0f) return;
+            expandedSurfaceRect.anchorMin = expandedSurfaceRect.anchorMax = new Vector2(0.5f, 0.5f);
+            expandedSurfaceRect.pivot = new Vector2(0f, 0f);
+            expandedSurfaceRect.sizeDelta = new Vector2(width, height);
+            expandedSurfaceRect.anchoredPosition = new Vector2(
+                Mathf.Clamp(toolbarBounds.Value.XMin, rootRect.rect.xMin + 18f,
+                    rootRect.rect.xMax - width - 18f),
+                Mathf.Clamp(toolbarBounds.Value.YMax + 4f, rootRect.rect.yMin + 92f,
+                    rootRect.rect.yMax - height - 18f));
+            foreach (RectTransform paper in paperLayers)
+                paper.sizeDelta = new Vector2(width * 2f, height * 2f);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(expandedSurfaceRect);
+            float preferred = LayoutUtility.GetPreferredHeight(bodyContent);
+            bodyScroll.vertical = preferred > bodyViewport.rect.height + 2f;
+            SetVisible(bodyScrollbarObject, bodyScroll.vertical);
+            bodyViewport.offsetMax = new Vector2(bodyScroll.vertical ? -22f : 0f, 0f);
+        }
+
+        private void ApplyPresetPopupGeometry()
+        {
+            RectTransform rootRect = root.GetComponent<RectTransform>();
+            RectTransform fieldRect = formulaInput.GetComponent<RectTransform>();
+            RectTransform popupRect = presetPopup.GetComponent<RectTransform>();
+            LocalLayoutRect? field = TryGetLocalBounds(fieldRect, rootRect);
+            if (!field.HasValue) return;
+            float width = Mathf.Min(450f, rootRect.rect.width - 36f);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(popupRect);
+            float height = Mathf.Max(234f, LayoutUtility.GetPreferredHeight(popupRect));
+            popupRect.sizeDelta = new Vector2(width, height);
+            float left = Mathf.Clamp(field.Value.XMin, rootRect.rect.xMin + 18f,
+                rootRect.rect.xMax - width - 18f);
+            float below = field.Value.YMin - 4f;
+            float top = below - height >= rootRect.rect.yMin + 18f
+                ? below : field.Value.YMax + height + 4f <= rootRect.rect.yMax - 18f
+                    ? field.Value.YMax + height + 4f
+                    : Mathf.Clamp(below, rootRect.rect.yMin + height + 18f,
+                        rootRect.rect.yMax - 18f);
+            popupRect.anchoredPosition = new Vector2(left, top);
+            presetBlocker.transform.SetAsLastSibling();
+            presetPopup.transform.SetAsLastSibling();
+        }
+
+        private bool CanDispatchCurrentView()
+        {
+            if (commands.IsBusy) return false;
+            RollSession session = commands.ActiveSession;
+            if (session == null || viewBinding == null ||
+                !commands.CanAttachNativePanel || attachedAllocator == null || root == null)
+                return false;
+            object owner;
+            bool active;
+            object phase;
+            object allocator;
+            try
+            {
+                KingmakerContracts contracts = contractsProvider();
+                return contracts != null && contracts.TryGetAbilityPhasePresentationContext(
+                    out owner, out active, out phase, out allocator) &&
+                    viewBinding.Matches(session.Controller, session.StableOwner, allocator, active);
+            }
+            catch (Exception exception)
+            {
+                ReportAttachment("Native UI command binding unavailable: " + exception.Message);
+                return false;
+            }
+        }
+
+        private void OpenInlineMenu(InlineMenuKind menu)
+        {
+            if (!inlineAvailable) return;
+            if (inlineTooltipOverlay != null) inlineTooltipOverlay.HideAll();
+            if (menu == InlineMenuKind.Presets && inlinePresetTooltip != null)
+                inlinePresetTooltip.SuppressUntilReentry();
+            if (inlineMenu == menu)
+            {
+                if (menu == InlineMenuKind.Load)
+                    NativeUiPresentation.CloseDrawer(panelState, commands.NotifyDrawerClosed);
+                inlineMenu = InlineMenuKind.None;
+            }
+            else
+            {
+                if (inlineMenu == InlineMenuKind.Load)
+                    NativeUiPresentation.CloseDrawer(panelState, commands.NotifyDrawerClosed);
+                inlineMenu = menu;
+                if (menu == InlineMenuKind.Load) panelState.Open();
+            }
+            Render(contractsProvider());
+            if (menu == InlineMenuKind.Load && panelState.IsExpanded && closeButton != null)
+                closeButton.Select();
+        }
+
+        private void SelectInlinePreset(DiceRollPreset preset)
+        {
+            if (inlinePresetTooltip != null) inlinePresetTooltip.SuppressUntilReentry();
+            string error = null;
+            bool succeeded = preset == DiceRollPreset.CustomExpression ||
+                commands.SelectPreset(preset, out error);
+            if (preset == DiceRollPreset.CustomExpression) error = null;
+            commandError = succeeded ? null : error;
+            if (succeeded && preset != DiceRollPreset.CustomExpression)
+                formulaDraft.SelectPreset(preset, commands.Snapshot.Configuration);
+            inlineMenu = InlineMenuKind.None;
+            Render(contractsProvider());
+            if (succeeded && formulaInput != null)
+            {
+                if (preset != DiceRollPreset.CustomExpression)
+                {
+                    rendering = true;
+                    try { formulaInput.text = formulaDraft.Text; }
+                    finally { rendering = false; }
+                }
+                formulaInput.Select();
+                if (preset == DiceRollPreset.CustomExpression) formulaInput.ActivateInputField();
+            }
         }
 
         private void Execute(RollUiCommand command, AbilityScore ability = AbilityScore.Strength)
         {
+            if (commands.IsBusy) return;
+            ReleaseRollReadyBeforeApplication(command);
             string error;
             bool succeeded = commands.Execute(command, ability, out error);
             commandError = succeeded ? null : error;
@@ -1573,8 +2811,11 @@ namespace KingmakerDiceRoller.UI
                     button.transition = Selectable.Transition.ColorTint;
                 });
             button.onClick = new Button.ButtonClickedEvent();
-            button.onClick.AddListener(() => NativeUiPresentation.Activate(
-                action, NativeBookTheme.PlayClick, ReportAttachment));
+            button.onClick.AddListener(() =>
+            {
+                if (!CanDispatchCurrentView()) return;
+                NativeUiPresentation.Activate(action, NativeBookTheme.PlayClick, ReportAttachment);
+            });
 
             var layout = gameObject.AddComponent<LayoutElement>();
             if (width > 0f)
@@ -1872,6 +3113,119 @@ namespace KingmakerDiceRoller.UI
             internal TextMeshProUGUI Value { get; }
             internal Button Up { get; }
             internal Button Down { get; }
+        }
+
+        private sealed class NativeButtonVisualState
+        {
+            private readonly Button button;
+            private readonly Graphic[] graphics;
+            private readonly bool[] enabled;
+            private readonly bool[] raycast;
+            private readonly Navigation navigation;
+            private bool readyInteractable;
+
+            internal NativeButtonVisualState(Button button)
+            {
+                this.button = button ?? throw new ArgumentNullException(nameof(button));
+                graphics = button.GetComponentsInChildren<Graphic>(true);
+                enabled = new bool[graphics.Length];
+                raycast = new bool[graphics.Length];
+                navigation = button.navigation;
+                for (int index = 0; index < graphics.Length; index++)
+                {
+                    enabled[index] = graphics[index].enabled;
+                    raycast[index] = graphics[index].raycastTarget;
+                }
+            }
+
+            internal void Conceal(bool rollReady)
+            {
+                if (rollReady) readyInteractable = button.interactable;
+                button.navigation = new Navigation { mode = Navigation.Mode.None };
+                if (rollReady) button.interactable = false;
+                foreach (Graphic graphic in graphics)
+                {
+                    if (graphic == null) continue;
+                    graphic.enabled = false;
+                    graphic.raycastTarget = false;
+                }
+            }
+
+            internal void KeepConcealed(bool rollReady)
+            {
+                button.navigation = new Navigation { mode = Navigation.Mode.None };
+                if (rollReady) button.interactable = false;
+                foreach (Graphic graphic in graphics)
+                {
+                    if (graphic == null) continue;
+                    graphic.enabled = false;
+                    graphic.raycastTarget = false;
+                }
+            }
+
+            internal void Restore(bool restoreReadyInteractable)
+            {
+                if (button == null) return;
+                button.navigation = navigation;
+                if (restoreReadyInteractable) button.interactable = readyInteractable;
+                for (int index = 0; index < graphics.Length; index++)
+                {
+                    if (graphics[index] == null) continue;
+                    graphics[index].enabled = enabled[index];
+                    graphics[index].raycastTarget = raycast[index];
+                }
+            }
+        }
+
+        private sealed class NativeCostHintVisualState
+        {
+            private readonly GameObject container;
+            private readonly TextMeshProUGUI[] labels;
+            private readonly bool[] originallyEnabled;
+            private readonly NativeCostHintGuard guard;
+            private bool originallyActive;
+            private bool captured;
+
+            internal NativeCostHintVisualState(GameObject owner, TextMeshProUGUI[] values,
+                NativeCostHintGuard rowGuard)
+            {
+                container = owner ?? throw new ArgumentNullException(nameof(owner));
+                labels = values ?? throw new ArgumentNullException(nameof(values));
+                guard = rowGuard ?? throw new ArgumentNullException(nameof(rowGuard));
+                originallyEnabled = new bool[labels.Length];
+                guard.Configure(Conceal);
+            }
+
+            internal void Conceal()
+            {
+                if (container == null || guard == null) return;
+                if (!captured)
+                {
+                    originallyActive = container.activeSelf;
+                    for (int index = 0; index < labels.Length; index++)
+                        originallyEnabled[index] = labels[index] != null && labels[index].enabled;
+                    captured = true;
+                }
+                guard.enabled = true;
+                for (int index = 0; index < labels.Length; index++)
+                    if (labels[index] != null) labels[index].enabled = false;
+                if (container != null) container.SetActive(false);
+            }
+
+            internal void Restore()
+            {
+                if (guard != null) guard.enabled = false;
+                if (!captured) return;
+                for (int index = 0; index < labels.Length; index++)
+                    if (labels[index] != null) labels[index].enabled = originallyEnabled[index];
+                if (container != null) container.SetActive(originallyActive);
+                captured = false;
+            }
+
+            internal void Dispose()
+            {
+                if (guard != null) Object.Destroy(guard);
+            }
         }
     }
 }

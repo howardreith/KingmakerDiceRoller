@@ -4,6 +4,186 @@ Source, exact-contract, build, package, and installation qualification do not
 replace this live gate. Preserve logs/screenshots outside Git and collect
 evidence only after fully exiting Kingmaker.
 
+## 0.1.17 Value badge color after navigation (NOT RUN)
+
+Install the exact candidate from
+`docs/VALUE-BADGE-COLOR-0.1.17-CANDIDATE.md`. In a supported new character,
+roll several times, then navigate back to Heritage or Race and forward to the
+ability/skills page. Verify the point-buy equivalent numeral and Value caption
+retain their normal readable colors on the red circle. Repeat after History,
+Recall, a preview rebuild, and a second page round trip. Confirm the native
+Points caption and budget color return in Point Buy, and another character's
+ability page has no retained owned tint. Capture the full badge at 1920×1200
+and a second UI scale.
+
+## 0.1.16 Value badge correction (NOT RUN)
+
+Install the exact candidate from `docs/VALUE-BADGE-0.1.16-CANDIDATE.md`.
+With a test fixture yielding base array 16, 15, 14, 12, 10, 8: Value
+must show **22**, while Details shows total **75** and point-buy equivalent
+**22**. Reassign two scores, navigate away and back through History, save and
+recall the array, then Reroll; Value must always match the active array's
+point-buy equivalent, without racial modifiers. In Roll-ready it shows a
+dash. Return to Point Buy and confirm the native Points caption and remaining
+budget return. Record the full badge at 1920×1200 and a second UI scale.
+
+## 0.1.15 v4 native-stat UI (NOT RUN)
+
+Install the exact candidate ZIP recorded in
+`docs/NATIVE-STAT-UI-V4-CANDIDATE.md`. Record commit, ZIP/DLL SHA-256,
+game version, resolution, canvas scale, creation context, and race. Capture
+whole ability pages at 1920×1200 and a smaller 16:9 scale. The mission's five
+owner screenshots are before evidence, not candidate after captures.
+
+1. On a new main, mercenary, and editable respec, click Roll, then use several
+   fast, separate Reroll clicks. Repeat after changing races and opening the
+   formula menu. Record each actual error and the full troubleshooting log;
+   confirm one click makes at most one history entry and failed attempts keep
+   the previous scores, allocator, skill points, spell slots, and selections.
+   If recovery is incomplete, confirm Roll, Reroll, Save, Recall, and history
+   are unavailable until a successful Return to Point Buy rebuild/rebind.
+2. Compare the owned Value number with the original native Points circle in
+   Roll-ready, Roll, Previous/Next, Load, and Return. Use real fixtures with
+   totals 6, 50, 120, and 720. Each number must be centered, single-line,
+   legible, and in front of the intact circle at both scales.
+3. Show validation and operation notices. Verify the three accepted toolbar
+   rows stay together, the notice sits in measured space above the score rows,
+   and the complete Human racial section (heading, chooser, arrows, counter,
+   lower frame) remains above the book edge and global navigation. Repeat
+   with a fixed-bonus race and a policy note.
+4. Hover and intentionally keyboard-focus the formula control, open/select a
+   preset, move the pointer away, and rebuild/close the page. The formula help
+   appears only for hover or deliberate keyboard focus, closes with the popup
+   or owner, and has no inner scroll-end ornament. Previous, Next, and Return
+   show no owned tooltip on hover or focus. Check no ghost popups or click
+   interception after teardown.
+5. Return to Point Buy after a successful roll and after a recoverable failed
+   reroll. Confirm the native budget and cost patches still work and the exact
+   live preview's skill/spell allowances match the restored scores. Exercise
+   new main, mercenary, and editable respec; later level-ups and locked-base
+   retraining must never expose Roll.
+
+Mark each V4-01 through V4-06 PASS, FAIL, or NOT RUN in the candidate evidence.
+
+## 0.1.14 v3 native-stat presentation (NOT RUN)
+
+Install the exact 0.1.14 candidate from
+`docs/NATIVE-STAT-UI-V3-CANDIDATE.md`. Record commit, ZIP/DLL SHA-256,
+game version, 1920×1200 resolution and canvas scale; repeat the visual cases
+at a smaller 16:9 layout. Capture the whole ability page, including the Human
+racial selector and global bottom navigation. Keep the owner's v2 screenshots
+as before evidence, not 0.1.14 after evidence.
+
+1. Begin with partially spent Point Buy on Human. While a native cost hint is
+   visible, open Roll for Stats. Check that the six base scores, budget, and
+   history are unchanged; the full Value caption is over the original circle
+   with a dash centered in it. Hover and keyboard-navigate every former native
+   purchase/refund target, including after FillData and a race/preview refresh.
+   No cost text, container, tooltip, focus ghost, or purchase/refund may appear.
+2. Inspect the centered 400–440-unit formula group and visible native down
+   chevron in normal/hover/pressed/focus states. Open its popup and use all six
+   visible choices without scrolling. Paste a long supported draft, then an
+   invalid one; opening/choosing/editing does not roll, spend, or append history.
+3. Use legitimate fixtures yielding totals 6, 77, 120, and 720. Capture each
+   full ability badge beside native comparison text. After Roll, Previous/Next,
+   and saved Load, verify total placement and base-sum semantics with Human's
+   racial destination changed. Swap each enabled adjacent position and confirm
+   one exchange per click, downward centered icons after refresh, and the
+   disabled Charisma endpoint.
+4. Inspect a swap tooltip and the long Return tooltip at screen edges. Check
+   text wrapping, complete paper/frame/scroll end, flip/clamp, pointer exit,
+   keyboard selection, popup/workspace closure, owner replacement, and scale
+   change. The overlay must not block neighboring clicks or survive its trigger.
+5. Verify Previous, Next, and Return on one 34-unit row, with Load/Save/Roll
+   above. In Roll-ready and applied Roll, the Human heading, selected ability,
+   both racial arrows, and bottom navigation must remain fully separated and
+   usable. Repeat with a fixed-bonus race, a nondefault policy note, a visible
+   validation/operation message, page rebuild, and smaller layout.
+6. Return from Roll-ready and applied Roll. Confirm the native localized Points
+   caption, current remaining budget, and legal purchase/refund costs update.
+   Repeat after an earlier Roll/Return with further purchases, then exercise
+   new main, mercenary, editable respec and owner/allocator replacement. No
+   cost suppression or overlay remains on another page or character.
+
+Record PASS/FAIL/NOT RUN per V3-01 through V3-06 in the candidate evidence.
+
+## 0.1.13 revised native-stat candidate (NOT RUN)
+
+Record the candidate commit, ZIP SHA-256, game version, resolution, and UI
+scale. Capture actual ordinary Point Buy, Roll-ready, applied Roll, all-six-row
+preset popup, and an invalid formula at 1920×1200 and a smaller 16:9 layout.
+The owner-provided 0.1.12 screenshots and mission SVGs are comparison material,
+not after captures.
+
+1. On a new supported character, verify only Roll for Stats is added; spend and
+   refund points, then open Roll-ready. Confirm no score/budget/RNG change,
+   Value dash, hidden and non-interactable original controls, and view-only
+   Return. Repeat after an earlier roll/return and further Point Buy purchases.
+2. Roll [or load] a known array; confirm Value equals its six base scores,
+   including with a racial adjustment. Swap with one right-hand downward arrow
+   and confirm centered hover/pressed icon, one dispatch/click sound, disabled
+   Charisma, and unchanged Value. Confirm native skills badge still works.
+3. Open presets and reach all six rows without scrolling. Select Custom,
+   enter invalid text, verify it remains and blocks only generation. Test Enter,
+   Escape, popup dismissal, and keyboard focus without triggering game Next.
+4. Roll A/B/C, navigate to A and back, then generate D from A and verify
+   preserved forward history. Save an arrangement, browse Load without effect,
+   recall it once, navigate back/forward, and return to the exact observed
+   Point Buy allocation and budget.
+5. Rebuild the same owner/allocator and switch characters, phases, and
+   supported main, mercenary, and editable-respec contexts. Check native
+   controls/listeners restore once and no stale popup, arrows, or badge remain.
+   Exercise UMM low-score settings and active-policy note. Confirm unsupported
+   later level-ups and locked-base retraining have no roll entry.
+
+Mark each actual game observation PASS/FAIL/NOT RUN in the candidate evidence.
+
+## 0.1.12 inline native-stat candidate (historical, NOT RUN)
+
+Use the exact packaged candidate and record its commit, ZIP hash, game version,
+screen resolution, canvas scale, and allocator/toolbar/racial-selector rects.
+Check 1920×1200, 1920×1080, 1600×900, 1366×768, 1280×720, and 1152×720.
+At each size capture the normal Point Buy view, Roll view, and the tallest
+open Method/Options/Load menu. The six native scores, racial modifiers,
+descriptions, toolbar captions, racial selector, and Back/Next must remain
+visible, readable, and independently clickable.
+
+1. On a new main character, confirm the two-row strip appears directly after
+   native score rows in Point Buy. No roll occurs on attach, FillData, menu
+   open, or preview rebuild. Original point-buy arrows buy/refund normally.
+2. Partially spend points; choose a method directly; Roll. Confirm six native
+   rows remain, original buy buttons are disabled, owned vertical arrows swap
+   only adjacent base-score source positions, and STR up/CHA down are disabled.
+   Check equal values, a racial bonus, Intelligence, and a casting score.
+   One pointer click or keyboard Submit performs one swap and one click sound.
+3. Reroll, Save the rearranged assignment, open Load, browse History and Saved
+   without changing the character, then explicitly Use/Recall. Confirm exact
+   saved assignment and no RNG. Return to Point Buy, edit allocation, Use a
+   history or saved record directly from Point Buy, then Return again to the
+   newly captured allocation and observed remaining/total budget.
+4. In either mode, open Options. Check low-score policy, conditional minimum,
+   custom-expression entry/help, and invalid-expression error. In Details,
+   check total, informational point-buy equivalent and extended marker, and
+   the applied rule after selecting a different next-roll method.
+5. Repeat FillData, phase exit/reentry, same-owner preview replacement,
+   allocator replacement, cancel, completion, disable/unload, and a different
+   character owner. Check one control/listener set, no stale callback routing,
+   no hidden focus or click blocker, native point-buy availability after
+   return, and no implicit reroll.
+6. Repeat the positive path for player-initiated mercenary recruitment and
+   qualified six-score respec. Confirm ordinary later level-up, catch-up
+   levels, locked-base retraining, pets, and unrelated units have no inline
+   controls. Verify native completion and save/reload using disposable state.
+7. If inline attachment fails, record the contract/layout diagnostic and
+   verify the prior Roll Stats drawer is usable without score mutation. A
+   fallback on the intended supported PC screen is a failed visual scenario.
+
+Runtime screenshot and interaction results are currently NOT RUN. The
+computer-use helper in this session exited unexpectedly twice before it could
+list windows, so no screen state or game input was observed.
+
+## Legacy 0.1.11 drawer checks (fallback only)
+
 ## Resolution matrix
 
 Run the mercenary screen at 1152 by 720 first and record effective

@@ -162,6 +162,36 @@ namespace KingmakerDiceRoller.Integration
                     progressionType.FullName + ".TotalIntelligenceSkillPoints is not a writable Int32 contract.");
             }
 
+            MemberInfo totalSkillPoints = ReflectionAccess.RequireInstanceMember(
+                levelUpStateType, "TotalSkillPoints");
+            MemberInfo spellSelections = ReflectionAccess.RequireInstanceMember(
+                levelUpStateType, "SpellSelections");
+            Type spellListType = ReflectionAccess.GetMemberType(spellSelections);
+            if (ReflectionAccess.GetMemberType(totalSkillPoints) != typeof(int) ||
+                !spellListType.IsGenericType ||
+                spellListType.GetGenericTypeDefinition() != typeof(List<>))
+                throw new ContractResolutionException("Exact LevelUpState skill/spell allowance caches were not found.");
+            Type spellDataType = spellListType.GetGenericArguments()[0];
+            if (spellDataType.FullName != "Kingmaker.UnitLogic.Class.LevelUp.SpellSelectionData")
+                throw new ContractResolutionException("LevelUpState.SpellSelections has an unexpected element type.");
+            MemberInfo spellLevelCount = ReflectionAccess.RequireInstanceMember(spellDataType, "LevelCount");
+            MemberInfo spellExtraMaxLevel = ReflectionAccess.RequireInstanceMember(spellDataType, "ExtraMaxLevel");
+            Type spellStatesType = ReflectionAccess.GetMemberType(spellLevelCount);
+            if (!spellStatesType.IsArray ||
+                ReflectionAccess.GetMemberType(spellExtraMaxLevel) != typeof(int))
+                throw new ContractResolutionException("SpellSelectionData allowance fields have unexpected types.");
+            MemberInfo selectedSpells = ReflectionAccess.RequireInstanceMember(
+                spellStatesType.GetElementType(), "SpellSelections");
+            if (!ReflectionAccess.GetMemberType(selectedSpells).IsArray)
+                throw new ContractResolutionException("SpellSelectionState.SpellSelections is not an array.");
+            var derivedAllowances = new KingmakerDerivedAllowanceContracts(
+                totalSkillPoints, spellSelections, spellLevelCount, spellExtraMaxLevel, selectedSpells);
+            evidence.Add("DerivedAllowance=" + totalSkillPoints.DeclaringType.FullName + "." + totalSkillPoints.Name);
+            evidence.Add("DerivedAllowance=" + spellSelections.DeclaringType.FullName + "." + spellSelections.Name);
+            evidence.Add("DerivedAllowance=" + spellLevelCount.DeclaringType.FullName + "." + spellLevelCount.Name);
+            evidence.Add("DerivedAllowance=" + spellExtraMaxLevel.DeclaringType.FullName + "." + spellExtraMaxLevel.Name);
+            evidence.Add("DerivedAllowance=" + selectedSpells.DeclaringType.FullName + "." + selectedSpells.Name);
+
             MethodInfo isCustomCompanion = unitHelperType.GetMethod(
                 "IsCustomCompanion",
                 StaticFlags,
@@ -498,11 +528,32 @@ namespace KingmakerDiceRoller.Integration
             }
             FieldInfo scoreEntryUpButton = scoreEntryType.GetField("UpButton", InstanceFlags);
             FieldInfo scoreEntryDownButton = scoreEntryType.GetField("DownButton", InstanceFlags);
+            FieldInfo scoreEntryCostAnimator = scoreEntryType.GetField("m_CostContainerAnimator", InstanceFlags);
+            FieldInfo scoreEntryCostLabel = scoreEntryType.GetField("m_CostLabel", InstanceFlags);
+            FieldInfo scoreEntryUpCost = scoreEntryType.GetField("m_UpCost", InstanceFlags);
+            FieldInfo scoreEntryDownCost = scoreEntryType.GetField("m_DownCost", InstanceFlags);
+            FieldInfo scoreEntryStatType = scoreEntryType.GetField("Type", InstanceFlags);
+            if (scoreEntryStatType == null || scoreEntryStatType.FieldType != statTypeType ||
+                !string.Equals(scoreEntryStatType.DeclaringType.FullName,
+                    "Kingmaker.UI.ServiceWindow.CharacterScreen.CharSScoreEntry", StringComparison.Ordinal))
+            {
+                throw new ContractResolutionException("Exact CharBScoresEntry inherited Type stat key was not found.");
+            }
             if (scoreEntryUpButton == null || scoreEntryDownButton == null ||
                 scoreEntryUpButton.FieldType != scoreEntryDownButton.FieldType ||
                 !string.Equals(scoreEntryUpButton.FieldType.FullName, "UnityEngine.UI.Button", StringComparison.Ordinal))
             {
                 throw new ContractResolutionException("Exact CharBScoresEntry UpButton/DownButton fields were not found.");
+            }
+            if (scoreEntryCostAnimator == null ||
+                !string.Equals(scoreEntryCostAnimator.FieldType.FullName,
+                    "Kingmaker.UI.Common.Animations.FadeAnimator", StringComparison.Ordinal) ||
+                scoreEntryCostLabel == null || scoreEntryUpCost == null || scoreEntryDownCost == null ||
+                !string.Equals(scoreEntryCostLabel.FieldType.FullName, "TMPro.TextMeshProUGUI", StringComparison.Ordinal) ||
+                scoreEntryUpCost.FieldType != scoreEntryCostLabel.FieldType ||
+                scoreEntryDownCost.FieldType != scoreEntryCostLabel.FieldType)
+            {
+                throw new ContractResolutionException("Exact CharBScoresEntry cost animator/text fields were not found.");
             }
             PropertyInfo interactable = scoreEntryUpButton.FieldType.GetProperty("interactable", InstanceFlags);
             if (interactable == null || interactable.PropertyType != typeof(bool) ||
@@ -511,14 +562,24 @@ namespace KingmakerDiceRoller.Integration
                 throw new ContractResolutionException("Unity Selectable.interactable is not an exact writable Boolean property.");
             }
             FieldInfo allocatorMainLabel = abilityAllocatorType.GetField("m_MainLabel", InstanceFlags);
+            FieldInfo allocatorPointsValue = abilityAllocatorType.GetField("m_AvailibleSkillPoints", InstanceFlags);
+            FieldInfo allocatorPointsCaption = abilityAllocatorType.GetField("m_AvailibleSkillPointsLabel", InstanceFlags);
             FieldInfo allocatorFrame = abilityAllocatorType.GetField("m_Frame", InstanceFlags);
             FieldInfo allocatorRaceBonusContainer = abilityAllocatorType.GetField("m_RaceBonusContainer", InstanceFlags);
+            FieldInfo availableValueColor = abilityAllocatorType.GetField("m_TextAvailibalePointsColor", InstanceFlags);
+            FieldInfo availableCaptionColor = abilityAllocatorType.GetField("m_LabelAvailibalePointsColor", InstanceFlags);
             if (allocatorMainLabel == null ||
                 !string.Equals(allocatorMainLabel.FieldType.FullName, "TMPro.TextMeshProUGUI", StringComparison.Ordinal) ||
+                allocatorPointsValue == null || allocatorPointsCaption == null ||
+                !string.Equals(allocatorPointsValue.FieldType.FullName, "TMPro.TextMeshProUGUI", StringComparison.Ordinal) ||
+                !string.Equals(allocatorPointsCaption.FieldType.FullName, "TMPro.TextMeshProUGUI", StringComparison.Ordinal) ||
                 allocatorFrame == null ||
                 !string.Equals(allocatorFrame.FieldType.FullName, "UnityEngine.UI.Image", StringComparison.Ordinal) ||
                 allocatorRaceBonusContainer == null ||
-                !string.Equals(allocatorRaceBonusContainer.FieldType.FullName, "UnityEngine.GameObject", StringComparison.Ordinal))
+                !string.Equals(allocatorRaceBonusContainer.FieldType.FullName, "UnityEngine.GameObject", StringComparison.Ordinal) ||
+                availableValueColor == null || availableCaptionColor == null ||
+                !string.Equals(availableValueColor.FieldType.FullName, "UnityEngine.Color", StringComparison.Ordinal) ||
+                !string.Equals(availableCaptionColor.FieldType.FullName, "UnityEngine.Color", StringComparison.Ordinal))
             {
                 throw new ContractResolutionException("Native allocator label/frame/racial-bonus UI anchors were not found.");
             }
@@ -550,8 +611,15 @@ namespace KingmakerDiceRoller.Integration
             evidence.Add(
                 "AbilityControls=" + abilityAllocatorType.FullName + ".m_StatEntries -> " +
                 scoreEntryType.FullName + ".UpButton + DownButton -> UnityEngine.UI.Selectable.interactable");
+            evidence.Add("AbilityRowIdentity=" + scoreEntryStatType.DeclaringType.FullName + ".Type: " + statTypeType.FullName);
+            evidence.Add("AbilityCostPresentation=" + scoreEntryType.FullName +
+                ".m_CostContainerAnimator + m_CostLabel + m_UpCost + m_DownCost");
             evidence.Add(
                 "AbilityPanelStyles=" + abilityAllocatorType.FullName + ".m_MainLabel + m_Frame");
+            evidence.Add("AbilityPointsBadge=" + abilityAllocatorType.FullName +
+                ".m_AvailibleSkillPointsLabel + m_AvailibleSkillPoints");
+            evidence.Add("AbilityPointsAvailableColors=" + abilityAllocatorType.FullName +
+                ".m_LabelAvailibalePointsColor + m_TextAvailibalePointsColor");
             evidence.Add(
                 "AbilityPanelAccessAnchor=" + abilityAllocatorType.FullName + ".m_RaceBonusContainer");
 
@@ -615,13 +683,23 @@ namespace KingmakerDiceRoller.Integration
                 allocatorSourceEntity,
                 allocatorPreviewEntity,
                 allocatorStatEntries,
+                scoreEntryStatType,
                 scoreEntryUpButton,
                 scoreEntryDownButton,
+                scoreEntryCostAnimator,
+                scoreEntryCostLabel,
+                scoreEntryUpCost,
+                scoreEntryDownCost,
                 interactable,
                 allocatorMainLabel,
+                allocatorPointsValue,
+                allocatorPointsCaption,
                 allocatorFrame,
                 allocatorRaceBonusContainer,
-                evidence);
+                evidence,
+                derivedAllowances,
+                availableValueColor,
+                availableCaptionColor);
         }
 
         private static Type RequireType(Assembly assembly, string fullName)

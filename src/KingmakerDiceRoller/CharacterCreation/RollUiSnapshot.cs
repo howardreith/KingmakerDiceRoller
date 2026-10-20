@@ -20,7 +20,8 @@ namespace KingmakerDiceRoller.CharacterCreation
             int savedCount,
             string savedLabel,
             string validationError,
-            string status)
+            string status,
+            bool recoveryRequired = false)
         {
             SessionAvailable = sessionAvailable;
             Mode = mode;
@@ -38,6 +39,7 @@ namespace KingmakerDiceRoller.CharacterCreation
             SavedLabel = savedLabel ?? string.Empty;
             ValidationError = validationError ?? string.Empty;
             Status = status ?? string.Empty;
+            RecoveryRequired = recoveryRequired;
         }
 
         public bool SessionAvailable { get; }
@@ -56,13 +58,15 @@ namespace KingmakerDiceRoller.CharacterCreation
         public string SavedLabel { get; }
         public string ValidationError { get; }
         public string Status { get; }
-        public bool CanRoll => SessionAvailable && Mode == RollSessionMode.PointBuy;
-        public bool CanReroll => SessionAvailable && Mode == RollSessionMode.Roll;
-        public bool CanReturnToPointBuy => CanReroll;
+        public bool RecoveryRequired { get; }
+        public bool CanRoll => SessionAvailable && !RecoveryRequired && Mode == RollSessionMode.PointBuy;
+        public bool CanReroll => SessionAvailable && !RecoveryRequired && Mode == RollSessionMode.Roll;
+        public bool CanReturnToPointBuy => SessionAvailable &&
+            (Mode == RollSessionMode.Roll || RecoveryRequired);
         public bool CanAssign => CanReroll && AssignedValues != null;
         public bool CanStore => CanAssign;
-        public bool CanUseHistory => SessionAvailable && HistoryCount > 0;
-        public bool CanRecall => SessionAvailable && SavedCount > 0 &&
+        public bool CanUseHistory => SessionAvailable && !RecoveryRequired && HistoryCount > 0;
+        public bool CanRecall => SessionAvailable && !RecoveryRequired && SavedCount > 0 &&
             (Mode == RollSessionMode.PointBuy || Mode == RollSessionMode.Roll);
     }
 }
