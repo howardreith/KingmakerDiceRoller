@@ -1,6 +1,6 @@
 # Project state
 
-## 0.2.0 stable release preparation
+## 0.2.0 stable release
 
 On 2026-10-19 the owner requested merging the native stats UI mission branch
 into the GitHub default branch and publishing a stable `0.2.0` release. The
@@ -10,8 +10,9 @@ latest alpha's page-return badge fix and its reproducible smoke scenario
 remain included. The development agent has not completed in-game visual,
 save/reload or compatibility qualification, so runtime qualification remains
 **No**. The owner specifically authorized a stable release; the guarded
-publisher's pre-runtime path preserves that distinction. It must run full
-qualification on the final default-branch commit.
+publisher's pre-runtime path preserves that distinction. PR #7 merged to
+`main` at `d0708fc087032bab05a80a67100da247ed282b15`, and the guarded
+publisher ran full qualification on that exact commit before publication.
 
 ## Qualification truth
 
@@ -25,10 +26,11 @@ qualification on the final default-branch commit.
   and zero errors; DLL SHA-256
   `cd3b60233f348bf634e76bdea44031952700054ab0f82766ebda51342823b3a5`.
 - Package-qualified: **Yes** — strict validation passed for the six-entry
-  preparation ZIP `artifacts/packages/KingmakerDiceRoller-0.2.0.zip` (SHA-256
+  `artifacts/packages/KingmakerDiceRoller-0.2.0.zip` (SHA-256
   `43f99fabcdd31192ecd5deb46533c2004fa64b59a432c4b094b85290f6dadaad`).
-  The guarded publisher must regenerate and validate the final ZIP from the
-  exact merge commit; this preparation ZIP is not the release asset.
+  The guarded publisher regenerated and validated the release ZIP on the
+  exact `main` merge commit; the downloaded GitHub asset matches it byte for
+  byte and passes strict validation.
 - Installed: **No** — the development agent has not installed 0.2.0 in game.
 - Focused runtime test: **NOT RUN** — live visual, input and save/reload checks.
 - Runtime-qualified: **No**.
@@ -38,8 +40,16 @@ qualification on the final default-branch commit.
 - Owner-authorized pre-runtime release: **Yes** — the owner authorized stable
   v0.2.0 despite the unverified runtime checks; no runtime PASS is recorded.
 - Testing-prerelease-authorized: **No** — the requested release is stable.
-- Publicly released: **No** — pending merge, default-branch qualification and
-  publication.
+- Publicly released: **Yes** — the
+  [v0.2.0 stable release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.2.0)
+  is published and GitHub marks it latest. Annotated tag `v0.2.0` peels to
+  merge commit `d0708fc087032bab05a80a67100da247ed282b15` on `main`.
+  The guarded publisher reran release-gate 20/20, repository validation,
+  Python 30/30, C# 416/416, installed contracts, respec 11/11, native UI
+  30/30, zero-warning Release build and strict package validation. GitHub's
+  asset digest and `SHA256SUMS.txt` both match ZIP SHA-256
+  `43f99fabcdd31192ecd5deb46533c2004fa64b59a432c4b094b85290f6dadaad`.
+  Runtime-qualified remains **No**.
 
 ## 0.1.17 Value badge color alpha
 

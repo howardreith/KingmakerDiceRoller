@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.2.0 - 2026-10-19 - native stats UI
+
+Owner-authorized stable GitHub release, merged into `main`. It is not
+runtime-qualified by the development agent; in-game visual, save/reload and
+compatibility checks remain open.
+
+- Integrate Roll for Stats with Kingmaker's native ability allocator using a
+  compact formula and action workspace, History, saved arrays and direct
+  score assignment.
+- Show the active array's point-buy equivalent in the native Value badge and
+  preserve its intended color after leaving and returning to the ability page.
+- Guard repeated roll commands and incomplete recovery, preserve scoped
+  starting-score ownership and Point Buy restoration, and record native
+  refresh diagnostics for any remaining in-game Reroll failure.
+- Advance the UMM and assembly versions to 0.2.0 while retaining the UMM ID,
+  DLL, entry method, install folder and settings format.
+
 ## 0.1.11 - 2026-10-15 - cleaner settings panel
 
 Owner-authorized stable release; not runtime-qualified (not installed or run

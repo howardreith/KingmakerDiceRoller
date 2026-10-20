@@ -16,8 +16,9 @@ rebuilt.
 
 ## Release status
 
-**0.2.0 stable release — native stats UI.** The owner requested merging the
-native stats UI work to `main` and publishing version 0.2.0. It brings the
+**0.2.0 stable release — native stats UI.** The
+[v0.2.0 release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.2.0)
+is published from the merged default branch. It brings the
 Roll workspace into Kingmaker's ability allocator, including formula presets,
 Reroll, History, saved arrays, score assignment, and a Value badge showing
 the rolled array's point-buy equivalent. The badge keeps its intended color

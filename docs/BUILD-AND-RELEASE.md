@@ -2,17 +2,19 @@
 
 ## 0.2.0 native stats UI stable release
 
-The owner requested merging the native stats UI mission branch into the
-default branch and publishing `v0.2.0` as a stable release. The guarded
-publisher must run from a clean `main` commit that exactly matches
-`origin/main`. It runs the full source, contract, Release build, package and
-strict validation gate, then creates the annotated tag and uploads the
-installable ZIP with `SHA256SUMS.txt`. The current `## Qualification truth`
-section in `PROJECT-STATE.md` records this specific owner authorization while
-keeping runtime qualification separate. Use
-`-Publish -ConfirmOwnerAuthorizedPreRuntimeRelease` with
-`-ReleaseNotesPath .\docs\RELEASE-NOTES-0.2.0.md`. The release remains marked
-as not runtime-qualified until live checks are recorded.
+The [v0.2.0 stable release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.2.0)
+is published from PR #7 merge commit
+`d0708fc087032bab05a80a67100da247ed282b15` on `main`. The guarded
+publisher used `-Publish -ConfirmOwnerAuthorizedPreRuntimeRelease` and
+`-ReleaseNotesPath .\docs\RELEASE-NOTES-0.2.0.md`. It reran the full source,
+contract, Release build, package and strict validation gate on that exact
+commit before creating annotated tag `v0.2.0` and uploading the installable
+ZIP with `SHA256SUMS.txt`. The uploaded ZIP, downloaded asset and checksum
+agree on SHA-256
+`43f99fabcdd31192ecd5deb46533c2004fa64b59a432c4b094b85290f6dadaad`.
+The current `## Qualification truth` section in `PROJECT-STATE.md` records
+the owner's stable-release authorization while keeping runtime qualification
+**No** until live checks are recorded.
 
 ## 0.1.17 Value badge color alpha
 
