@@ -6,9 +6,11 @@ The owner corrected the intended meaning of the native Value badge: in Roll
 Mode it should display the point-buy equivalent of the six base scores, not
 their arithmetic sum. The snapshot already calculates both; the owned badge
 now formats `PointBuyEquivalent` while Details retains both numbers. The
-Point Buy badge remains fully native. Version `0.1.16` is a review candidate
-because v0.1.15 is already published. No 0.1.16 release has been requested.
-The published v0.1.15 alpha is unchanged. See
+Point Buy badge remains fully native. Version `0.1.16` was qualified as a
+review candidate because v0.1.15 was already published. The owner then
+explicitly requested another GitHub alpha. Publishing `v0.1.16` as a testing
+prerelease is authorized; stable or runtime-qualified publication is not.
+The published v0.1.15 alpha remains unchanged. See
 `docs/VALUE-BADGE-0.1.16-CANDIDATE.md` for qualification and the remaining
 live visual check.
 Clean implementation commit `8e9d60d00a232e327c4207317ce4cdee8b7ee49a`
@@ -20,6 +22,8 @@ package validation. The installable ZIP is
 (SHA-256 `174e21f2c2ef0f65f0dbe66a8619dc3873f37daf49b504adce94e0ec57eb03ca`).
 The Windows computer-use process exited before window discovery, so the
 rendered badge remains **NOT RUN**.
+The owner's earlier instruction says the full release test suite need not be
+rerun for alpha publication.
 
 ## 0.1.15 native-stat UI v4 review candidate
 

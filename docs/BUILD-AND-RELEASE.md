@@ -3,8 +3,13 @@
 ## 0.1.16 Value badge correction candidate
 
 The published 0.1.15 alpha is unchanged. Version 0.1.16 corrects the Roll
-Mode Value badge to show the active array's point-buy equivalent. It remains
-a review candidate until a later release request. See
+Mode Value badge to show the active array's point-buy equivalent. The owner
+requested a GitHub testing alpha after candidate qualification. The exact
+qualified ZIP from implementation commit
+`8e9d60d00a232e327c4207317ce4cdee8b7ee49a` is
+`artifacts/candidates/8e9d60d00a232e327c4207317ce4cdee8b7ee49a/KingmakerDiceRoller-0.1.16.zip`
+(SHA-256 `174e21f2c2ef0f65f0dbe66a8619dc3873f37daf49b504adce94e0ec57eb03ca`).
+The owner said the full suite need not be rerun for alpha publication. See
 `docs/VALUE-BADGE-0.1.16-CANDIDATE.md` for the qualified artifact and live
 visual-check status.
 
