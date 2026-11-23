@@ -387,7 +387,7 @@ try {
         [IO.File]::WriteAllText($path, $text.Substring(0, $index) + "`r`n" + $Inject + "`r`n" + $text.Substring($index))
         return $path
     }
-    $packageAfterStaging = New-InstrumentedScript 'Package' '$stagedDllSha = Get-Sha256 $stagedDll' "Copy-Item -LiteralPath '$($legacyDll.Replace("'", "''"))' -Destination `$dll -Force"
+    $packageAfterStaging = New-InstrumentedScript 'Package' '$stagedDllSha = Get-Sha256 $stagedDll' ('Copy-Item -LiteralPath ' + (Quote $legacyDll) + ' -Destination $dll -Force')
     $mixed = Invoke-Isolated @('-File', $packageAfterStaging, '-Candidate')
     $candidateDir = Join-Path $base ('artifacts\candidates\' + $commit)
     $m = if (Test-Path -LiteralPath (Join-Path $candidateDir 'package-manifest.json')) { Get-Content -LiteralPath (Join-Path $candidateDir 'package-manifest.json') -Raw | ConvertFrom-Json } else { $null }
@@ -408,7 +408,7 @@ try {
     $refreshed = Join-Path $inputs 'receipt-claiming-later-commit.json'
     Copy-Item -LiteralPath $savedReceipt -Destination $refreshed -Force
     Edit-Json $refreshed { param($j) $j.commit = $laterCommit }
-    $packageRefresh = New-InstrumentedScript 'Package' '$loaderReceipt = [Text.Encoding]::UTF8.GetString($receiptBytes).TrimStart([char]0xFEFF) | ConvertFrom-Json' "Copy-Item -LiteralPath '$($refreshed.Replace("'", "''"))' -Destination `$loaderReceiptPath -Force"
+    $packageRefresh = New-InstrumentedScript 'Package' '$loaderReceipt = [Text.Encoding]::UTF8.GetString($receiptBytes).TrimStart([char]0xFEFF) | ConvertFrom-Json' ('Copy-Item -LiteralPath ' + (Quote $refreshed) + ' -Destination $loaderReceiptPath -Force')
     Expect-Rejected 'candidate-refuses-when-receipt-refreshed-during-packaging' (Invoke-Isolated @('-File', $packageRefresh, '-Candidate')) 'matching build from the exact clean current commit'
     Remove-Item -LiteralPath $packageRefresh -Force
     foreach ($bad in @(@{ Name = 'commit-array'; Edit = { param($j) $j.commit = @($j.commit) } }, @{ Name = 'dirty-string'; Edit = { param($j) $j.dirty = 'false' } })) {
@@ -442,7 +442,7 @@ try {
     Expect-Accepted 'package-level0-deflate-empty-directory-accepted' (& $v $p) 'Package validation passed'
     $callerZip = Join-Path $inputs 'caller-path.zip'
     Copy-Item -LiteralPath $candidateZip -Destination $callerZip
-    $validatorSwap = New-InstrumentedScript 'Validate-Package' '[IO.File]::Copy($PackagePath, $inspected)' "[IO.File]::Copy('$($secondZip.Replace("'", "''"))', `$PackagePath, `$true)"
+    $validatorSwap = New-InstrumentedScript 'Validate-Package' '[IO.File]::Copy($PackagePath, $inspected)' ('[IO.File]::Copy(' + (Quote $secondZip) + ', $PackagePath, $true)')
     $mixReport = Join-Path $inputs 'mix-report.json'
     $mix = Invoke-Isolated @('-File', $validatorSwap, '-PackagePath', $callerZip, '-ReportPath', $mixReport)
     $mr = if (Test-Path -LiteralPath $mixReport) { Get-Content -LiteralPath $mixReport -Raw | ConvertFrom-Json } else { $null }
