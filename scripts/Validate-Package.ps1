@@ -28,6 +28,8 @@ $observed = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal
 $entryLengths = [ordered]@{}
 $info = $null
 $dllHeader = $null
+$dllIdentity = $null
+$dllSha256 = $null
 
 $archive = [IO.Compression.ZipFile]::OpenRead($PackagePath)
 try {
@@ -62,7 +64,8 @@ try {
                     $stream.CopyTo($buffer)
                     $dllBytes = $buffer.ToArray()
                     $dllHeader = @($dllBytes[0], $dllBytes[1])
-                    Assert-PinnedAssemblyReferences $dllBytes
+                    $dllIdentity = Assert-PinnedAssemblyReferences $dllBytes
+                    $dllSha256 = ([BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash($dllBytes))).Replace('-', '').ToLowerInvariant()
                 }
                 finally { $buffer.Dispose() }
             }
@@ -106,6 +109,10 @@ $result = [ordered]@{
     package = $PackagePath
     package_sha256 = Get-Sha256 $PackagePath
     version = $info.Version
+    manager_version = $info.ManagerVersion
+    dll_sha256 = $dllSha256
+    dll_mvid = $dllIdentity.Mvid
+    dll_loader_references = @($dllIdentity.LoaderReferences)
     entries = @($entryLengths.Keys)
     entry_lengths = $entryLengths
 }
@@ -116,3 +123,4 @@ if ($ReportPath) {
 }
 Write-Host "Package validation passed: $PackagePath"
 Write-Host "Package SHA-256: $($result.package_sha256)"
+Write-Host "Packaged DLL SHA-256: $dllSha256; MVID: $($dllIdentity.Mvid); loader references: $((@($dllIdentity.LoaderReferences) | ForEach-Object { $_.name + ' ' + $_.version }) -join ', ')"

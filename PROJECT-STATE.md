@@ -4,43 +4,35 @@
 
 The current development change lowers the declared minimum from 0.32.0 to
 0.31.1 and pins compilation to verified upstream 0.31.1/Harmony12 bytes.
-Direct MSBuild verifies those bytes; packaging requires a matching build receipt.
-The published 0.2.0 ZIP below is unchanged and still requires UMM 0.32.0.
+Direct MSBuild verifies those bytes and the compiler's resolved inputs; packaging
+requires a matching build receipt; the standalone ZIP validator checks the packaged
+DLL's AssemblyRefs. The published 0.2.0 ZIP below is unchanged and still requires
+UMM 0.32.0. Details and reproduction: `docs/UMM-COMPATIBILITY.md`.
 
 ## Qualification truth
 
-- Implemented: **Yes** — manifest, pinned build references and package guard.
-- Source-qualified: **No** — the complete source/contract gate is pending. The
-  repository validator and 20/20 release-gate checks passed; the shared loader
-  verifier accepted exact upstream bytes and rejected a corrupt cache through
-  direct MSBuild. Seven build-receipt cases passed. The standalone ZIP
-  validator rejected the actual released DLL with only its manifest lowered;
-  the reference check accepted the genuine 0.31.1-built Skip DLL.
-- Contract-qualified: **No** — no Kingmaker assemblies are available on this host.
-- Build-qualified: **No** — no product DLL built with the new baseline.
-- Package-qualified: **No** — no installable package produced for this change.
+- Implemented: **Yes** — manifest, pinned build references, resolved-input guard,
+  receipt and package guards, `scripts/Test-LoaderBaseline.ps1`.
+- Source-qualified: **Yes** — repository validator, source oracle and 416/416 domain
+  tests passed in `Build-Local.ps1` on 2026-11-23.
+- Contract-qualified: **Yes** — Kingmaker, respec (11) and native-UI (30) contract
+  checks passed against the installed Kingmaker 2.1.7b assemblies.
+- Build-qualified: **Yes** — Release DLL `634f2277…12ee` compiled against
+  UnityModManager 0.31.1.0 and 0Harmony12 1.2.0.1 (pinned bytes).
+- Package-qualified: **Yes** for the boundary tests — 23/23 loader-baseline checks,
+  including rejection of the genuine 0.33.0-compiled v0.2.0 DLL with only its
+  manifest lowered. No release candidate package was produced.
+- Static loader API audit: all references resolved on 0.31.1, 0.32.4, the owner's
+  0.33.0 and 0.33.4 (static evidence only).
 - Installed: **No**.
-- Focused runtime test: **NOT RUN** — the Windows game host was offline.
-- Runtime-qualified: **No**.
-- Compatibility-qualified: **No** — exact newer-loader runs are pending.
+- Focused runtime test: **NOT RUN** — no disposable-game harness exists; the live
+  installation is not used.
+- Runtime-qualified: **No** (not on 0.31.1 or any newer loader).
+- Compatibility-qualified: **No** — native newer-loader runs are not done.
 - Release-authorized: **No** — this task requests baseline standardization.
 - Owner-authorized pre-runtime release: **No**.
 - Testing-prerelease-authorized: **No**.
 - Publicly released: **No** — historical release records follow.
-
-## 0.2.0 stable release
-
-On 2026-10-19 the owner requested merging the native stats UI mission branch
-into the GitHub default branch and publishing a stable `0.2.0` release. The
-0.1.17 testing alpha is the behavioral basis; the release preparation changes
-version metadata, release documentation and source validation only. The
-latest alpha's page-return badge fix and its reproducible smoke scenario
-remain included. The development agent has not completed in-game visual,
-save/reload or compatibility qualification, so runtime qualification remains
-**No**. The owner specifically authorized a stable release; the guarded
-publisher's pre-runtime path preserves that distinction. PR #7 merged to
-`main` at `d0708fc087032bab05a80a67100da247ed282b15`, and the guarded
-publisher ran full qualification on that exact commit before publication.
 
 ## Historical 0.2.0 qualification truth
 
