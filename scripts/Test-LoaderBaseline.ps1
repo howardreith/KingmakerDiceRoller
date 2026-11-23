@@ -239,6 +239,8 @@ try {
         schema = 'kdr.loader-baseline-tests.v1'
         source_commit = (Get-GitMetadata).Commit
         source_dirty = (Get-GitMetadata).Dirty
+        build_receipt_commit = $receipt.commit
+        build_receipt_dirty = $receipt.dirty
         dll_sha256 = Get-Sha256 $dll
         candidate_package = $candidateZip
         candidate_package_sha256 = Get-Sha256 $candidateZip
@@ -247,6 +249,9 @@ try {
         cases = @($cases)
         passed = $cases.Count - $failed.Count
         total = $cases.Count
+    }
+    if ($receipt.commit -ne $summary.source_commit -or $receipt.dirty -or $summary.source_dirty) {
+        Write-Host "WARNING: the tested build was not produced from the current clean commit (receipt $($receipt.commit), dirty $($receipt.dirty)); rebuild for candidate evidence."
     }
     if ($ReportPath) { $summary | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $ReportPath -Encoding UTF8 }
     Write-Host ("RESULT {0}/{1} loader-baseline checks passed" -f $summary.passed, $summary.total)

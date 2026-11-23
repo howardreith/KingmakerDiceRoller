@@ -34,6 +34,20 @@ UMM 0.32.0. Details and reproduction: `docs/UMM-COMPATIBILITY.md`.
 - Testing-prerelease-authorized: **No**.
 - Publicly released: **No** — historical release records follow.
 
+## 0.2.0 stable release
+
+On 2026-10-19 the owner requested merging the native stats UI mission branch
+into the GitHub default branch and publishing a stable `0.2.0` release. The
+0.1.17 testing alpha is the behavioral basis; the release preparation changes
+version metadata, release documentation and source validation only. The
+latest alpha's page-return badge fix and its reproducible smoke scenario
+remain included. The development agent has not completed in-game visual,
+save/reload or compatibility qualification, so runtime qualification remains
+**No**. The owner specifically authorized a stable release; the guarded
+publisher's pre-runtime path preserves that distinction. PR #7 merged to
+`main` at `d0708fc087032bab05a80a67100da247ed282b15`, and the guarded
+publisher ran full qualification on that exact commit before publication.
+
 ## Historical 0.2.0 qualification truth
 
 - Implemented: **Yes** — native stats UI work and 0.2.0 version metadata.
