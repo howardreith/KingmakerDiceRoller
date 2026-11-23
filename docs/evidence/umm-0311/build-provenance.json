@@ -1,9 +1,9 @@
 {
     "status":  "build-qualified",
-    "built_at_utc":  "2026-11-23T22:32:04.7429175Z",
+    "built_at_utc":  "2026-11-23T22:59:04.9676791Z",
     "configuration":  "Release",
     "branch":  "codex/umm-0311-baseline-20261123",
-    "commit":  "fca7cdef06dd28805b356fdd8ad78356b21fc800",
+    "commit":  "039f323816478ef09395bc41d08b622f6716a07e",
     "dirty":  false,
     "dll_sha256":  "634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee",
     "loader_references":  [
@@ -22,7 +22,61 @@
                                   "source":  "https://raw.githubusercontent.com/newman55/unity-mod-manager/10cfb1cce51914a5114928c5bc6a06d1d2c31fe2/lib/Harmony/1.2/0Harmony12.dll"
                               }
                           ],
-    "build_inputs_sha256":  "98c31bd62ff84e6b4eb983d36ad5273e6938a205c038a2c0b88385ba7aff1037",
+    "build_inputs_sha256":  "931f37bda0222aaeb2da4718b010821e036ef91a7f151f79d0a70f0118400491",
+    "compiler_references":  [
+                                {
+                                    "file":  "0Harmony12.dll",
+                                    "sha256":  "aa1cd48317254985d8b700cc74953477d1b40c3022ce9aa4c95ed2b8327e1292"
+                                },
+                                {
+                                    "file":  "Assembly-CSharp.dll",
+                                    "sha256":  "3b6450ffec440e296e586f71c711b195aed144b28d53e1cbb29406d18fef5afb"
+                                },
+                                {
+                                    "file":  "Assembly-CSharp-firstpass.dll",
+                                    "sha256":  "069a7362ce5e3ccd597206174aec13743c2db5a1bfbc2a42f15a5fbd1ea30d30"
+                                },
+                                {
+                                    "file":  "mscorlib.dll",
+                                    "sha256":  "a69849cf0b433664b14dbaeb82385ec043449f71f7c69559cba4be0dd3e8be8d"
+                                },
+                                {
+                                    "file":  "System.Core.dll",
+                                    "sha256":  "f9c65f2d44f244e1195802a68f5d8f3457caeef2e385cf28c534218749adbe7f"
+                                },
+                                {
+                                    "file":  "System.dll",
+                                    "sha256":  "541c6067cc69a43660d06a4f0f6eab0febcd33df9089f209d99b7ea36682a0a5"
+                                },
+                                {
+                                    "file":  "UnityEngine.CoreModule.dll",
+                                    "sha256":  "3a76df7f709d465e3273502e08edbffb536b1c2f78c3a132b8668e59fddd2803"
+                                },
+                                {
+                                    "file":  "UnityEngine.dll",
+                                    "sha256":  "50b79c57f46bf4e060bb27461b6d4fac6f078e08b57e776c7a811554c4899fd6"
+                                },
+                                {
+                                    "file":  "UnityEngine.IMGUIModule.dll",
+                                    "sha256":  "327b1d34eab0ada754186a03dac40f23de627867124777ec35c6c040b210079a"
+                                },
+                                {
+                                    "file":  "UnityEngine.TextRenderingModule.dll",
+                                    "sha256":  "9ece6f5f1d1221809aeee9c591d67a38d51cde32dc6f525719f2ae2b20bf7fac"
+                                },
+                                {
+                                    "file":  "UnityEngine.UI.dll",
+                                    "sha256":  "4dee942e8974492511733e5482f89fde39e3964008f072ec9c12d05e40a9080d"
+                                },
+                                {
+                                    "file":  "UnityEngine.UIModule.dll",
+                                    "sha256":  "51b32055e2a03c78d3e7b2d7d8a6425ee80d415c1e07ea0ec7b1dd84eddc9f12"
+                                },
+                                {
+                                    "file":  "UnityModManager.dll",
+                                    "sha256":  "2e038ff23ab01d538dfef792096e1f5c04802d1edac3660db20d0d54c167c2c4"
+                                }
+                            ],
     "game_assembly_sha256":  "3b6450ffec440e296e586f71c711b195aed144b28d53e1cbb29406d18fef5afb",
     "game_assembly_mvid":  "07fa1e4d-8618-41b3-9b8d-faa17d3b26f7"
 }
