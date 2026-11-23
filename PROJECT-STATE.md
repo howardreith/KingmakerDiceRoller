@@ -1,5 +1,33 @@
 # Project state
 
+## UMM 0.31.1 baseline (2026-11-23)
+
+The current development change lowers the declared minimum from 0.32.0 to
+0.31.1 and pins compilation to verified upstream 0.31.1/Harmony12 bytes.
+Direct MSBuild verifies those bytes; packaging requires a matching build receipt.
+The published 0.2.0 ZIP below is unchanged and still requires UMM 0.32.0.
+
+## Qualification truth
+
+- Implemented: **Yes** — manifest, pinned build references and package guard.
+- Source-qualified: **No** — the complete source/contract gate is pending. The
+  repository validator and 20/20 release-gate checks passed; the shared loader
+  verifier accepted exact upstream bytes and rejected a corrupt cache through
+  direct MSBuild. Seven build-receipt cases passed. The standalone ZIP
+  validator rejected the actual released DLL with only its manifest lowered;
+  the reference check accepted the genuine 0.31.1-built Skip DLL.
+- Contract-qualified: **No** — no Kingmaker assemblies are available on this host.
+- Build-qualified: **No** — no product DLL built with the new baseline.
+- Package-qualified: **No** — no installable package produced for this change.
+- Installed: **No**.
+- Focused runtime test: **NOT RUN** — the Windows game host was offline.
+- Runtime-qualified: **No**.
+- Compatibility-qualified: **No** — exact newer-loader runs are pending.
+- Release-authorized: **No** — this task requests baseline standardization.
+- Owner-authorized pre-runtime release: **No**.
+- Testing-prerelease-authorized: **No**.
+- Publicly released: **No** — historical release records follow.
+
 ## 0.2.0 stable release
 
 On 2026-10-19 the owner requested merging the native stats UI mission branch
@@ -14,7 +42,7 @@ publisher's pre-runtime path preserves that distinction. PR #7 merged to
 `main` at `d0708fc087032bab05a80a67100da247ed282b15`, and the guarded
 publisher ran full qualification on that exact commit before publication.
 
-## Qualification truth
+## Historical 0.2.0 qualification truth
 
 - Implemented: **Yes** — native stats UI work and 0.2.0 version metadata.
 - Source-qualified: **Yes** — the 0.2.0 preparation run passed release-gate

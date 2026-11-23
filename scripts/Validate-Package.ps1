@@ -57,9 +57,14 @@ try {
         elseif ($name -eq 'KingmakerDiceRoller/KingmakerDiceRoller.dll') {
             $stream = $entry.Open()
             try {
-                $first = $stream.ReadByte()
-                $second = $stream.ReadByte()
-                $dllHeader = @($first, $second)
+                $buffer = [IO.MemoryStream]::new()
+                try {
+                    $stream.CopyTo($buffer)
+                    $dllBytes = $buffer.ToArray()
+                    $dllHeader = @($dllBytes[0], $dllBytes[1])
+                    Assert-PinnedAssemblyReferences $dllBytes
+                }
+                finally { $buffer.Dispose() }
             }
             finally { $stream.Dispose() }
         }
@@ -74,6 +79,9 @@ finally {
 }
 
 if ($null -eq $info) { throw 'Info.json could not be read from the package.' }
+if ($info.ManagerVersion -ne $expectedInfo.ManagerVersion -or $info.ManagerVersion -ne '0.31.1') {
+    throw "Packaged ManagerVersion '$($info.ManagerVersion)' does not match the 0.31.1 baseline."
+}
 if ($info.Id -ne 'KingmakerDiceRoller') { throw "Unexpected packaged UMM ID: $($info.Id)" }
 if ($info.Version -ne $expectedInfo.Version) {
     throw "Packaged version '$($info.Version)' does not match repository version '$($expectedInfo.Version)'."

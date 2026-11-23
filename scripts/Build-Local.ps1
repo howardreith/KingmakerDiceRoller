@@ -2,6 +2,8 @@
 param([ValidateSet('Debug','Release')][string] $Configuration = 'Release')
 . (Join-Path $PSScriptRoot 'Common.ps1')
 $root = Get-RepositoryRoot
+Initialize-PinnedReferences | Out-Null
+$loaderReferences = @(Get-PinnedReferenceIdentities)
 & (Join-Path $PSScriptRoot 'Validate-Repository.ps1')
 & (Join-Path $PSScriptRoot 'Test-SourceOracle.ps1')
 & (Join-Path $PSScriptRoot 'Test-Domain.ps1') -Configuration $Configuration
@@ -24,6 +26,7 @@ $provenance = [ordered]@{
     commit = $git.Commit
     dirty = $git.Dirty
     dll_sha256 = Get-Sha256 $dll
+    loader_references = $loaderReferences
     game_assembly_sha256 = $contracts.assembly_sha256
     game_assembly_mvid = $contracts.assembly_mvid
 }

@@ -7,6 +7,10 @@ param(
 $root = Get-RepositoryRoot
 $dll = Join-Path $root "artifacts\bin\$Configuration\KingmakerDiceRoller\KingmakerDiceRoller.dll"
 Assert-FileExists $dll 'Built mod DLL'
+$loaderReceiptPath = Join-Path $root 'artifacts\build-provenance.json'
+Assert-FileExists $loaderReceiptPath 'Build receipt with pinned loader references'
+$loaderReceipt = Get-Content -LiteralPath $loaderReceiptPath -Raw | ConvertFrom-Json
+Assert-PinnedBuildReceipt $loaderReceipt $dll
 $info = Get-Content -LiteralPath (Join-Path $root 'Info.json') -Raw | ConvertFrom-Json
 $git = Get-GitMetadata
 $artifactsRoot = [IO.Path]::GetFullPath((Join-Path $root 'artifacts'))
