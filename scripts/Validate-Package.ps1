@@ -1,7 +1,9 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory=$true)][string] $PackagePath,
-    [string] $ReportPath
+    [string] $ReportPath,
+    # When packaging, the DLL SHA-256 recorded by the build receipt: the archived DLL must be exactly that DLL.
+    [string] $ExpectedDllSha256
 )
 
 . (Join-Path $PSScriptRoot 'Common.ps1')
@@ -71,6 +73,20 @@ try {
             }
             finally { $stream.Dispose() }
         }
+        else {
+            # Documentation and licence entries must be text: an assembly (or any binary) under an allowed text
+            # name is refused, so the allow-list cannot carry a loader, Harmony or game DLL by renaming it.
+            $stream = $entry.Open()
+            $buffer = [IO.MemoryStream]::new()
+            try { $stream.CopyTo($buffer); $textBytes = $buffer.ToArray() }
+            finally { $buffer.Dispose(); $stream.Dispose() }
+            if (($textBytes.Length -ge 2 -and $textBytes[0] -eq 0x4D -and $textBytes[1] -eq 0x5A) -or
+                [Array]::IndexOf($textBytes, [byte]0) -ge 0) {
+                throw "Package text entry contains binary content: $name"
+            }
+            try { [void][Text.UTF8Encoding]::new($false, $true).GetString($textBytes) }
+            catch { throw "Package text entry is not valid UTF-8 text: $name" }
+        }
     }
 
     foreach ($path in $allowed) {
@@ -82,8 +98,11 @@ finally {
 }
 
 if ($null -eq $info) { throw 'Info.json could not be read from the package.' }
-if ($info.ManagerVersion -ne $expectedInfo.ManagerVersion -or $info.ManagerVersion -ne '0.31.1') {
+if (-not ($info.ManagerVersion -is [string]) -or $info.ManagerVersion -cne $expectedInfo.ManagerVersion -or $info.ManagerVersion -cne '0.31.1') {
     throw "Packaged ManagerVersion '$($info.ManagerVersion)' does not match the 0.31.1 baseline."
+}
+if ($ExpectedDllSha256 -and $dllSha256 -cne $ExpectedDllSha256) {
+    throw "Archived DLL SHA-256 $dllSha256 does not match the build receipt's $ExpectedDllSha256."
 }
 if ($info.Id -ne 'KingmakerDiceRoller') { throw "Unexpected packaged UMM ID: $($info.Id)" }
 if ($info.Version -ne $expectedInfo.Version) {

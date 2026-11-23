@@ -11,21 +11,18 @@ if (-not $PackagePath) {
 }
 Assert-FileExists $PackagePath 'Package ZIP'
 $PackagePath = [IO.Path]::GetFullPath($PackagePath)
-& (Join-Path $PSScriptRoot 'Validate-Package.ps1') -PackagePath $PackagePath
 
 $running = @(Get-Process -Name 'Kingmaker' -ErrorAction SilentlyContinue)
 if ($running.Count -gt 0) { throw 'Pathfinder: Kingmaker is running. Exit the game before installing the mod.' }
 
-Add-Type -AssemblyName System.IO.Compression.FileSystem
 $temporary = Join-Path ([IO.Path]::GetTempPath()) ('KingmakerDiceRoller-' + [Guid]::NewGuid().ToString('N'))
 [IO.Directory]::CreateDirectory($temporary) | Out-Null
 try {
-    [IO.Compression.ZipFile]::ExtractToDirectory($PackagePath, $temporary)
+    # Validate a private copy of the ZIP (manifest, allow-list and the DLL's actual loader references) and
+    # extract that same copy; the extracted DLL must be the validated one.
+    $sourceDllHash = Expand-ValidatedPackage $PackagePath $temporary
     $source = Join-Path $temporary 'KingmakerDiceRoller'
     Assert-DirectoryExists $source 'Extracted mod directory'
-    $sourceDll = Join-Path $source 'KingmakerDiceRoller.dll'
-    Assert-FileExists $sourceDll 'Extracted mod DLL'
-    $sourceDllHash = Get-Sha256 $sourceDll
 
     $target = Join-Path $config.ModsDir 'KingmakerDiceRoller'
     if (-not $PSCmdlet.ShouldProcess($target, 'Transactionally install Kingmaker Dice Roller')) {

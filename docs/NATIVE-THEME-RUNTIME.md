@@ -21,7 +21,10 @@ and remove only the probe directory created by this test.
 ## Temporary probe
 
 `Build-NativeThemeRuntimeProbe.ps1` builds `NativeThemeRuntimeProbe.cs` against
-the installed Unity/UMM contracts. This is a lab-only module and never part of
+the installed Kingmaker/Unity assemblies and the hash-pinned UnityModManager 0.31.1.0
+reference from `scripts/loader-reference-pins.json` (fetched and verified into
+`artifacts/references` by `Initialize-PinnedReferences`); its Info.json declares
+ManagerVersion 0.31.1. The installed loader is not a compile input. This is a lab-only module and never part of
 the six-file candidate ZIP or a dependency of Dice Roller. Its separate UMM ID
 is `KingmakerDiceRollerNativeThemeProbe`. Use only an unoccupied temporary mod
 directory for its output DLL and Info.json; remove it after testing.

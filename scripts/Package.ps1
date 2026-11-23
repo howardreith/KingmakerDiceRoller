@@ -10,7 +10,7 @@ Assert-FileExists $dll 'Built mod DLL'
 $loaderReceiptPath = Join-Path $root 'artifacts\build-provenance.json'
 Assert-FileExists $loaderReceiptPath 'Build receipt with pinned loader references'
 $loaderReceipt = Get-Content -LiteralPath $loaderReceiptPath -Raw | ConvertFrom-Json
-Assert-PinnedBuildReceipt $loaderReceipt $dll
+Assert-PinnedBuildReceipt $loaderReceipt $dll $Configuration
 $info = Get-Content -LiteralPath (Join-Path $root 'Info.json') -Raw | ConvertFrom-Json
 $git = Get-GitMetadata
 $artifactsRoot = [IO.Path]::GetFullPath((Join-Path $root 'artifacts'))
@@ -49,7 +49,8 @@ Copy-Item -LiteralPath (Join-Path $root 'licenses\UPSTREAM-WOTR-DICE-ROLLER-MIT.
 New-Item -ItemType Directory -Force -Path $packageDir | Out-Null
 $zip = Join-Path $packageDir ("KingmakerDiceRoller-{0}.zip" -f $info.Version)
 Invoke-RepositoryPython @((Join-Path $root 'tools\create_deterministic_zip.py'), $stageRoot, $zip)
-& (Join-Path $PSScriptRoot 'Validate-Package.ps1') -PackagePath $zip -ReportPath (Join-Path $packageDir 'package-validation.json')
+# The archived DLL must be the exact DLL the receipt describes, read back from the produced ZIP.
+& (Join-Path $PSScriptRoot 'Validate-Package.ps1') -PackagePath $zip -ReportPath (Join-Path $packageDir 'package-validation.json') -ExpectedDllSha256 $loaderReceipt.dll_sha256
 $manifest = [ordered]@{
     candidate_only = [bool]$Candidate
     package = [IO.Path]::GetFileName($zip)
