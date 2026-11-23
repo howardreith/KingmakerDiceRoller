@@ -12,14 +12,14 @@ UMM 0.32.0. Details and reproduction: `docs/UMM-COMPATIBILITY.md`.
 ## Qualification truth
 
 - Implemented: **Yes** — manifest, pinned build references, resolved-input guard,
-  receipt and package guards, `scripts/Test-LoaderBaseline.ps1`.
+  build-input/receipt and package guards, validated private-copy install, `scripts/Test-LoaderBaseline.ps1`.
 - Source-qualified: **Yes** — repository validator, source oracle and 416/416 domain
   tests passed in `Build-Local.ps1` on 2026-11-23.
 - Contract-qualified: **Yes** — Kingmaker, respec (11) and native-UI (30) contract
   checks passed against the installed Kingmaker 2.1.7b assemblies.
 - Build-qualified: **Yes** — Release DLL `634f2277…12ee` compiled against
   UnityModManager 0.31.1.0 and 0Harmony12 1.2.0.1 (pinned bytes).
-- Package-qualified: **Yes** for the boundary tests — 23/23 loader-baseline checks,
+- Package-qualified: **Yes** for the boundary tests — 58/58 loader-baseline checks,
   including rejection of the genuine 0.33.0-compiled v0.2.0 DLL with only its
   manifest lowered. No release candidate package was produced.
 - Static loader API audit: all references resolved on 0.31.1, 0.32.4, the owner's

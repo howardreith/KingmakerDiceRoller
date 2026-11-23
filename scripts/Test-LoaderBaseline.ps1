@@ -36,18 +36,24 @@ $cases = [Collections.Generic.List[object]]::new()
 $msbuild = Resolve-MSBuild
 $config = Get-KingmakerConfiguration
 
+# Each check runs in a fresh Windows PowerShell process with an empty, closed stdin. Every output record is turned
+# into text with its own ToString(), so stderr messages are never re-wrapped at console width by Out-String.
+function ConvertTo-PlainText($Records) { return (@($Records | ForEach-Object { "$_" }) -join "`n") }
 function Invoke-Isolated([string[]] $Arguments) {
     $previous = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'
-    try { $output = & powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass @Arguments 2>&1 | Out-String }
+    try { $records = $null | & powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass @Arguments 2>&1 }
     finally { $ErrorActionPreference = $previous }
-    return [pscustomobject]@{ ExitCode = $LASTEXITCODE; Output = $output }
+    return [pscustomobject]@{ ExitCode = $LASTEXITCODE; Output = (ConvertTo-PlainText $records) }
 }
-function Invoke-Script([string] $Text) { return Invoke-Isolated @('-EncodedCommand', [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($Text))) }
+function Invoke-Script([string] $Text) {
+    $wrapped = "try { $Text } catch { [Console]::Out.WriteLine('ERROR: ' + `$_.Exception.Message); exit 1 }"
+    return Invoke-Isolated @('-EncodedCommand', [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($wrapped)))
+}
 function Invoke-MSBuildIsolated([string[]] $Arguments) {
     $previous = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'
-    try { $output = & $msbuild /nologo /v:m @Arguments 2>&1 | Out-String }
+    try { $output = ConvertTo-PlainText ($null | & $msbuild /nologo /v:m /nr:false @Arguments 2>&1) }
     finally { $ErrorActionPreference = $previous }
     return [pscustomobject]@{ ExitCode = $LASTEXITCODE; Output = $output }
 }
@@ -56,16 +62,18 @@ function Add-Case([string] $Name, [bool] $Passed, [string] $Detail) {
     if ($Passed) { Write-Host "PASS $Name :: $Detail" } else { Write-Host "FAIL $Name :: $Detail" }
 }
 function Get-Reason([string] $Output) {
-    $line = @($Output -split "`r?`n" | Where-Object { $_ -match '(?i)error|must|mismatch|missing|refuse|does not|unexpected|exactly|changed|contains|invalid|rebuild|passed|Package:' } | Select-Object -First 1)
+    $line = @($Output -split "`r?`n" | Where-Object { $_ -match '^ERROR: |: error ' } | Select-Object -First 1)
+    if (-not $line) { $line = @($Output -split "`r?`n" | Where-Object { $_ -match '(?i)must|mismatch|missing|does not|unexpected|exactly|changed|contains|rebuild|refus|not valid' -and $_ -notmatch '^PASS ' } | Select-Object -First 1) }
+    if (-not $line) { $line = @($Output -split "`r?`n" | Where-Object { $_ -match '(?i)passed|Package:|SHA-256' } | Select-Object -First 1) }
     if ($line) { return $line[0].Trim() } else { return ($Output.Trim() -split "`r?`n" | Select-Object -Last 1) }
 }
 function Expect-Rejected([string] $Name, $Result, [string] $Pattern) {
-    $ok = $Result.ExitCode -ne 0 -and $Result.Output -match $Pattern
+    $ok = $Result.ExitCode -ne 0 -and ($Result.Output -replace '\s+', ' ') -match $Pattern
     $detail = if ($ok) { 'rejected: ' + (Get-Reason $Result.Output) } else { "exit $($Result.ExitCode); expected /$Pattern/; output: $($Result.Output.Trim())" }
     Add-Case $Name $ok $detail
 }
 function Expect-Accepted([string] $Name, $Result, [string] $Pattern) {
-    $ok = $Result.ExitCode -eq 0 -and (-not $Pattern -or $Result.Output -match $Pattern)
+    $ok = $Result.ExitCode -eq 0 -and (-not $Pattern -or ($Result.Output -replace '\s+', ' ') -match $Pattern)
     $detail = if ($ok -and $Pattern) { 'accepted: ' + [regex]::Match($Result.Output, $Pattern).Value } elseif ($ok) { 'accepted' } else { "exit $($Result.ExitCode); output: $($Result.Output.Trim())" }
     Add-Case $Name $ok $detail
 }
@@ -191,8 +199,8 @@ try {
 
     # 3. Direct MSBuild of the production project: corrupt cache refused; genuine cache compiles with exactly the
     #    pinned files as csc inputs (the clone path contains a space, so csc quotes them).
-    $obj = Join-Path $temp 'direct obj\'
-    $out = Join-Path $temp 'direct bin\'
+    $obj = Join-Path $temp 'direct-obj\'
+    $out = Join-Path $temp 'direct-bin\'
     Expect-Rejected 'msbuild-corrupt-cache-rejected' (Invoke-MSBuildIsolated @($project, '/t:Build', "/p:Configuration=$Configuration",
         "/p:PinnedLoaderReferenceDir=$corrupt", "/p:IntermediateOutputPath=$obj", "/p:OutputPath=$out")) 'hash mismatch'
     $direct = Invoke-MSBuildIsolated @($project, '/t:Rebuild', '/v:n', "/p:Configuration=$Configuration", "/p:IntermediateOutputPath=$obj", "/p:OutputPath=$out")
@@ -203,8 +211,8 @@ try {
 
     # 4. Incremental (IDE-style) builds: after an up-to-date build, changing only the manifest or a pin is refused by
     #    an ordinary incremental Build; restoring the genuine inputs is accepted again.
-    $iobj = Join-Path $temp 'incremental obj\'
-    $iout = Join-Path $temp 'incremental bin\'
+    $iobj = Join-Path $temp 'incremental-obj\'
+    $iout = Join-Path $temp 'incremental-bin\'
     $inc = @($project, '/t:Build', "/p:Configuration=$Configuration", "/p:IntermediateOutputPath=$iobj", "/p:OutputPath=$iout")
     Expect-Accepted 'incremental-build-genuine-accepted' (Invoke-MSBuildIsolated $inc) ''
     Expect-Accepted 'incremental-build-up-to-date-accepted' (Invoke-MSBuildIsolated $inc) ''
