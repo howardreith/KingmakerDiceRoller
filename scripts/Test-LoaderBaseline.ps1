@@ -391,7 +391,7 @@ try {
     Expect-Rejected 'package-data-bearing-directory-record-rejected' (& $v $p) 'data-bearing package directory record'
     $p = Join-Path $inputs 'own-directory-with-data.zip'; Edit-Zip $candidateZip $p { param($a) $w = [IO.StreamWriter]::new($a.CreateEntry("$modFolder/").Open()); try { $w.Write('inert marker') } finally { $w.Dispose() } }
     Expect-Rejected 'package-own-directory-record-with-data-rejected' (& $v $p) 'data-bearing package directory record'
-    Expect-Rejected 'validator-explicit-empty-expected-digest-rejected' (Invoke-Isolated @('-File', $validator, '-PackagePath', $candidateZip, '-ExpectedDllSha256', '')) 'ExpectedDllSha256 must be a lowercase SHA-256 string'
+    Expect-Rejected 'validator-explicit-empty-expected-digest-rejected' (Invoke-Script "& $(Quote $validator) -PackagePath $(Quote $candidateZip) -ExpectedDllSha256 ''") 'ExpectedDllSha256 must be a lowercase SHA-256 string'
     $p = Join-Path $inputs 'harmony-as-readme.zip'; Edit-Zip $candidateZip $p { param($a) Set-ZipEntryFile $a "$modFolder/README.md" $pinnedHarmony }
     Expect-Rejected 'package-harmony-bytes-under-readme-name-rejected' (& $v $p) 'binary content: KingmakerDiceRoller/README\.md'
     $p = Join-Path $inputs 'loader-as-licence.zip'; Edit-Zip $candidateZip $p { param($a) Set-ZipEntryFile $a "$modFolder/licenses/UPSTREAM-WOTR-DICE-ROLLER-MIT.txt" $pinnedUmm }
@@ -437,7 +437,7 @@ try {
     Copy-Item -LiteralPath (Join-Path $config.ManagedDir 'Assembly-CSharp.dll') -Destination $fakeManaged
     Copy-Item -LiteralPath $pinnedUmm, $pinnedHarmony -Destination (Join-Path $fakeManaged 'UnityModManager')
     [IO.File]::WriteAllText((Join-Path $fakeGame 'Mods\OtherMod\Info.json'), '{"Id":"OtherMod"}')
-    [IO.File]::WriteAllText($gamePath, "<Project xmlns=`"http://schemas.microsoft.com/developer/msbuild/2003`"><PropertyGroup><KingmakerInstallDir>$fakeGame</KingmakerInstallDir></PropertyGroup></Project>")
+    [IO.File]::WriteAllText($gamePath, "<Project xmlns=`"http://schemas.microsoft.com/developer/msbuild/2003`"><PropertyGroup><KingmakerInstallDir>$fakeGame</KingmakerInstallDir><KingmakerManagedDir>$fakeManaged</KingmakerManagedDir><UnityModManagerDir>$(Join-Path $fakeManaged 'UnityModManager')</UnityModManagerDir></PropertyGroup></Project>")
     $modsBefore = @(Get-ChildItem -LiteralPath (Join-Path $fakeGame 'Mods') -Recurse -Force | ForEach-Object { $_.FullName + '|' + $(if ($_.PSIsContainer) { 'dir' } else { Get-Sha256 $_.FullName }) }) -join ';'
     $tempBefore = @(Get-ChildItem -LiteralPath ([IO.Path]::GetTempPath()) -Directory -Filter 'KingmakerDiceRoller-*' | ForEach-Object Name) -join ';'
     $installScript = Join-Path $base 'scripts\Install.ps1'
