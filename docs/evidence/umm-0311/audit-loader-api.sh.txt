@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# usage: audit-loader-api.sh <mod.dll> <json-out> [extra assemblies list, default UnityModManager,0Harmony12,0Harmony]
+set -euo pipefail
+L="<fleet>/loaders"
+EXE=/c/Dev/missions/kingmaker-umm-0311/tools/LoaderApiAudit/bin/Release/net8.0/LoaderApiAudit.exe
+prof(){ echo "$1=$L/$1/UnityModManager.dll;$L/$1/0Harmony.dll;$L/$1/0Harmony12.dll"; }
+"$EXE" --mod "$(cygpath -w "$1")" --json "$(cygpath -w "$2")" --assemblies "${3:-UnityModManager,0Harmony12,0Harmony}" \
+  --profile "$(prof 0.31.1)" --profile "$(prof 0.32.4)" --profile "$(prof owner-0.33.0)" --profile "$(prof 0.33.4)"

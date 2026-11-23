@@ -1,0 +1,554 @@
+PASS OwnerAuthorizedPreRuntimeReleaseKeepsRuntimeNo
+PASS OwnerAuthorizationMustNameTheExactVersion
+PASS OwnerPathRequiresEveryCurrentQualification
+PASS OwnerPathCannotClaimRuntimeQualification
+PASS OwnerAuthorizationCannotSatisfyRuntimeGate
+PASS PublicationDispositionsAreExclusive
+PASS HistoricalOwnerAuthorizationCannotPublish
+PASS AuthorizedTestingPrereleaseDoesNotClaimRuntimeQualification
+PASS TestingAuthorizationCannotPublishStableRelease
+PASS TestingPrereleaseRequiresEveryCurrentQualification
+PASS HistoricalTestingAuthorizationCannotPublish
+PASS TestingSwitchRemainsExplicit
+PASS FollowingHeadingRenameDoesNotBreakGate
+PASS ArbitraryFollowingHeadingDoesNotBreakGate
+PASS EndOfFileTerminatesQualificationSection
+PASS LevelThreeHeadingDoesNotTerminateSection
+PASS LaterSectionCannotAuthorizePublication
+PASS MissingQualificationSectionFailsClosed
+PASS ConfirmationSwitchRemainsRequired
+PASS RuntimeNoRemainsRejected
+RESULT 20/20 passed
+{
+  "status": "passed",
+  "checks": [
+    "required files (76)",
+    "Info.json, assembly product identity, and UMM version ordering",
+    "XML parse (4)",
+    "JSON parse (2)",
+    "Python parse (4)",
+    "PowerShell lexical/balance audit (21)",
+    "no binary or game artifacts",
+    "C# lexical/balance/C#7.3 audit (133)",
+    "pure domain dependency boundary",
+    "narrow Harmony patch surface",
+    "rolled workflow, native UI, restoration, context, and stale-session invariants",
+    "test inventories (C# 416, Python 30)",
+    "package allowlist and transactional installation guards",
+    "release publication qualification gate",
+    "0.1.1 corrective release disclosure",
+    "0.1.2 mercenary finalization release disclosure",
+    "licensing and attribution",
+    "qualification disclosure"
+  ],
+  "csharp_files": 133,
+  "csharp_behavior_cases": 416,
+  "python_behavior_cases": 30,
+  "info_sha256": "b73b08b319c02cfdee711781f79b65794422df3f1c2cfd50942c0897f10c866f"
+}
+test_4d6_keep_highest (test_domain_reference.DomainReferenceTests.test_4d6_keep_highest) ... ok
+test_4d6_keep_lowest (test_domain_reference.DomainReferenceTests.test_4d6_keep_lowest) ... ok
+test_above_score_boundary_rejected (test_domain_reference.DomainReferenceTests.test_above_score_boundary_rejected) ... ok
+test_all_faces_rerolled (test_domain_reference.DomainReferenceTests.test_all_faces_rerolled) ... ok
+test_assignment_does_not_change_equivalent (test_domain_reference.DomainReferenceTests.test_assignment_does_not_change_equivalent) ... ok
+test_division_rejected (test_domain_reference.DomainReferenceTests.test_division_rejected) ... ok
+test_duplicate_swap_by_position (test_domain_reference.DomainReferenceTests.test_duplicate_swap_by_position) ... ok
+test_explicit_upper_score_boundary (test_domain_reference.DomainReferenceTests.test_explicit_upper_score_boundary) ... ok
+test_extended_equivalent_reaches_product_boundary (test_domain_reference.DomainReferenceTests.test_extended_equivalent_reaches_product_boundary) ... ok
+test_extended_high_point_buy (test_domain_reference.DomainReferenceTests.test_extended_high_point_buy) ... ok
+test_extended_low_point_buy (test_domain_reference.DomainReferenceTests.test_extended_low_point_buy) ... ok
+test_fixed_array_point_buy (test_domain_reference.DomainReferenceTests.test_fixed_array_point_buy) ... ok
+test_immutable_six_scores (test_domain_reference.DomainReferenceTests.test_immutable_six_scores) ... ok
+test_invalid (test_domain_reference.DomainReferenceTests.test_invalid) ... ok
+test_invalid_assignment_permutation_rejected (test_domain_reference.DomainReferenceTests.test_invalid_assignment_permutation_rejected) ... ok
+test_liveness_ignores_failed_observations (test_domain_reference.DomainReferenceTests.test_liveness_ignores_failed_observations) ... ok
+test_liveness_match_resets_mismatch (test_domain_reference.DomainReferenceTests.test_liveness_match_resets_mismatch) ... ok
+test_liveness_protects_unconfirmed_session (test_domain_reference.DomainReferenceTests.test_liveness_protects_unconfirmed_session) ... ok
+test_liveness_rejects_invalid_delta (test_domain_reference.DomainReferenceTests.test_liveness_rejects_invalid_delta) ... ok
+test_liveness_releases_confirmed_mismatch (test_domain_reference.DomainReferenceTests.test_liveness_releases_confirmed_mismatch) ... ok
+test_nested_dice_count (test_domain_reference.DomainReferenceTests.test_nested_dice_count) ... ok
+test_nested_keep_count (test_domain_reference.DomainReferenceTests.test_nested_keep_count) ... ok
+test_normalization (test_domain_reference.DomainReferenceTests.test_normalization) ... ok
+test_parentheses (test_domain_reference.DomainReferenceTests.test_parentheses) ... ok
+test_precedence (test_domain_reference.DomainReferenceTests.test_precedence) ... ok
+test_range (test_domain_reference.DomainReferenceTests.test_range) ... ok
+test_reroll_ones (test_domain_reference.DomainReferenceTests.test_reroll_ones) ... ok
+test_standard_point_buy (test_domain_reference.DomainReferenceTests.test_standard_point_buy) ... ok
+test_unreasonable_dice_count (test_domain_reference.DomainReferenceTests.test_unreasonable_dice_count) ... ok
+test_wrong_count (test_domain_reference.DomainReferenceTests.test_wrong_count) ... ok
+
+----------------------------------------------------------------------
+Ran 30 tests in 0.001s
+
+OK
+Build started 11/23/2026 5:32:00 PM.
+
+     1>Project "<repo>\tests\KingmakerDiceRoller.DomainTests\KingmakerDiceRoller.DomainTests.csproj" on node 1 (Rebuild target(s)).
+     1>CoreClean:
+         Deleting file "<repo>\artifacts\tests\Release\KingmakerDiceRoller.DomainTests.exe".
+         Deleting file "<repo>\artifacts\obj\tests\Release\KingmakerDiceRoller.DomainTests.csproj.AssemblyReference.cache".
+         Deleting file "<repo>\artifacts\obj\tests\Release\KingmakerDiceRoller.DomainTests.csproj.CoreCompileInputs.cache".
+         Deleting file "<repo>\artifacts\obj\tests\Release\KingmakerDiceRoller.DomainTests.exe".
+       GenerateTargetFrameworkMonikerAttribute:
+       Skipping target "GenerateTargetFrameworkMonikerAttribute" because all output files are up-to-date with respect to the input files.
+       CoreCompile:
+         <buildtools>\MSBuild\Current\Bin\Roslyn\csc.exe /noconfig /nowarn:1701,1702 /fullpaths /nostdlib+ /platform:anycpu32bitpreferred /warn:4 /highentropyva+ /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\mscorlib.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\System.Core.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\System.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\System.Xml.dll" /out:..\..\artifacts\obj\tests\Release\KingmakerDiceRoller.DomainTests.exe /subsystemversion:6.00 /target:exe /warnaserror+ /utf8output /deterministic+ /langversion:7.3 /analyzerconfig:<repo>\.editorconfig AssertEx.cs NativeThemeResolverTests.cs NativePanelConstructionBudgetTests.cs ButtonCaptionFitTests.cs ..\..\src\KingmakerDiceRoller\UI\NativeUiDonorLookup.cs ..\..\src\KingmakerDiceRoller\UI\NativeThemeResolver.cs ..\..\src\KingmakerDiceRoller\UI\NativeThemeRecovery.cs ..\..\src\KingmakerDiceRoller\UI\NativePanelConstructionBudget.cs ..\..\src\KingmakerDiceRoller\UI\ButtonCaptionFit.cs ..\..\src\KingmakerDiceRoller\UI\SettingsPanel.cs ..\..\src\KingmakerDiceRoller\Compatibility\CompatibilitySnapshot.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\PointBuyReturnOutcome.cs SettingsPanelTests.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\RespecOwnership.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\RespecLifecycleService.cs CharacterCreationContextPolicyTests.cs CollapsedAccessTabLayoutTests.cs InlineTooltipPlacementTests.cs ..\..\src\KingmakerDiceRoller\UI\InlineTooltipPlacement.cs PreviewSessionContinuityTests.cs BuildIntegrityTests.cs SkillsNavigationTests.cs ProductWorkflowTests.cs NativePanelLifecycleTests.cs NativePanelUsabilityTests.cs NativeScoreRowIdentityTests.cs NativeViewCommandBindingTests.cs RollUiPresenterTests.cs ResponsiveRollPanelLayoutTests.cs Program.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\NativeUiPresentation.cs RespecLifecycleTests.cs SequenceRandomSource.cs ..\..\src\KingmakerDiceRoller\Domain\AbilityScore.cs ..\..\src\KingmakerDiceRoller\Domain\DiagnosticArrays.cs ..\..\src\KingmakerDiceRoller\Domain\DiceExpression.cs ..\..\src\KingmakerDiceRoller\Domain\DiceExpressionException.cs ..\..\src\KingmakerDiceRoller\Domain\DiceExpressionParser.cs ..\..\src\KingmakerDiceRoller\Domain\DiceRollEngine.cs ..\..\src\KingmakerDiceRoller\Domain\DiceRollPreset.cs ..\..\src\KingmakerDiceRoller\Domain\DiceRollRule.cs ..\..\src\KingmakerDiceRoller\Domain\DomainAssemblyMarker.cs ..\..\src\KingmakerDiceRoller\Domain\IRandomSource.cs ..\..\src\KingmakerDiceRoller\Domain\LowScorePolicy.cs ..\..\src\KingmakerDiceRoller\Domain\PointBuyEquivalent.cs ..\..\src\KingmakerDiceRoller\Domain\PointBuyEquivalentCalculator.cs ..\..\src\KingmakerDiceRoller\Domain\RollCandidate.cs ..\..\src\KingmakerDiceRoller\Domain\RollConfiguration.cs ..\..\src\KingmakerDiceRoller\Domain\RolledStatArray.cs ..\..\src\KingmakerDiceRoller\Domain\RollHistory.cs ..\..\src\KingmakerDiceRoller\Domain\RollHistoryEntry.cs ..\..\src\KingmakerDiceRoller\Domain\RollSessionLifecycle.cs ..\..\src\KingmakerDiceRoller\Domain\RollSessionOwnership.cs ..\..\src\KingmakerDiceRoller\Domain\RollValidationException.cs ..\..\src\KingmakerDiceRoller\Domain\SavedRollArrayRecord.cs ..\..\src\KingmakerDiceRoller\Domain\SavedRollCatalog.cs ..\..\src\KingmakerDiceRoller\Domain\SessionLivenessTracker.cs ..\..\src\KingmakerDiceRoller\Domain\StatAssignment.cs ..\..\src\KingmakerDiceRoller\Domain\SystemRandomSource.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\AbilityValueSnapshot.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\CharacterCreationContextDecision.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\CharacterCreationContextPolicy.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\CharacterCreationCoordinator.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\DerivedStateRefreshService.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\SkillsPhaseSynchronizationService.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\CollapsedAccessTabLayout.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\IRollUiCommandTarget.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\CharacterRollWorkflow.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\KingmakerStatAccess.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\LivePreviewInspector.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\LivePreviewObservation.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\MainCharacterIdentityRelation.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\MercenaryFinalizationObservation.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\MercenaryFinalizationService.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\SupportedCharacterCreationKind.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\NativeAbilityControlService.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\NativePanelAttachmentLifecycle.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\NativeRollPanelLayoutSpec.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\NativeRollPanelState.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\NativeScoreRowIdentity.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\NativeViewCommandBinding.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\GenerationRollbackSnapshot.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\PointBuyOrigin.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\PointBudgetResolver.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\PointBudgetTracker.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\PointBuyRestoreObservation.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\PointBuyRestoreService.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\PointBuyPresentationObservation.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\AbilityPhasePresentationService.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\PreviewRefreshService.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\RollSession.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\ResponsiveRollPanelLayout.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\RollUiSnapshot.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\RollPanelModel.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\RollUiCommand.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\RollUiCommandRouter.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\RollFormulaDraft.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\RollSessionMode.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\RollPresentationObservation.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\RollSessionManager.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\RuntimeDiagnostics.cs ..\..\src\KingmakerDiceRoller\CharacterCreation\StatApplicationService.cs ..\..\src\KingmakerDiceRoller\Integration\ContractResolutionException.cs ..\..\src\KingmakerDiceRoller\Integration\KingmakerContracts.cs ..\..\src\KingmakerDiceRoller\Integration\ReflectionAccess.cs ..\..\src\KingmakerDiceRoller\Logging\IModLogger.cs "..\..\artifacts\obj\tests\Release\.NETFramework,Version=v4.7.2.AssemblyAttributes.cs"
+         CompilerServer: server - server processed compilation - KingmakerDiceRoller.DomainTests
+       CopyFilesToOutputDirectory:
+         Copying file from "<repo>\artifacts\obj\tests\Release\KingmakerDiceRoller.DomainTests.exe" to "<repo>\artifacts\tests\Release\KingmakerDiceRoller.DomainTests.exe".
+         KingmakerDiceRoller.DomainTests -> <repo>\artifacts\tests\Release\KingmakerDiceRoller.DomainTests.exe
+     1>Done Building Project "<repo>\tests\KingmakerDiceRoller.DomainTests\KingmakerDiceRoller.DomainTests.csproj" (Rebuild target(s)).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.29
+PASS ProductionThemeRecoveryPreservesRollSavedAndDraft
+PASS ThemeRetriesLeaveOwnedCommandDispatchSingle
+PASS ThemeRecoveryPreservesCloseBadgeAndForwardGuards
+PASS LiteralSlashChildUsesProductionResolver
+PASS LiteralAndPathRemainDistinct
+PASS LiteralDoesNotSatisfyHierarchyPath
+PASS InactiveDonorsRemainEligible
+PASS LiteralMatchIsOrdinalAndRejectsDuplicates
+PASS WrongComponentDoesNotSelectUnrelatedText
+PASS DuplicateComponentsFailCapability
+PASS MissingOwnerAndDestroyedComponentsFailClearly
+PASS AmbiguousPathDoesNotChooseFirstDonor
+PASS OptionalCapabilitiesFailIndependently
+PASS FailedValidationNeverCommitsPartialCapability
+PASS MissingCriticalCapabilityCannotClaimFullyThemed
+PASS LookupAndDiagnosticsAreBounded
+PASS RecoveryWaitsForFillAndStopsAtLimit
+PASS LateDonorsRestyleExistingBindingsOnce
+PASS UnchangedButtonsAreNotRestyledByOptionalRetries
+PASS DestroyedAndMovedDonorsDiscardOnlyTheirCapability
+PASS NewAllocatorOrHierarchyResetsRecoveryIdentity
+PASS CapabilityApplicationFailureRestoresItsWholeGroup
+PASS TeardownClearsOwnedBindingsAndFallbackFailureIsContained
+PASS RespecFailedSourceWriteRollsBackExactSnapshot
+PASS RespecNewProviderLockPreventsRoll
+PASS RespecDifferentCharacterHasNoAssignmentOrOrigin
+PASS RespecSourceStagedBeforeNativeChecks
+PASS RespecPreviewStagedBeforeNativeChecks
+PASS RespecNativeReplayOverwriteIsDetected
+PASS RespecMissingCopyCannotPassCoincidentalScores
+PASS RespecReenteredCommitInvalidatesOldTicket
+PASS RespecPendingCommitDisablePreventsWrites
+PASS RespecLostOwnerDisableDoesNotRestoreAnotherUnit
+PASS RespecDerivedStatsRefreshOnRollAndReturn
+PASS RespecMainCloneAdmitted
+PASS RespecMercenaryAdmitted
+PASS RespecStoryCompanionAdmitted
+PASS RespecNegativeContextMatrix
+PASS RespecConstructorIncompleteThenBound
+PASS RespecReplacementKeepsAssignmentAndRng
+PASS RespecPointBuyRestoresModifiedOrigin
+PASS RespecOldRolledOriginDoesNotBecomeNewRoll
+PASS RespecReplayAndCopyReachOriginalRecipient
+PASS RespecPostCallbackOverwriteDetected
+PASS RespecMissingReplayCannotPass
+PASS RespecWrongTargetCannotConsumeWrite
+PASS RespecDuplicateReplayDoesNotOverwriteIncrease
+PASS RespecDuplicateCompletionIsInert
+PASS RespecCatchUpRetainsAbilityIncreases
+PASS RespecRaceAndPermanentModifiersStaySeparate
+PASS RespecCancelReopenStartsPointBuy
+PASS RespecOwnerLossPreventsLateWrites
+PASS RespecCommitExceptionExpiresTicket
+PASS RespecDisableRestoresAndCloses
+PASS RespecUnrolledCompletionNeverWrites
+PASS RespecHistoryRecallAndPointBuyOrigin
+PASS RolledIntelligenceRefreshesNativeSkillAllowance
+PASS DerivedAllowanceRefreshIsIdempotentAcrossRerolls
+PASS FailedDerivedRefreshFailsRollAndRollsBack
+PASS PartialNativeRefreshFailureRestoresPriorRollAndSpellChoices
+PASS ReentrantRerollIsRefusedBeforeRngDraw
+PASS PointBuyReturnRefreshesDerivedAllowance
+PASS MercenaryCommitStagesScoresBeforeNativeReplay
+PASS MercenaryReplayOverwriteFailsWithoutCorrectiveWrite
+PASS MercenaryDroppedSelectionsFailCompletion
+PASS MercenaryInterruptedCommitRestoresExactPreCommitState
+PASS MercenaryCatchUpLevelNeverStagesStartingScores
+PASS NewMainCommitStagesAndVerifiesAuthoritativeScores
+PASS UpdateRestageAlsoRefreshesDerivedAllowances
+PASS DerivedRefreshFailureOnPointBuyReturnIsReported
+PASS SpentBudgetRerollRefreshesBadgeAndBlocksNext
+PASS OverspendAfterLowerIntelligenceBlocksForward
+PASS RepeatedDrawerCloseWithoutChangesIsHarmless
+PASS ForwardGuardIsScopedToOwnedSessionAndSkillsPhase
+PASS RerollWithIdenticalScoresStillSynchronizesExactlyOnce
+PASS DrawerCloseSettlesSynchronizationAfterFailedCommand
+PASS PreviewReplacementSynchronizesSkillsPage
+PASS PointBuyReturnSynchronizesSkillsPageForPointBuyBudget
+PASS constant expression
+PASS whitespace and case normalization
+PASS 4d6 keep highest three
+PASS 4d6 keep lowest three
+PASS reroll ones
+PASS custom minimum and maximum
+PASS nested dice count
+PASS nested keep count
+PASS arithmetic precedence
+PASS parenthesized arithmetic
+PASS invalid expression
+PASS division rejected
+PASS all faces rerolled rejected
+PASS unreasonable dice count rejected
+PASS literal overflow rejected
+PASS deterministic seeded source
+PASS six-score generation
+PASS 3d6 preset
+PASS 2d6 plus six preset
+PASS 1d20 preset
+PASS individual low-score reroll
+PASS whole-array low-score reroll
+PASS tabletop mode preserves low score
+PASS no silent score clamp
+PASS array requires six values
+PASS array enforces range
+PASS array is immutable
+PASS duplicate values are valid
+PASS swap uses positions
+PASS repeated swap restores assignment
+PASS move boundaries are stable
+PASS point buy standard values
+PASS point buy fixed array
+PASS point buy extended low values
+PASS point buy extended high values
+PASS saved array validates
+PASS saved array rejects malformed values
+PASS fixed diagnostic array
+PASS default product configuration
+PASS every product preset expression
+PASS custom expression accepts explicit score boundary
+PASS custom expression rejects above boundary without clamping
+PASS invalid custom expression consumes no random
+PASS workflow construction and render consume no random
+PASS explicit generation creates six scores
+PASS invalid product preset and policy fail closed
+PASS minimum outside explicit boundary fails closed
+PASS individual minimum exhaustion
+PASS whole-array minimum exhaustion
+PASS source-position duplicate round trip
+PASS invalid assignment permutation fails closed
+PASS assignment preserves roll summary
+PASS point-buy equivalent supports score boundary
+PASS history adds and selects newest
+PASS history evicts oldest at twenty
+PASS history navigation stops at endpoints
+PASS equal-array history preserves permutations
+PASS saved recall appends one history entry
+PASS formula draft validation consumes no random
+PASS formula preflight rejects impossible constants
+PASS reassignment updates history without adding
+PASS different array cannot contaminate history
+PASS browsing history preserves active entry
+PASS used history entry becomes active
+PASS saved schema one migrates identity
+PASS saved schema two round trips assignment
+PASS saved schema two XML round trip
+PASS unsupported saved schema rejected
+PASS malformed saved permutation rejected
+PASS saved catalog isolates corrupt entries
+PASS saved catalog evicts at ten
+PASS saved catalog delete and navigation
+PASS new session snapshot starts point buy
+PASS generated commit adds one history entry
+PASS reroll preserves point-buy origin
+PASS preview rebind adds no history
+PASS aborted entry returns to point buy
+PASS aborted reroll restores verified roll
+PASS point-buy panel snapshot
+PASS native rows map by exact stat key
+PASS invalid native row keys fail closed
+PASS same owner exact allocator dispatch
+PASS old UI cannot dispatch to new owner
+PASS roll panel assignment rows
+PASS roll panel summary
+PASS native Value badge shows point-buy equivalent
+PASS extended panel summary
+PASS custom expression panel visibility
+PASS tabletop minimum control state
+PASS panel history saved and error state
+PASS point-buy panel uses progressive disclosure
+PASS Wide point-buy panel exposes options
+PASS Wide roll panel exposes ordinary sections
+PASS Wide roll panel compacts empty history
+PASS selected preset and applied rule remain distinct
+PASS profile switching has no command side effects
+PASS main and mercenary presentation is identical
+PASS roll panel shows relevant primary controls
+PASS advanced panel options begin collapsed
+PASS history details require disclosure
+PASS saved details require disclosure
+PASS panel uses readable player labels
+PASS panel policy names hide enums
+PASS panel disclosure render has no side effects
+PASS panel render has no command side effects
+PASS UI router primary commands
+PASS UI router position move
+PASS UI router preset and policy wrap
+PASS UI router direct preset does not roll
+PASS point-buy history remains reachable
+PASS UI router minimum boundary
+PASS UI router history and saved commands
+PASS UI router custom expression
+PASS SuccessfulModesHaveNoMessageButKeepScores
+PASS FullActionableErrorWinsOverTransientStatus
+PASS CloseActivationRoutesSynchronizationExactlyOnce
+PASS AcceptedActivationRoutesOneCommandAndOneFeedback
+PASS FeedbackFailureStillRoutesOneCommand
+PASS CommandFailureIsNotRetriedOrSwallowed
+PASS ThemeResolutionRetainsQualifiedObject
+PASS ThemeConstructionUsesBoundedFallback
+PASS EmptyMessagesReserveNoFooterAndErrorsCanScroll
+PASS RequiredResolutionMatrixPreservesNavigationAndContentBounds
+PASS PresentationAndThemeFailurePreserveRealRollSession
+PASS native panel attaches once
+PASS native panel rebinds allocator
+PASS native panel detaches on phase exit
+PASS native panel rejects missing allocator
+PASS native panel reset permits reattach
+PASS native panel repeated construction failure exhausts
+PASS native panel allocator change reopens construction
+PASS native panel controller change reopens construction
+PASS native panel same identity keeps failure count
+PASS native panel successful construction clears failures
+PASS button caption short keeps design width
+PASS button caption long reserves text and padding
+PASS button caption padding counted once per side
+PASS button caption invalid measurement falls back
+PASS button caption height includes insets
+PASS button caption pair uses wider control
+PASS button caption rows fit wide content
+PASS button caption compact reflow bounded
+PASS new native panel owner starts collapsed
+PASS collapsed panel surface and background inactive
+PASS collapsed panel only access tab raycasts
+PASS opening panel changes presentation only
+PASS closing panel preserves disclosures and owner
+PASS same owner panel rebind preserves expanded choice
+PASS new panel owner resets presentation choice
+PASS detached panel has no raycast footprint
+PASS ending panel owner clears presentation state
+PASS expanded panel raycasts only visible surface
+PASS native panel uses separate native inset paper
+PASS native panel expanded dimensions bounded
+PASS native panel header and Close dimensions bounded
+PASS native panel access tab dimensions bounded
+PASS native panel typography and padding readable
+PASS native panel selector and label raycasts safe
+PASS native panel content masked and scrollable
+PASS native panel assignment controls fit
+PASS native panel access anchor uses bottom-center ability geometry
+PASS collapsed access tab prefers active racial geometry
+PASS collapsed access tab handles missing racial geometry
+PASS collapsed access tab handles inactive racial geometry
+PASS collapsed access tab rejects unsuitable racial geometry
+PASS collapsed access tab clamps constrained width
+PASS collapsed access tab preserves constrained-height navigation inset
+PASS collapsed access tab honors bottom navigation inset
+PASS collapsed access tab has no upper-right fallback
+PASS collapsed access tab centers within ability region
+PASS collapsed access tab is bounded at 1152x720
+PASS collapsed access tab is bounded at 1280x720
+PASS collapsed access tab is bounded at 1366x768
+PASS collapsed access tab is bounded at 1600x900
+PASS collapsed access tab is bounded at 1920x1080
+PASS inline tooltip prefers above when frame fits
+PASS inline tooltip flips below near top
+PASS inline tooltip clamps full frame at both side edges
+PASS inline tooltip clamps when neither side fits
+PASS inline tooltip rejects frame larger than safe viewport
+PASS native panel repeated attach detach creates one view
+PASS native panel creation-owner transition resets presentation
+PASS responsive profile is not character state
+PASS responsive panel ample bounds select Wide
+PASS responsive panel constrained width selects Compact
+PASS responsive panel constrained height selects Compact
+PASS responsive panel clamps to safe bounds
+PASS responsive panel preserves safe insets
+PASS responsive panel body cannot be negative
+PASS responsive Wide point buy does not scroll
+PASS responsive Wide roll mode does not scroll
+PASS responsive oversized content scrolls
+PASS responsive profile hysteresis prevents flicker
+PASS responsive scroll hysteresis prevents flicker
+PASS responsive calculation has no random side effects
+PASS context permits absent main character
+PASS context permits direct same main character
+PASS context resolves Value wrapper
+PASS context resolves Descriptor wrapper
+PASS context resolves Unit wrapper
+PASS context permits controller source for owned preview
+PASS context rejects different main character
+PASS context accepts exact mercenary
+PASS mercenary marker requires controller ownership
+PASS mercenary marker requires player faction
+PASS mercenary marker rejects pet
+PASS mercenary marker rejects enemy
+PASS mercenary marker rejects respec
+PASS mercenary marker rejects pregen
+PASS mercenary marker rejects unknown mode
+PASS mercenary marker rejects level-up mode
+PASS mercenary marker rejects non-first-level
+PASS mercenary marker requires resolved main
+PASS mercenary evidence cannot authorize another controller
+PASS mercenary evidence cannot authorize later build
+PASS main and mercenary kinds cannot cross rebind
+PASS context fails closed for unresolvable main character
+PASS context rejects respec without qualified launch
+PASS context keeps non-first-level excluded
+PASS context keeps pets excluded
+PASS context keeps enemies excluded
+PASS context requires controller ownership
+PASS different main character cannot open session
+PASS different main character cannot rebind session
+PASS rebuilt state reuses fixed assignment
+PASS diagnostics distinguish same and different main
+PASS preview A opens with stable source
+PASS preview B rebinds with different descriptor
+PASS same owner does not report another unit
+PASS constructor-stage replacement is marked pending
+PASS different stable owner is rejected
+PASS assignment survives three generations
+PASS rebind replaces transient objects and rollback but preserves pristine
+PASS first preview captures pristine point-buy origin
+PASS fixed staging does not mutate pristine origin
+PASS same-owner rebind never recaptures pristine origin
+PASS generation rollback changes independently from pristine origin
+PASS nested preview refresh is refused
+PASS reentrant replacement uses one refresh
+PASS final live replacement contains fixed array
+PASS application requests no replacement refresh
+PASS coordinator counts only verified live application
+PASS detached matching preview cannot verify
+PASS same-owner replacement does not release
+PASS null state with same owner does not release
+PASS missing controller eventually releases
+PASS different controller eventually releases
+PASS point buy restores newest preview only
+PASS point buy restores non-default budget and allocation
+PASS hybrid rolled values and full budget cannot verify
+PASS zero-budget pristine assignment is not misclassified as hybrid
+PASS racial modifiers remain separate from restored base values
+PASS point-buy mode survives same-owner rebuild without restaging
+PASS point-buy mode does not force completion or allocator restart
+PASS disable during roll restores before clearing ownership
+PASS failed restoration rolls back to isolated roll mode
+PASS failed rollback refuses unsafe disable
+PASS point-buy cancellation releases and new owner can open
+PASS restoration diagnostics expose pristine transition
+PASS semantic restoration without active presentation is not synchronized
+PASS native ability refresh runs after pristine writes
+PASS presentation refresh is bounded per generation
+PASS presentation refresh cannot reenter roll mode
+PASS same-owner replacement during presentation stays suppressed
+PASS fixed assignment is not restaged by presentation
+PASS post-refresh live state remains pristine
+PASS post-refresh allocator keeps observed budget
+PASS presentation binds current state and distribution
+PASS human presentation immediately shows pristine point buy
+PASS race modifiers remain separate in immediate presentation
+PASS non-default budget reaches immediate presentation
+PASS navigation after presentation stays in point buy
+PASS presentation failure preserves safe point buy
+PASS presentation failure never rolls back to fixed array
+PASS disable after semantic restoration remains safe
+PASS disable during roll synchronizes before clear
+PASS presentation refresh does not rebuild preview
+PASS inactive ability phase cannot claim synchronization
+PASS diagnostics separate semantic and presentation failure
+PASS diagnostics report native presentation verification
+PASS view binding mismatch cannot claim synchronization
+PASS completion uses current live distribution
+PASS existing and special paths remain excluded
+PASS diagnostics distinguish preview lifecycle
+PASS explicit session consumes no random before Roll
+PASS mercenary preview replacement preserves session
+PASS mercenary allocator replacement preserves session
+PASS second mercenary starts fresh session
+PASS canceled mercenary clears session
+PASS completed mercenary clears session
+PASS preview match alone cannot complete mercenary finalization
+PASS mercenary assignment reaches authoritative final descriptor
+PASS mercenary final-state mismatch is detected
+PASS main character cannot use mercenary finalization seam
+PASS different finalization owner cannot receive assignment
+PASS preview replacement preserves one assignment through finalization
+PASS duplicate mercenary completion observation is idempotent
+PASS success callback owner release still verifies final descriptor
+PASS canceled mercenary cannot commit late
+PASS mercenary ownership loss cannot commit late
+PASS mercenary finalization keeps racial modifiers separate
+PASS untouched mercenary restores observed twenty-point origin
+PASS partial mercenary allocation restores exactly
+PASS mercenary nonstandard budget is preserved
+PASS mercenary reroll preserves original origin
+PASS mercenary recall captures original origin
+PASS mercenary roll leaves campaign main unchanged
+PASS explicit Roll restores modified origin
+PASS second Roll captures new origin
+PASS invalid explicit Roll preserves point buy
+PASS native panel requires current owner binding
+PASS native controls suppressed in roll mode
+PASS native control states restored exactly
+PASS session lifecycle happy path
+PASS session lifecycle rejects invalid transition
+PASS session lifecycle can abort point-buy restore
+PASS liveness ignores failed observations
+PASS liveness protects unconfirmed session
+PASS liveness releases confirmed mismatch
+PASS liveness match resets mismatch
+PASS liveness rejects invalid delta
+PASS session ownership uses identity
+PASS session ownership transfers explicitly
+PASS SettingsPanelHealthyMainMenuIsShortAndCollapsed
+PASS SettingsPanelUnrelatedLevelUpIsNotAlarming
+PASS SettingsPanelSupportedCreationShowsAvailabilityAndRecovery
+PASS SettingsPanelNamesMercenaryAndRespecContexts
+PASS SettingsPanelRejectedOwnershipIsNotAlarming
+PASS SettingsPanelStartFailureStaysVisible
+PASS SettingsPanelApplicationFailureKeepsRecoveryVisible
+PASS SettingsPanelBlockedRecoveryExplainsReason
+PASS SettingsPanelFailedReturnKeepsActionAvailable
+PASS SettingsPanelIncompleteReturnStaysVisible
+PASS SettingsPanelFinalizationFailureStaysVisibleAfterSessionEnds
+PASS SettingsPanelUnverifiedCompatibilityIsConcise
+PASS SettingsPanelTroubleshootingIsPresentationOnly
+PASS SettingsPanelPreservesSavedPreferences
+PASS SettingsPanelLowScoreControlsPersistWithoutRolling
+RESULT 416/416 passed
+Kingmaker contract verification passed: <repo>\artifacts\contracts\runtime-contracts.json
+Build started 11/23/2026 5:32:01 PM.
+
+     1>Project "<repo>\src\KingmakerDiceRoller\KingmakerDiceRoller.csproj" on node 1 (Rebuild target(s)).
+     1>CoreClean:
+         Deleting file "<repo>\artifacts\bin\Release\KingmakerDiceRoller\KingmakerDiceRoller.dll".
+         Deleting file "<repo>\artifacts\obj\Release\KingmakerDiceRoller\KingmakerDiceRoller.csproj.AssemblyReference.cache".
+         Deleting file "<repo>\artifacts\obj\Release\KingmakerDiceRoller\KingmakerDiceRoller.csproj.CoreCompileInputs.cache".
+         Deleting file "<repo>\artifacts\obj\Release\KingmakerDiceRoller\KingmakerDiceRoller.dll".
+       ValidatePinnedLoaderReferences:
+         "powershell.exe" -NoLogo -NoProfile -ExecutionPolicy Bypass -File "<repo>\scripts\Get-PinnedLoaderReferences.ps1" -VerifyOnly -ReferenceDirectory "<repo>\artifacts\references"
+         <repo>\artifacts\references
+       GenerateTargetFrameworkMonikerAttribute:
+       Skipping target "GenerateTargetFrameworkMonikerAttribute" because all output files are up-to-date with respect to the input files.
+       CoreCompile:
+         <buildtools>\MSBuild\Current\Bin\Roslyn\csc.exe /noconfig /nowarn:1701,1702 /fullpaths /nostdlib+ /warn:4 /highentropyva+ /reference:<repo>\artifacts\references\0Harmony12.dll /reference:"<game>\Kingmaker_Data\Managed\Assembly-CSharp-firstpass.dll" /reference:"<game>\Kingmaker_Data\Managed\Assembly-CSharp.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\mscorlib.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\System.Core.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\System.dll" /reference:"<game>\Kingmaker_Data\Managed\UnityEngine.CoreModule.dll" /reference:"<game>\Kingmaker_Data\Managed\UnityEngine.dll" /reference:"<game>\Kingmaker_Data\Managed\UnityEngine.IMGUIModule.dll" /reference:"<game>\Kingmaker_Data\Managed\UnityEngine.TextRenderingModule.dll" /reference:"<game>\Kingmaker_Data\Managed\UnityEngine.UI.dll" /reference:"<game>\Kingmaker_Data\Managed\UnityEngine.UIModule.dll" /reference:<repo>\artifacts\references\UnityModManager.dll /out:..\..\artifacts\obj\Release\KingmakerDiceRoller\KingmakerDiceRoller.dll /subsystemversion:6.00 /target:library /warnaserror+ /utf8output /deterministic+ /langversion:7.3 /analyzerconfig:<repo>\.editorconfig CharacterCreation\AbilityPhasePresentationService.cs CharacterCreation\AbilityValueSnapshot.cs CharacterCreation\CharacterCreationContextDecision.cs CharacterCreation\CharacterCreationContextPolicy.cs CharacterCreation\CharacterCreationCoordinator.cs CharacterCreation\CharacterRollWorkflow.cs CharacterCreation\CollapsedAccessTabLayout.cs CharacterCreation\DerivedStateRefreshService.cs CharacterCreation\GenerationRollbackSnapshot.cs CharacterCreation\IRollUiCommandTarget.cs CharacterCreation\KingmakerStatAccess.cs CharacterCreation\LivePreviewInspector.cs CharacterCreation\LivePreviewObservation.cs CharacterCreation\MainCharacterIdentityRelation.cs CharacterCreation\MercenaryFinalizationObservation.cs CharacterCreation\MercenaryFinalizationService.cs CharacterCreation\NativeAbilityControlService.cs CharacterCreation\NativePanelAttachmentLifecycle.cs CharacterCreation\NativeRespecEntryService.cs CharacterCreation\NativeRollPanelLayoutSpec.cs CharacterCreation\NativeRollPanelState.cs CharacterCreation\NativeScoreRowIdentity.cs CharacterCreation\NativeUiPresentation.cs CharacterCreation\NativeViewCommandBinding.cs CharacterCreation\PointBudgetResolver.cs CharacterCreation\PointBudgetTracker.cs CharacterCreation\PointBuyOrigin.cs CharacterCreation\PointBuyPresentationObservation.cs CharacterCreation\PointBuyRestoreObservation.cs CharacterCreation\PointBuyRestoreService.cs CharacterCreation\PointBuyReturnOutcome.cs CharacterCreation\PreviewRefreshService.cs CharacterCreation\RespecLifecycleService.cs CharacterCreation\RespecOwnership.cs CharacterCreation\ResponsiveRollPanelLayout.cs CharacterCreation\RollFormulaDraft.cs CharacterCreation\RollPanelModel.cs CharacterCreation\RollPresentationObservation.cs CharacterCreation\RollSession.cs CharacterCreation\RollSessionManager.cs CharacterCreation\RollSessionMode.cs CharacterCreation\RollUiCommand.cs CharacterCreation\RollUiCommandRouter.cs CharacterCreation\RollUiSnapshot.cs CharacterCreation\RuntimeDiagnostics.cs CharacterCreation\SkillsPhaseSynchronizationService.cs CharacterCreation\StatApplicationService.cs CharacterCreation\SupportedCharacterCreationKind.cs Compatibility\CompatibilityDetector.cs Compatibility\CompatibilitySnapshot.cs CompositionRoot.cs Domain\AbilityScore.cs Domain\DiagnosticArrays.cs Domain\DiceExpression.cs Domain\DiceExpressionException.cs Domain\DiceExpressionParser.cs Domain\DiceRollEngine.cs Domain\DiceRollPreset.cs Domain\DiceRollRule.cs Domain\DomainAssemblyMarker.cs Domain\IRandomSource.cs Domain\LowScorePolicy.cs Domain\PointBuyEquivalent.cs Domain\PointBuyEquivalentCalculator.cs Domain\RollCandidate.cs Domain\RollConfiguration.cs Domain\RolledStatArray.cs Domain\RollHistory.cs Domain\RollHistoryEntry.cs Domain\RollSessionLifecycle.cs Domain\RollSessionOwnership.cs Domain\RollValidationException.cs Domain\SavedRollArrayRecord.cs Domain\SavedRollCatalog.cs Domain\SessionLivenessTracker.cs Domain\StatAssignment.cs Domain\SystemRandomSource.cs Integration\ContractResolutionException.cs Integration\KingmakerContractHolder.cs Integration\KingmakerContractResolver.cs Integration\KingmakerContracts.cs Integration\NativeInvocationScope.cs Integration\NativeRespecContracts.cs Integration\PatchOwnerDiagnostics.cs Integration\ReflectionAccess.cs Logging\IModLogger.cs Logging\UmmLogger.cs Main.cs Patches\KingmakerPatchBridge.cs Patches\KingmakerPatchController.cs ProductMetadata.cs Properties\AssemblyInfo.cs Settings.cs UI\ButtonCaptionFit.cs UI\InlineArrowAnchor.cs UI\InlineArrowTooltip.cs UI\InlineTooltipOverlay.cs UI\InlineTooltipPlacement.cs UI\NativeBookTheme.cs UI\NativeCostHintGuard.cs UI\NativePanelConstructionBudget.cs UI\NativeRollPanelHost.cs UI\NativeThemeRecovery.cs UI\NativeThemeResolver.cs UI\NativeUiDonorLookup.cs UI\SettingsPanel.cs UI\SettingsView.cs "..\..\artifacts\obj\Release\KingmakerDiceRoller\.NETFramework,Version=v4.7.2.AssemblyAttributes.cs"
+         CompilerServer: server - server processed compilation - KingmakerDiceRoller
+       CopyFilesToOutputDirectory:
+         Copying file from "<repo>\artifacts\obj\Release\KingmakerDiceRoller\KingmakerDiceRoller.dll" to "<repo>\artifacts\bin\Release\KingmakerDiceRoller\KingmakerDiceRoller.dll".
+         KingmakerDiceRoller -> <repo>\artifacts\bin\Release\KingmakerDiceRoller\KingmakerDiceRoller.dll
+     1>Done Building Project "<repo>\src\KingmakerDiceRoller\KingmakerDiceRoller.csproj" (Rebuild target(s)).
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.49
+Respec installed-assembly contracts passed: 11 checks. Live UI/save qualification NOT RUN.
+Native UI IL/contracts: 30/30 passed. Engine interaction/audio is NOT RUN.
+Build qualification passed. DLL: <repo>\artifacts\bin\Release\KingmakerDiceRoller\KingmakerDiceRoller.dll
+SHA-256: 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee

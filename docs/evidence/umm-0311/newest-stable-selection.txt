@@ -1,0 +1,26 @@
+Newest-stable selection, measured 2026-11-23T22:33Z
+NuGet https://api.nuget.org/v3-flatcontainer/unitymodmanager/index.json:
+{"versions":["0.26.0","0.27.0","0.27.2","0.27.5","0.27.12","0.27.14","0.28.2","0.29.0","0.30.1","0.31.0","0.31.1","0.32.3","0.32.4","0.33.2","0.33.4"]}
+NuGet registration (author / project URL / published):
+  0.30.1 newman55 https://www.nexusmods.com/site/mods/21 2024-09-22
+  0.31.0 newman55 https://www.nexusmods.com/site/mods/21 2024-09-25
+  0.31.1 newman55 https://www.nexusmods.com/site/mods/21 2024-11-27
+  0.32.3 newman55 https://www.nexusmods.com/site/mods/21 2025-04-21
+  0.32.4 newman55 https://www.nexusmods.com/site/mods/21 2025-04-21
+  0.33.2 newman55 https://www.nexusmods.com/site/mods/21 2026-10-11
+  0.33.4 newman55 https://www.nexusmods.com/site/mods/21 2026-11-19
+GitHub newman55/unity-mod-manager HEAD:
+  3d14bf0d776ac30f86e9611696ba2696a9d1083c 2026-11-19T12:45:23Z
+      <Version>0.33.4</Version>
+      <AssemblyVersion>0.33.4</AssemblyVersion>
+      <FileVersion>0.33.4</FileVersion>
+Package hashes (this machine):
+05a82b66bc44d56d1246f146d16e9fa8f9a42c450c5bc334bcfa9efddbdb53c9 *  0.31.1/unitymodmanager.0.31.1.nupkg
+a8438e921ca7b0e5805f5a31c196ae65c90f236543885bea0146457d082c9ec9 *  0.32.4/unitymodmanager.0.32.4.nupkg
+7cbab8edccd9db54f8a9e61fdd7969ae1e908c1f53d1509d29ad20fdfdade66b *  0.33.4/unitymodmanager.0.33.4.nupkg
+b9096d3e2191ca18b803e2894511a2ee4ec6c92050e53853b46ebfeed46798aa *  harmony2/lib.harmony.2.3.1.1.nupkg
+498f99c5ca97cfec0e6cb277d721c242071ea9d9f019312cf9eaf015762de075 *  harmony2/lib.harmony.2.3.6.nupkg
+f07af11a0d62447e7e1b6e3fcf1e28fc75d9f8d1abf2d6ee79aabcdc4db43e88 *  harmony2/lib.harmony.2.4.3.nupkg
+b9096d3e2191ca18b803e2894511a2ee4ec6c92050e53853b46ebfeed46798aa *  harmony2/lib.harmony.2.3.1.1.nupkg
+498f99c5ca97cfec0e6cb277d721c242071ea9d9f019312cf9eaf015762de075 *  harmony2/lib.harmony.2.3.6.nupkg
+f07af11a0d62447e7e1b6e3fcf1e28fc75d9f8d1abf2d6ee79aabcdc4db43e88 *  harmony2/lib.harmony.2.4.3.nupkg

@@ -1,0 +1,137 @@
+Owner-installed UnityModManager (measured only, not used as a fixture): 0.33.0.0 63e5baf7b1738e4091b5fd17ccb738ecdb4d1dbf246061dfd55dc52835d52691
+PASS clone-build-from-detached-commit :: receipt commit fca7cdef06dd28805b356fdd8ad78356b21fc800 dirty False dll 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee inputs 98c31bd62ff84e6b4eb983d36ad5273e6938a205c038a2c0b88385ba7aff1037
+PASS cache-genuine-verified :: accepted
+PASS cache-corrupt-rejected :: rejected: Pinned loader reference hash mismatch:
+PASS cache-missing-rejected :: rejected: Pinned loader reference missing:
+PASS cache-umm-0.32.4-fixture-rejected :: rejected: Pinned loader reference hash mismatch:
+PASS manifest-control-accepted :: accepted
+PASS pin-definition-without-harmony12-rejected :: rejected: The pin file must define exactly: UnityModManager, 0Harmony12.
+PASS pin-definition-misnamed-harmony12-rejected :: rejected: The pin file must define 0Harmony12 exactly once as 0Harmony12.dll.
+PASS manifest-above-compiler-reference-rejected :: rejected: Info.json ManagerVersion must equal the pinned baseline 0.31.1.
+PASS manifest-array-version-rejected :: rejected: Info.json ManagerVersion must equal the pinned baseline 0.31.1.
+PASS compiler-pin-above-minimum-rejected :: rejected: The UnityModManager compile reference must equal the declared minimum.
+PASS msbuild-corrupt-cache-rejected :: rejected: <temp>\kdr-loader-baseline-fc601059d08742dabd60495fbb26c5bc\clone with space\LoaderReferences.targets(18,5): error MSB3073: The command ""powershell.exe" -NoLogo -NoProfile -ExecutionPolicy Bypass -File "<temp>\kdr-loader-baseline-fc601059d08742dabd60495fbb26c5bc\clone with space\scripts\Get-PinnedLoaderReferences.ps1" -VerifyOnly -ReferenceDirectory "<temp>\kdr-loader-baseline-fc601059d08742dabd60495fbb26c5bc\cache corrupt"" exited with code 1. [<temp>\kdr-loader-baseline-fc601059d08742dabd60495fbb26c5bc\clone with space\src\KingmakerDiceRoller\KingmakerDiceRoller.csproj]
+PASS msbuild-direct-compiles-against-pinned-inputs :: exit 0; csc UnityModManager: <temp>\kdr-loader-baseline-fc601059d08742dabd60495fbb26c5bc\clone with space\artifacts\references\UnityModManager.dll; csc 0Harmony12: <temp>\kdr-loader-baseline-fc601059d08742dabd60495fbb26c5bc\clone with space\artifacts\references\0Harmony12.dll
+PASS incremental-build-genuine-accepted :: accepted
+PASS incremental-build-up-to-date-accepted :: accepted
+PASS incremental-build-after-manifest-only-change-rejected :: rejected: <temp>\kdr-loader-baseline-fc601059d08742dabd60495fbb26c5bc\clone with space\LoaderReferences.targets(18,5): error MSB3073: The command ""powershell.exe" -NoLogo -NoProfile -ExecutionPolicy Bypass -File "<temp>\kdr-loader-baseline-fc601059d08742dabd60495fbb26c5bc\clone with space\scripts\Get-PinnedLoaderReferences.ps1" -VerifyOnly -ReferenceDirectory "<temp>\kdr-loader-baseline-fc601059d08742dabd60495fbb26c5bc\clone with space\artifacts\references"" exited with code 1. [<temp>\kdr-loader-baseline-fc601059d08742dabd60495fbb26c5bc\clone with space\src\KingmakerDiceRoller\KingmakerDiceRoller.csproj]
+PASS incremental-build-after-pin-only-change-rejected :: rejected: <temp>\kdr-loader-baseline-fc601059d08742dabd60495fbb26c5bc\clone with space\LoaderReferences.targets(18,5): error MSB3073: The command ""powershell.exe" -NoLogo -NoProfile -ExecutionPolicy Bypass -File "<temp>\kdr-loader-baseline-fc601059d08742dabd60495fbb26c5bc\clone with space\scripts\Get-PinnedLoaderReferences.ps1" -VerifyOnly -ReferenceDirectory "<temp>\kdr-loader-baseline-fc601059d08742dabd60495fbb26c5bc\clone with space\artifacts\references"" exited with code 1. [<temp>\kdr-loader-baseline-fc601059d08742dabd60495fbb26c5bc\clone with space\src\KingmakerDiceRoller\KingmakerDiceRoller.csproj]
+PASS incremental-build-after-restore-accepted :: accepted
+PASS resolved-input-pinned-accepted :: accepted
+PASS resolved-input-identical-copy-elsewhere-rejected :: rejected: <temp>\kdr-loader-baseline-fc601059d08742dabd60495fbb26c5bc\clone with space\LoaderReferences.targets(37,5): error : Loader compiler references must be the verified files in the pinned directory <temp>\kdr-loader-baseline-fc601059d08742dabd60495fbb26c5bc\clone with space\artifacts\references\; resolved: <temp>\kdr-loader-baseline-fc601059d08742dabd60495fbb26c5bc\stray copy\UnityModManager.dll [<temp>\kdr-loader-baseline-fc601059d08742dabd60495fbb26c5bc\probe stray.csproj]
+PASS resolved-input-same-stem-file-in-pinned-dir-rejected :: rejected: <temp>\kdr-loader-baseline-fc601059d08742dabd60495fbb26c5bc\clone with space\LoaderReferences.targets(37,5): error : Loader compiler references must be the verified files in the pinned directory <temp>\kdr-loader-baseline-fc601059d08742dabd60495fbb26c5bc\clone with space\artifacts\references\; resolved: <temp>\kdr-loader-baseline-fc601059d08742dabd60495fbb26c5bc\clone with space\artifacts\references\UnityModManager.exe [<temp>\kdr-loader-baseline-fc601059d08742dabd60495fbb26c5bc\probe samestem.csproj]
+PASS resolved-input-renamed-loader-in-pinned-dir-rejected :: rejected: <temp>\kdr-loader-baseline-fc601059d08742dabd60495fbb26c5bc\clone with space\LoaderReferences.targets(37,5): error : Loader compiler references must be the verified files in the pinned directory <temp>\kdr-loader-baseline-fc601059d08742dabd60495fbb26c5bc\clone with space\artifacts\references\; resolved: <temp>\kdr-loader-baseline-fc601059d08742dabd60495fbb26c5bc\clone with space\artifacts\references\umm-alias.dll [<temp>\kdr-loader-baseline-fc601059d08742dabd60495fbb26c5bc\probe alias.csproj]
+PASS resolved-input-umm-0.32.4-fixture-rejected :: rejected: <temp>\kdr-loader-baseline-fc601059d08742dabd60495fbb26c5bc\clone with space\LoaderReferences.targets(37,5): error : Loader compiler references must be the verified files in the pinned directory <temp>\kdr-loader-baseline-fc601059d08742dabd60495fbb26c5bc\clone with space\artifacts\references\; resolved: <temp>\kdr-loader-baseline-fc601059d08742dabd60495fbb26c5bc\inputs\umm-0.32.4\UnityModManager.dll [<temp>\kdr-loader-baseline-fc601059d08742dabd60495fbb26c5bc\probe wrong.csproj]
+PASS receipt-matching-build-accepted :: accepted
+PASS receipt-other-configuration-rejected :: rejected: ERROR: Build receipt is for configuration Release, not Debug; rebuild first.
+PASS package-reuse-after-production-source-change-rejected :: rejected: Build inputs changed since this DLL was built (source, manifest or loader pins); rebuild first.
+PASS package-reuse-after-reference-helper-change-rejected :: rejected: Build inputs changed since this DLL was built (source, manifest or loader pins); rebuild first.
+PASS package-reuse-after-msbuild-guard-change-rejected :: rejected: Build inputs changed since this DLL was built (source, manifest or loader pins); rebuild first.
+PASS package-reuse-after-project-file-change-rejected :: rejected: Build inputs changed since this DLL was built (source, manifest or loader pins); rebuild first.
+PASS qualify-package-reuse-after-source-change-rejected :: rejected: test_liveness_match_resets_mismatch (test_domain_reference.DomainReferenceTests.test_liveness_match_resets_mismatch) ... ok
+PASS package-after-restoring-identical-inputs-accepted :: accepted: Package validation passed: <temp>\kdr-loader-baseline-fc601059d08742dabd60495fbb26c5bc\clone with space\artifacts\packages\KingmakerDiceRoller-0.2.0.zip
+PASS rebuild-after-source-change-accepted :: exit 0; first DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee; changed-source DLL 27c0a839e9b41f4a208723e8cdc9e495e1745059ee6e563bf145f15c84fab274
+PASS package-after-matching-rebuild-accepted :: accepted: Package validation passed: <temp>\kdr-loader-baseline-fc601059d08742dabd60495fbb26c5bc\clone with space\artifacts\packages\KingmakerDiceRoller-0.2.0.zip
+PASS receipt-of-first-build-for-changed-dll-rejected :: rejected: ERROR: Build receipt does not match the mod DLL; rebuild first.
+PASS archived-dll-vs-first-receipt-rejected :: rejected: Archived DLL SHA-256 27c0a839e9b41f4a208723e8cdc9e495e1745059ee6e563bf145f15c84fab274 does not match the build
+PASS rebuild-of-committed-source-reproduces-first-dll :: DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee
+PASS receipt-conflicting-observed-version-rejected :: rejected: ERROR: Build receipt does not match pinned reference UnityModManager.dll; rebuild first.
+PASS receipt-without-loader-references-rejected :: rejected: ERROR: Build receipt has no loader_references; rebuild first.
+PASS receipt-recording-other-loader-rejected :: rejected: ERROR: Build receipt does not match pinned reference UnityModManager.dll; rebuild first.
+PASS package-reuse-after-build-wrapper-change-rejected :: rejected: Build inputs changed since this DLL was built (source, manifest or loader pins); rebuild first.
+PASS package-with-identical-managed-references-elsewhere-accepted :: accepted: Package validation passed
+PASS package-reuse-after-resolved-managed-reference-change-rejected :: rejected: Build inputs changed since this DLL was built (source, manifest or loader pins); rebuild first.
+PASS package-receipt-dll-digest-array-rejected :: rejected: Build receipt dll_sha256 must be a lowercase SHA-256 string; rebuild first.
+PASS package-receipt-dll-digest-boolean-rejected :: rejected: Build receipt dll_sha256 must be a lowercase SHA-256 string; rebuild first.
+PASS package-receipt-inputs-digest-array-rejected :: rejected: Build receipt build_inputs_sha256 must be a lowercase SHA-256 string; rebuild first.
+PASS package-receipt-configuration-array-rejected :: rejected: Build receipt configuration must be a string; rebuild first.
+PASS package-receipt-loader-version-array-rejected :: rejected: Build receipt loader reference field version must be a string; rebuild first.
+PASS package-genuine-receipt-accepted :: accepted: Package validation passed
+PASS candidate-package-records-frozen-after-build-output-replaced :: build output replaced after staging (now cd3b60233f348bf634e76bdea44031952700054ab0f82766ebda51342823b3a5); manifest DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee; loose DLL and receipt copy match; ZIP b8cb456b8061fc48bfa464bd5af66f368516ab24cbb22d3d1f2c6e376d436e81
+PASS package-names-producing-build-across-commits :: producing_commit fca7cdef06dd28805b356fdd8ad78356b21fc800; packaging_commit 6bd37440f055fff5332e7241bbc6630e6d2be5db; DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee
+PASS package-candidate-accepted :: accepted: Packaged DLL SHA-256: 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee; MVID: 7a6d0a75-f788-47a5-83c9-fed6fb14e3ff; loader references: UnityModManager 0.31.1.0, 0Harmony12 1.2.0.1
+PASS package-candidate-matches-receipt-dll :: accepted: Package validation passed
+PASS package-extra-harmony-rejected :: rejected: Package must contain exactly 6 files; observed 7.
+PASS package-swapped-in-loader-rejected :: rejected: Unexpected package entry: KingmakerDiceRoller/UnityModManager.dll
+PASS package-swapped-in-game-assembly-rejected :: rejected: Unexpected package entry: KingmakerDiceRoller/Assembly-CSharp-firstpass.dll
+PASS package-data-bearing-directory-record-rejected :: rejected: Unexpected or data-bearing package directory record: 'KingmakerDiceRoller/extra/'
+PASS package-own-directory-record-with-data-rejected :: rejected: Unexpected or data-bearing package directory record: 'KingmakerDiceRoller/'
+PASS validator-explicit-empty-expected-digest-rejected :: rejected: ERROR: ExpectedDllSha256 must be a lowercase SHA-256 string.
+PASS package-harmony-bytes-under-readme-name-rejected :: rejected: Package text entry contains binary content: KingmakerDiceRoller/README.md
+PASS package-loader-bytes-under-licence-name-rejected :: rejected: Package text entry contains binary content: KingmakerDiceRoller/licenses/UPSTREAM-WOTR-DICE-ROLLER-MIT.txt
+PASS package-manager-version-array-rejected :: rejected: Packaged ManagerVersion '0.31.1' does not match the 0.31.1 baseline.
+PASS package-manager-version-boolean-rejected :: rejected: Packaged ManagerVersion 'True' does not match the 0.31.1 baseline.
+PASS package-manager-version-number-rejected :: rejected: Packaged ManagerVersion '0.31' does not match the 0.31.1 baseline.
+PASS legacy-release-references-umm-0.33.0 :: genuine v0.2.0 ZIP 43f99fabcdd31192ecd5deb46533c2004fa64b59a432c4b094b85290f6dadaad; its DLL references UnityModManager 0.33.0.0
+PASS package-legacy-0.33.0-dll-with-lowered-manifest-rejected :: rejected: Packaged DLL must reference pinned UnityModManager 0.31.1.0; lowering Info.json alone is not sufficient.
+Package validation passed: <temp>\kdr-loader-baseline-fc601059d08742dabd60495fbb26c5bc\inputs\candidate.zip
+Package SHA-256: b8cb456b8061fc48bfa464bd5af66f368516ab24cbb22d3d1f2c6e376d436e81
+Packaged DLL SHA-256: 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee; MVID: 7a6d0a75-f788-47a5-83c9-fed6fb14e3ff; loader references: UnityModManager 0.31.1.0, 0Harmony12 1.2.0.1
+PASS same-host-validation-candidate-first :: Package validation passed: <temp>\kdr-loader-baseline-fc601059d08742dabd60495fbb26c5bc\inputs\candidate.zip | Package SHA-256: b8cb456b8061fc48bfa464bd5af66f368516ab24cbb22d3d1f2c6e376d436e81 | Packaged DLL SHA-256: 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee; MVID: 7a6d0a75-f788-47a5-83c9-fed6fb14e3ff; loader references: UnityModManager 0.31.1.0, 0Harmony12 1.2.0.1 | ACCEPTED candidate.zip | REJECTED legacy-lowered-manifest.zip: Packaged DLL must reference pinned UnityModManager 0.31.1.0; lowering Info.json alone is not sufficient.
+Package validation passed: <temp>\kdr-loader-baseline-fc601059d08742dabd60495fbb26c5bc\inputs\candidate.zip
+Package SHA-256: b8cb456b8061fc48bfa464bd5af66f368516ab24cbb22d3d1f2c6e376d436e81
+Packaged DLL SHA-256: 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee; MVID: 7a6d0a75-f788-47a5-83c9-fed6fb14e3ff; loader references: UnityModManager 0.31.1.0, 0Harmony12 1.2.0.1
+PASS same-host-validation-legacy-lowered-manifest-first :: REJECTED legacy-lowered-manifest.zip: Packaged DLL must reference pinned UnityModManager 0.31.1.0; lowering Info.json alone is not sufficient. | Package validation passed: <temp>\kdr-loader-baseline-fc601059d08742dabd60495fbb26c5bc\inputs\candidate.zip | Package SHA-256: b8cb456b8061fc48bfa464bd5af66f368516ab24cbb22d3d1f2c6e376d436e81 | Packaged DLL SHA-256: 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee; MVID: 7a6d0a75-f788-47a5-83c9-fed6fb14e3ff; loader references: UnityModManager 0.31.1.0, 0Harmony12 1.2.0.1 | ACCEPTED candidate.zip
+Package validation passed: <temp>\KingmakerDiceRoller-package-d4d8ecc3899c49a58a648014e13065af\package.zip
+Package SHA-256: b8cb456b8061fc48bfa464bd5af66f368516ab24cbb22d3d1f2c6e376d436e81
+Packaged DLL SHA-256: 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee; MVID: 7a6d0a75-f788-47a5-83c9-fed6fb14e3ff; loader references: UnityModManager 0.31.1.0, 0Harmony12 1.2.0.1
+PASS expand-validated-package-candidate :: returned validated DLL SHA-256: 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee
+PASS expand-validated-package-legacy-rejected :: rejected before extraction: ERROR: Packaged DLL must reference pinned UnityModManager 0.31.1.0; lowering Info.json alone is not sufficient.
+PASS install-uses-validated-private-copy :: Install.ps1 extracts only via Expand-ValidatedPackage, before any live Mods path (Install.ps1 itself is not executed)
+PASS install-whatif-valid-package-previews-target :: accepted: What if: Performing the operation "Transactionally install Kingmaker Dice Roller" on target "<temp>\kdr-loader-baseline-fc601059d08742dabd60495fbb26c5bc\disposable game\Mods\KingmakerDiceRoller". | WhatIf completed: package validation passed and no live files were changed.
+PASS install-whatif-invalid-package-rejected :: rejected: Packaged DLL must reference pinned UnityModManager 0.31.1.0; lowering Info.json alone is not sufficient.
+PASS install-whatif-leaves-mods-and-temp-unchanged :: disposable Mods unchanged; no leftover KingmakerDiceRoller-* temporary folders
+PASS legacy-input-preserved :: private copy and any supplied original still 43f99fabcdd31192ecd5deb46533c2004fa64b59a432c4b094b85290f6dadaad
+PASS repository-package-outputs-untouched :: artifacts\packages before = after: KingmakerDiceRoller-0.2.0.zip=b8cb456b8061fc48bfa464bd5af66f368516ab24cbb22d3d1f2c6e376d436e81, package-manifest.json=59c7aace1e44c32f4d1835d9d43fa35693cbe801997d49768c4e6dd2a40d6e12, package-validation.json=866a7efc819d932eb11e0a099d39946b9b6ff18aef485146c9884c5566ff0a49
+{
+    "schema":  "kdr.loader-baseline-tests.v3",
+    "source_commit":  "fca7cdef06dd28805b356fdd8ad78356b21fc800",
+    "clone_build_receipt":  {
+                                "commit":  "fca7cdef06dd28805b356fdd8ad78356b21fc800",
+                                "dirty":  false,
+                                "configuration":  "Release",
+                                "dll_sha256":  "634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee",
+                                "build_inputs_sha256":  "98c31bd62ff84e6b4eb983d36ad5273e6938a205c038a2c0b88385ba7aff1037",
+                                "loader_references":  [
+                                                          {
+                                                              "file":  "UnityModManager.dll",
+                                                              "version":  "0.31.1.0",
+                                                              "assembly_version":  "0.31.1.0",
+                                                              "sha256":  "2e038ff23ab01d538dfef792096e1f5c04802d1edac3660db20d0d54c167c2c4",
+                                                              "source":  "https://api.nuget.org/v3-flatcontainer/unitymodmanager/0.31.1/unitymodmanager.0.31.1.nupkg"
+                                                          },
+                                                          {
+                                                              "file":  "0Harmony12.dll",
+                                                              "version":  "1.2.0.1",
+                                                              "assembly_version":  "1.2.0.1",
+                                                              "sha256":  "aa1cd48317254985d8b700cc74953477d1b40c3022ce9aa4c95ed2b8327e1292",
+                                                              "source":  "https://raw.githubusercontent.com/newman55/unity-mod-manager/10cfb1cce51914a5114928c5bc6a06d1d2c31fe2/lib/Harmony/1.2/0Harmony12.dll"
+                                                          }
+                                                      ]
+                            },
+    "candidate_package_sha256":  "b8cb456b8061fc48bfa464bd5af66f368516ab24cbb22d3d1f2c6e376d436e81",
+    "candidate_validation":  {
+                                 "dll_sha256":  "634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee",
+                                 "dll_mvid":  "7a6d0a75-f788-47a5-83c9-fed6fb14e3ff",
+                                 "manager_version":  "0.31.1",
+                                 "dll_loader_references":  [
+                                                               {
+                                                                   "name":  "UnityModManager",
+                                                                   "version":  "0.31.1.0"
+                                                               },
+                                                               {
+                                                                   "name":  "0Harmony12",
+                                                                   "version":  "1.2.0.1"
+                                                               }
+                                                           ]
+                             },
+    "legacy_release_zip_sha256":  "43f99fabcdd31192ecd5deb46533c2004fa64b59a432c4b094b85290f6dadaad",
+    "wrong_loader_fixture":  "UnityModManager 0.32.4.0 1387468bc3af41c50fe51859a3bb7af4922891aa8f13a6187e7a348ceaabfd88 (NuGet package a8438e921ca7b0e5805f5a31c196ae65c90f236543885bea0146457d082c9ec9)",
+    "owner_install_measured":  {
+                                   "version":  "0.33.0.0",
+                                   "sha256":  "63e5baf7b1738e4091b5fd17ccb738ecdb4d1dbf246061dfd55dc52835d52691"
+                               },
+    "passed":  75,
+    "total":  75
+}
+RESULT 75/75 loader-baseline checks passed

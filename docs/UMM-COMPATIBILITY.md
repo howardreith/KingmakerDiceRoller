@@ -31,26 +31,35 @@ whatever loader is installed on the build machine.
   verified files by full path. A stray HintPath, a same-stem or renamed file in the
   pinned directory, or the installed loader is refused even when its bytes equal the
   pin. The fast up-to-date check is disabled and the pin, verifier, guard and manifest
-  are compile inputs, so an IDE build after a pin-only or manifest-only change reaches
-  the guard.
+  are compile inputs. Incremental command-line MSBuild (the engine an IDE invokes for
+  this project) refuses a pin-only or manifest-only change; no C# IDE is installed on
+  the build host (only Visual Studio Build Tools), so IDE behaviour itself was not
+  observed.
 - `Info.json` `ManagerVersion` must be a JSON string equal to the pinned UnityModManager
   version (minus the revision), and the pin must equal the declared minimum.
 - `scripts/Build-Local.ps1` records in its receipt a fingerprint of every material build
   input (tracked or new files under `src/`, `Directory.Build.props`, `.editorconfig`,
-  `Info.json`, `LoaderReferences.targets`, the pin file and its verifier) and the
-  configuration. `scripts/Package.ps1` (and `Qualify.ps1 -Package`) refuse a DLL whose
-  receipt has different bytes, configuration, inputs or loader identities, and require
-  the DLL read back from the produced ZIP to equal the receipt's DLL hash.
+  `Info.json`, `LoaderReferences.targets`, the pin file and its verifier, the build
+  wrapper `Build-Local.ps1`/`Common.ps1`, and the SHA-256 of every game/Unity assembly the
+  project references from the configured Managed directory) and the configuration.
+  `scripts/Package.ps1` (and `Qualify.ps1 -Package`) refuse a DLL whose receipt has
+  different bytes, configuration, inputs or loader identities or malformed field types,
+  and require the DLL read back from the produced ZIP to equal the receipt's DLL hash.
+  The package manifest and candidate copies are written from the staged DLL, the receipt
+  bytes read once and the validated archive (never by rereading build output), and name
+  the producing build (receipt commit, configuration, inputs) separately from the
+  packaging checkout.
 - The standalone `scripts/Validate-Package.ps1` reads the packaged DLL's AssemblyRef
   table (in Windows PowerShell, in a separate process, so several packages can be
   validated in one session), requires exactly UnityModManager 0.31.1.0 and 0Harmony12
   1.2.0.1, requires `ManagerVersion` to be the string "0.31.1", accepts only the six
-  allow-listed files and requires the four documentation/licence entries to be UTF-8
-  text (no loader, Harmony, game or Unity DLL can be packaged, renamed or not). Its
+  allow-listed files (directory records only as empty records of the package's own
+  folders) and requires the four documentation/licence entries to be UTF-8 text (no loader, Harmony, game or Unity DLL can be packaged, renamed or not). Its
   report records the packaged DLL's SHA-256, MVID and observed loader references.
   `scripts/Install.ps1` copies a supplied ZIP to a private location, validates that copy
   and extracts that same copy (`Expand-ValidatedPackage`); the extracted DLL must equal
-  the validated one.
+  the validated one. That private validation also runs under `Install.ps1 -WhatIf`;
+  only live Mods changes stay behind `ShouldProcess`.
 - `UnityModManagerDir` still identifies the installed runtime for contract checks and
   installation; upgrading that installation does not change the production build.
 
@@ -75,21 +84,26 @@ runs every check in a separate PowerShell or MSBuild process; this repository's
 them: the genuine v0.2.0 release ZIP (SHA-256 `43f99fab…6dadaad`, its DLL compiled
 against UnityModManager 0.33.0.0) and the author's UnityModManager 0.32.4 NuGet package
 (`a8438e92…082c9ec9`, DLL `1387468b…7bfd88`) as the known distinct wrong-loader fixture.
-The owner's installed loader is only measured and reported. The 58 checks cover: cache
+The owner's installed loader is only measured and reported. The 75 checks cover: cache
 bytes (genuine, corrupt, missing, 0.32.4); dropped/misnamed pins, raised or array-typed
 manifests and raised pins; direct MSBuild with a corrupt and a genuine cache (the quoted
 `csc` reference paths must be exactly the pinned files); incremental builds refusing a
 manifest-only and a pin-only change and accepting the restored inputs; probe projects
 whose UnityModManager resolves to an identical copy elsewhere, a same-stem `.exe` or a
 renamed copy inside the pinned directory, or the 0.32.4 fixture; packaging and
-`Qualify.ps1 -Package` refusing a reused DLL after a source, helper, guard or project
-change and accepting identical inputs or a matching rebuild; receipts for another DLL,
+`Qualify.ps1 -Package` refusing a reused DLL after a source, helper, guard, project,
+build-wrapper or resolved managed-reference change and accepting identical inputs or a
+matching rebuild; producing-build provenance across commits; frozen candidate records
+after the build output is replaced post-staging; array/boolean receipt fields; receipts for another DLL,
 configuration, observed version or loader; the archived-DLL/receipt comparison;
 packages with added or swapped-in Harmony, loader or game DLLs, DLL bytes under
-documentation/licence names, and array/boolean/number `ManagerVersion`; the v0.2.0 DLL
+documentation/licence names, data-bearing directory records, an explicitly empty
+expected digest, and array/boolean/number `ManagerVersion`; the v0.2.0 DLL
 with only its manifest lowered (refused); both packages validated in one Windows
 PowerShell session in either order; and the validated private-copy extraction used by
-`Install.ps1` (which itself is not run).
+`Install.ps1`, including the real `Install.ps1 -WhatIf` against a disposable
+configuration (valid ZIP previews the target, invalid ZIP refused, temporary files
+removed, disposable Mods folder unchanged).
 
 Static API audit (the four-loader table below): the fleet mission's `LoaderApiAudit` tool
 (a small .NET 8 console
@@ -105,13 +119,21 @@ method can be repeated with any metadata reader.
 
 ## Evidence for this change (2026-11-23)
 
+Machine-generated records for the candidate are committed in
+[`docs/evidence/umm-0311/`](evidence/umm-0311/INDEX.md): the `Build-Local.ps1` output
+(compiler command line, contract results) and receipt, the package manifest and
+validation report, the full `Test-LoaderBaseline.ps1` output and per-case JSON, the
+static audit JSON with every profile component identity, the profile provenance, the
+newest-stable selection record, the build-host IDE inventory and the audit tool's
+source. Only local path prefixes are replaced by placeholders (see the index).
+
 Candidate DLL (Release, built by `Build-Local.ps1` on Windows against the pinned
 cache, Kingmaker 2.1.7b managed assemblies):
 SHA-256 `634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee`,
 MVID `7a6d0a75-f788-47a5-83c9-fed6fb14e3ff`; AssemblyRefs UnityModManager 0.31.1.0 and
 0Harmony12 1.2.0.1. The build ran the repository validator, source oracle, 416/416
 domain tests, Kingmaker/respec/native-UI contract checks, and the build gate.
-`Test-LoaderBaseline.ps1`: 58/58 checks passed on the candidate commit (package SHA-256
+`Test-LoaderBaseline.ps1`: 75/75 checks passed on the candidate commit (package SHA-256
 `b8cb456b8061fc48bfa464bd5af66f368516ab24cbb22d3d1f2c6e376d436e81`), including the
 v0.2.0 regression. The newest-stable row was selected on 2026-11-23 from the author's
 NuGet feed (0.33.4 published 2026-11-19, the highest version; project URL the Nexus

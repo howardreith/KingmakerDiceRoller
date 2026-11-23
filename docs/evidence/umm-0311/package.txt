@@ -1,0 +1,6 @@
+<repo>\artifacts\packages\KingmakerDiceRoller-0.2.0.zip
+Package validation passed: <repo>\artifacts\packages\KingmakerDiceRoller-0.2.0.zip
+Package SHA-256: b8cb456b8061fc48bfa464bd5af66f368516ab24cbb22d3d1f2c6e376d436e81
+Packaged DLL SHA-256: 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee; MVID: 7a6d0a75-f788-47a5-83c9-fed6fb14e3ff; loader references: UnityModManager 0.31.1.0, 0Harmony12 1.2.0.1
+Package: <repo>\artifacts\packages\KingmakerDiceRoller-0.2.0.zip
+SHA-256: b8cb456b8061fc48bfa464bd5af66f368516ab24cbb22d3d1f2c6e376d436e81
