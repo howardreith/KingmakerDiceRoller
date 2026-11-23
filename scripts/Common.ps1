@@ -141,10 +141,34 @@ function Get-PinnedReferenceIdentities {
 
 # Material inputs of the production DLL: every tracked or new file under src\, the loader pin, verifier and
 # MSBuild guard, the root build properties, the manifest, the build wrapper (Build-Local.ps1 and Common.ps1, which
-# choose the MSBuild invocation), and the identity of every game/Unity assembly the project references from the
-# configured Managed directory. Any change invalidates an existing DLL and receipt, so packaging or qualification
+# choose the MSBuild invocation), and the identity of every assembly Csc receives for the configuration, as resolved
+# by MSBuild itself. Any change invalidates an existing DLL and receipt, so packaging or qualification
 # can never reuse a build made from other inputs. The configuration is bound separately by the receipt.
-function Get-BuildInputFingerprint {
+# The exact assemblies Csc receives for this configuration, from MSBuild itself (references resolved and reference
+# assemblies selected), as path-free identities: identical bytes relocated elsewhere keep the same identity.
+function Get-CompilerReferenceIdentities([string] $Configuration) {
+    $id = [Guid]::NewGuid().ToString('N')
+    $list = Join-Path ([IO.Path]::GetTempPath()) ("kdr-compiler-references-$id.txt")
+    $obj = Join-Path ([IO.Path]::GetTempPath()) ("kdr-compiler-references-$id\")
+    $project = Join-Path $script:RepositoryRoot 'src\KingmakerDiceRoller\KingmakerDiceRoller.csproj'
+    $previous = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        $output = $null | & (Resolve-MSBuild) $project /nologo /v:q /nr:false '/t:ResolveReferences;FindReferenceAssembliesForReferences' `
+            "/p:Configuration=$Configuration" /p:Platform=AnyCPU "/p:CompilerReferenceListPath=$list" "/p:IntermediateOutputPath=$obj" 2>&1 | ForEach-Object { "$_" }
+        $exit = $LASTEXITCODE
+        if ($exit -ne 0 -or -not (Test-Path -LiteralPath $list)) { throw "Could not resolve the compiler references: $($output -join ' ')" }
+        return @(Get-Content -LiteralPath $list | Where-Object { $_ } | Sort-Object { [IO.Path]::GetFileName($_) } | ForEach-Object {
+            [ordered]@{ file = [IO.Path]::GetFileName($_); sha256 = Get-Sha256 $_ } })
+    }
+    finally {
+        $ErrorActionPreference = $previous
+        Remove-Item -LiteralPath $list -Force -ErrorAction SilentlyContinue
+        if ([IO.Directory]::Exists($obj)) { [IO.Directory]::Delete($obj, $true) }
+    }
+}
+
+function Get-BuildInputFingerprint([string] $Configuration = 'Release') {
     $root = $script:RepositoryRoot
     $paths = @('src', 'Directory.Build.props', '.editorconfig', 'Info.json', 'LoaderReferences.targets',
         'scripts/loader-reference-pins.json', 'scripts/Get-PinnedLoaderReferences.ps1', 'scripts/Build-Local.ps1', 'scripts/Common.ps1')
@@ -154,13 +178,7 @@ function Get-BuildInputFingerprint {
         $full = Join-Path $root $file
         if (Test-Path -LiteralPath $full -PathType Leaf) { $file + "`t" + (Get-Sha256 $full) }
     })
-    $managed = (Get-KingmakerConfiguration).ManagedDir
-    [xml] $project = Get-Content -LiteralPath (Join-Path $root 'src\KingmakerDiceRoller\KingmakerDiceRoller.csproj') -Raw
-    $hints = @($project.SelectNodes("//*[local-name()='Reference']/*[local-name()='HintPath']") | ForEach-Object { $_.InnerText } | Where-Object { $_.StartsWith('$(KingmakerManagedDir)') })
-    foreach ($hint in ($hints | Sort-Object)) {
-        $file = ([string]$hint).Substring('$(KingmakerManagedDir)'.Length).TrimStart('\')
-        $lines += 'managed:' + $file + "`t" + (Get-Sha256 (Join-Path $managed $file))
-    }
+    foreach ($reference in (Get-CompilerReferenceIdentities $Configuration)) { $lines += 'compiler-reference:' + $reference.file + "`t" + $reference.sha256 }
     $hasher = [Security.Cryptography.SHA256]::Create()
     try { $digest = $hasher.ComputeHash([Text.Encoding]::UTF8.GetBytes(($lines -join "`n"))) }
     finally { $hasher.Dispose() }
@@ -178,6 +196,9 @@ function Assert-PinnedBuildReceipt($Receipt, [string] $DllPath, [string] $Config
         if (-not ($Receipt.$field -is [string]) -or $Receipt.$field -cnotmatch '^[0-9a-f]{64}$') { throw "Build receipt $field must be a lowercase SHA-256 string; rebuild first." }
     }
     if (-not ($Receipt.configuration -is [string])) { throw 'Build receipt configuration must be a string; rebuild first.' }
+    foreach ($field in @('commit', 'dirty')) { if (-not $Receipt.PSObject.Properties[$field]) { throw "Build receipt has no $field; rebuild first." } }
+    if (-not ($Receipt.commit -is [string]) -or $Receipt.commit -cnotmatch '^[0-9a-f]{40}$') { throw 'Build receipt commit must be a 40-character lowercase commit SHA; rebuild first.' }
+    if (-not ($Receipt.dirty -is [bool])) { throw 'Build receipt dirty must be a JSON Boolean; rebuild first.' }
     foreach ($entry in @($Receipt.loader_references)) {
         foreach ($field in @('file', 'version', 'assembly_version', 'sha256', 'source')) {
             if ($null -eq $entry -or -not $entry.PSObject.Properties[$field] -or -not ($entry.$field -is [string])) { throw "Build receipt loader reference field $field must be a string; rebuild first." }
@@ -185,7 +206,7 @@ function Assert-PinnedBuildReceipt($Receipt, [string] $DllPath, [string] $Config
     }
     if ($Receipt.dll_sha256 -ne (Get-Sha256 $DllPath)) { throw 'Build receipt does not match the mod DLL; rebuild first.' }
     if ($Configuration -and $Receipt.configuration -cne $Configuration) { throw "Build receipt is for configuration $($Receipt.configuration), not $Configuration; rebuild first." }
-    if ($Receipt.build_inputs_sha256 -cne (Get-BuildInputFingerprint)) { throw 'Build inputs changed since this DLL was built (source, manifest or loader pins); rebuild first.' }
+    if ($Receipt.build_inputs_sha256 -cne (Get-BuildInputFingerprint $Receipt.configuration)) { throw 'Build inputs changed since this DLL was built (source, manifest or loader pins); rebuild first.' }
     $pins = @(Get-PinnedReferenceDefinitions)
     $recorded = @($Receipt.loader_references)
     if ($recorded.Count -ne $pins.Count) { throw 'Build receipt has an unexpected loader reference count; rebuild first.' }

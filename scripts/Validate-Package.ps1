@@ -9,6 +9,12 @@ param(
 . (Join-Path $PSScriptRoot 'Common.ps1')
 $root = Get-RepositoryRoot
 Assert-FileExists $PackagePath 'Package ZIP'
+# Inspect and hash one immutable private copy, so the recorded ZIP digest and the inspected DLL come from the same bytes.
+$privateDirectory = Join-Path ([IO.Path]::GetTempPath()) ('kdr-validate-' + [Guid]::NewGuid().ToString('N'))
+[void][IO.Directory]::CreateDirectory($privateDirectory)
+$inspected = Join-Path $privateDirectory 'package.zip'
+[IO.File]::Copy($PackagePath, $inspected)
+try {
 # An explicitly supplied expected digest must be well formed; only an omitted parameter skips the comparison.
 if ($PSBoundParameters.ContainsKey('ExpectedDllSha256') -and $ExpectedDllSha256 -cnotmatch '^[0-9a-f]{64}$') {
     throw 'ExpectedDllSha256 must be a lowercase SHA-256 string.'
@@ -37,12 +43,14 @@ $dllHeader = $null
 $dllIdentity = $null
 $dllSha256 = $null
 
-$archive = [IO.Compression.ZipFile]::OpenRead($PackagePath)
+$archive = [IO.Compression.ZipFile]::OpenRead($inspected)
 try {
     # Directory records are allowed only as empty, safe records for the package's own folders; a directory record
     # carrying data, or any other path, is refused before files are counted.
     foreach ($directory in @($archive.Entries | Where-Object { -not $_.FullName -or $_.FullName.EndsWith('/') -or $_.FullName.EndsWith('\') })) {
-        if ($directory.Length -ne 0 -or $directory.CompressedLength -gt 2 -or
+        $directoryStream = $directory.Open()
+        try { $decodedByte = $directoryStream.ReadByte() } finally { $directoryStream.Dispose() }
+        if ($directory.Length -ne 0 -or $decodedByte -ne -1 -or
             @('KingmakerDiceRoller/', 'KingmakerDiceRoller/licenses/') -cnotcontains $directory.FullName) {
             throw "Unexpected or data-bearing package directory record: '$($directory.FullName)'"
         }
@@ -138,7 +146,7 @@ if ($dllHeader.Count -ne 2 -or $dllHeader[0] -ne 0x4D -or $dllHeader[1] -ne 0x5A
 $result = [ordered]@{
     status = 'package-validated'
     package = $PackagePath
-    package_sha256 = Get-Sha256 $PackagePath
+    package_sha256 = Get-Sha256 $inspected
     version = $info.Version
     manager_version = $info.ManagerVersion
     dll_sha256 = $dllSha256
@@ -155,3 +163,5 @@ if ($ReportPath) {
 Write-Host "Package validation passed: $PackagePath"
 Write-Host "Package SHA-256: $($result.package_sha256)"
 Write-Host "Packaged DLL SHA-256: $dllSha256; MVID: $($dllIdentity.Mvid); loader references: $((@($dllIdentity.LoaderReferences) | ForEach-Object { $_.name + ' ' + $_.version }) -join ', ')"
+}
+finally { if ([IO.Directory]::Exists($privateDirectory)) { [IO.Directory]::Delete($privateDirectory, $true) } }

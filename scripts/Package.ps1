@@ -20,17 +20,10 @@ $artifactsRoot = [IO.Path]::GetFullPath((Join-Path $root 'artifacts'))
 $packageDir = Join-Path $artifactsRoot 'packages'
 $stageRoot = Join-Path $artifactsRoot 'staging'
 if ($Candidate) {
-    $provenancePath = Join-Path $artifactsRoot 'build-provenance.json'
-    Assert-FileExists $provenancePath 'Build provenance'
-    $provenance = Get-Content -LiteralPath $provenancePath -Raw | ConvertFrom-Json
-    if ($git.Dirty -or $provenance.dirty -or $provenance.commit -ne $git.Commit -or
-        $provenance.configuration -ne $Configuration -or $provenance.dll_sha256 -ne (Get-Sha256 $dll)) {
+    # Admission uses the same typed receipt object that is exported below (read once), never a second read.
+    if ($git.Dirty -or $loaderReceipt.dirty -or $loaderReceipt.commit -cne $git.Commit -or $loaderReceipt.configuration -cne $Configuration) {
         throw 'Candidate packaging requires a matching build from the exact clean current commit.'
     }
-    $assemblyVersion = [Reflection.AssemblyName]::GetAssemblyName($dll).Version.ToString()
-    $fileVersion = [Diagnostics.FileVersionInfo]::GetVersionInfo($dll)
-    if ($assemblyVersion -ne ($info.Version + '.0') -or $fileVersion.FileVersion -ne ($info.Version + '.0') -or
-        $fileVersion.ProductVersion -ne $info.Version) { throw 'Candidate assembly and Info.json versions disagree.' }
     $packageDir = Join-Path $artifactsRoot ('candidates\' + $git.Commit)
     if (Test-Path -LiteralPath $packageDir) { throw "Candidate output already exists; refusing to overwrite: $packageDir" }
     $stageRoot = Join-Path $packageDir 'staging'
@@ -50,9 +43,12 @@ $stagedDll = Join-Path $stage 'KingmakerDiceRoller.dll'
 Copy-Item -LiteralPath $dll -Destination $stagedDll
 $stagedDllSha = Get-Sha256 $stagedDll
 if ($stagedDllSha -cne $loaderReceipt.dll_sha256) { throw 'The build output changed before staging; rebuild first.' }
-# Test hook (used only by scripts\Test-LoaderBaseline.ps1): replace the build output after staging to prove that
-# nothing below rereads it.
-if ($env:KDR_PACKAGE_TEST_REPLACE_BUILD_DLL_AFTER_STAGING) { Copy-Item -LiteralPath $env:KDR_PACKAGE_TEST_REPLACE_BUILD_DLL_AFTER_STAGING -Destination $dll -Force }
+if ($Candidate) {
+    $assemblyVersion = [Reflection.AssemblyName]::GetAssemblyName($stagedDll).Version.ToString()
+    $fileVersion = [Diagnostics.FileVersionInfo]::GetVersionInfo($stagedDll)
+    if ($assemblyVersion -ne ($info.Version + '.0') -or $fileVersion.FileVersion -ne ($info.Version + '.0') -or
+        $fileVersion.ProductVersion -ne $info.Version) { throw 'Candidate assembly and Info.json versions disagree.' }
+}
 foreach ($name in @('Info.json','LICENSE','THIRD-PARTY-NOTICES.md','README.md')) { Copy-Item -LiteralPath (Join-Path $root $name) -Destination (Join-Path $stage $name) }
 Copy-Item -LiteralPath (Join-Path $root 'licenses\UPSTREAM-WOTR-DICE-ROLLER-MIT.txt') -Destination (Join-Path $stage 'licenses\UPSTREAM-WOTR-DICE-ROLLER-MIT.txt')
 New-Item -ItemType Directory -Force -Path $packageDir | Out-Null

@@ -140,6 +140,8 @@ try {
     & git clone -q --no-hardlinks $source $base
     if ($LASTEXITCODE -ne 0) { throw 'git clone failed.' }
     & git -C $base checkout -q --detach $commit
+    # Disposable instrumented script copies created by some cases are local to the clone and never part of its status.
+    Add-Content -LiteralPath (Join-Path $base '.git/info/exclude') -Value 'scripts/*-instrumented.ps1'
     Copy-Item -LiteralPath (Join-Path $source 'GamePath.props') -Destination $base
     $references = Join-Path $base 'artifacts\references'
     Copy-Pins (Get-PinnedReferenceDirectory) $references
@@ -253,11 +255,23 @@ try {
         [IO.File]::WriteAllText($path, $text)
         return $path
     }
-    Expect-Accepted 'resolved-input-pinned-accepted' (Invoke-MSBuildIsolated @((New-ProbeProject 'pinned' $pinnedUmm), '/t:ResolveAssemblyReferences')) ''
-    Expect-Rejected 'resolved-input-identical-copy-elsewhere-rejected' (Invoke-MSBuildIsolated @((New-ProbeProject 'stray' (Join-Path $stray 'UnityModManager.dll')), '/t:ResolveAssemblyReferences')) 'must be the verified files'
-    Expect-Rejected 'resolved-input-same-stem-file-in-pinned-dir-rejected' (Invoke-MSBuildIsolated @((New-ProbeProject 'samestem' (Join-Path $references 'UnityModManager.exe')), '/t:ResolveAssemblyReferences')) 'must be the verified files'
-    Expect-Rejected 'resolved-input-renamed-loader-in-pinned-dir-rejected' (Invoke-MSBuildIsolated @((New-ProbeProject 'alias' (Join-Path $references 'umm-alias.dll')), '/t:ResolveAssemblyReferences')) 'must be the verified files'
-    Expect-Rejected 'resolved-input-umm-0.32.4-fixture-rejected' (Invoke-MSBuildIsolated @((New-ProbeProject 'wrong' $wrongUmm), '/t:ResolveAssemblyReferences')) 'must be the verified files'
+    Expect-Accepted 'resolved-input-pinned-accepted' (Invoke-MSBuildIsolated @((New-ProbeProject 'pinned' $pinnedUmm), '/t:ResolveReferences;FindReferenceAssembliesForReferences')) ''
+    Expect-Rejected 'resolved-input-identical-copy-elsewhere-rejected' (Invoke-MSBuildIsolated @((New-ProbeProject 'stray' (Join-Path $stray 'UnityModManager.dll')), '/t:ResolveReferences;FindReferenceAssembliesForReferences')) 'must be the verified files'
+    Expect-Rejected 'resolved-input-same-stem-file-in-pinned-dir-rejected' (Invoke-MSBuildIsolated @((New-ProbeProject 'samestem' (Join-Path $references 'UnityModManager.exe')), '/t:ResolveReferences;FindReferenceAssembliesForReferences')) 'must be the verified files'
+    Expect-Rejected 'resolved-input-renamed-loader-in-pinned-dir-rejected' (Invoke-MSBuildIsolated @((New-ProbeProject 'alias' (Join-Path $references 'umm-alias.dll')), '/t:ResolveReferences;FindReferenceAssembliesForReferences')) 'must be the verified files'
+    Expect-Rejected 'resolved-input-umm-0.32.4-fixture-rejected' (Invoke-MSBuildIsolated @((New-ProbeProject 'wrong' $wrongUmm), '/t:ResolveReferences;FindReferenceAssembliesForReferences')) 'must be the verified files'
+    # A reference assembly substituted after resolution: ReferencePath stays valid, the Csc input does not.
+    $substituted = (New-ProbeProject 'substituted' $pinnedUmm)
+    $substitution = @"
+  <Target Name="SubstituteLoaderReferenceAssembly" AfterTargets="ResolveAssemblyReferences" BeforeTargets="FindReferenceAssembliesForReferences">
+    <ItemGroup>
+      <ReferencePath Condition="'%(Filename)' == 'UnityModManager'"><ReferenceAssembly>$(Join-Path $stray 'UnityModManager.dll')</ReferenceAssembly></ReferencePath>
+    </ItemGroup>
+  </Target>
+</Project>
+"@
+    [IO.File]::WriteAllText($substituted, ([IO.File]::ReadAllText($substituted).Replace('</Project>', $substitution)))
+    Expect-Rejected 'resolved-input-substituted-reference-assembly-rejected' (Invoke-MSBuildIsolated @($substituted, '/t:ResolveReferences;FindReferenceAssembliesForReferences')) 'must be the verified files'
     Remove-Item -LiteralPath (Join-Path $references 'UnityModManager.exe'), (Join-Path $references 'umm-alias.dll')
 
     # 6. Build receipts bind the DLL bytes, configuration, material inputs and pinned identities; packaging and
@@ -332,7 +346,11 @@ try {
     Copy-Item -LiteralPath $pinnedUmm, $pinnedHarmony -Destination (Join-Path $managedCopy 'UnityModManager')
     $gamePath = Join-Path $base 'GamePath.props'
     $gamePathOriginal = [IO.File]::ReadAllText($gamePath)
-    [IO.File]::WriteAllText($gamePath, ($gamePathOriginal -replace '<KingmakerManagedDir>[^<]*</KingmakerManagedDir>', "<KingmakerManagedDir>$managedCopy</KingmakerManagedDir>"))
+    [IO.File]::WriteAllText($gamePath, $gamePathOriginal.Replace('</Project>', "  <PropertyGroup Condition=`"'`$(Configuration)' == 'Release'`"><KingmakerManagedDir>$managedCopy</KingmakerManagedDir></PropertyGroup>`r`n</Project>"))
+    $resolvedList = Join-Path $inputs 'resolved-references.txt'
+    Invoke-MSBuildIsolated @($project, '/t:ResolveReferences;FindReferenceAssembliesForReferences', '/p:Configuration=Release', "/p:CompilerReferenceListPath=$resolvedList", "/p:IntermediateOutputPath=$(Join-Path $temp 'resolve-obj\')") | Out-Null
+    $uiResolved = @(Get-Content -LiteralPath $resolvedList | Where-Object { [IO.Path]::GetFileName($_) -eq 'UnityEngine.UI.dll' })
+    Add-Case 'compiler-resolves-release-only-managed-directory' ($uiResolved.Count -eq 1 -and $uiResolved[0].StartsWith($managedCopy)) ("Release Csc input for UnityEngine.UI.dll: $($uiResolved -join ', ') (GamePath.props first group still names the installation)")
     Expect-Accepted 'package-with-identical-managed-references-elsewhere-accepted' (Invoke-Isolated @('-File', $package)) 'Package validation passed'
     $uiBytes = [IO.File]::ReadAllBytes((Join-Path $managedCopy 'UnityEngine.UI.dll'))
     $uiBytes[$uiBytes.Length - 1] = $uiBytes[$uiBytes.Length - 1] -bxor 0x01
@@ -356,9 +374,21 @@ try {
 
     # 6c. Package records come from the staged DLL, receipt bytes and validated archive, even if the build output changes
     #     after staging; ordinary packages name the producing build, also when identical inputs are packaged later.
-    $env:KDR_PACKAGE_TEST_REPLACE_BUILD_DLL_AFTER_STAGING = $legacyDll
-    try { $mixed = Invoke-Isolated @('-File', $package, '-Candidate') }
-    finally { Remove-Item Env:\KDR_PACKAGE_TEST_REPLACE_BUILD_DLL_AFTER_STAGING }
+    # Ordinary packaging leaves its inputs alone.
+    $dllBefore = Get-Sha256 $dll; $receiptBefore = Get-Sha256 $receiptPath
+    Invoke-Isolated @('-File', $package) | Out-Null
+    Add-Case 'ordinary-package-preserves-build-output-and-receipt' ((Get-Sha256 $dll) -eq $dllBefore -and (Get-Sha256 $receiptPath) -eq $receiptBefore) "DLL $dllBefore and receipt unchanged"
+    # Disposable instrumented copies (the committed scripts contain no test hooks).
+    function New-InstrumentedScript([string] $Name, [string] $After, [string] $Inject) {
+        $text = [IO.File]::ReadAllText((Join-Path $base "scripts\$Name.ps1"))
+        if ($text.IndexOf($After) -lt 0) { throw "Instrumentation anchor not found in $Name.ps1: $After" }
+        $path = Join-Path $base "scripts\$Name-instrumented.ps1"
+        $index = $text.IndexOf($After) + $After.Length
+        [IO.File]::WriteAllText($path, $text.Substring(0, $index) + "`r`n" + $Inject + "`r`n" + $text.Substring($index))
+        return $path
+    }
+    $packageAfterStaging = New-InstrumentedScript 'Package' '$stagedDllSha = Get-Sha256 $stagedDll' "Copy-Item -LiteralPath '$($legacyDll.Replace("'", "''"))' -Destination `$dll -Force"
+    $mixed = Invoke-Isolated @('-File', $packageAfterStaging, '-Candidate')
     $candidateDir = Join-Path $base ('artifacts\candidates\' + $commit)
     $m = if (Test-Path -LiteralPath (Join-Path $candidateDir 'package-manifest.json')) { Get-Content -LiteralPath (Join-Path $candidateDir 'package-manifest.json') -Raw | ConvertFrom-Json } else { $null }
     $ok = $mixed.ExitCode -eq 0 -and $m -and (Get-Sha256 $dll) -ne $firstDllSha -and $m.dll_sha256 -eq $firstDllSha -and
@@ -374,6 +404,20 @@ try {
     $m = Get-Content -LiteralPath (Join-Path $base 'artifacts\packages\package-manifest.json') -Raw | ConvertFrom-Json
     $ok = $later.ExitCode -eq 0 -and $m.producing_commit -eq $commit -and $m.packaging_commit -eq $laterCommit -and $m.dll_sha256 -eq $firstDllSha
     Add-Case 'package-names-producing-build-across-commits' $ok ("producing_commit $($m.producing_commit); packaging_commit $($m.packaging_commit); DLL $($m.dll_sha256)")
+    Expect-Rejected 'candidate-refuses-earlier-commit-receipt-with-identical-dll' (Invoke-Isolated @('-File', $package, '-Candidate')) 'matching build from the exact clean current commit'
+    $refreshed = Join-Path $inputs 'receipt-claiming-later-commit.json'
+    Copy-Item -LiteralPath $savedReceipt -Destination $refreshed -Force
+    Edit-Json $refreshed { param($j) $j.commit = $laterCommit }
+    $packageRefresh = New-InstrumentedScript 'Package' '$loaderReceipt = [Text.Encoding]::UTF8.GetString($receiptBytes).TrimStart([char]0xFEFF) | ConvertFrom-Json' "Copy-Item -LiteralPath '$($refreshed.Replace("'", "''"))' -Destination `$loaderReceiptPath -Force"
+    Expect-Rejected 'candidate-refuses-when-receipt-refreshed-during-packaging' (Invoke-Isolated @('-File', $packageRefresh, '-Candidate')) 'matching build from the exact clean current commit'
+    Remove-Item -LiteralPath $packageRefresh -Force
+    foreach ($bad in @(@{ Name = 'commit-array'; Edit = { param($j) $j.commit = @($j.commit) } }, @{ Name = 'dirty-string'; Edit = { param($j) $j.dirty = 'false' } })) {
+        Copy-Item -LiteralPath $savedReceipt -Destination $receiptPath -Force
+        Edit-Json $receiptPath $bad.Edit
+        Expect-Rejected "package-receipt-$($bad.Name)-rejected" (Invoke-Isolated @('-File', $package, '-Candidate')) '(commit must be a 40-character|dirty must be a JSON Boolean)'
+    }
+    Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1')) | Out-Null
+    Expect-Accepted 'candidate-accepted-after-build-at-current-commit' (Invoke-Isolated @('-File', $package, '-Candidate')) 'Package validation passed'
     & git -C $base reset -q --hard $commit
     Copy-Item -LiteralPath $savedReceipt -Destination $receiptPath -Force
 
@@ -391,6 +435,20 @@ try {
     Expect-Rejected 'package-data-bearing-directory-record-rejected' (& $v $p) 'data-bearing package directory record'
     $p = Join-Path $inputs 'own-directory-with-data.zip'; Edit-Zip $candidateZip $p { param($a) $w = [IO.StreamWriter]::new($a.CreateEntry("$modFolder/").Open()); try { $w.Write('inert marker') } finally { $w.Dispose() } }
     Expect-Rejected 'package-own-directory-record-with-data-rejected' (& $v $p) 'data-bearing package directory record'
+    $p = Join-Path $inputs 'deflate-level0-directory.zip'
+    Copy-Item -LiteralPath $candidateZip -Destination $p
+    $py = Resolve-PythonCommand
+    & $py.Executable @($py.Prefix) -c "import sys,zipfile; z=zipfile.ZipFile(sys.argv[1],'a'); i=zipfile.ZipInfo('KingmakerDiceRoller/licenses/'); i.compress_type=zipfile.ZIP_DEFLATED; z.writestr(i,b'',compress_type=zipfile.ZIP_DEFLATED,compresslevel=0); z.close(); z=zipfile.ZipFile(sys.argv[1]); print([(x.filename,x.compress_type,x.compress_size) for x in z.infolist() if x.filename.endswith('/')])" $p | Out-Null
+    Expect-Accepted 'package-level0-deflate-empty-directory-accepted' (& $v $p) 'Package validation passed'
+    $callerZip = Join-Path $inputs 'caller-path.zip'
+    Copy-Item -LiteralPath $candidateZip -Destination $callerZip
+    $validatorSwap = New-InstrumentedScript 'Validate-Package' '[IO.File]::Copy($PackagePath, $inspected)' "[IO.File]::Copy('$($secondZip.Replace("'", "''"))', `$PackagePath, `$true)"
+    $mixReport = Join-Path $inputs 'mix-report.json'
+    $mix = Invoke-Isolated @('-File', $validatorSwap, '-PackagePath', $callerZip, '-ReportPath', $mixReport)
+    $mr = if (Test-Path -LiteralPath $mixReport) { Get-Content -LiteralPath $mixReport -Raw | ConvertFrom-Json } else { $null }
+    $ok = $mix.ExitCode -eq 0 -and $mr -and $mr.package_sha256 -eq (Get-Sha256 $candidateZip) -and $mr.dll_sha256 -eq $firstDllSha -and (Get-Sha256 $callerZip) -eq (Get-Sha256 $secondZip)
+    Add-Case 'validator-report-pairs-zip-digest-with-its-own-dll' $ok ("caller file replaced after the snapshot: report ZIP $($mr.package_sha256) with DLL $($mr.dll_sha256)")
+    Remove-Item -LiteralPath $validatorSwap -Force
     Expect-Rejected 'validator-explicit-empty-expected-digest-rejected' (Invoke-Script "& $(Quote $validator) -PackagePath $(Quote $candidateZip) -ExpectedDllSha256 ''") 'ExpectedDllSha256 must be a lowercase SHA-256 string'
     $p = Join-Path $inputs 'harmony-as-readme.zip'; Edit-Zip $candidateZip $p { param($a) Set-ZipEntryFile $a "$modFolder/README.md" $pinnedHarmony }
     Expect-Rejected 'package-harmony-bytes-under-readme-name-rejected' (& $v $p) 'binary content: KingmakerDiceRoller/README\.md'
@@ -463,7 +521,7 @@ try {
     Invoke-Isolated @('-File', $validator, '-PackagePath', $candidateZip, '-ReportPath', $reportFile) | Out-Null
     $candidateReport = Get-Content -LiteralPath $reportFile -Raw | ConvertFrom-Json
     $summary = [ordered]@{
-        schema = 'kdr.loader-baseline-tests.v3'
+        schema = 'kdr.loader-baseline-tests.v4'
         source_commit = $commit
         clone_build_receipt = [ordered]@{ commit = $receipt.commit; dirty = $receipt.dirty; configuration = $receipt.configuration; dll_sha256 = $receipt.dll_sha256; build_inputs_sha256 = $receipt.build_inputs_sha256; loader_references = $receipt.loader_references }
         candidate_package_sha256 = Get-Sha256 $candidateZip
