@@ -9,6 +9,10 @@ param(
 . (Join-Path $PSScriptRoot 'Common.ps1')
 $root = Get-RepositoryRoot
 Assert-FileExists $PackagePath 'Package ZIP'
+# An explicitly supplied expected digest must be well formed; only an omitted parameter skips the comparison.
+if ($PSBoundParameters.ContainsKey('ExpectedDllSha256') -and $ExpectedDllSha256 -cnotmatch '^[0-9a-f]{64}$') {
+    throw 'ExpectedDllSha256 must be a lowercase SHA-256 string.'
+}
 $PackagePath = [IO.Path]::GetFullPath($PackagePath)
 
 $expectedInfoPath = Join-Path $root 'Info.json'
@@ -35,7 +39,15 @@ $dllSha256 = $null
 
 $archive = [IO.Compression.ZipFile]::OpenRead($PackagePath)
 try {
-    $files = @($archive.Entries | Where-Object { $_.FullName -and -not $_.FullName.EndsWith('/') })
+    # Directory records are allowed only as empty, safe records for the package's own folders; a directory record
+    # carrying data, or any other path, is refused before files are counted.
+    foreach ($directory in @($archive.Entries | Where-Object { -not $_.FullName -or $_.FullName.EndsWith('/') -or $_.FullName.EndsWith('\') })) {
+        if ($directory.Length -ne 0 -or $directory.CompressedLength -gt 2 -or
+            @('KingmakerDiceRoller/', 'KingmakerDiceRoller/licenses/') -cnotcontains $directory.FullName) {
+            throw "Unexpected or data-bearing package directory record: '$($directory.FullName)'"
+        }
+    }
+    $files = @($archive.Entries | Where-Object { $_.FullName -and -not $_.FullName.EndsWith('/') -and -not $_.FullName.EndsWith('\') })
     if ($files.Count -ne $allowed.Count) {
         throw "Package must contain exactly $($allowed.Count) files; observed $($files.Count)."
     }

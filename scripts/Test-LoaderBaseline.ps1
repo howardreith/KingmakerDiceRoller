@@ -317,6 +317,66 @@ try {
     Edit-Json $otherLoader { param($j) @($j.loader_references | Where-Object file -eq 'UnityModManager.dll')[0].sha256 = $wrongLoaderDllSha256 }
     Expect-Rejected 'receipt-recording-other-loader-rejected' (Test-Receipt $otherLoader $dll 'Release') 'does not match pinned reference UnityModManager\.dll'
 
+
+    # 6b. Wrapper and resolved managed-reference changes also invalidate reuse; malformed receipt fields are refused.
+    [IO.File]::AppendAllText((Join-Path $base 'scripts\Build-Local.ps1'), "`r`n# loader-baseline test edit`r`n")
+    Expect-Rejected 'package-reuse-after-build-wrapper-change-rejected' (Invoke-Isolated @('-File', $package)) 'Build inputs changed'
+    & git -C $base checkout -q -- scripts/Build-Local.ps1
+    $managedCopy = Join-Path $temp 'managed copy'
+    New-Item -ItemType Directory -Path (Join-Path $managedCopy 'UnityModManager') -Force | Out-Null
+    [xml] $projectXml = Get-Content -LiteralPath $project -Raw
+    foreach ($hint in @($projectXml.SelectNodes("//*[local-name()='Reference']/*[local-name()='HintPath']") | ForEach-Object { $_.InnerText } | Where-Object { $_.StartsWith('$(KingmakerManagedDir)') })) {
+        $name = $hint.Substring('$(KingmakerManagedDir)'.Length).TrimStart('\')
+        Copy-Item -LiteralPath (Join-Path $config.ManagedDir $name) -Destination (Join-Path $managedCopy $name)
+    }
+    Copy-Item -LiteralPath $pinnedUmm, $pinnedHarmony -Destination (Join-Path $managedCopy 'UnityModManager')
+    $gamePath = Join-Path $base 'GamePath.props'
+    $gamePathOriginal = [IO.File]::ReadAllText($gamePath)
+    [IO.File]::WriteAllText($gamePath, ($gamePathOriginal -replace '<KingmakerManagedDir>[^<]*</KingmakerManagedDir>', "<KingmakerManagedDir>$managedCopy</KingmakerManagedDir>"))
+    Expect-Accepted 'package-with-identical-managed-references-elsewhere-accepted' (Invoke-Isolated @('-File', $package)) 'Package validation passed'
+    $uiBytes = [IO.File]::ReadAllBytes((Join-Path $managedCopy 'UnityEngine.UI.dll'))
+    $uiBytes[$uiBytes.Length - 1] = $uiBytes[$uiBytes.Length - 1] -bxor 0x01
+    [IO.File]::WriteAllBytes((Join-Path $managedCopy 'UnityEngine.UI.dll'), $uiBytes)
+    Expect-Rejected 'package-reuse-after-resolved-managed-reference-change-rejected' (Invoke-Isolated @('-File', $package)) 'Build inputs changed'
+    [IO.File]::WriteAllText($gamePath, $gamePathOriginal)
+    $savedReceipt = Join-Path $inputs 'genuine-receipt.json'
+    Copy-Item -LiteralPath $receiptPath -Destination $savedReceipt -Force
+    foreach ($bad in @(
+        @{ Name = 'dll-digest-array'; Edit = { param($j) $j.dll_sha256 = @($j.dll_sha256) } },
+        @{ Name = 'dll-digest-boolean'; Edit = { param($j) $j.dll_sha256 = $true } },
+        @{ Name = 'inputs-digest-array'; Edit = { param($j) $j.build_inputs_sha256 = @($j.build_inputs_sha256, ('0' * 64)) } },
+        @{ Name = 'configuration-array'; Edit = { param($j) $j.configuration = @('Release') } },
+        @{ Name = 'loader-version-array'; Edit = { param($j) @($j.loader_references)[0].version = @(@($j.loader_references)[0].version) } })) {
+        Copy-Item -LiteralPath $savedReceipt -Destination $receiptPath -Force
+        Edit-Json $receiptPath $bad.Edit
+        Expect-Rejected "package-receipt-$($bad.Name)-rejected" (Invoke-Isolated @('-File', $package)) 'must be (a lowercase SHA-256 string|a string)'
+    }
+    Copy-Item -LiteralPath $savedReceipt -Destination $receiptPath -Force
+    Expect-Accepted 'package-genuine-receipt-accepted' (Invoke-Isolated @('-File', $package)) 'Package validation passed'
+
+    # 6c. Package records come from the staged DLL, receipt bytes and validated archive, even if the build output changes
+    #     after staging; ordinary packages name the producing build, also when identical inputs are packaged later.
+    $env:KDR_PACKAGE_TEST_REPLACE_BUILD_DLL_AFTER_STAGING = $legacyDll
+    try { $mixed = Invoke-Isolated @('-File', $package, '-Candidate') }
+    finally { Remove-Item Env:\KDR_PACKAGE_TEST_REPLACE_BUILD_DLL_AFTER_STAGING }
+    $candidateDir = Join-Path $base ('artifacts\candidates\' + $commit)
+    $m = if (Test-Path -LiteralPath (Join-Path $candidateDir 'package-manifest.json')) { Get-Content -LiteralPath (Join-Path $candidateDir 'package-manifest.json') -Raw | ConvertFrom-Json } else { $null }
+    $ok = $mixed.ExitCode -eq 0 -and $m -and (Get-Sha256 $dll) -ne $firstDllSha -and $m.dll_sha256 -eq $firstDllSha -and
+        (Get-Sha256 (Join-Path $candidateDir 'KingmakerDiceRoller.dll')) -eq $firstDllSha -and
+        (Get-Sha256 (Join-Path $candidateDir 'build-provenance.json')) -eq (Get-Sha256 $savedReceipt) -and
+        $m.package_sha256 -eq (Get-Sha256 (Join-Path $candidateDir 'KingmakerDiceRoller-0.2.0.zip'))
+    Add-Case 'candidate-package-records-frozen-after-build-output-replaced' $ok ("build output replaced after staging (now $(Get-Sha256 $dll)); manifest DLL $($m.dll_sha256); loose DLL and receipt copy match; ZIP $($m.package_sha256)")
+    Copy-Item -LiteralPath (Join-Path $candidateDir 'KingmakerDiceRoller.dll') -Destination $dll -Force
+    [IO.File]::AppendAllText((Join-Path $base 'docs\UMM-COMPATIBILITY.md'), "`n<!-- loader-baseline test: documentation-only commit -->`n")
+    & git -C $base -c user.name=loader-baseline-test -c user.email=loader-baseline-test@invalid commit -q -am 'test: documentation-only commit'
+    $laterCommit = (& git -C $base rev-parse HEAD).Trim()
+    $later = Invoke-Isolated @('-File', $package)
+    $m = Get-Content -LiteralPath (Join-Path $base 'artifacts\packages\package-manifest.json') -Raw | ConvertFrom-Json
+    $ok = $later.ExitCode -eq 0 -and $m.producing_commit -eq $commit -and $m.packaging_commit -eq $laterCommit -and $m.dll_sha256 -eq $firstDllSha
+    Add-Case 'package-names-producing-build-across-commits' $ok ("producing_commit $($m.producing_commit); packaging_commit $($m.packaging_commit); DLL $($m.dll_sha256)")
+    & git -C $base reset -q --hard $commit
+    Copy-Item -LiteralPath $savedReceipt -Destination $receiptPath -Force
+
     # 7. Standalone validator on real archives: each case in its own process, and both archives in one host.
     $v = { param($zip) Invoke-Isolated @('-File', $validator, '-PackagePath', $zip) }
     Expect-Accepted 'package-candidate-accepted' (& $v $candidateZip) 'Packaged DLL SHA-256: [0-9a-f]{64}; MVID: [0-9a-f-]{36}; loader references: UnityModManager 0\.31\.1\.0, 0Harmony12 1\.2\.0\.1'
@@ -327,6 +387,11 @@ try {
     Expect-Rejected 'package-swapped-in-loader-rejected' (& $v $p) 'Unexpected package entry: KingmakerDiceRoller/UnityModManager\.dll'
     $p = Join-Path $inputs 'swap-game.zip'; Edit-Zip $candidateZip $p { param($a) $a.GetEntry("$modFolder/README.md").Delete(); Set-ZipEntryFile $a "$modFolder/Assembly-CSharp-firstpass.dll" (Join-Path $config.ManagedDir 'Assembly-CSharp-firstpass.dll') }
     Expect-Rejected 'package-swapped-in-game-assembly-rejected' (& $v $p) 'Unexpected package entry'
+    $p = Join-Path $inputs 'directory-with-data.zip'; Edit-Zip $candidateZip $p { param($a) $w = [IO.StreamWriter]::new($a.CreateEntry("$modFolder/extra/").Open()); try { $w.Write('inert marker') } finally { $w.Dispose() } }
+    Expect-Rejected 'package-data-bearing-directory-record-rejected' (& $v $p) 'data-bearing package directory record'
+    $p = Join-Path $inputs 'own-directory-with-data.zip'; Edit-Zip $candidateZip $p { param($a) $w = [IO.StreamWriter]::new($a.CreateEntry("$modFolder/").Open()); try { $w.Write('inert marker') } finally { $w.Dispose() } }
+    Expect-Rejected 'package-own-directory-record-with-data-rejected' (& $v $p) 'data-bearing package directory record'
+    Expect-Rejected 'validator-explicit-empty-expected-digest-rejected' (Invoke-Isolated @('-File', $validator, '-PackagePath', $candidateZip, '-ExpectedDllSha256', '')) 'ExpectedDllSha256 must be a lowercase SHA-256 string'
     $p = Join-Path $inputs 'harmony-as-readme.zip'; Edit-Zip $candidateZip $p { param($a) Set-ZipEntryFile $a "$modFolder/README.md" $pinnedHarmony }
     Expect-Rejected 'package-harmony-bytes-under-readme-name-rejected' (& $v $p) 'binary content: KingmakerDiceRoller/README\.md'
     $p = Join-Path $inputs 'loader-as-licence.zip'; Edit-Zip $candidateZip $p { param($a) Set-ZipEntryFile $a "$modFolder/licenses/UPSTREAM-WOTR-DICE-ROLLER-MIT.txt" $pinnedUmm }
@@ -364,6 +429,29 @@ try {
         $install.IndexOf('Expand-ValidatedPackage') -lt $install.IndexOf('$config.ModsDir')
     Add-Case 'install-uses-validated-private-copy' $ok 'Install.ps1 extracts only via Expand-ValidatedPackage, before any live Mods path (Install.ps1 itself is not executed)'
 
+    # The real Install.ps1 -WhatIf against a disposable configuration: valid ZIP reaches the target preview, an invalid
+    # ZIP is refused, temporary files are cleaned up, and the disposable Mods folder is unchanged.
+    $fakeGame = Join-Path $temp 'disposable game'
+    $fakeManaged = Join-Path $fakeGame 'Kingmaker_Data\Managed'
+    New-Item -ItemType Directory -Path (Join-Path $fakeManaged 'UnityModManager'), (Join-Path $fakeGame 'Mods\OtherMod') -Force | Out-Null
+    Copy-Item -LiteralPath (Join-Path $config.ManagedDir 'Assembly-CSharp.dll') -Destination $fakeManaged
+    Copy-Item -LiteralPath $pinnedUmm, $pinnedHarmony -Destination (Join-Path $fakeManaged 'UnityModManager')
+    [IO.File]::WriteAllText((Join-Path $fakeGame 'Mods\OtherMod\Info.json'), '{"Id":"OtherMod"}')
+    [IO.File]::WriteAllText($gamePath, "<Project xmlns=`"http://schemas.microsoft.com/developer/msbuild/2003`"><PropertyGroup><KingmakerInstallDir>$fakeGame</KingmakerInstallDir></PropertyGroup></Project>")
+    $modsBefore = @(Get-ChildItem -LiteralPath (Join-Path $fakeGame 'Mods') -Recurse -Force | ForEach-Object { $_.FullName + '|' + $(if ($_.PSIsContainer) { 'dir' } else { Get-Sha256 $_.FullName }) }) -join ';'
+    $tempBefore = @(Get-ChildItem -LiteralPath ([IO.Path]::GetTempPath()) -Directory -Filter 'KingmakerDiceRoller-*' | ForEach-Object Name) -join ';'
+    $installScript = Join-Path $base 'scripts\Install.ps1'
+    $w = Invoke-Isolated @('-File', $installScript, '-PackagePath', $candidateZip, '-WhatIf')
+    $flat = $w.Output -replace '\s+', ' '
+    $ok = $w.ExitCode -eq 0 -and $flat -match 'WhatIf completed' -and $flat -match [regex]::Escape((Join-Path $fakeGame 'Mods\KingmakerDiceRoller'))
+    Add-Case 'install-whatif-valid-package-previews-target' $ok ('accepted: ' + (@($w.Output -split "`n" | Where-Object { $_ -match 'What if|WhatIf' }) -join ' | '))
+    $w = Invoke-Isolated @('-File', $installScript, '-PackagePath', $lowered, '-WhatIf')
+    Expect-Rejected 'install-whatif-invalid-package-rejected' $w 'must reference pinned UnityModManager 0\.31\.1\.0'
+    $modsAfter = @(Get-ChildItem -LiteralPath (Join-Path $fakeGame 'Mods') -Recurse -Force | ForEach-Object { $_.FullName + '|' + $(if ($_.PSIsContainer) { 'dir' } else { Get-Sha256 $_.FullName }) }) -join ';'
+    $tempAfter = @(Get-ChildItem -LiteralPath ([IO.Path]::GetTempPath()) -Directory -Filter 'KingmakerDiceRoller-*' | ForEach-Object Name) -join ';'
+    Add-Case 'install-whatif-leaves-mods-and-temp-unchanged' ($modsBefore -eq $modsAfter -and $tempBefore -eq $tempAfter) "disposable Mods unchanged; no leftover KingmakerDiceRoller-* temporary folders"
+    [IO.File]::WriteAllText($gamePath, $gamePathOriginal)
+
     # 9. Inputs and this repository's outputs are preserved.
     $legacyOk = (Get-Sha256 $legacyZip) -eq $legacySha256 -and (-not $LegacyReleaseZip -or (Get-Sha256 $LegacyReleaseZip) -eq $legacyOriginalSha)
     Add-Case 'legacy-input-preserved' $legacyOk "private copy and any supplied original still $legacySha256"
@@ -375,7 +463,7 @@ try {
     Invoke-Isolated @('-File', $validator, '-PackagePath', $candidateZip, '-ReportPath', $reportFile) | Out-Null
     $candidateReport = Get-Content -LiteralPath $reportFile -Raw | ConvertFrom-Json
     $summary = [ordered]@{
-        schema = 'kdr.loader-baseline-tests.v2'
+        schema = 'kdr.loader-baseline-tests.v3'
         source_commit = $commit
         clone_build_receipt = [ordered]@{ commit = $receipt.commit; dirty = $receipt.dirty; configuration = $receipt.configuration; dll_sha256 = $receipt.dll_sha256; build_inputs_sha256 = $receipt.build_inputs_sha256; loader_references = $receipt.loader_references }
         candidate_package_sha256 = Get-Sha256 $candidateZip
