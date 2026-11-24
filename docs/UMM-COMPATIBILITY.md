@@ -41,14 +41,16 @@ whatever loader is installed on the build machine.
 - `Info.json` `ManagerVersion` must be a JSON string equal to the pinned UnityModManager
   version (minus the revision), and the pin must equal the declared minimum.
 - `scripts/Build-Local.ps1` records in its receipt a fingerprint of every material build
-  input (tracked or new files under `src/`, `Directory.Build.props`, `.editorconfig`,
+  input (tracked or new files under `src/`, the root `Directory.Build.props`, `Directory.Build.targets`
+  and `Directory.Build.rsp`, `.editorconfig`,
   `Info.json`, `LoaderReferences.targets`, the pin file and its verifier, the build
   wrapper `Build-Local.ps1`/`Common.ps1`, and the compiler inventory) and the configuration.
   The compiler inventory is the exact Csc command line MSBuild produces for the production
   project (an opt-in `WriteCompilerReferenceList` target with `ProvideCommandLineArgs`; the
   evaluation is a `SkipCompilerExecution` pass through `PrepareResources` and `CoreCompile` in a
   fresh intermediate directory, so anything `GamePath.props` or another import sets is included):
-  the effective compiler binary first (and the implicit `csc.rsp` when `/noconfig` is absent), then
+  the effective compiler binary first (`/noconfig` is required: without it the compiler would read the
+  default `csc.rsp` beside it, whose contents the receipt cannot bind, so that mode is refused), then
   every argument in the compiler's order - options verbatim (for example `/checked+`,
   `/baseaddress:...`), references and sources (generated ones included) by name and SHA-256, and
   file-valued options (`/win32res`, `/win32icon`, `/keyfile`, `/resource`, rule sets and others) by
@@ -65,8 +67,11 @@ whatever loader is installed on the build machine.
   `Build-Local.ps1` and by every receipt admission (`Package.ps1`, `Qualify.ps1 -Package`): the ignored
   `GamePath.props` may only set `KingmakerInstallDir`, `KingmakerManagedDir` and `UnityModManagerDir`
   (conditions only on `Configuration` or `Platform`; values referring only to those properties; no
-  imports, items, targets or property functions); no `Directory.Build.props`/`.targets`/`.rsp` above
-  the repository, and none inside it that Git does not track, nor an untracked project `.user` file;
+  imports, items, targets or property functions); for each of `Directory.Build.props`, `.targets` and
+  `.rsp`, the file MSBuild imports for the production project (the first one found walking up from
+  `src/KingmakerDiceRoller`; one further up is shadowed, and files beside other folders are not
+  imported) must be inside the checkout and tracked by Git, and so must the production project's
+  `.user` file if present;
   no environment variable that selects MSBuild imports (`DirectoryBuildTargetsPath`,
   `CustomAfterMicrosoftCommonTargets` and the related names); no per-user MSBuild
   `ImportBefore`/`ImportAfter` extension file. Compiler settings belong in tracked files such as
@@ -129,7 +134,8 @@ runs every check in a separate PowerShell or MSBuild process; this repository's
 them: the genuine v0.2.0 release ZIP (SHA-256 `43f99fab…6dadaad`, its DLL compiled
 against UnityModManager 0.33.0.0) and the author's UnityModManager 0.32.4 NuGet package
 (`a8438e92…082c9ec9`, DLL `1387468b…7bfd88`) as the known distinct wrong-loader fixture.
-The owner's installed loader is only measured and reported. The 111 checks cover: cache
+The owner's installed loader is only measured and reported. The checks (the current count is in
+`loader-baseline.json`, listed in the evidence index; the historical round-6 run recorded 111/111) cover: cache
 bytes (genuine, corrupt, missing, 0.32.4); dropped/misnamed pins, raised or array-typed
 manifests and raised pins; direct MSBuild with a corrupt and a genuine cache (the quoted
 `csc` reference paths must be exactly the pinned files); incremental builds refusing a
@@ -157,15 +163,24 @@ PowerShell session in either order; and the validated private-copy extraction us
 `Install.ps1`, including the real `Install.ps1 -WhatIf` against a disposable
 configuration (valid ZIP previews the target, invalid ZIP refused, temporary files
 removed, disposable Mods folder unchanged); and, from round 5, only the overflow-checking
-option changed through `GamePath.props` (stale package refused, the matching rebuild's
-receipt records the effective option and its DLL differs, removal refused until rebuilt), the
+option changed through the tracked `Directory.Build.props` (stale package refused, the matching rebuild's
+receipt records the effective option and its DLL differs, removal refused until rebuilt; compiler settings
+in `GamePath.props` are refused at the build and at package admission, whether conditioned on a real
+compile or not), the
 receipt's reference inventory equal to the real Csc `/reference` list, and a receipt with one
 recorded reference digest changed or with no inventory refused on the ordinary package route;
-and, from round 6, `BaseAddress` imported from `GamePath.props` and an external `Win32Resource` replaced at
+and, from round 6, `BaseAddress` set in the tracked `Directory.Build.props` and an external `Win32Resource` replaced at
 the same path (stale packages refused, rebuilt receipts record the option and the resource's digest, the
 DLL changes, matching rebuilds accepted), the receipt naming the effective compiler first, a document
 restaged after the staging copy (refused; the previously published package and records unchanged; no
-private staging left), and a failure during publication (the previous package set restored exactly).
+private staging left), and a failure during publication (the previous package set restored exactly);
+and, in the final review round, a tracked root `Directory.Build.targets` with a production-only overflow
+setting added after the build (stale package refused, the build refused, accepted once removed), a
+disposable compiler copy whose default `csc.rsp` names the external resource selected without
+`/noconfig` (refused at package admission and at the build), a shadowed parent `Directory.Build.props`
+with an unrelated `tools/Directory.Build.targets` (the build reproduces the first DLL and the package is
+accepted), and a byte-identical Managed copy under ignored `artifacts` (the receipt names the game
+assembly repository-relatively; the build and its matching local candidate are accepted).
 `Package.ps1` stages, archives and validates in a folder private to the invocation, compares the
 documents read back from the validated archive with the repository files hashed before staging,
 prepares both records, and only then publishes the ZIP, validation report and manifest together, keeping
@@ -183,7 +198,18 @@ version that UnityModManager.dll references (`lib/net48/0Harmony.dll`) and the p
 0Harmony12; the hashes are in the table. The tool is outside this repository; the same
 method can be repeated with any metadata reader.
 
-## Evidence for this change (2026-11-24, round 7)
+## Evidence for this change (2026-11-24, final review round)
+
+The final round changes only build, packaging and test tooling (`Common.ps1`, `Package.ps1`,
+`Test-LoaderBaseline.ps1`) and this guide; the product source and therefore the candidate DLL are
+unchanged, so the build and package records below keep their original identities (index), and
+`loader-baseline.json` is the new boundary-suite run on the corrected tooling. The candidate qualification
+reports a local candidate carries (source, runtime, respec and native-UI contracts) are bound to the
+build by the checks described above (status, packaged DLL digest, the game assembly the receipt's compile
+referenced and the admitted `Info.json`); binding them further, for example to the Unity UI assembly the
+native-UI check read, is not part of the UMM 0.31.1 baseline and is left as follow-up work.
+
+### Previous submission (2026-11-24; labelled round 7 here at the time)
 
 Machine-generated records are committed as structured files (no logs) in
 [`docs/evidence/umm-0311/`](evidence/umm-0311/INDEX.md); the index names the producer of every
@@ -196,8 +222,8 @@ file. Local path prefixes are replaced by placeholders (see the index).
   compile is exercised by the boundary suite (`receipt-reference-inventory-equals-csc-inputs`
   compares the receipt's references with the direct `csc` command line).
 - `package-manifest.json` and `package-validation.json` come from `Package.ps1` on that build.
-- `loader-baseline.json` is `Test-LoaderBaseline.ps1` on a temporary clone of the round-7 tooling
-  (the index gives the commit and the counts, including any host-gated case).
+- That submission's boundary suite recorded 129/129 at `8c198e0`; the current `loader-baseline.json`
+  is the final round's run (the index gives the commit and the counts, including any host-gated case).
 - The static audit and loader-profile inventory describe the candidate DLL
   `634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee` (MVID
   `7a6d0a75-f788-47a5-83c9-fed6fb14e3ff`, AssemblyRefs UnityModManager 0.31.1.0 and 0Harmony12
