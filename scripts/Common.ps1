@@ -242,7 +242,7 @@ function Assert-PinnedBuildReceipt($Receipt, [string] $DllPath, [string] $Config
     Assert-CompilerInventoryShape $Receipt.compiler_references
     $currentInventory = @(Get-CompilerReferenceIdentities $Receipt.configuration)
     if ((ConvertTo-CompilerInventoryText $Receipt.compiler_references) -cne (ConvertTo-CompilerInventoryText $currentInventory)) {
-        throw 'Build receipt compiler inputs differ from the inputs MSBuild resolves now (references, sources or compiler settings); rebuild first.'
+        throw 'Build inputs changed since this DLL was built: the receipt compiler inputs differ from the inputs MSBuild resolves now (references, sources or compiler settings); rebuild first.'
     }
     if ($Receipt.build_inputs_sha256 -cne (Get-BuildInputFingerprint $Receipt.configuration $currentInventory)) { throw 'Build inputs changed since this DLL was built (source, manifest or loader pins); rebuild first.' }
     $pins = @(Get-PinnedReferenceDefinitions)

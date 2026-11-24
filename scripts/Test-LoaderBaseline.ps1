@@ -349,7 +349,7 @@ try {
     [IO.File]::WriteAllText($gamePath, $gamePathOriginal.Replace('</Project>', "  <PropertyGroup Condition=`"'`$(Configuration)' == 'Release'`"><KingmakerManagedDir>$managedCopy</KingmakerManagedDir></PropertyGroup>`r`n</Project>"))
     $resolvedList = Join-Path $inputs 'resolved-references.txt'
     Invoke-MSBuildIsolated @($project, '/t:ResolveReferences;FindReferenceAssembliesForReferences', '/p:Configuration=Release', "/p:CompilerReferenceListPath=$resolvedList", "/p:IntermediateOutputPath=$(Join-Path $temp 'resolve-obj\')") | Out-Null
-    $uiResolved = @(Get-Content -LiteralPath $resolvedList | Where-Object { [IO.Path]::GetFileName($_) -eq 'UnityEngine.UI.dll' })
+    $uiResolved = @(Get-Content -LiteralPath $resolvedList | Where-Object { $_.StartsWith('reference|') } | ForEach-Object { $_.Substring('reference|'.Length) } | Where-Object { [IO.Path]::GetFileName($_) -eq 'UnityEngine.UI.dll' })
     Add-Case 'compiler-resolves-release-only-managed-directory' ($uiResolved.Count -eq 1 -and $uiResolved[0].StartsWith($managedCopy)) ("Release Csc input for UnityEngine.UI.dll: $($uiResolved -join ', ') (GamePath.props first group still names the installation)")
     Expect-Accepted 'package-with-identical-managed-references-elsewhere-accepted' (Invoke-Isolated @('-File', $package)) 'Package validation passed'
     $uiBytes = [IO.File]::ReadAllBytes((Join-Path $managedCopy 'UnityEngine.UI.dll'))
