@@ -33,7 +33,9 @@ whatever loader is installed on the build machine.
   in the pinned directory, or the installed loader is refused even when its bytes equal
   the pin. The supported build routes are `scripts/Build-Local.ps1` and command-line
   MSBuild from Visual Studio Build Tools (see `docs/BUILD-AND-RELEASE.md`); IDE builds are
-  not a supported or verified route for this repository. The fast up-to-date check is
+  not a supported or verified route for this repository: the owner stated on 2026-11-24 that
+  this mod has never been opened or built in an IDE, and no IDE is installed on the build host, so no
+  IDE up-to-date trace exists (an open, owner-accepted gap rather than a verified property). The fast up-to-date check is
   nevertheless disabled and the pin, verifier, guard and manifest are compile inputs, so
   an incremental MSBuild build refuses a pin-only or manifest-only change.
 - `Info.json` `ManagerVersion` must be a JSON string equal to the pinned UnityModManager
