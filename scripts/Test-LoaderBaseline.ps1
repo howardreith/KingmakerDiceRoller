@@ -364,13 +364,65 @@ try {
     $checkedBuild = Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))
     $checkedReceipt = Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json
     $checkedSha = Get-Sha256 $dll
-    $effective = @($checkedReceipt.compiler_references | Where-Object { $_.kind -eq 'setting' -and $_.name -like 'CheckForOverflowUnderflow=*' } | ForEach-Object name)
-    Add-Case 'rebuild-with-overflow-checking-records-effective-option' ($checkedBuild.ExitCode -eq 0 -and $effective -ceq 'CheckForOverflowUnderflow=true' -and $checkedSha -ne $firstDllSha) ("exit $($checkedBuild.ExitCode); receipt records $($effective -join ', '); DLL $checkedSha (committed configuration $firstDllSha)" + $(if ($checkedBuild.ExitCode) { '; ' + (Get-Reason $checkedBuild.Output) } else { '' }))
+    $effective = @($checkedReceipt.compiler_references | Where-Object { $_.kind -eq 'option' -and $_.name -like '/checked*' } | ForEach-Object name)
+    Add-Case 'rebuild-with-overflow-checking-records-effective-option' ($checkedBuild.ExitCode -eq 0 -and $effective -ceq '/checked+' -and $checkedSha -ne $firstDllSha) ("exit $($checkedBuild.ExitCode); receipt records $($effective -join ', '); DLL $checkedSha (committed configuration $firstDllSha)" + $(if ($checkedBuild.ExitCode) { '; ' + (Get-Reason $checkedBuild.Output) } else { '' }))
     Expect-Accepted 'package-after-matching-overflow-checking-rebuild-accepted' (Invoke-Isolated @('-File', $package)) 'Package validation passed'
     [IO.File]::WriteAllText($gamePath, $gamePathOriginal)
     Expect-Rejected 'package-reuse-after-overflow-checking-removed-rejected' (Invoke-Isolated @('-File', $package)) 'compiler inputs differ'
     $rebuild = Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))
     Add-Case 'rebuild-without-overflow-checking-reproduces-first-dll' ($rebuild.ExitCode -eq 0 -and (Get-Sha256 $dll) -eq $firstDllSha) "DLL $(Get-Sha256 $dll)"
+    # Any effective compiler option counts (the exact Csc command line), for example BaseAddress from GamePath.props.
+    [IO.File]::WriteAllText($gamePath, $gamePathOriginal.Replace('</Project>', "  <PropertyGroup><BaseAddress>0x11000000</BaseAddress></PropertyGroup>`r`n</Project>"))
+    Expect-Rejected 'package-reuse-after-base-address-change-rejected' (Invoke-Isolated @('-File', $package)) 'compiler inputs differ'
+    $b = Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))
+    $br = Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json
+    $baseOption = @($br.compiler_references | Where-Object { $_.kind -eq 'option' -and $_.name -like '/baseaddress:*' } | ForEach-Object name)
+    Add-Case 'rebuild-with-base-address-records-it' ($b.ExitCode -eq 0 -and $baseOption -ceq '/baseaddress:0x11000000' -and (Get-Sha256 $dll) -ne $firstDllSha) ("exit $($b.ExitCode); receipt option $($baseOption -join ', '); DLL $(Get-Sha256 $dll)")
+    Expect-Accepted 'package-after-base-address-rebuild-accepted' (Invoke-Isolated @('-File', $package)) 'Package validation passed'
+    # A file-valued input: an external Win32Resource replaced at the same path invalidates the receipt by content.
+    function New-ResFile([string] $Path, [byte[]] $Payload) {
+        $ms = [IO.MemoryStream]::new(); $w = [IO.BinaryWriter]::new($ms)
+        foreach ($h in @(@(0, 0), @($Payload.Length, 10))) {
+            $w.Write([int]$h[0]); $w.Write([int]32); $w.Write([uint16]0xFFFF); $w.Write([uint16]$h[1]); $w.Write([uint16]0xFFFF); $w.Write([uint16]$(if ($h[1]) { 1 } else { 0 }))
+            $w.Write([int]0); $w.Write([uint16]$(if ($h[1]) { 0x30 } else { 0 })); $w.Write([uint16]$(if ($h[1]) { 0x0409 } else { 0 })); $w.Write([int]0); $w.Write([int]0)
+            if ($h[1]) { $w.Write($Payload); while ($ms.Length % 4) { $w.Write([byte]0) } }
+        }
+        $w.Flush(); [IO.File]::WriteAllBytes($Path, $ms.ToArray()); $w.Dispose()
+    }
+    $resDir = Join-Path $temp 'win32 resource'; New-Item -ItemType Directory -Path $resDir | Out-Null
+    $res = Join-Path $resDir 'external.res'
+    New-ResFile $res ([Text.Encoding]::ASCII.GetBytes('loader-baseline resource A'))
+    [IO.File]::WriteAllText($gamePath, $gamePathOriginal.Replace('</Project>', "  <PropertyGroup><Win32Resource>$([Security.SecurityElement]::Escape($res))</Win32Resource></PropertyGroup>`r`n</Project>"))
+    $r1 = Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))
+    $resReceipt = Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json
+    $resEntry = @($resReceipt.compiler_references | Where-Object { $_.kind -eq 'file-option' -and $_.name -like '/win32res:*' })
+    $dllA = Get-Sha256 $dll
+    Add-Case 'rebuild-with-external-win32-resource-records-its-content' ($r1.ExitCode -eq 0 -and $resEntry.Count -eq 1 -and $resEntry[0].sha256 -eq (Get-Sha256 $res)) ("exit $($r1.ExitCode); receipt $($resEntry.name) $($resEntry.sha256); DLL $dllA")
+    Expect-Accepted 'package-with-external-win32-resource-accepted' (Invoke-Isolated @('-File', $package)) 'Package validation passed'
+    New-ResFile $res ([Text.Encoding]::ASCII.GetBytes('loader-baseline resource B, replaced at the same path'))
+    Expect-Rejected 'package-reuse-after-win32-resource-replaced-rejected' (Invoke-Isolated @('-File', $package)) 'compiler inputs differ'
+    $r2 = Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))
+    Add-Case 'rebuild-after-win32-resource-replaced-changes-dll' ($r2.ExitCode -eq 0 -and (Get-Sha256 $dll) -ne $dllA) ("exit $($r2.ExitCode); DLL $(Get-Sha256 $dll) (previous resource: $dllA)")
+    Expect-Accepted 'package-after-win32-resource-rebuild-accepted' (Invoke-Isolated @('-File', $package)) 'Package validation passed'
+    [IO.File]::WriteAllText($gamePath, $gamePathOriginal)
+    $rebuild = Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))
+    Add-Case 'rebuild-without-imported-options-reproduces-first-dll' ($rebuild.ExitCode -eq 0 -and (Get-Sha256 $dll) -eq $firstDllSha) "DLL $(Get-Sha256 $dll)"
+    # A document restaged after the staging copy cannot reach a published package, and the refusal keeps the previously
+    # published package and records unchanged.
+    Invoke-Isolated @('-File', $package) | Out-Null
+    $published = @((Join-Path $base "artifacts\packages\KingmakerDiceRoller-0.2.0.zip"), (Join-Path $base 'artifacts\packages\package-manifest.json'), (Join-Path $base 'artifacts\packages\package-validation.json'))
+    $before = @($published | ForEach-Object { if (Test-Path -LiteralPath $_) { Get-Sha256 $_ } else { 'missing' } }) -join ';'
+    $packageText = [IO.File]::ReadAllText($package)
+    $stageAnchor = "    foreach (`$entry in `$documents.Keys) { Copy-Item -LiteralPath (Join-Path `$root `$documents[`$entry]) -Destination (Join-Path `$stage `$documents[`$entry]) }"
+    if ($packageText.IndexOf($stageAnchor) -lt 0) { throw 'Package.ps1 staging anchor not found.' }
+    $restage = Join-Path $base 'scripts\Package-instrumented.ps1'
+    [IO.File]::WriteAllText($restage, $packageText.Replace($stageAnchor, $stageAnchor + "`r`n    [IO.File]::AppendAllText((Join-Path `$stage 'README.md'), ""`r`n<!-- restaged after the staging copy -->`r`n"")"))
+    Expect-Rejected 'package-document-restaged-before-archive-rejected' (Invoke-Isolated @('-File', $restage)) 'archived README\.md differs'
+    Remove-Item -LiteralPath $restage
+    $after = @($published | ForEach-Object { if (Test-Path -LiteralPath $_) { Get-Sha256 $_ } else { 'missing' } }) -join ';'
+    Add-Case 'restage-refusal-preserves-published-package-and-records' ($before -notmatch 'missing' -and $before -ceq $after) "published ZIP, manifest and validation report unchanged: $($before -ceq $after)"
+    $leftovers = @(Get-ChildItem -LiteralPath (Join-Path $base 'artifacts') -Directory -Force -Filter '.package-*').Count
+    Add-Case 'package-private-staging-removed-after-refusal' ($leftovers -eq 0) "private package folders left: $leftovers"
     $savedReceipt = Join-Path $inputs 'genuine-receipt.json'
     Copy-Item -LiteralPath $receiptPath -Destination $savedReceipt -Force
     # The receipt's reference inventory equals the /reference list of the direct normal-verbosity compile above.
