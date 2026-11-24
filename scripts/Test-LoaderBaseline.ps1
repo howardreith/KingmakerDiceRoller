@@ -393,14 +393,20 @@ try {
     # R4-F1: a tracked root Directory.Build.targets with a production-only overflow setting (conditioned on a real
     # compile, so the evaluated inventory does not show it) added after the clean build: package admission refuses the old
     # receipt (the file is a fingerprinted build input) and Build-Local refuses the build (the production compile's inputs
-    # differ from the evaluated ones); with the file removed the receipt is accepted again.
+    # differ from the evaluated ones, and it records no receipt, so the DLL it compiled is refused at packaging too); with
+    # the file removed, a rebuild reproduces the first DLL and its receipt is accepted.
     $rootTargets = Join-Path $base 'Directory.Build.targets'
     [IO.File]::WriteAllText($rootTargets, "<Project><PropertyGroup Condition=`"'`$(SkipCompilerExecution)' != 'true'`"><CheckForOverflowUnderflow>true</CheckForOverflowUnderflow></PropertyGroup></Project>")
     & git -C $base add -- Directory.Build.targets
     Expect-Rejected 'package-reuse-after-tracked-root-targets-production-setting-rejected' (Invoke-Isolated @('-File', $package)) 'Build inputs changed'
+    $receiptBeforeRefusedBuild = Get-Sha256 $receiptPath
     Expect-Rejected 'build-with-tracked-root-targets-production-setting-refused' (Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))) 'different compiler inputs'
+    Add-Case 'refused-build-records-no-receipt' ((Get-Sha256 $receiptPath) -eq $receiptBeforeRefusedBuild) "receipt unchanged after the refused build: $((Get-Sha256 $receiptPath) -eq $receiptBeforeRefusedBuild)"
     & git -C $base rm -q --cached -- Directory.Build.targets
     Remove-Item -LiteralPath $rootTargets
+    Expect-Rejected 'package-of-the-refused-builds-dll-rejected' (Invoke-Isolated @('-File', $package)) 'does not match the mod DLL'
+    $recovered = Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))
+    Add-Case 'rebuild-after-tracked-root-targets-removed-reproduces-first-dll' ($recovered.ExitCode -eq 0 -and (Get-Sha256 $dll) -eq $firstDllSha) "exit $($recovered.ExitCode); DLL $(Get-Sha256 $dll)"
     Expect-Accepted 'package-after-tracked-root-targets-removed-accepted' (Invoke-Isolated @('-File', $package)) 'Package validation passed'
     # Effective compiler options from the tracked Directory.Build.props (here edited in the disposable checkout). Only the
     # overflow-checking option changes: the stale package is refused, the receipt of a matching rebuild records the
@@ -461,15 +467,24 @@ try {
     Expect-Rejected 'build-with-compiler-response-file-refused' (Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))) 'Unsupported compiler input: the response file'
     [IO.File]::WriteAllText($dirProps, $dirPropsOriginal)
     # R5-F3: the implicit default response file mode is refused, not partly modelled. A disposable copy of the Roslyn
-    # compiler whose default csc.rsp names the same external resource, selected with NoConfig disabled: refused at package
-    # admission and at Build-Local (the normal /noconfig control is receipt-records-effective-compiler-first).
+    # compiler whose default csc.rsp names the external resource, selected with NoConfig disabled: the build still passes
+    # /noconfig (Microsoft.CSharp.Core.targets gives the Csc task NoConfig="true"), so the csc.rsp is never read and the
+    # build reproduces the first DLL (the resource would change it). The inventory reader refuses that run's own compiler
+    # list with /noconfig removed, the only way the implicit mode could reach a receipt.
     $rspCompiler = Join-Path $temp 'compiler with default response file'
     New-Item -ItemType Directory -Path $rspCompiler -Force | Out-Null
     Copy-Item -Path (Join-Path (Join-Path (Split-Path -Parent $msbuild) 'Roslyn') '*') -Destination $rspCompiler -Recurse -Force
     [IO.File]::WriteAllText((Join-Path $rspCompiler 'csc.rsp'), "/win32res:`"$res`"`r`n")
     [IO.File]::WriteAllText($dirProps, $dirPropsOriginal.Replace('</Project>', "  <PropertyGroup><CscToolPath>$([Security.SecurityElement]::Escape($rspCompiler))</CscToolPath><CscToolExe>csc.exe</CscToolExe><NoConfig>false</NoConfig><UseSharedCompilation>false</UseSharedCompilation></PropertyGroup>`r`n</Project>"))
-    Expect-Rejected 'package-with-implicit-default-response-file-refused' (Invoke-Isolated @('-File', $package)) 'Unsupported compiler mode: without /noconfig'
-    Expect-Rejected 'build-with-implicit-default-response-file-refused' (Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))) 'Unsupported compiler mode: without /noconfig'
+    $rspBuild = Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))
+    $rspInventory = @((Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json).compiler_references)
+    Add-Case 'default-response-file-is-not-read-because-noconfig-is-always-passed' ($rspBuild.ExitCode -eq 0 -and (Get-Sha256 $dll) -eq $firstDllSha -and @($rspInventory | Where-Object { $_.kind -eq 'option' -and $_.name -ceq '/noconfig' }).Count -eq 1 -and @($rspInventory | Where-Object { $_.name -like '/win32res*' }).Count -eq 0) ("build exit $($rspBuild.ExitCode); DLL $(Get-Sha256 $dll) (first DLL $firstDllSha); receipt has /noconfig: $(@($rspInventory | Where-Object { $_.name -ceq '/noconfig' }).Count -eq 1)")
+    $rspList = Join-Path $inputs 'default-response-file-compiler-list.txt'
+    Invoke-MSBuildIsolated @($project, '/t:PrepareResources;Compile', '/p:SkipCompilerExecution=true', '/p:Configuration=Release', "/p:OutputPath=$(Join-Path $temp 'rsp-bin')", "/p:CompilerReferenceListPath=$rspList", "/p:IntermediateOutputPath=$(Join-Path $temp 'rsp-obj\')") | Out-Null
+    $withoutNoConfig = Join-Path $inputs 'default-response-file-compiler-list-without-noconfig.txt'
+    [IO.File]::WriteAllLines($withoutNoConfig, [string[]]@(Get-Content -LiteralPath $rspList | Where-Object { $_ -cne 'arg|/noconfig' }))
+    $reader = Invoke-Script (". $(Quote (Join-Path $base 'scripts\Common.ps1')); `$null = ConvertFrom-CompilerInputList $(Quote $rspList); [Console]::Out.WriteLine('WITH-NOCONFIG READ'); `$null = ConvertFrom-CompilerInputList $(Quote $withoutNoConfig); [Console]::Out.WriteLine('WITHOUT-NOCONFIG READ')")
+    Add-Case 'inventory-without-noconfig-refused' ($reader.Output -match 'WITH-NOCONFIG READ' -and $reader.Output -match 'Unsupported compiler mode: without /noconfig' -and $reader.Output -notmatch 'WITHOUT-NOCONFIG READ') ($reader.Output.Trim() -replace "`r?`n", ' | ')
     [IO.File]::WriteAllText($dirProps, $dirPropsOriginal)
     $rebuild = Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))
     Add-Case 'rebuild-without-imported-options-reproduces-first-dll' ($rebuild.ExitCode -eq 0 -and (Get-Sha256 $dll) -eq $firstDllSha) "DLL $(Get-Sha256 $dll)"
