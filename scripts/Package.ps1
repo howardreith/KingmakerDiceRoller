@@ -48,7 +48,7 @@ foreach ($entry in $documents.Keys) {
 # assembly the receipt's compile referenced, and the admitted Info.json.
 $candidateReports = [ordered]@{}
 if ($Candidate) {
-    $gameReference = @($loaderReceipt.compiler_references | Where-Object { $_.kind -ceq 'reference' -and $_.name -ceq 'Assembly-CSharp.dll' })
+    $gameReference = @($loaderReceipt.compiler_references | Where-Object { $_.kind -ceq 'reference' -and ($_.name -ceq 'Assembly-CSharp.dll' -or $_.name.EndsWith('/Assembly-CSharp.dll', [StringComparison]::Ordinal)) })
     if ($gameReference.Count -ne 1) { throw 'The build receipt does not name exactly one Assembly-CSharp.dll compile reference.' }
     $gameSha = [string]$gameReference[0].sha256
     $reportSpecs = [ordered]@{

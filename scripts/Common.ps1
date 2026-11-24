@@ -180,15 +180,13 @@ function ConvertFrom-CompilerInputList([string] $ListPath) {
     $outputSwitches = @('out', 'pdb', 'refout', 'doc', 'errorlog', 'generatedfilesout')
     $fileSwitches = @('win32res', 'win32icon', 'win32manifest', 'keyfile', 'ruleset', 'appconfig', 'analyzer', 'a', 'additionalfile', 'analyzerconfig', 'embed', 'sourcelink', 'addmodule')
     $resourceSwitches = @('resource', 'res', 'linkresource', 'linkres')
-    # The effective compiler binary (and, without /noconfig, the implicit csc.rsp beside it) is an input.
+    # The effective compiler binary is an input. Without /noconfig the compiler would also read the csc.rsp beside it,
+    # whose contents can name references, resources and options the receipt cannot bind; that mode is refused.
     $compiler = $lines[2].Substring('compiler|'.Length)
     $compilerEntry = [ordered]@{ kind = 'compiler'; name = [IO.Path]::GetFileName($compiler); sha256 = $(if (Test-Path -LiteralPath $compiler -PathType Leaf) { Get-Sha256 $compiler } else { 'absent' }) }
     $cscArgs = @($lines[3..($lines.Count - 1)] | ForEach-Object { if (-not $_.StartsWith('arg|')) { throw "Compiler input list is malformed: $_" }; $_.Substring(4) })
+    if ($cscArgs -cnotcontains '/noconfig') { throw 'Unsupported compiler mode: without /noconfig the compiler reads the default csc.rsp beside it, which the build receipt cannot bind; build with NoConfig enabled (the project default).' }
     $implicit = @()
-    if ($cscArgs -notcontains '/noconfig') {
-        $rsp = Join-Path (Split-Path -Parent $compiler) 'csc.rsp'
-        $implicit += [ordered]@{ kind = 'response-file'; name = 'implicit:csc.rsp'; sha256 = $(if (Test-Path -LiteralPath $rsp -PathType Leaf) { Get-Sha256 $rsp } else { 'absent' }) }
-    }
     $entries = foreach ($line in @($cscArgs | ForEach-Object { 'arg|' + $_ })) {
         if (-not $line.StartsWith('arg|')) { throw "Compiler input list is malformed: $line" }
         $arg = $line.Substring(4)
@@ -265,18 +263,31 @@ function Assert-LocalBuildConfiguration {
         }
     }
     if (-not $ok) { throw "GamePath.props may only set $($allowedNames -join ', ') (conditions on Configuration or Platform only; no imports, items, targets, property functions or other properties)." }
-    $dir = Split-Path -Parent ([IO.Path]::GetFullPath($root).TrimEnd('\'))
-    while ($dir) {
-        foreach ($name in @('Directory.Build.props', 'Directory.Build.targets', 'Directory.Build.rsp')) {
-            if (Test-Path -LiteralPath (Join-Path $dir $name) -PathType Leaf) { throw "An outside $name applies to the build: $(Join-Path $dir $name)" }
+    # Only the configuration MSBuild imports for the production project applies: for each of Directory.Build.props,
+    # Directory.Build.targets and Directory.Build.rsp the first file found walking up from the project directory (one
+    # further up is shadowed; files beside other folders are not imported), and the project's own .csproj.user. An
+    # applicable file outside the checkout, or untracked inside it, is refused; tracked ones are fingerprinted inputs.
+    $rootPrefix = [IO.Path]::GetFullPath($root).TrimEnd('\') + '\'
+    $projectDirectory = Join-Path $root 'src\KingmakerDiceRoller'
+    $applicable = @()
+    foreach ($name in @('Directory.Build.props', 'Directory.Build.targets', 'Directory.Build.rsp')) {
+        $dir = $projectDirectory
+        while ($dir) {
+            if (Test-Path -LiteralPath (Join-Path $dir $name) -PathType Leaf) { $applicable += [IO.Path]::GetFullPath((Join-Path $dir $name)); break }
+            $parent = Split-Path -Parent $dir
+            if (-not $parent -or $parent -eq $dir) { break }
+            $dir = $parent
         }
-        $parent = Split-Path -Parent $dir
-        if (-not $parent -or $parent -eq $dir) { break }
-        $dir = $parent
     }
-    $untracked = @(& git -C $root ls-files --others -- ':(glob)**/Directory.Build.props' ':(glob)**/Directory.Build.targets' ':(glob)**/Directory.Build.rsp' ':(glob)**/*.csproj.user')
-    if ($LASTEXITCODE -ne 0) { throw 'git ls-files failed while checking the local build configuration.' }
-    if ($untracked.Count -gt 0) { throw "Untracked MSBuild configuration files apply to the build: $($untracked -join ', ')" }
+    $userFile = Join-Path $projectDirectory 'KingmakerDiceRoller.csproj.user'
+    if (Test-Path -LiteralPath $userFile -PathType Leaf) { $applicable += [IO.Path]::GetFullPath($userFile) }
+    foreach ($file in $applicable) {
+        if (-not $file.StartsWith($rootPrefix, [StringComparison]::OrdinalIgnoreCase)) { throw "An outside $([IO.Path]::GetFileName($file)) applies to the build: $file" }
+        $relative = $file.Substring($rootPrefix.Length).Replace('\', '/')
+        $tracked = @(& git -C $root ls-files -- $relative)
+        if ($LASTEXITCODE -ne 0) { throw 'git ls-files failed while checking the local build configuration.' }
+        if ($tracked.Count -eq 0) { throw "Untracked MSBuild configuration files apply to the build: $relative" }
+    }
     foreach ($name in @('DirectoryBuildPropsPath', 'DirectoryBuildTargetsPath', 'ImportDirectoryBuildProps', 'ImportDirectoryBuildTargets',
             'CustomBeforeMicrosoftCommonProps', 'CustomAfterMicrosoftCommonProps', 'CustomBeforeMicrosoftCommonTargets', 'CustomAfterMicrosoftCommonTargets',
             'CustomBeforeMicrosoftCSharpProps', 'CustomAfterMicrosoftCSharpProps', 'CustomBeforeMicrosoftCSharpTargets', 'CustomAfterMicrosoftCSharpTargets',
@@ -335,7 +346,7 @@ function Get-CompilerReferenceIdentities([string] $Configuration) {
 
 function Get-BuildInputFingerprint([string] $Configuration = 'Release', $CompilerInputs = $null) {
     $root = $script:RepositoryRoot
-    $paths = @('src', 'Directory.Build.props', '.editorconfig', 'Info.json', 'LoaderReferences.targets',
+    $paths = @('src', 'Directory.Build.props', 'Directory.Build.targets', 'Directory.Build.rsp', '.editorconfig', 'Info.json', 'LoaderReferences.targets',
         'scripts/loader-reference-pins.json', 'scripts/Get-PinnedLoaderReferences.ps1', 'scripts/Build-Local.ps1', 'scripts/Common.ps1')
     $files = @(& git -C $root ls-files --cached --others --exclude-standard -- @paths)
     if ($LASTEXITCODE -ne 0) { throw 'git ls-files failed while fingerprinting build inputs.' }

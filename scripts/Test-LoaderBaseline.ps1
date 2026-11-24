@@ -378,6 +378,30 @@ try {
     try { Expect-Rejected 'package-with-import-selecting-environment-variable-refused' (Invoke-Isolated @('-File', $package)) 'environment variable DirectoryBuildTargetsPath selects MSBuild imports' }
     finally { Remove-Item Env:\DirectoryBuildTargetsPath }
     Expect-Accepted 'package-after-local-configuration-restored-accepted' (Invoke-Isolated @('-File', $package)) 'Package validation passed'
+    # R6-F1: configuration MSBuild does not import for the production project does not stop a valid build. A parent
+    # Directory.Build.props above the checkout (shadowed by the tracked root one; it would enable overflow checking) and an
+    # untracked Directory.Build.targets beside another folder (tools\): Build-Local reproduces the first DLL and the
+    # package is accepted.
+    $shadowedProps = Join-Path $temp 'Directory.Build.props'
+    [IO.File]::WriteAllText($shadowedProps, "<Project><PropertyGroup><CheckForOverflowUnderflow>true</CheckForOverflowUnderflow></PropertyGroup></Project>")
+    $siblingTargets = Join-Path $base 'tools\Directory.Build.targets'
+    [IO.File]::WriteAllText($siblingTargets, "<Project><PropertyGroup><CheckForOverflowUnderflow>true</CheckForOverflowUnderflow></PropertyGroup></Project>")
+    $unrelated = Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))
+    Add-Case 'build-with-shadowed-parent-props-and-unrelated-sibling-targets-accepted' ($unrelated.ExitCode -eq 0 -and (Get-Sha256 $dll) -eq $firstDllSha) ("exit $($unrelated.ExitCode); DLL $(Get-Sha256 $dll) (first DLL $firstDllSha)" + $(if ($unrelated.ExitCode) { '; ' + (Get-Reason $unrelated.Output) } else { '' }))
+    Expect-Accepted 'package-with-shadowed-parent-props-and-unrelated-sibling-targets-accepted' (Invoke-Isolated @('-File', $package)) 'Package validation passed'
+    Remove-Item -LiteralPath $shadowedProps, $siblingTargets
+    # R4-F1: a tracked root Directory.Build.targets with a production-only overflow setting (conditioned on a real
+    # compile, so the evaluated inventory does not show it) added after the clean build: package admission refuses the old
+    # receipt (the file is a fingerprinted build input) and Build-Local refuses the build (the production compile's inputs
+    # differ from the evaluated ones); with the file removed the receipt is accepted again.
+    $rootTargets = Join-Path $base 'Directory.Build.targets'
+    [IO.File]::WriteAllText($rootTargets, "<Project><PropertyGroup Condition=`"'`$(SkipCompilerExecution)' != 'true'`"><CheckForOverflowUnderflow>true</CheckForOverflowUnderflow></PropertyGroup></Project>")
+    & git -C $base add -- Directory.Build.targets
+    Expect-Rejected 'package-reuse-after-tracked-root-targets-production-setting-rejected' (Invoke-Isolated @('-File', $package)) 'Build inputs changed'
+    Expect-Rejected 'build-with-tracked-root-targets-production-setting-refused' (Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))) 'different compiler inputs'
+    & git -C $base rm -q --cached -- Directory.Build.targets
+    Remove-Item -LiteralPath $rootTargets
+    Expect-Accepted 'package-after-tracked-root-targets-removed-accepted' (Invoke-Isolated @('-File', $package)) 'Package validation passed'
     # Effective compiler options from the tracked Directory.Build.props (here edited in the disposable checkout). Only the
     # overflow-checking option changes: the stale package is refused, the receipt of a matching rebuild records the
     # effective option, and the rebuilt DLL differs; removing it needs a rebuild again.
@@ -435,6 +459,17 @@ try {
     [IO.File]::WriteAllText($dirProps, $dirPropsOriginal.Replace('</Project>', "  <PropertyGroup><CompilerResponseFile>$([Security.SecurityElement]::Escape($rsp))</CompilerResponseFile></PropertyGroup>`r`n</Project>"))
     Expect-Rejected 'package-with-compiler-response-file-refused' (Invoke-Isolated @('-File', $package)) 'Unsupported compiler input: the response file'
     Expect-Rejected 'build-with-compiler-response-file-refused' (Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))) 'Unsupported compiler input: the response file'
+    [IO.File]::WriteAllText($dirProps, $dirPropsOriginal)
+    # R5-F3: the implicit default response file mode is refused, not partly modelled. A disposable copy of the Roslyn
+    # compiler whose default csc.rsp names the same external resource, selected with NoConfig disabled: refused at package
+    # admission and at Build-Local (the normal /noconfig control is receipt-records-effective-compiler-first).
+    $rspCompiler = Join-Path $temp 'compiler with default response file'
+    New-Item -ItemType Directory -Path $rspCompiler -Force | Out-Null
+    Copy-Item -Path (Join-Path (Join-Path (Split-Path -Parent $msbuild) 'Roslyn') '*') -Destination $rspCompiler -Recurse -Force
+    [IO.File]::WriteAllText((Join-Path $rspCompiler 'csc.rsp'), "/win32res:`"$res`"`r`n")
+    [IO.File]::WriteAllText($dirProps, $dirPropsOriginal.Replace('</Project>', "  <PropertyGroup><CscToolPath>$([Security.SecurityElement]::Escape($rspCompiler))</CscToolPath><CscToolExe>csc.exe</CscToolExe><NoConfig>false</NoConfig><UseSharedCompilation>false</UseSharedCompilation></PropertyGroup>`r`n</Project>"))
+    Expect-Rejected 'package-with-implicit-default-response-file-refused' (Invoke-Isolated @('-File', $package)) 'Unsupported compiler mode: without /noconfig'
+    Expect-Rejected 'build-with-implicit-default-response-file-refused' (Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))) 'Unsupported compiler mode: without /noconfig'
     [IO.File]::WriteAllText($dirProps, $dirPropsOriginal)
     $rebuild = Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))
     Add-Case 'rebuild-without-imported-options-reproduces-first-dll' ($rebuild.ExitCode -eq 0 -and (Get-Sha256 $dll) -eq $firstDllSha) "DLL $(Get-Sha256 $dll)"
@@ -608,6 +643,19 @@ try {
     $published8 = @(Get-ChildItem -LiteralPath $laterCandidateDir -File | ForEach-Object { $_.Name } | Sort-Object)
     $expected8 = @('build-provenance.json', 'KingmakerDiceRoller-0.2.0.zip', 'KingmakerDiceRoller.dll', 'native-ui-contracts.json', 'package-manifest.json', 'package-validation.json', 'respec-contracts.json', 'runtime-contracts.json', 'source-qualification.json') | Sort-Object
     Add-Case 'candidate-directory-holds-the-complete-set' (($published8 -join ',') -eq ($expected8 -join ',')) ($published8 -join ', ')
+    # R6-F2: a Managed directory inside the checkout (a byte-identical copy under ignored artifacts): the receipt names the
+    # game assembly repository-relatively, and the clean build and its matching local candidate are accepted (the
+    # conflicting-report refusal is candidate-with-another-builds-report-refused above).
+    $localManaged = Join-Path $base 'artifacts\managed copy'
+    Copy-Item -LiteralPath $managedCopy -Destination $localManaged -Recurse
+    $gamePathBefore = [IO.File]::ReadAllText($gamePath)
+    [IO.File]::WriteAllText($gamePath, $gamePathBefore.Replace('</Project>', "  <PropertyGroup><KingmakerManagedDir>$([Security.SecurityElement]::Escape($localManaged))</KingmakerManagedDir></PropertyGroup>`r`n</Project>"))
+    $localBuild = Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))
+    $gameNames = @((Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json).compiler_references | Where-Object { $_.kind -eq 'reference' -and $_.name -like '*Assembly-CSharp.dll' } | ForEach-Object name)
+    Remove-Item -LiteralPath $laterCandidateDir -Recurse -Force
+    $localCandidate = Invoke-Isolated @('-File', $package, '-Candidate')
+    Add-Case 'candidate-with-repository-local-managed-directory-accepted' ($localBuild.ExitCode -eq 0 -and ($gameNames -join ',') -ceq 'artifacts/managed copy/Assembly-CSharp.dll' -and $localCandidate.ExitCode -eq 0 -and $localCandidate.Output -match 'Package validation passed' -and (Test-Path -LiteralPath (Join-Path $laterCandidateDir 'package-manifest.json'))) ("build exit $($localBuild.ExitCode); receipt game reference '$($gameNames -join ',')'; candidate exit $($localCandidate.ExitCode); " + (Get-Reason $localCandidate.Output))
+    [IO.File]::WriteAllText($gamePath, $gamePathBefore)
     & git -C $base reset -q --hard $commit
     Copy-Item -LiteralPath $savedReceipt -Destination $receiptPath -Force
 
