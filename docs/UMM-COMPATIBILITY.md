@@ -43,11 +43,15 @@ whatever loader is installed on the build machine.
 - `scripts/Build-Local.ps1` records in its receipt a fingerprint of every material build
   input (tracked or new files under `src/`, `Directory.Build.props`, `.editorconfig`,
   `Info.json`, `LoaderReferences.targets`, the pin file and its verifier, the build
-  wrapper `Build-Local.ps1`/`Common.ps1`, and the file name and SHA-256 of every assembly
-  Csc receives for that configuration, as resolved by MSBuild itself, so the check follows
-  MSBuild's own reading of the project and `GamePath.props`; identical bytes relocated
-  elsewhere keep their identity) and the configuration; the receipt also lists those
-  compiler inputs.
+  wrapper `Build-Local.ps1`/`Common.ps1`, and the compiler inventory MSBuild itself evaluates
+  for that configuration: the exact references Csc receives after reference-assembly
+  selection, the source/resource/analyzer items and the compile-affecting properties such as
+  `CheckForOverflowUnderflow`, `DefineConstants`, `LangVersion` or `Optimize`, including
+  anything `GamePath.props` sets; files by name and SHA-256, so identical bytes relocated
+  elsewhere keep their identity) and the configuration. The production compile writes its
+  own inventory, which must equal the inventory evaluated before building; the receipt
+  records it, and packaging checks the recorded inventory (shape, and equality with what
+  MSBuild evaluates now) before the fingerprint.
   `scripts/Package.ps1` (and `Qualify.ps1 -Package`) refuse a DLL whose receipt has
   different bytes, configuration, inputs or loader identities or malformed field types,
   and require the DLL read back from the produced ZIP to equal the receipt's DLL hash.
@@ -92,7 +96,7 @@ runs every check in a separate PowerShell or MSBuild process; this repository's
 them: the genuine v0.2.0 release ZIP (SHA-256 `43f99fab…6dadaad`, its DLL compiled
 against UnityModManager 0.33.0.0) and the author's UnityModManager 0.32.4 NuGet package
 (`a8438e92…082c9ec9`, DLL `1387468b…7bfd88`) as the known distinct wrong-loader fixture.
-The owner's installed loader is only measured and reported. The 85 checks cover: cache
+The owner's installed loader is only measured and reported. The 96 checks cover: cache
 bytes (genuine, corrupt, missing, 0.32.4); dropped/misnamed pins, raised or array-typed
 manifests and raised pins; direct MSBuild with a corrupt and a genuine cache (the quoted
 `csc` reference paths must be exactly the pinned files); incremental builds refusing a
@@ -110,13 +114,20 @@ test hooks); array/boolean receipt fields; receipts for another DLL,
 configuration, observed version or loader; the archived-DLL/receipt comparison;
 packages with added or swapped-in Harmony, loader or game DLLs, DLL bytes under
 documentation/licence names, data-bearing directory records (and an accepted
-level-0 DEFLATE empty directory), a caller ZIP replaced after the validator's snapshot, an
+level-0 DEFLATE empty directory, whose fixture is checked first: writer exit status, six files,
+method 8, compressed size above two bytes, zero decoded bytes; a failed fixture write fails the
+case), a validator whose input copy fails (exclusively held ZIP: reported, no private directory
+left behind), a caller ZIP replaced after the validator's snapshot, an
 explicitly empty expected digest, and array/boolean/number `ManagerVersion`; the v0.2.0 DLL
 with only its manifest lowered (refused); both packages validated in one Windows
 PowerShell session in either order; and the validated private-copy extraction used by
 `Install.ps1`, including the real `Install.ps1 -WhatIf` against a disposable
 configuration (valid ZIP previews the target, invalid ZIP refused, temporary files
-removed, disposable Mods folder unchanged).
+removed, disposable Mods folder unchanged); and, from round 5, only the overflow-checking
+option changed through `GamePath.props` (stale package refused, the matching rebuild's
+receipt records the effective option and its DLL differs, removal refused until rebuilt), the
+receipt's reference inventory equal to the real Csc `/reference` list, and a receipt with one
+recorded reference digest changed or with no inventory refused on the ordinary package route.
 
 Static API audit (the four-loader table below): the fleet mission's `LoaderApiAudit` tool
 (a small .NET 8 console
@@ -148,7 +159,7 @@ SHA-256 `634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee`,
 MVID `7a6d0a75-f788-47a5-83c9-fed6fb14e3ff`; AssemblyRefs UnityModManager 0.31.1.0 and
 0Harmony12 1.2.0.1. The build ran the repository validator, source oracle, 416/416
 domain tests, Kingmaker/respec/native-UI contract checks, and the build gate.
-`Test-LoaderBaseline.ps1`: 85/85 checks passed on the candidate commit (package SHA-256
+`Test-LoaderBaseline.ps1`: 96/96 checks passed on the round-5 tooling `e3be083` (package SHA-256
 `b8cb456b8061fc48bfa464bd5af66f368516ab24cbb22d3d1f2c6e376d436e81`), including the
 v0.2.0 regression. The newest-stable row was selected on 2026-11-23 from the author's
 NuGet feed (0.33.4 published 2026-11-19, the highest version; project URL the Nexus
