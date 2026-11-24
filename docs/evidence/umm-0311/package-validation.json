@@ -1,6 +1,5 @@
 {
     "status":  "package-validated",
-    "package":  "<temp>\\kdr-ev5-Sgz7\\clone\\artifacts\\packages\\KingmakerDiceRoller-0.2.0.zip",
     "package_sha256":  "b8cb456b8061fc48bfa464bd5af66f368516ab24cbb22d3d1f2c6e376d436e81",
     "version":  "0.2.0",
     "manager_version":  "0.31.1",
@@ -31,5 +30,6 @@
                           "KingmakerDiceRoller/licenses/UPSTREAM-WOTR-DICE-ROLLER-MIT.txt":  2149,
                           "KingmakerDiceRoller/README.md":  16785,
                           "KingmakerDiceRoller/THIRD-PARTY-NOTICES.md":  1180
-                      }
+                      },
+    "package":  "<temp>\\kdr-ev6-fdmK\\clone\\artifacts\\packages\\KingmakerDiceRoller-0.2.0.zip"
 }

@@ -1,12 +1,12 @@
 {
  "schema": "kingmaker.build-record.v1",
- "source_commit": "e3be08363f6910e1890e776d5b193a7a98154e51",
+ "source_commit": "dd5483862e95fe10a4c307d0eaa8e70c9467f57d",
  "product": "KingmakerDiceRoller.dll",
  "product_compilations": [
   {
-   "out": "<temp>\\kdr-ev5-Sgz7\\direct-obj\\KingmakerDiceRoller.dll",
+   "out": "<temp>\\kdr-ev6-fdmK\\direct-obj\\KingmakerDiceRoller.dll",
    "references": [
-    "<temp>\\kdr-ev5-Sgz7\\clone\\artifacts\\references\\0Harmony12.dll",
+    "<temp>\\kdr-ev6-fdmK\\clone\\artifacts\\references\\0Harmony12.dll",
     "<game>\\Kingmaker_Data\\Managed\\Assembly-CSharp-firstpass.dll",
     "<game>\\Kingmaker_Data\\Managed\\Assembly-CSharp.dll",
     "<reference-assemblies>\\Microsoft\\Framework\\.NETFramework\\v4.7.2\\mscorlib.dll",
@@ -18,7 +18,7 @@
     "<game>\\Kingmaker_Data\\Managed\\UnityEngine.TextRenderingModule.dll",
     "<game>\\Kingmaker_Data\\Managed\\UnityEngine.UI.dll",
     "<game>\\Kingmaker_Data\\Managed\\UnityEngine.UIModule.dll",
-    "<temp>\\kdr-ev5-Sgz7\\clone\\artifacts\\references\\UnityModManager.dll"
+    "<temp>\\kdr-ev6-fdmK\\clone\\artifacts\\references\\UnityModManager.dll"
    ]
   }
  ],

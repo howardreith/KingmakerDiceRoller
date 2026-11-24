@@ -1,6 +1,6 @@
 {
   "schema": "kingmaker.loader-profile-inventory.v1",
-  "measured_utc": "2026-11-24T00:52:10Z",
+  "measured_utc": "2026-11-24T01:52:35Z",
   "candidate": {
     "file": "KingmakerDiceRoller.dll",
     "assembly": "KingmakerDiceRoller",
