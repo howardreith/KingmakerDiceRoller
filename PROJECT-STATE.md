@@ -19,7 +19,7 @@ UMM 0.32.0. Details and reproduction: `docs/UMM-COMPATIBILITY.md`.
   checks passed against the installed Kingmaker 2.1.7b assemblies.
 - Build-qualified: **Yes** — Release DLL `634f2277…12ee` compiled against
   UnityModManager 0.31.1.0 and 0Harmony12 1.2.0.1 (pinned bytes).
-- Package-qualified: **Yes** for the boundary tests — 96/96 loader-baseline checks (records and
+- Package-qualified: **Yes** for the boundary tests — 111/111 loader-baseline checks (records and
   producing commit in `docs/evidence/umm-0311/`),
   including rejection of the genuine 0.33.0-compiled v0.2.0 DLL with only its
   manifest lowered. No release candidate package was produced.
