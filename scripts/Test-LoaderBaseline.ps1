@@ -489,6 +489,7 @@ try {
     $logA = Join-Path $inputs 'publisher-a.txt'; $logB = Join-Path $inputs 'publisher-b.txt'
     $pa = Start-Process -FilePath powershell.exe -ArgumentList @('-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', ('"' + $package + '"')) -RedirectStandardOutput $logA -PassThru
     $pb = Start-Process -FilePath powershell.exe -ArgumentList @('-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', ('"' + $package + '"')) -RedirectStandardOutput $logB -PassThru
+    $null = $pa.Handle; $null = $pb.Handle   # keeps the exit codes readable after the processes end
     $pa.WaitForExit(); $pb.WaitForExit()
     $set = @($published | ForEach-Object { if (Test-Path -LiteralPath $_) { Get-Sha256 $_ } else { 'missing' } })
     $rm = Get-Content -LiteralPath $published[1] -Raw | ConvertFrom-Json; $rv = Get-Content -LiteralPath $published[2] -Raw | ConvertFrom-Json
