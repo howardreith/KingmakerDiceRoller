@@ -215,7 +215,7 @@ function Get-CompilerReferenceIdentities([string] $Configuration) {
     $previous = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'
     try {
-        $output = $null | & (Resolve-MSBuild) $project /nologo /v:q /nr:false '/t:Compile' /p:SkipCompilerExecution=true `
+        $output = $null | & (Resolve-MSBuild) $project /nologo /v:q /nr:false '/t:PrepareResources;Compile' /p:SkipCompilerExecution=true `
             "/p:Configuration=$Configuration" /p:Platform=AnyCPU "/p:CompilerReferenceListPath=$list" "/p:IntermediateOutputPath=$obj" "/p:OutputPath=$($obj)bin" 2>&1 | ForEach-Object { "$_" }
         if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $list)) { throw "Could not resolve the compiler references: $($output -join ' ')" }
         return @(ConvertFrom-CompilerInputList $list)
