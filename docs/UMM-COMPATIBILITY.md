@@ -50,13 +50,28 @@ whatever loader is installed on the build machine.
   fresh intermediate directory, so anything `GamePath.props` or another import sets is included):
   the effective compiler binary first (and the implicit `csc.rsp` when `/noconfig` is absent), then
   every argument in the compiler's order - options verbatim (for example `/checked+`,
-  `/baseaddress:...`), references, sources (generated ones included) and response files by name and
-  SHA-256, and file-valued options (`/win32res`, `/win32icon`, `/keyfile`, `/resource`, rule sets and
-  others) by the content of the file they name. Identical bytes relocated elsewhere keep their
-  identity; an input that cannot be identified refuses reuse. The production compile writes its
-  own command line, which must equal the evaluated one; the receipt records it, and packaging checks
-  the recorded inventory (shape, and equality with what MSBuild evaluates now) before the
-  fingerprint.
+  `/baseaddress:...`), references and sources (generated ones included) by name and SHA-256, and
+  file-valued options (`/win32res`, `/win32icon`, `/keyfile`, `/resource`, rule sets and others) by
+  the content of the file they name. Identical bytes relocated elsewhere keep their identity; an
+  input that cannot be identified refuses reuse. Forms whose material files the inventory cannot
+  name are refused outright, at the build and at every receipt admission: an explicit compiler
+  response file (`@file`), linked (embedded-interop) references (`/link`) and wildcard source
+  recursion (`/recurse`). The production compile writes its own command line, which must equal the
+  evaluated one entry by entry; the receipt records it, and packaging checks the recorded inventory
+  (shape, including no control characters in names, then the same number of entries and, in order,
+  the same kind, name and digest as what MSBuild evaluates now) before the fingerprint.
+- Bounded local configuration. Because the inventory comes from an evaluation that skips the
+  compiler, anything that could act only during a real compile is refused instead of trusted, by
+  `Build-Local.ps1` and by every receipt admission (`Package.ps1`, `Qualify.ps1 -Package`): the ignored
+  `GamePath.props` may only set `KingmakerInstallDir`, `KingmakerManagedDir` and `UnityModManagerDir`
+  (conditions only on `Configuration` or `Platform`; values referring only to those properties; no
+  imports, items, targets or property functions); no `Directory.Build.props`/`.targets`/`.rsp` above
+  the repository, and none inside it that Git does not track, nor an untracked project `.user` file;
+  no environment variable that selects MSBuild imports (`DirectoryBuildTargetsPath`,
+  `CustomAfterMicrosoftCommonTargets` and the related names); no per-user MSBuild
+  `ImportBefore`/`ImportAfter` extension file. Compiler settings belong in tracked files such as
+  `Directory.Build.props`, whose effective options the inventory records. Extension files that ship
+  with the installed MSBuild are part of the toolchain and are not inventoried.
   `scripts/Package.ps1` (and `Qualify.ps1 -Package`) refuse a DLL whose receipt has
   different bytes, configuration, inputs or loader identities or malformed field types,
   and require the DLL read back from the produced ZIP to equal the receipt's DLL hash.
@@ -65,7 +80,20 @@ whatever loader is installed on the build machine.
   The package manifest and candidate copies are written from the staged DLL, the receipt
   bytes read once and the validated archive (never by rereading build output), and name
   the producing build (receipt commit, configuration, inputs) separately from the
-  packaging checkout.
+  packaging checkout. The packaged documents are read once and staged from those bytes; a
+  candidate's documents must equal the admitted commit's files as Git checks them out
+  (`git cat-file --filters`), so an edit after admission is refused. A candidate's
+  qualification reports are read once and must describe this build: the respec and native-UI
+  reports name the packaged DLL, the three contract reports name the game assembly the
+  receipt's compile referenced, and the source qualification names the admitted `Info.json`.
+  The whole candidate (ZIP, validation report, manifest, DLL, receipt and reports) is prepared
+  in private storage and published once with a directory move that refuses an existing
+  destination, so a failure leaves no commit directory and a competing same-commit publisher's
+  files are kept. Ordinary publication of the ZIP, validation report and manifest runs one
+  publisher at a time per destination (an exclusive lock file removed when its handle closes);
+  both records are prepared first, and backup acquisition, placement and rollback are one
+  recovery scope that tracks exactly the files this invocation moved and placed. If restoration
+  itself fails, the previous files are kept (not deleted) and named.
 - The standalone `scripts/Validate-Package.ps1` inspects and hashes one private copy of
   the ZIP and reads the packaged DLL's AssemblyRef table (in Windows PowerShell, in a separate process, so several packages can be
   validated in one session), requires exactly UnityModManager 0.31.1.0 and 0Harmony12
@@ -155,29 +183,34 @@ version that UnityModManager.dll references (`lib/net48/0Harmony.dll`) and the p
 0Harmony12; the hashes are in the table. The tool is outside this repository; the same
 method can be repeated with any metadata reader.
 
-## Evidence for this change (2026-11-23)
+## Evidence for this change (2026-11-24, round 7)
 
-Machine-generated records for the candidate are committed as structured files (no logs)
-in [`docs/evidence/umm-0311/`](evidence/umm-0311/INDEX.md): the build record extracted from
-the `Build-Local.ps1` run (every compiler invocation's inputs, test and contract result
-lines), the build receipt, the package manifest and validation report, the boundary-suite
-results, the static audit, a full loader-profile inventory (every component's identity,
-SHA-256, MVID and references), the newest-stable selection record and the audit tool's
-source. Local path prefixes are replaced by placeholders (see the index); the index names
-the producing commit, case count and artifact identities, and supersedes counts quoted
-elsewhere.
+Machine-generated records are committed as structured files (no logs) in
+[`docs/evidence/umm-0311/`](evidence/umm-0311/INDEX.md); the index names the producer of every
+file. Local path prefixes are replaced by placeholders (see the index).
 
-Candidate DLL (Release, built by `Build-Local.ps1` on Windows against the pinned
-cache, Kingmaker 2.1.7b managed assemblies):
-SHA-256 `634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee`,
-MVID `7a6d0a75-f788-47a5-83c9-fed6fb14e3ff`; AssemblyRefs UnityModManager 0.31.1.0 and
-0Harmony12 1.2.0.1. The build ran the repository validator, source oracle, 416/416
-domain tests, Kingmaker/respec/native-UI contract checks, and the build gate.
-`Test-LoaderBaseline.ps1`: 111/111 checks passed on the round-6 tooling `dd54838` (package SHA-256
-`b8cb456b8061fc48bfa464bd5af66f368516ab24cbb22d3d1f2c6e376d436e81`), including the
-v0.2.0 regression. The newest-stable row was selected on 2026-11-23 from the author's
-NuGet feed (0.33.4 published 2026-11-19, the highest version; project URL the Nexus
-page) and confirmed by the author's GitHub HEAD `3d14bf0d` (`<Version>0.33.4</Version>`).
+- `build-provenance.json` is the receipt of a clean `Build-Local.ps1` run of the documentation
+  commit, and `build-local-summary.json` is a structured summary of that wrapper run's own result
+  lines (repository validator, source oracle, domain tests, contract checks, the build and the
+  recorded compiler inventory). There is no separate direct-MSBuild record any more; the direct
+  compile is exercised by the boundary suite (`receipt-reference-inventory-equals-csc-inputs`
+  compares the receipt's references with the direct `csc` command line).
+- `package-manifest.json` and `package-validation.json` come from `Package.ps1` on that build.
+- `loader-baseline.json` is `Test-LoaderBaseline.ps1` on a temporary clone of the round-7 tooling
+  (the index gives the commit and the counts, including any host-gated case).
+- The static audit and loader-profile inventory describe the candidate DLL
+  `634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee` (MVID
+  `7a6d0a75-f788-47a5-83c9-fed6fb14e3ff`, AssemblyRefs UnityModManager 0.31.1.0 and 0Harmony12
+  1.2.0.1); the product source did not change in rounds 2 to 7, and the round-7 build reproduces
+  that DLL. They are reused records, labelled as such in the index.
+- The newest-stable row was selected on 2026-11-23 from the author's NuGet feed (0.33.4 published
+  2026-11-19, the highest version; project URL the Nexus page) and confirmed by the author's GitHub
+  HEAD `3d14bf0d` (`<Version>0.33.4</Version>`).
+
+Earlier rounds (history): round 6 recorded `Test-LoaderBaseline.ps1` 111/111 on `dd54838` (package
+`b8cb456b8061fc48bfa464bd5af66f368516ab24cbb22d3d1f2c6e376d436e81`). Its committed `build-record.json`
+was a direct MSBuild compile record, not a `Build-Local.ps1` trace as this guide then said; that
+record is withdrawn.
 
 Four observations are kept separate:
 
