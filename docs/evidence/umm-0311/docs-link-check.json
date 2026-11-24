@@ -1,0 +1,67 @@
+{
+ "schema": "kingmaker.docs-link-check.v1",
+ "files": [
+  "docs/UMM-COMPATIBILITY.md",
+  "PROJECT-STATE.md",
+  "README.md"
+ ],
+ "links": 11,
+ "broken": [],
+ "results": [
+  {
+   "file": "docs/UMM-COMPATIBILITY.md",
+   "link": "evidence/umm-0311/INDEX.md",
+   "ok": true
+  },
+  {
+   "file": "README.md",
+   "link": "docs/UMM-COMPATIBILITY.md",
+   "ok": true
+  },
+  {
+   "file": "README.md",
+   "link": "docs/NATIVE-STAT-UI-V4-CANDIDATE.md",
+   "ok": true
+  },
+  {
+   "file": "README.md",
+   "link": "docs/NATIVE-STAT-UI-V3-CANDIDATE.md",
+   "ok": true
+  },
+  {
+   "file": "README.md",
+   "link": "docs/RELEASE-NOTES-0.1.9.md",
+   "ok": true
+  },
+  {
+   "file": "README.md",
+   "link": "PROJECT-STATE.md",
+   "ok": true
+  },
+  {
+   "file": "README.md",
+   "link": "docs/VALUE-BADGE-COLOR-0.1.17-CANDIDATE.md",
+   "ok": true
+  },
+  {
+   "file": "README.md",
+   "link": "docs/VALUE-BADGE-0.1.16-CANDIDATE.md",
+   "ok": true
+  },
+  {
+   "file": "README.md",
+   "link": "docs/NATIVE-STAT-UI-V4-CANDIDATE.md",
+   "ok": true
+  },
+  {
+   "file": "README.md",
+   "link": "docs/NATIVE-STAT-UI-V3-CANDIDATE.md",
+   "ok": true
+  },
+  {
+   "file": "README.md",
+   "link": "docs/NATIVE-STAT-UI-V2-CANDIDATE.md",
+   "ok": true
+  }
+ ]
+}

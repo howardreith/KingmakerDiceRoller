@@ -1,9 +1,9 @@
 {
     "status":  "build-qualified",
-    "built_at_utc":  "2026-11-23T22:59:04.9676791Z",
+    "built_at_utc":  "2026-11-24T00:51:55.2383840Z",
     "configuration":  "Release",
-    "branch":  "codex/umm-0311-baseline-20261123",
-    "commit":  "039f323816478ef09395bc41d08b622f6716a07e",
+    "branch":  "HEAD",
+    "commit":  "e3be08363f6910e1890e776d5b193a7a98154e51",
     "dirty":  false,
     "dll_sha256":  "634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee",
     "loader_references":  [
@@ -22,59 +22,802 @@
                                   "source":  "https://raw.githubusercontent.com/newman55/unity-mod-manager/10cfb1cce51914a5114928c5bc6a06d1d2c31fe2/lib/Harmony/1.2/0Harmony12.dll"
                               }
                           ],
-    "build_inputs_sha256":  "931f37bda0222aaeb2da4718b010821e036ef91a7f151f79d0a70f0118400491",
+    "build_inputs_sha256":  "f84a25f11cf807f3dbed1cd018811b86eac32b3f95cb297f0e6964f7ef1f3967",
     "compiler_references":  [
                                 {
-                                    "file":  "0Harmony12.dll",
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/AbilityPhasePresentationService.cs",
+                                    "sha256":  "5cc6d2bd9db574676fb11d0c5221a3edaf3fd7b4774845765b2e627cbfac12e9"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/AbilityValueSnapshot.cs",
+                                    "sha256":  "883bc9eb28c82f0734336596a0f58caa77eb3f24c641e31f63b3499c409e0e22"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/CharacterCreationContextDecision.cs",
+                                    "sha256":  "e7773020db90a197b23ad07075572c758241525c373c3a3edea7364bc0799c87"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/CharacterCreationContextPolicy.cs",
+                                    "sha256":  "8c0ff163510b98d7a3b4bb6f403d958f6999eaf1c5abab3e1d2e890b03a53b70"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/CharacterCreationCoordinator.cs",
+                                    "sha256":  "8423df4c6cb88c0a960df8e1af796b0ab4766be00f817b8aef1568f47d715ba9"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/CharacterRollWorkflow.cs",
+                                    "sha256":  "682f3077f9d3f56a8e34fc044f5a1980713447927ba3bd7d881d51cfff877b1f"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/CollapsedAccessTabLayout.cs",
+                                    "sha256":  "b104ac06e1e8133b8c300a9e155a416087ba8d8481943ae8af532f8ad85935b2"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/DerivedStateRefreshService.cs",
+                                    "sha256":  "e0d490b81f400d61a45e210c986eac931d3fe6dbc770cc1eb5c16ef4f96c0b05"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/GenerationRollbackSnapshot.cs",
+                                    "sha256":  "c2e73b21cd6258d894134a3d42d0441087819639b16dac902811ac9678ba20d6"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/IRollUiCommandTarget.cs",
+                                    "sha256":  "3b5403842a7f77732ed1bcf13196eb473777358400a837b525344983ffba3361"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/KingmakerStatAccess.cs",
+                                    "sha256":  "9be57be1e39f27c349fb91de559a12f6e037c43f583089223151fb88a7bc22df"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/LivePreviewInspector.cs",
+                                    "sha256":  "b38e0d6e24dc2c84115f8746eb5ed2caa56aa3847beef7c9dcc5fc4422b2a5db"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/LivePreviewObservation.cs",
+                                    "sha256":  "8d235c325b4a230ef41d791dfcf586df73f968fd0d7b9d81ce0b6c17ef738b77"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/MainCharacterIdentityRelation.cs",
+                                    "sha256":  "5be934a2e690403b4e79ba182e44fe422b732391fd9b715d876e3b5aca605c49"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/MercenaryFinalizationObservation.cs",
+                                    "sha256":  "c14cef57948b6f2b80efb86c1f862727055ce306d1450909d626e24819026433"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/MercenaryFinalizationService.cs",
+                                    "sha256":  "e6842e3e33ae6a01d6d56d09ddcc31f96024f47be7f56bd8789adea4dd0ca0f2"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/NativeAbilityControlService.cs",
+                                    "sha256":  "3c1890cd975e64cc17bd7963cc6725e68002b9dee1494516a5d10668225589fe"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/NativePanelAttachmentLifecycle.cs",
+                                    "sha256":  "130b6dfd3d81c753efc63010f72e7a0cf75b9ce699d15e010c706c197a5c44f7"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/NativeRespecEntryService.cs",
+                                    "sha256":  "f0edaa564cf4c88e33434560970133b686f20c58bb4f22f0528d28dc272030ab"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/NativeRollPanelLayoutSpec.cs",
+                                    "sha256":  "875ea4a02a208d7059bb3fa7facd081b03dd6435d221a45dfdac262694ca8f65"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/NativeRollPanelState.cs",
+                                    "sha256":  "24e0458ac0d74f88bae317963c163ccdf1c64085472dac053d022d97f582c89b"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/NativeScoreRowIdentity.cs",
+                                    "sha256":  "66417afd10a8fe92b8c01dbf3eec04f267d3ad3693dc00b85ccc68b6459b3105"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/NativeUiPresentation.cs",
+                                    "sha256":  "3e37488775f8c703d7455f7b47c7f74cbcfd142f39c00b9e278eec33d3565d08"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/NativeViewCommandBinding.cs",
+                                    "sha256":  "8373c3aa2996249ba3d7744d637600cc099492bcd7b0f8fdd59247d646e7bdf7"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/PointBudgetResolver.cs",
+                                    "sha256":  "c434558276e6dca6a8e9f42d1d0cce02875698eb0000ff89a03d0637c3eb921c"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/PointBudgetTracker.cs",
+                                    "sha256":  "e442929e9a146be453c33dc8944a93589dff0f3d913bba228166fbf5c52ef40e"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/PointBuyOrigin.cs",
+                                    "sha256":  "255372b659f3089e66c1ca6d29a352492cf21a8b3045194808b3c079efa20c54"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/PointBuyPresentationObservation.cs",
+                                    "sha256":  "7e0c74fdeeccff046d85095c24deda9b8ceaff996dd3872bd55d9f26d37db294"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/PointBuyRestoreObservation.cs",
+                                    "sha256":  "5fcb0808cbcd86bd6c8fb8caed58aaa083312f372b753332b62a6ccd7e3a7c7a"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/PointBuyRestoreService.cs",
+                                    "sha256":  "f6eb78426ad87c1f1292dae195e76a15596bb1276a1a50765b176d2c7646135c"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/PointBuyReturnOutcome.cs",
+                                    "sha256":  "c7158cd49adc8818fe1e2ef120fedc2ee8a39daa76436d5607874e8177f4bed7"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/PreviewRefreshService.cs",
+                                    "sha256":  "e263913b5e1a903177a811037cce4c3de156e5d287098b2f40a08859eaf3628d"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/RespecLifecycleService.cs",
+                                    "sha256":  "c872de38322726afd53f48fb0792e7d9901fe568fa1ef88286532fdd9abd5896"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/RespecOwnership.cs",
+                                    "sha256":  "f493ed0cda9598b231a903acd6b202a1fa4ad92c979964d98d4196054ea9b533"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/ResponsiveRollPanelLayout.cs",
+                                    "sha256":  "b6c55c94d8a9fa287e8fc2caacadd7c389af4dfa89be87ae2a783fb29542e649"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/RollFormulaDraft.cs",
+                                    "sha256":  "1b91c361e0e86e792b1d5d8849250830a2518836faa403c7bd6f3e75d1b56157"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/RollPanelModel.cs",
+                                    "sha256":  "09e177f7c4382a725fc8d0b4ded3d226655aa6c87da50c924ffe544d93dbedd3"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/RollPresentationObservation.cs",
+                                    "sha256":  "8f3bda64a15d15bdab51e22b844523e40f4f84e705d8120d8aa89b6dcbcaff79"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/RollSession.cs",
+                                    "sha256":  "7a7d7be4157f0ddbfaa9ede87b0754ce2c79a793c6dba2d506eb6aaa33ea2a77"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/RollSessionManager.cs",
+                                    "sha256":  "c713117788e429308d060f18b85cd4faa92c2968bfc80f65db3c5bc0e344eeba"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/RollSessionMode.cs",
+                                    "sha256":  "6afab8fdf5f929a68af2f4854b8b16982acbb49fad048dd8b3ee1c9b52e739a0"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/RollUiCommand.cs",
+                                    "sha256":  "1b199d1eb1fe22b16c530c67be516086ba22d1b4e95c755ac5f97ffc31636cb9"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/RollUiCommandRouter.cs",
+                                    "sha256":  "1783c39d25d2d4a2aa53cd52015fd59d0aef222f51c0e6e2ca405e843cc709bd"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/RollUiSnapshot.cs",
+                                    "sha256":  "df9663dc63aa2acc5f709dc87f428bc0ec60a2c8cdfde2a2d16bf72dc0144d49"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/RuntimeDiagnostics.cs",
+                                    "sha256":  "423543f92ac0ef19c183a9340a57c33f6da8a0e3bd782732668ffa4ee5a48046"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/SkillsPhaseSynchronizationService.cs",
+                                    "sha256":  "f1351aa2fac15a57a42aa215c5ad06d24b4754be2c0ed081a7c4d14e1c8e6a90"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/StatApplicationService.cs",
+                                    "sha256":  "f8d34ab6574be2fde4d32ece92321f882698260c6c52039c8ddeab3565e1d604"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CharacterCreation/SupportedCharacterCreationKind.cs",
+                                    "sha256":  "091f82f19c7adc4b19c63581e69e793d025bcceb0911ee5473baa64e1ebd0190"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Compatibility/CompatibilityDetector.cs",
+                                    "sha256":  "7d6f3039610d594be1ad610e19f0b9ff6e39431f3d079048b5aefec9394f8439"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Compatibility/CompatibilitySnapshot.cs",
+                                    "sha256":  "a5382d78884113c072dcb9c670923bd63bc8eaf8557bffe98d14bd6728950167"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/CompositionRoot.cs",
+                                    "sha256":  "2647669293a7d4d42c78a98582415cf58dde339347aa8bc099a75255865d880e"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Domain/AbilityScore.cs",
+                                    "sha256":  "0b7c7a8dda0c5d4c88bb86039a54d1742fcb4e4bd30515490fa3759320b4ca9a"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Domain/DiagnosticArrays.cs",
+                                    "sha256":  "b2ce2dca2882c885097f336aefe4f668a693b4e41345e818e1622f3bfb479819"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Domain/DiceExpression.cs",
+                                    "sha256":  "4a3218b6397ea3b5c2b2a96c611779f0150757fe97bb576716a523399df33d9e"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Domain/DiceExpressionException.cs",
+                                    "sha256":  "99b30bacba7a8b7c2fadc61d693bfa1861da636c82e34802778c1a0d8ff355e0"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Domain/DiceExpressionParser.cs",
+                                    "sha256":  "25512fe726e8b533fce7cafd48a15a76dcf1620e521041e7f6fb0b61e0df7c84"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Domain/DiceRollEngine.cs",
+                                    "sha256":  "20c53e8d266f5fe5057d25aae8eb4973dead20f00053d65ec3907acc2a7cb1be"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Domain/DiceRollPreset.cs",
+                                    "sha256":  "4b7f35e88b258fcf72a234fcbd63c3b6a4a72cee79fab4b6e398169ed7c84045"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Domain/DiceRollRule.cs",
+                                    "sha256":  "1a92f1c5fcffaa85f09bc91a6fc4382093be9588dee3b1bf4d76dff315368636"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Domain/DomainAssemblyMarker.cs",
+                                    "sha256":  "969d3c0a7dfba6562501fb6d11f58aea0de59e6a7455b7fe0279b83971a0e0cf"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Domain/IRandomSource.cs",
+                                    "sha256":  "6cbb3c90779301497c253df120e493ffb40ff7c63a611901f6a75b9c6eda945c"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Domain/LowScorePolicy.cs",
+                                    "sha256":  "31aacee041e4358a29c1e570697b63f5ffa90afb44339d4b2b0242aeb88cd7ac"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Domain/PointBuyEquivalent.cs",
+                                    "sha256":  "5b7888c580cb6e423de26092f6696d46673cf638440030a35d6d284f3540cf1d"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Domain/PointBuyEquivalentCalculator.cs",
+                                    "sha256":  "d521601a0a190929c7f903fb64c03bbcd4966ba49f5bf342b4a21198f12221be"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Domain/RollCandidate.cs",
+                                    "sha256":  "0b1be30ebd9135986317cc02bcaad4d04946314c45b41cbb7a5e470db72cb2eb"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Domain/RollConfiguration.cs",
+                                    "sha256":  "009c2590a62b3d7fa3bdffbe5bbef02ed52f25242ed07509cc55c1658637513a"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Domain/RolledStatArray.cs",
+                                    "sha256":  "346e5a7fa80aaf054e47aae36055176fca505e4a1fa3964b82f9ce220df563d0"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Domain/RollHistory.cs",
+                                    "sha256":  "45e908f34531fab40bf0fcc3c479028fd3efb6b7928a1a1f32624c257a2928b7"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Domain/RollHistoryEntry.cs",
+                                    "sha256":  "5fe71678eeef07fc8adced7d3cedbcfde359fdd43aefa83355b90629cf156da0"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Domain/RollSessionLifecycle.cs",
+                                    "sha256":  "add76d073868f1577e2269f7022356267cf0ee71245619e7263fe2f7b75c4418"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Domain/RollSessionOwnership.cs",
+                                    "sha256":  "2744c6618c46e4df817a33485acc3c6b10e7b5e2fd4e23b2edfe273807ae0ee1"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Domain/RollValidationException.cs",
+                                    "sha256":  "a4047e50869f80116fabb242bcf458a3345912c9836aa4806f5e4ae485a170a9"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Domain/SavedRollArrayRecord.cs",
+                                    "sha256":  "e6d783db1f3b5da2546795c1f46ce66361bcb90a5399b9ca75a4aadadf1e8ea2"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Domain/SavedRollCatalog.cs",
+                                    "sha256":  "690a3562bb1432a70da91ae0db9e25c9d482277373391187408c249e8a350b1b"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Domain/SessionLivenessTracker.cs",
+                                    "sha256":  "f4c030ef449e5154f894bdf896082bf6fd2eb5afce7edb75ca96599fd3c61788"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Domain/StatAssignment.cs",
+                                    "sha256":  "8771173c7476a7b79b2b9bb78f48dce2b9a12783b5b4b34b48cfb3570ac50d93"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Domain/SystemRandomSource.cs",
+                                    "sha256":  "b670600891ea159e17739ad8e9f7cd661e969aa51b6c3def4d46d22cea128e2e"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Integration/ContractResolutionException.cs",
+                                    "sha256":  "7d1c47f2cc462735e77d876730e8f94db431c64975d9344205f6ca4afb97a830"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Integration/KingmakerContractHolder.cs",
+                                    "sha256":  "0ec926eb644c6d177076f4c4f8959f1adc76d6e8c6e08e86ce9033d185460fd7"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Integration/KingmakerContractResolver.cs",
+                                    "sha256":  "ff113176fb47f40fc3887c6967f27bcf2183e1540ce795ff7dfbdcf75b5e8d5f"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Integration/KingmakerContracts.cs",
+                                    "sha256":  "7fbc9720dc287b704e790e686941aa9114553286c4d4b57f606dfb9ec3fd5c09"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Integration/NativeInvocationScope.cs",
+                                    "sha256":  "29840dc46da56b5912acb54ecde80f43793ee55fd9c7ff3865604ca5c4ab12e8"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Integration/NativeRespecContracts.cs",
+                                    "sha256":  "addf5ad003eb5f47e49967fc81aa27d04ff0162a8ea142a0755b1edeaf46b000"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Integration/PatchOwnerDiagnostics.cs",
+                                    "sha256":  "b634388cd17b15291f83d55fc77ec5ccdde1efb2967de44ff0243b6b50fce9b3"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Integration/ReflectionAccess.cs",
+                                    "sha256":  "159b02a720bcda5c5e25e609e8a047cb5a4607ce210f284105ed21a42e1ff23d"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Logging/IModLogger.cs",
+                                    "sha256":  "c31a338b8123336f4a5bdae5c60fb1a63f53b5380e07dd6ae476e981d325be29"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Logging/UmmLogger.cs",
+                                    "sha256":  "2868f695d42c98da6b0d3178f76df91d0b6520490115a0a8453ecd140cc02abe"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Main.cs",
+                                    "sha256":  "a309786748ea65d2f93cd00b4e8ad9101560b8ebe152a327fba3f73963758865"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Patches/KingmakerPatchBridge.cs",
+                                    "sha256":  "c3d361c85224cd601ec2aa1d1853368ca32cf33e9f0f408e52b7a19ab5821a1f"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Patches/KingmakerPatchController.cs",
+                                    "sha256":  "e6c14f7129a11ec6dcc7be1949cb7af789433c2d9327be635986cf61187d9b4a"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/ProductMetadata.cs",
+                                    "sha256":  "c8b0a6cdfc0aaf092f4296b851e11f84a64063dbfb07a8ec3bdd26195f72e8db"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Properties/AssemblyInfo.cs",
+                                    "sha256":  "f5c72e61bdb823e149ccb2de1a2f1e963175b3ca2718631d2e7445d946120c0a"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/Settings.cs",
+                                    "sha256":  "959879c54e1b59634db1085b4df59ebb98fb06fdb4c53a4abb69592f90eed4d1"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/UI/ButtonCaptionFit.cs",
+                                    "sha256":  "6a59d7ce502aa239550277d83e6cfeebb2d8f345f9524fbf3933557fe1d3c3d0"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/UI/InlineArrowAnchor.cs",
+                                    "sha256":  "87914c89ac88904fd03536df84f8b3f7c8cfa78bc4bc28f01031e9736e89f99e"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/UI/InlineArrowTooltip.cs",
+                                    "sha256":  "34fc901fab7ac74f84d1d116ee1e4fce2e339cd83207265001a02d29692f741e"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/UI/InlineTooltipOverlay.cs",
+                                    "sha256":  "8e5977c07589211ffe7d3276463872cd59db507b888d5ceb98db87f74bb02609"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/UI/InlineTooltipPlacement.cs",
+                                    "sha256":  "4fa16942c0a444f5649778de9394d9921f6edd72c01378de229142f6f649c004"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/UI/NativeBookTheme.cs",
+                                    "sha256":  "456e096c47ca33e91b3e3d8b0be85655a445d8495ead6548bb7c2120d0960981"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/UI/NativeCostHintGuard.cs",
+                                    "sha256":  "235e0a336f355d88f14e06ec9c5a910fab3351907a4c8b08e43a8027603fe7b2"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/UI/NativePanelConstructionBudget.cs",
+                                    "sha256":  "52199b5d465ebe92c759f26b097aa581f519a2890b6b5bde75f9d6fe768a93f9"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/UI/NativeRollPanelHost.cs",
+                                    "sha256":  "97bf467efc16276c273c52de19776ab80b5bd346fbb4bc32b0d9f9cfedceebd4"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/UI/NativeThemeRecovery.cs",
+                                    "sha256":  "579cd59b5abe57597729cc77f9d39b26689836003b6b8f935545e314021219e1"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/UI/NativeThemeResolver.cs",
+                                    "sha256":  "158b02090d27e3b7146744fc75e7b8a73ddfada152109a5d5240ee88d395b093"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/UI/NativeUiDonorLookup.cs",
+                                    "sha256":  "4cf0f458d4a037d887c7f908fc8d66b121129ec1d37b02c5d326efb0122ce1f8"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/UI/SettingsPanel.cs",
+                                    "sha256":  "e6199e646793a860c0a4755f7ceee9ca02ac4c1c80b652b714f82d01032785d1"
+                                },
+                                {
+                                    "kind":  "compile",
+                                    "name":  "src/KingmakerDiceRoller/UI/SettingsView.cs",
+                                    "sha256":  "5473e60a00e1dd945b64f215c487156fdc5dfbee730598c9265eba7cdd93d314"
+                                },
+                                {
+                                    "kind":  "editorconfig",
+                                    "name":  ".editorconfig",
+                                    "sha256":  "3b55297c946e1d6a058f9bca1f0377deaf1d36a0b2a73993296893768f2c567d"
+                                },
+                                {
+                                    "kind":  "reference",
+                                    "name":  "artifacts/references/0Harmony12.dll",
                                     "sha256":  "aa1cd48317254985d8b700cc74953477d1b40c3022ce9aa4c95ed2b8327e1292"
                                 },
                                 {
-                                    "file":  "Assembly-CSharp.dll",
+                                    "kind":  "reference",
+                                    "name":  "artifacts/references/UnityModManager.dll",
+                                    "sha256":  "2e038ff23ab01d538dfef792096e1f5c04802d1edac3660db20d0d54c167c2c4"
+                                },
+                                {
+                                    "kind":  "reference",
+                                    "name":  "Assembly-CSharp.dll",
                                     "sha256":  "3b6450ffec440e296e586f71c711b195aed144b28d53e1cbb29406d18fef5afb"
                                 },
                                 {
-                                    "file":  "Assembly-CSharp-firstpass.dll",
+                                    "kind":  "reference",
+                                    "name":  "Assembly-CSharp-firstpass.dll",
                                     "sha256":  "069a7362ce5e3ccd597206174aec13743c2db5a1bfbc2a42f15a5fbd1ea30d30"
                                 },
                                 {
-                                    "file":  "mscorlib.dll",
+                                    "kind":  "reference",
+                                    "name":  "mscorlib.dll",
                                     "sha256":  "a69849cf0b433664b14dbaeb82385ec043449f71f7c69559cba4be0dd3e8be8d"
                                 },
                                 {
-                                    "file":  "System.Core.dll",
+                                    "kind":  "reference",
+                                    "name":  "System.Core.dll",
                                     "sha256":  "f9c65f2d44f244e1195802a68f5d8f3457caeef2e385cf28c534218749adbe7f"
                                 },
                                 {
-                                    "file":  "System.dll",
+                                    "kind":  "reference",
+                                    "name":  "System.dll",
                                     "sha256":  "541c6067cc69a43660d06a4f0f6eab0febcd33df9089f209d99b7ea36682a0a5"
                                 },
                                 {
-                                    "file":  "UnityEngine.CoreModule.dll",
+                                    "kind":  "reference",
+                                    "name":  "UnityEngine.CoreModule.dll",
                                     "sha256":  "3a76df7f709d465e3273502e08edbffb536b1c2f78c3a132b8668e59fddd2803"
                                 },
                                 {
-                                    "file":  "UnityEngine.dll",
+                                    "kind":  "reference",
+                                    "name":  "UnityEngine.dll",
                                     "sha256":  "50b79c57f46bf4e060bb27461b6d4fac6f078e08b57e776c7a811554c4899fd6"
                                 },
                                 {
-                                    "file":  "UnityEngine.IMGUIModule.dll",
+                                    "kind":  "reference",
+                                    "name":  "UnityEngine.IMGUIModule.dll",
                                     "sha256":  "327b1d34eab0ada754186a03dac40f23de627867124777ec35c6c040b210079a"
                                 },
                                 {
-                                    "file":  "UnityEngine.TextRenderingModule.dll",
+                                    "kind":  "reference",
+                                    "name":  "UnityEngine.TextRenderingModule.dll",
                                     "sha256":  "9ece6f5f1d1221809aeee9c591d67a38d51cde32dc6f525719f2ae2b20bf7fac"
                                 },
                                 {
-                                    "file":  "UnityEngine.UI.dll",
+                                    "kind":  "reference",
+                                    "name":  "UnityEngine.UI.dll",
                                     "sha256":  "4dee942e8974492511733e5482f89fde39e3964008f072ec9c12d05e40a9080d"
                                 },
                                 {
-                                    "file":  "UnityEngine.UIModule.dll",
+                                    "kind":  "reference",
+                                    "name":  "UnityEngine.UIModule.dll",
                                     "sha256":  "51b32055e2a03c78d3e7b2d7d8a6425ee80d415c1e07ea0ec7b1dd84eddc9f12"
                                 },
                                 {
-                                    "file":  "UnityModManager.dll",
-                                    "sha256":  "2e038ff23ab01d538dfef792096e1f5c04802d1edac3660db20d0d54c167c2c4"
+                                    "kind":  "setting",
+                                    "name":  "AdditionalLibPaths=",
+                                    "sha256":  ""
+                                },
+                                {
+                                    "kind":  "setting",
+                                    "name":  "AllowUnsafeBlocks=",
+                                    "sha256":  ""
+                                },
+                                {
+                                    "kind":  "setting",
+                                    "name":  "ApplicationIcon=",
+                                    "sha256":  ""
+                                },
+                                {
+                                    "kind":  "setting",
+                                    "name":  "AssemblyName=KingmakerDiceRoller",
+                                    "sha256":  ""
+                                },
+                                {
+                                    "kind":  "setting",
+                                    "name":  "AssemblyOriginatorKeyFile=",
+                                    "sha256":  ""
+                                },
+                                {
+                                    "kind":  "setting",
+                                    "name":  "CheckForOverflowUnderflow=",
+                                    "sha256":  ""
+                                },
+                                {
+                                    "kind":  "setting",
+                                    "name":  "CscToolExe=",
+                                    "sha256":  ""
+                                },
+                                {
+                                    "kind":  "setting",
+                                    "name":  "CscToolPath=",
+                                    "sha256":  ""
+                                },
+                                {
+                                    "kind":  "setting",
+                                    "name":  "DebugSymbols=",
+                                    "sha256":  ""
+                                },
+                                {
+                                    "kind":  "setting",
+                                    "name":  "DebugType=",
+                                    "sha256":  ""
+                                },
+                                {
+                                    "kind":  "setting",
+                                    "name":  "DefineConstants=",
+                                    "sha256":  ""
+                                },
+                                {
+                                    "kind":  "setting",
+                                    "name":  "DelaySign=",
+                                    "sha256":  ""
+                                },
+                                {
+                                    "kind":  "setting",
+                                    "name":  "Deterministic=true",
+                                    "sha256":  ""
+                                },
+                                {
+                                    "kind":  "setting",
+                                    "name":  "Features=",
+                                    "sha256":  ""
+                                },
+                                {
+                                    "kind":  "setting",
+                                    "name":  "FileAlignment=",
+                                    "sha256":  ""
+                                },
+                                {
+                                    "kind":  "setting",
+                                    "name":  "HighEntropyVA=true",
+                                    "sha256":  ""
+                                },
+                                {
+                                    "kind":  "setting",
+                                    "name":  "LangVersion=7.3",
+                                    "sha256":  ""
+                                },
+                                {
+                                    "kind":  "setting",
+                                    "name":  "ModuleAssemblyName=",
+                                    "sha256":  ""
+                                },
+                                {
+                                    "kind":  "setting",
+                                    "name":  "NoConfig=",
+                                    "sha256":  ""
+                                },
+                                {
+                                    "kind":  "setting",
+                                    "name":  "NoStdLib=",
+                                    "sha256":  ""
+                                },
+                                {
+                                    "kind":  "setting",
+                                    "name":  "NoWarn=",
+                                    "sha256":  ""
+                                },
+                                {
+                                    "kind":  "setting",
+                                    "name":  "Nullable=",
+                                    "sha256":  ""
+                                },
+                                {
+                                    "kind":  "setting",
+                                    "name":  "Optimize=",
+                                    "sha256":  ""
+                                },
+                                {
+                                    "kind":  "setting",
+                                    "name":  "PathMap=",
+                                    "sha256":  ""
+                                },
+                                {
+                                    "kind":  "setting",
+                                    "name":  "PlatformTarget=",
+                                    "sha256":  ""
+                                },
+                                {
+                                    "kind":  "setting",
+                                    "name":  "Prefer32Bit=false",
+                                    "sha256":  ""
+                                },
+                                {
+                                    "kind":  "setting",
+                                    "name":  "PublicSign=",
+                                    "sha256":  ""
+                                },
+                                {
+                                    "kind":  "setting",
+                                    "name":  "RootNamespace=KingmakerDiceRoller",
+                                    "sha256":  ""
+                                },
+                                {
+                                    "kind":  "setting",
+                                    "name":  "SignAssembly=",
+                                    "sha256":  ""
+                                },
+                                {
+                                    "kind":  "setting",
+                                    "name":  "SubsystemVersion=6.00",
+                                    "sha256":  ""
+                                },
+                                {
+                                    "kind":  "setting",
+                                    "name":  "TargetFrameworkMoniker=.NETFramework,Version=v4.7.2",
+                                    "sha256":  ""
+                                },
+                                {
+                                    "kind":  "setting",
+                                    "name":  "TargetFrameworkVersion=v4.7.2",
+                                    "sha256":  ""
+                                },
+                                {
+                                    "kind":  "setting",
+                                    "name":  "TreatWarningsAsErrors=true",
+                                    "sha256":  ""
+                                },
+                                {
+                                    "kind":  "setting",
+                                    "name":  "WarningLevel=4",
+                                    "sha256":  ""
+                                },
+                                {
+                                    "kind":  "setting",
+                                    "name":  "WarningsAsErrors=",
+                                    "sha256":  ""
+                                },
+                                {
+                                    "kind":  "setting",
+                                    "name":  "WarningsNotAsErrors=",
+                                    "sha256":  ""
+                                },
+                                {
+                                    "kind":  "setting",
+                                    "name":  "Win32Manifest=",
+                                    "sha256":  ""
+                                },
+                                {
+                                    "kind":  "setting",
+                                    "name":  "Win32Resource=",
+                                    "sha256":  ""
                                 }
                             ],
     "game_assembly_sha256":  "3b6450ffec440e296e586f71c711b195aed144b28d53e1cbb29406d18fef5afb",
