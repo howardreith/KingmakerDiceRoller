@@ -84,6 +84,23 @@ function Get-Sha256([string] $Path) {
     return ([BitConverter]::ToString($bytes)).Replace('-', '').ToLowerInvariant()
 }
 
+# The bytes Git checks out for <commit>:<path> in this repository (its filters and line-ending rules applied).
+function Get-GitCheckoutBytes([string] $Commit, [string] $Path) {
+    $start = [Diagnostics.ProcessStartInfo]::new('git')
+    $start.Arguments = "-C `"$($script:RepositoryRoot)`" cat-file --filters `"$($Commit):$($Path.Replace('\', '/'))`""
+    $start.UseShellExecute = $false; $start.RedirectStandardOutput = $true; $start.RedirectStandardError = $true
+    $process = [Diagnostics.Process]::Start($start)
+    $buffer = [IO.MemoryStream]::new()
+    try {
+        $errorTask = $process.StandardError.ReadToEndAsync()
+        $process.StandardOutput.BaseStream.CopyTo($buffer)
+        $process.WaitForExit()
+        if ($process.ExitCode -ne 0) { throw "git cat-file --filters $($Commit):$Path failed: $($errorTask.Result)" }
+        return , $buffer.ToArray()
+    }
+    finally { $buffer.Dispose(); $process.Dispose() }
+}
+
 function Get-GitMetadata {
     $branch = (& git -C $script:RepositoryRoot rev-parse --abbrev-ref HEAD).Trim()
     $commit = (& git -C $script:RepositoryRoot rev-parse HEAD).Trim()
@@ -175,10 +192,14 @@ function ConvertFrom-CompilerInputList([string] $ListPath) {
     $entries = foreach ($line in @($cscArgs | ForEach-Object { 'arg|' + $_ })) {
         if (-not $line.StartsWith('arg|')) { throw "Compiler input list is malformed: $line" }
         $arg = $line.Substring(4)
-        if ($arg.StartsWith('@')) { [ordered]@{ kind = 'response-file'; name = '@' + (Get-InputName $arg.Substring(1)); sha256 = Get-InputDigest $arg.Substring(1) }; continue }
+        # Forms whose material files the inventory cannot name are refused, not recorded as text: an explicit response
+        # file (its contents can name further sources, resources or references), linked (embedded-interop) references
+        # and wildcard source recursion.
+        if ($arg.StartsWith('@')) { throw "Unsupported compiler input: the response file $arg can name files the build receipt cannot bind; remove it from the project or local configuration." }
         $m = [regex]::Match($arg, '^[/-]([A-Za-z0-9_+-]+?)(?::(.*))?$')
         if (-not $m.Success) { [ordered]@{ kind = 'compile'; name = Get-InputName $arg; sha256 = Get-InputDigest $arg }; continue }
         $switch = $m.Groups[1].Value.ToLowerInvariant(); $value = $m.Groups[2].Value
+        if (@('link', 'l', 'recurse') -ccontains $switch) { throw "Unsupported compiler input: $arg (linked references and wildcard source recursion are not supported by the build receipt); remove it from the project or local configuration." }
         if ($outputSwitches -ccontains $switch) { [ordered]@{ kind = 'output'; name = "/$switch" + ':' + [IO.Path]::GetFileName($value.Trim('"')); sha256 = '' } }
         elseif ($switch -ceq 'reference' -or $switch -ceq 'r') {
             $alias, $path = if ($value -match '^[A-Za-z_][A-Za-z0-9_]*=') { $value -split '=', 2 } else { $null, $value }
@@ -195,9 +216,79 @@ function ConvertFrom-CompilerInputList([string] $ListPath) {
     return @(@($compilerEntry) + $implicit + @($entries))
 }
 
-# Canonical text of a compiler inventory (for equality checks between the receipt, the production compile and now).
-function ConvertTo-CompilerInventoryText($Inventory) {
-    return (@($Inventory | ForEach-Object { [string]$_.kind + '|' + [string]$_.name + '|' + [string]$_.sha256 }) -join "`n")
+# Structural comparison of two compiler inventories: the same number of entries and, entry by entry in order, the same
+# kind, name and digest (each a string, compared ordinally). Returns $null when equal, otherwise the first difference.
+function Get-CompilerInventoryDifference($Recorded, $Current) {
+    $a = @($Recorded); $b = @($Current)
+    if ($a.Count -ne $b.Count) { return "entry count $($a.Count) vs $($b.Count)" }
+    for ($i = 0; $i -lt $a.Count; $i++) {
+        foreach ($field in @('kind', 'name', 'sha256')) {
+            $x = if ($a[$i] -is [Collections.IDictionary]) { $a[$i][$field] } else { $a[$i].$field }
+            $y = if ($b[$i] -is [Collections.IDictionary]) { $b[$i][$field] } else { $b[$i].$field }
+            if (-not ($x -is [string]) -or -not ($y -is [string]) -or -not [string]::Equals($x, $y, [StringComparison]::Ordinal)) { return "entry $i $field" }
+        }
+    }
+    return $null
+}
+
+# The bounded local build configuration. The receipt's inventory comes from an MSBuild evaluation that skips the compiler,
+# so anything that could act only during a real compile is refused instead of trusted, at Build-Local and at every receipt
+# admission (package, qualification):
+# - the ignored GamePath.props may only set the three path properties (no conditions, imports, items or targets);
+# - no Directory.Build.props/.targets/.rsp above the repository, and none inside it that Git does not track, nor an
+#   untracked project .user file;
+# - no environment variable that selects additional MSBuild imports;
+# - no per-user MSBuild ImportBefore/ImportAfter extension file.
+# Machine-wide extension files that ship with the installed MSBuild are part of the toolchain and are not inventoried.
+function Assert-LocalBuildConfiguration {
+    $root = $script:RepositoryRoot
+    $props = Join-Path $root 'GamePath.props'
+    if (-not (Test-Path -LiteralPath $props -PathType Leaf)) { throw 'GamePath.props is missing (run scripts\Initialize-GamePath.ps1).' }
+    [xml]$xml = Get-Content -LiteralPath $props -Raw
+    $project = $xml.DocumentElement
+    $allowedNames = @('KingmakerInstallDir', 'KingmakerManagedDir', 'UnityModManagerDir')
+    # Conditions may test only $(Configuration) and $(Platform), which the evaluation and the production compile share;
+    # values may refer only to the path properties, the configuration and this file's directory. No property functions,
+    # item or metadata references.
+    $textAllowed = { param([string] $Text, [string[]] $References)
+        if ($Text -match '[@%]\(' -or $Text -match '\$\(\s*\[') { return $false }
+        foreach ($m in [regex]::Matches($Text, '\$\(([^)]*)\)')) { if ($References -cnotcontains $m.Groups[1].Value.Trim()) { return $false } }
+        return $true }
+    $conditionOk = { param($Node) foreach ($attribute in @($Node.Attributes)) { if ($attribute.Name -cne 'Condition' -or -not (& $textAllowed $attribute.Value @('Configuration', 'Platform'))) { return $false } }; return $true }
+    $groups = @($project.ChildNodes | Where-Object { $_.NodeType -eq 'Element' })
+    $ok = $project.LocalName -ceq 'Project' -and @($project.Attributes | Where-Object { @('xmlns', 'ToolsVersion') -cnotcontains $_.Name }).Count -eq 0 -and
+        @($groups | Where-Object { $_.LocalName -cne 'PropertyGroup' -or -not (& $conditionOk $_) }).Count -eq 0
+    if ($ok) {
+        foreach ($property in @($groups | ForEach-Object { @($_.ChildNodes | Where-Object { $_.NodeType -eq 'Element' }) })) {
+            if ($allowedNames -cnotcontains $property.LocalName -or -not (& $conditionOk $property) -or @($property.ChildNodes | Where-Object { $_.NodeType -eq 'Element' }).Count -ne 0 -or
+                -not (& $textAllowed $property.InnerText ($allowedNames + @('Configuration', 'Platform', 'MSBuildThisFileDirectory')))) { $ok = $false }
+        }
+    }
+    if (-not $ok) { throw "GamePath.props may only set $($allowedNames -join ', ') (conditions on Configuration or Platform only; no imports, items, targets, property functions or other properties)." }
+    $dir = Split-Path -Parent ([IO.Path]::GetFullPath($root).TrimEnd('\'))
+    while ($dir) {
+        foreach ($name in @('Directory.Build.props', 'Directory.Build.targets', 'Directory.Build.rsp')) {
+            if (Test-Path -LiteralPath (Join-Path $dir $name) -PathType Leaf) { throw "An outside $name applies to the build: $(Join-Path $dir $name)" }
+        }
+        $parent = Split-Path -Parent $dir
+        if (-not $parent -or $parent -eq $dir) { break }
+        $dir = $parent
+    }
+    $untracked = @(& git -C $root ls-files --others -- ':(glob)**/Directory.Build.props' ':(glob)**/Directory.Build.targets' ':(glob)**/Directory.Build.rsp' ':(glob)**/*.csproj.user')
+    if ($LASTEXITCODE -ne 0) { throw 'git ls-files failed while checking the local build configuration.' }
+    if ($untracked.Count -gt 0) { throw "Untracked MSBuild configuration files apply to the build: $($untracked -join ', ')" }
+    foreach ($name in @('DirectoryBuildPropsPath', 'DirectoryBuildTargetsPath', 'ImportDirectoryBuildProps', 'ImportDirectoryBuildTargets',
+            'CustomBeforeMicrosoftCommonProps', 'CustomAfterMicrosoftCommonProps', 'CustomBeforeMicrosoftCommonTargets', 'CustomAfterMicrosoftCommonTargets',
+            'CustomBeforeMicrosoftCSharpProps', 'CustomAfterMicrosoftCSharpProps', 'CustomBeforeMicrosoftCSharpTargets', 'CustomAfterMicrosoftCSharpTargets',
+            'MSBuildUserExtensionsPath', 'ImportUserLocationsByWildcardBeforeMicrosoftCommonProps', 'ImportUserLocationsByWildcardAfterMicrosoftCommonProps',
+            'ImportUserLocationsByWildcardBeforeMicrosoftCommonTargets', 'ImportUserLocationsByWildcardAfterMicrosoftCommonTargets')) {
+        if (-not [string]::IsNullOrEmpty([Environment]::GetEnvironmentVariable($name))) { throw "The environment variable $name selects MSBuild imports; unset it before building." }
+    }
+    $userExtensions = Join-Path $env:LOCALAPPDATA 'Microsoft\MSBuild'
+    if (Test-Path -LiteralPath $userExtensions -PathType Container) {
+        $hooks = @(Get-ChildItem -LiteralPath $userExtensions -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.FullName -match '\\Import(Before|After)\\' })
+        if ($hooks.Count -gt 0) { throw "Per-user MSBuild extension files apply to the build: $(@($hooks | ForEach-Object { $_.FullName }) -join ', ')" }
+    }
 }
 
 # Validates the shape of a recorded compiler inventory (as read back from JSON).
@@ -208,6 +299,7 @@ function Assert-CompilerInventoryShape($Inventory) {
         foreach ($field in @('kind', 'name', 'sha256')) {
             if ($null -eq $entry -or -not $entry.PSObject.Properties[$field] -or -not ($entry.$field -is [string])) { throw "Build receipt compiler input field $field must be a string; rebuild first." }
         }
+        if ($entry.name -match '[\x00-\x1f]') { throw "Build receipt compiler input name contains a control character: $($entry.kind); rebuild first." }
         $valid = if ($entry.kind -ceq 'option' -or $entry.kind -ceq 'output') { $entry.sha256 -ceq '' -and $entry.name.Length -gt 0 } else {
             @('reference', 'compile', 'file-option', 'compiler', 'response-file') -ccontains $entry.kind -and ($entry.sha256 -cmatch '^[0-9a-f]{64}$' -or $entry.sha256 -ceq 'absent') }
         if (-not $valid) { throw "Build receipt compiler input is malformed: $($entry.kind) $($entry.name); rebuild first." }
@@ -221,6 +313,7 @@ function Assert-CompilerInventoryShape($Inventory) {
 # SkipCompilerExecution pass through CoreCompile in a fresh intermediate directory (references, sources including generated
 # ones, every option, file-valued inputs by content). Needs the game assemblies and pins, not the runtime loader.
 function Get-CompilerReferenceIdentities([string] $Configuration) {
+    Assert-LocalBuildConfiguration
     $id = [Guid]::NewGuid().ToString('N')
     $list = Join-Path ([IO.Path]::GetTempPath()) ("kdr-compiler-references-$id.txt")
     $obj = Join-Path ([IO.Path]::GetTempPath()) ("kdr-compiler-references-$id\")
@@ -284,8 +377,9 @@ function Assert-PinnedBuildReceipt($Receipt, [string] $DllPath, [string] $Config
     if (-not $Receipt.PSObject.Properties['compiler_references']) { throw 'Build receipt has no compiler_references; rebuild first.' }
     Assert-CompilerInventoryShape $Receipt.compiler_references
     $currentInventory = @(Get-CompilerReferenceIdentities $Receipt.configuration)
-    if ((ConvertTo-CompilerInventoryText $Receipt.compiler_references) -cne (ConvertTo-CompilerInventoryText $currentInventory)) {
-        throw 'Build inputs changed since this DLL was built: the receipt compiler inputs differ from the inputs MSBuild resolves now (references, sources or compiler settings); rebuild first.'
+    $difference = Get-CompilerInventoryDifference $Receipt.compiler_references $currentInventory
+    if ($difference) {
+        throw "Build inputs changed since this DLL was built: the receipt compiler inputs differ from the inputs MSBuild resolves now ($difference; references, sources or compiler settings); rebuild first."
     }
     if ($Receipt.build_inputs_sha256 -cne (Get-BuildInputFingerprint $Receipt.configuration $currentInventory)) { throw 'Build inputs changed since this DLL was built (source, manifest or loader pins); rebuild first.' }
     $pins = @(Get-PinnedReferenceDefinitions)

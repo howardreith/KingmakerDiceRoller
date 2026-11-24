@@ -307,6 +307,7 @@ try {
     [IO.File]::AppendAllText((Join-Path $base $marker), "`r`nnamespace KingmakerDiceRoller.Domain { internal static class LoaderBaselineTestMarker { } }`r`n")
     $rebuild = Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))
     $secondDllSha = Get-Sha256 $dll
+    Copy-Item -LiteralPath (Join-Path $base 'artifacts\contracts\respec-contracts.json') -Destination (Join-Path $inputs 'respec-contracts-other-build.json')
     Add-Case 'rebuild-after-source-change-accepted' ($rebuild.ExitCode -eq 0 -and $secondDllSha -ne $firstDllSha) "exit $($rebuild.ExitCode); first DLL $firstDllSha; changed-source DLL $secondDllSha"
     $second = Invoke-Isolated @('-File', $package)
     $secondMatch = [regex]::Match($second.Output, 'Package: (.+\.zip)')
@@ -357,9 +358,32 @@ try {
     [IO.File]::WriteAllBytes((Join-Path $managedCopy 'UnityEngine.UI.dll'), $uiBytes)
     Expect-Rejected 'package-reuse-after-resolved-managed-reference-change-rejected' (Invoke-Isolated @('-File', $package)) '(Build inputs changed|compiler inputs differ)'
     [IO.File]::WriteAllText($gamePath, $gamePathOriginal)
-    # Only the overflow-checking option changes (imported from GamePath.props): the stale package is refused, the receipt
-    # of a matching rebuild records the effective option, and the rebuilt DLL differs; removing it needs a rebuild again.
-    [IO.File]::WriteAllText($gamePath, $gamePathOriginal.Replace('</Project>', "  <PropertyGroup><CheckForOverflowUnderflow>true</CheckForOverflowUnderflow></PropertyGroup>`r`n</Project>"))
+    # Bounded local configuration: GamePath.props may only set the path properties. An overflow setting that applies only
+    # to a real compile (conditioned on SkipCompilerExecution), and an unconditional one, are refused at package admission
+    # and at Build-Local; an untracked Directory.Build.targets and an import-selecting environment variable are refused too.
+    $configCases = @(
+        @{ Name = 'production-only-overflow-setting'; Text = $gamePathOriginal.Replace('</Project>', "  <PropertyGroup Condition=`"'`$(SkipCompilerExecution)' != 'true'`"><CheckForOverflowUnderflow>true</CheckForOverflowUnderflow></PropertyGroup>`r`n</Project>") },
+        @{ Name = 'unconditional-overflow-setting'; Text = $gamePathOriginal.Replace('</Project>', "  <PropertyGroup><CheckForOverflowUnderflow>true</CheckForOverflowUnderflow></PropertyGroup>`r`n</Project>") })
+    foreach ($case in $configCases) {
+        [IO.File]::WriteAllText($gamePath, $case.Text)
+        Expect-Rejected "package-with-gamepath-$($case.Name)-refused" (Invoke-Isolated @('-File', $package)) 'GamePath\.props may only set'
+        Expect-Rejected "build-with-gamepath-$($case.Name)-refused" (Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))) 'GamePath\.props may only set'
+    }
+    [IO.File]::WriteAllText($gamePath, $gamePathOriginal)
+    $untrackedTargets = Join-Path $base 'src\Directory.Build.targets'
+    [IO.File]::WriteAllText($untrackedTargets, "<Project><PropertyGroup Condition=`"'`$(SkipCompilerExecution)' != 'true'`"><CheckForOverflowUnderflow>true</CheckForOverflowUnderflow></PropertyGroup></Project>")
+    Expect-Rejected 'package-with-untracked-directory-build-targets-refused' (Invoke-Isolated @('-File', $package)) 'Untracked MSBuild configuration files apply to the build: src/Directory\.Build\.targets'
+    Remove-Item -LiteralPath $untrackedTargets
+    $env:DirectoryBuildTargetsPath = Join-Path $inputs 'selected.targets'
+    try { Expect-Rejected 'package-with-import-selecting-environment-variable-refused' (Invoke-Isolated @('-File', $package)) 'environment variable DirectoryBuildTargetsPath selects MSBuild imports' }
+    finally { Remove-Item Env:\DirectoryBuildTargetsPath }
+    Expect-Accepted 'package-after-local-configuration-restored-accepted' (Invoke-Isolated @('-File', $package)) 'Package validation passed'
+    # Effective compiler options from the tracked Directory.Build.props (here edited in the disposable checkout). Only the
+    # overflow-checking option changes: the stale package is refused, the receipt of a matching rebuild records the
+    # effective option, and the rebuilt DLL differs; removing it needs a rebuild again.
+    $dirProps = Join-Path $base 'Directory.Build.props'
+    $dirPropsOriginal = [IO.File]::ReadAllText($dirProps)
+    [IO.File]::WriteAllText($dirProps, $dirPropsOriginal.Replace('</Project>', "  <PropertyGroup><CheckForOverflowUnderflow>true</CheckForOverflowUnderflow></PropertyGroup>`r`n</Project>"))
     Expect-Rejected 'package-reuse-after-overflow-checking-change-rejected' (Invoke-Isolated @('-File', $package)) 'compiler inputs differ'
     $checkedBuild = Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))
     $checkedReceipt = Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json
@@ -367,12 +391,12 @@ try {
     $effective = @($checkedReceipt.compiler_references | Where-Object { $_.kind -eq 'option' -and $_.name -like '/checked*' } | ForEach-Object name)
     Add-Case 'rebuild-with-overflow-checking-records-effective-option' ($checkedBuild.ExitCode -eq 0 -and $effective -ceq '/checked+' -and $checkedSha -ne $firstDllSha) ("exit $($checkedBuild.ExitCode); receipt records $($effective -join ', '); DLL $checkedSha (committed configuration $firstDllSha)" + $(if ($checkedBuild.ExitCode) { '; ' + (Get-Reason $checkedBuild.Output) } else { '' }))
     Expect-Accepted 'package-after-matching-overflow-checking-rebuild-accepted' (Invoke-Isolated @('-File', $package)) 'Package validation passed'
-    [IO.File]::WriteAllText($gamePath, $gamePathOriginal)
+    [IO.File]::WriteAllText($dirProps, $dirPropsOriginal)
     Expect-Rejected 'package-reuse-after-overflow-checking-removed-rejected' (Invoke-Isolated @('-File', $package)) 'compiler inputs differ'
     $rebuild = Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))
     Add-Case 'rebuild-without-overflow-checking-reproduces-first-dll' ($rebuild.ExitCode -eq 0 -and (Get-Sha256 $dll) -eq $firstDllSha) "DLL $(Get-Sha256 $dll)"
-    # Any effective compiler option counts (the exact Csc command line), for example BaseAddress from GamePath.props.
-    [IO.File]::WriteAllText($gamePath, $gamePathOriginal.Replace('</Project>', "  <PropertyGroup><BaseAddress>0x11000000</BaseAddress></PropertyGroup>`r`n</Project>"))
+    # Any effective compiler option counts (the exact Csc command line), for example BaseAddress from Directory.Build.props.
+    [IO.File]::WriteAllText($dirProps, $dirPropsOriginal.Replace('</Project>', "  <PropertyGroup><BaseAddress>0x11000000</BaseAddress></PropertyGroup>`r`n</Project>"))
     Expect-Rejected 'package-reuse-after-base-address-change-rejected' (Invoke-Isolated @('-File', $package)) 'compiler inputs differ'
     $b = Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))
     $br = Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json
@@ -392,7 +416,7 @@ try {
     $resDir = Join-Path $temp 'win32 resource'; New-Item -ItemType Directory -Path $resDir | Out-Null
     $res = Join-Path $resDir 'external.res'
     New-ResFile $res ([Text.Encoding]::ASCII.GetBytes('loader-baseline resource A'))
-    [IO.File]::WriteAllText($gamePath, $gamePathOriginal.Replace('</Project>', "  <PropertyGroup><Win32Resource>$([Security.SecurityElement]::Escape($res))</Win32Resource></PropertyGroup>`r`n</Project>"))
+    [IO.File]::WriteAllText($dirProps, $dirPropsOriginal.Replace('</Project>', "  <PropertyGroup><Win32Resource>$([Security.SecurityElement]::Escape($res))</Win32Resource></PropertyGroup>`r`n</Project>"))
     $r1 = Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))
     $resReceipt = Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json
     $resEntry = @($resReceipt.compiler_references | Where-Object { $_.kind -eq 'file-option' -and $_.name -like '/win32res:*' })
@@ -404,7 +428,14 @@ try {
     $r2 = Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))
     Add-Case 'rebuild-after-win32-resource-replaced-changes-dll' ($r2.ExitCode -eq 0 -and (Get-Sha256 $dll) -ne $dllA) ("exit $($r2.ExitCode); DLL $(Get-Sha256 $dll) (previous resource: $dllA)")
     Expect-Accepted 'package-after-win32-resource-rebuild-accepted' (Invoke-Isolated @('-File', $package)) 'Package validation passed'
-    [IO.File]::WriteAllText($gamePath, $gamePathOriginal)
+    # R5-F3: an explicit compiler response file (naming the same external resource) is an unsupported form, refused at
+    # package admission and at Build-Local, never recorded as text.
+    $rsp = Join-Path $resDir 'compiler.rsp'
+    [IO.File]::WriteAllText($rsp, "/win32res:`"$res`"`r`n")
+    [IO.File]::WriteAllText($dirProps, $dirPropsOriginal.Replace('</Project>', "  <PropertyGroup><CompilerResponseFile>$([Security.SecurityElement]::Escape($rsp))</CompilerResponseFile></PropertyGroup>`r`n</Project>"))
+    Expect-Rejected 'package-with-compiler-response-file-refused' (Invoke-Isolated @('-File', $package)) 'Unsupported compiler input: the response file'
+    Expect-Rejected 'build-with-compiler-response-file-refused' (Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))) 'Unsupported compiler input: the response file'
+    [IO.File]::WriteAllText($dirProps, $dirPropsOriginal)
     $rebuild = Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))
     Add-Case 'rebuild-without-imported-options-reproduces-first-dll' ($rebuild.ExitCode -eq 0 -and (Get-Sha256 $dll) -eq $firstDllSha) "DLL $(Get-Sha256 $dll)"
     # A document restaged after the staging copy cannot reach a published package, and the refusal keeps the previously
@@ -413,7 +444,7 @@ try {
     $published = @((Join-Path $base "artifacts\packages\KingmakerDiceRoller-0.2.0.zip"), (Join-Path $base 'artifacts\packages\package-manifest.json'), (Join-Path $base 'artifacts\packages\package-validation.json'))
     $before = @($published | ForEach-Object { if (Test-Path -LiteralPath $_) { Get-Sha256 $_ } else { 'missing' } }) -join ';'
     $packageText = [IO.File]::ReadAllText($package)
-    $stageAnchor = "    foreach (`$entry in `$documents.Keys) { Copy-Item -LiteralPath (Join-Path `$root `$documents[`$entry]) -Destination (Join-Path `$stage `$documents[`$entry]) }"
+    $stageAnchor = "    foreach (`$entry in `$documents.Keys) { [IO.File]::WriteAllBytes((Join-Path `$stage `$documents[`$entry]), [byte[]]`$documentBytes[`$entry]) }"
     if ($packageText.IndexOf($stageAnchor) -lt 0) { throw 'Package.ps1 staging anchor not found.' }
     $restage = Join-Path $base 'scripts\Package-instrumented.ps1'
     [IO.File]::WriteAllText($restage, $packageText.Replace($stageAnchor, $stageAnchor + "`r`n    [IO.File]::AppendAllText((Join-Path `$stage 'README.md'), ""`r`n<!-- restaged after the staging copy -->`r`n"")"))
@@ -431,14 +462,37 @@ try {
     Invoke-Isolated @('-File', $package) | Out-Null
     $before = @($published | ForEach-Object { Get-Sha256 $_ }) -join ';'
     $packageText = [IO.File]::ReadAllText($package)
-    $publishAnchor = '        [IO.File]::Move($newZip, $zip)'
+    $publishAnchor = '                    [IO.File]::Move($pair[0], $pair[1]); $placed.Add($pair[1])'
     if ($packageText.IndexOf($publishAnchor) -lt 0) { throw 'Package.ps1 publication anchor not found.' }
     $failingPublish = Join-Path $base 'scripts\Package-instrumented.ps1'
-    [IO.File]::WriteAllText($failingPublish, $packageText.Replace($publishAnchor, $publishAnchor + "`r`n        throw 'injected failure after the new ZIP was placed'"))
+    [IO.File]::WriteAllText($failingPublish, $packageText.Replace($publishAnchor, $publishAnchor + "`r`n                    if (`$pair[1] -ceq `$zip) { throw 'injected failure after the new ZIP was placed' }"))
     Expect-Rejected 'package-publication-failure-rejected' (Invoke-Isolated @('-File', $failingPublish)) 'injected failure after the new ZIP was placed'
     Remove-Item -LiteralPath $failingPublish
     $after = @($published | ForEach-Object { if (Test-Path -LiteralPath $_) { Get-Sha256 $_ } else { 'missing' } }) -join ';'
     Add-Case 'publication-failure-restores-previous-package-set' ($before -ceq $after) "published ZIP, manifest and validation report restored: $($before -ceq $after)"
+    # R5-F1: the existing validation report held open without delete sharing during ordinary repackaging of a distinct
+    # valid replacement (README changed): the publication fails during backup acquisition and all three public files keep
+    # their hashes; after the handle closes, a retry succeeds.
+    $readmePath = Join-Path $base 'README.md'; $readmeOriginal = [IO.File]::ReadAllBytes($readmePath)
+    [IO.File]::AppendAllText($readmePath, "`r`n<!-- distinct replacement -->`r`n")
+    $holder = [IO.File]::Open((Join-Path $base 'artifacts\packages\package-validation.json'), [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
+    try { $held = Invoke-Isolated @('-File', $package) } finally { $holder.Dispose() }
+    $afterHeld = @($published | ForEach-Object { if (Test-Path -LiteralPath $_) { Get-Sha256 $_ } else { 'missing' } }) -join ';'
+    Add-Case 'held-validation-report-keeps-previous-package-set' ($held.ExitCode -ne 0 -and $afterHeld -ceq $before) ("exit $($held.ExitCode); all three public hashes unchanged: $($afterHeld -ceq $before); " + (Get-Reason $held.Output))
+    $retry = Invoke-Isolated @('-File', $package)
+    $set = @($published | ForEach-Object { Get-Sha256 $_ })
+    $rm = Get-Content -LiteralPath $published[1] -Raw | ConvertFrom-Json; $rv = Get-Content -LiteralPath $published[2] -Raw | ConvertFrom-Json
+    Add-Case 'retry-after-handle-closed-publishes-the-replacement' ($retry.ExitCode -eq 0 -and $set[0] -ne ($before -split ';')[0] -and $rm.package_sha256 -eq $set[0] -and $rv.package_sha256 -eq $set[0]) "exit $($retry.ExitCode); ZIP $($set[0])"
+    [IO.File]::WriteAllBytes($readmePath, $readmeOriginal)
+    # Two overlapping ordinary publishers: both finish, one publication at a time, and the surviving ZIP,
+    # validation report and manifest agree with each other.
+    $logA = Join-Path $inputs 'publisher-a.txt'; $logB = Join-Path $inputs 'publisher-b.txt'
+    $pa = Start-Process -FilePath powershell.exe -ArgumentList @('-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', ('"' + $package + '"')) -RedirectStandardOutput $logA -PassThru
+    $pb = Start-Process -FilePath powershell.exe -ArgumentList @('-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', ('"' + $package + '"')) -RedirectStandardOutput $logB -PassThru
+    $pa.WaitForExit(); $pb.WaitForExit()
+    $set = @($published | ForEach-Object { if (Test-Path -LiteralPath $_) { Get-Sha256 $_ } else { 'missing' } })
+    $rm = Get-Content -LiteralPath $published[1] -Raw | ConvertFrom-Json; $rv = Get-Content -LiteralPath $published[2] -Raw | ConvertFrom-Json
+    Add-Case 'overlapping-publishers-leave-an-agreeing-set' ($pa.ExitCode -eq 0 -and $pb.ExitCode -eq 0 -and $rm.package_sha256 -eq $set[0] -and $rv.package_sha256 -eq $set[0] -and $rm.dll_sha256 -eq $rv.dll_sha256 -and -not (Test-Path -LiteralPath (Join-Path $base 'artifacts\packages\.publish.lock'))) "exits $($pa.ExitCode)/$($pb.ExitCode); ZIP $($set[0]); manifest $($rm.package_sha256); validation $($rv.package_sha256)"
     $savedReceipt = Join-Path $inputs 'genuine-receipt.json'
     Copy-Item -LiteralPath $receiptPath -Destination $savedReceipt -Force
     # The receipt's reference inventory equals the /reference list of the direct normal-verbosity compile above.
@@ -454,6 +508,16 @@ try {
     Copy-Item -LiteralPath $savedReceipt -Destination $receiptPath -Force
     Get-Content -LiteralPath $savedReceipt -Raw | ConvertFrom-Json | Select-Object -Property * -ExcludeProperty compiler_references | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $receiptPath -Encoding UTF8
     Expect-Rejected 'package-receipt-without-compiler-inventory-rejected' (Invoke-Isolated @('-File', $package)) 'no compiler_references'
+    Copy-Item -LiteralPath $savedReceipt -Destination $receiptPath -Force
+    # R4-F2: two reference records folded into one multiline name (equal under the former delimiter text) are refused.
+    Edit-Json $receiptPath { param($j)
+        $list = [Collections.ArrayList]@($j.compiler_references)
+        $i = [Array]::FindIndex([object[]]$list.ToArray(), [Predicate[object]]{ param($e) $e.kind -eq 'reference' })
+        $list[$i].name = $list[$i].name + '|' + $list[$i].sha256 + "`n" + $list[$i + 1].kind + '|' + $list[$i + 1].name
+        $list[$i].sha256 = $list[$i + 1].sha256
+        $list.RemoveAt($i + 1)
+        $j.compiler_references = @($list) }
+    Expect-Rejected 'package-receipt-with-folded-multiline-reference-name-rejected' (Invoke-Isolated @('-File', $package)) '(control character|entry count)'
     Copy-Item -LiteralPath $savedReceipt -Destination $receiptPath -Force
     Expect-Accepted 'package-genuine-receipt-with-inventory-accepted' (Invoke-Isolated @('-File', $package)) 'Package validation passed'
     foreach ($bad in @(
@@ -514,7 +578,35 @@ try {
         Expect-Rejected "package-receipt-$($bad.Name)-rejected" (Invoke-Isolated @('-File', $package, '-Candidate')) '(commit must be a 40-character|dirty must be a JSON Boolean)'
     }
     Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1')) | Out-Null
+    $laterCandidateDir = Join-Path $base ('artifacts\candidates\' + $laterCommit)
+    # R5-F2: a required report unavailable: nothing is published and no commit directory is left; the retry below succeeds.
+    $respec = Join-Path $base 'artifacts\contracts\respec-contracts.json'; $respecBytes = [IO.File]::ReadAllBytes($respec)
+    Remove-Item -LiteralPath $respec
+    $r = Invoke-Isolated @('-File', $package, '-Candidate')
+    Add-Case 'candidate-with-missing-report-leaves-no-commit-directory' ($r.ExitCode -ne 0 -and -not (Test-Path -LiteralPath $laterCandidateDir)) ("exit $($r.ExitCode); commit directory present: $(Test-Path -LiteralPath $laterCandidateDir)")
+    # R5-F5: a genuine contract report from another disposable build (the changed-source DLL) is refused before publication.
+    Copy-Item -LiteralPath (Join-Path $inputs 'respec-contracts-other-build.json') -Destination $respec
+    $r = Invoke-Isolated @('-File', $package, '-Candidate')
+    Add-Case 'candidate-with-another-builds-report-refused' ($r.ExitCode -ne 0 -and $r.Output -match 'respec-contracts\.json does not describe this build \(dll_sha256' -and -not (Test-Path -LiteralPath $laterCandidateDir)) (Get-Reason $r.Output)
+    [IO.File]::WriteAllBytes($respec, $respecBytes)
+    # R5-F4: README.md changed after clean admission, before the documents are read: refused (the candidate's documents
+    # must be the admitted commit's checkout bytes); nothing is published.
+    $readmeEdit = New-InstrumentedScript 'Package' '$documentDigests = [ordered]@{}' "[IO.File]::AppendAllText((Join-Path `$root 'README.md'), ""`r`n<!-- edited after admission -->`r`n"")"
+    $r = Invoke-Isolated @('-File', $readmeEdit, '-Candidate')
+    Remove-Item -LiteralPath $readmeEdit -Force
+    & git -C $base checkout -q -- README.md
+    Add-Case 'candidate-readme-edited-after-admission-refused' ($r.ExitCode -ne 0 -and $r.Output -match "candidate's README\.md differs from the admitted commit" -and -not (Test-Path -LiteralPath $laterCandidateDir)) (Get-Reason $r.Output)
+    # R5-F2: a competing same-commit publisher that creates the destination first keeps its files; this one is refused.
+    $race = New-InstrumentedScript 'Package' '        New-Item -ItemType Directory -Force -Path (Split-Path -Parent $packageDir) | Out-Null' "New-Item -ItemType Directory -Path `$packageDir | Out-Null; [IO.File]::WriteAllText((Join-Path `$packageDir 'winner.txt'), 'winner')"
+    $r = Invoke-Isolated @('-File', $race, '-Candidate')
+    Remove-Item -LiteralPath $race -Force
+    $winner = @(Get-ChildItem -LiteralPath $laterCandidateDir -Force | ForEach-Object { $_.Name })
+    Add-Case 'competing-candidate-publisher-keeps-the-winners-files' ($r.ExitCode -ne 0 -and $r.Output -match 'nothing was overwritten' -and ($winner -join ',') -eq 'winner.txt') ("exit $($r.ExitCode); destination holds: $($winner -join ', ')")
+    Remove-Item -LiteralPath $laterCandidateDir -Recurse -Force
     Expect-Accepted 'candidate-accepted-after-build-at-current-commit' (Invoke-Isolated @('-File', $package, '-Candidate')) 'Package validation passed'
+    $published8 = @(Get-ChildItem -LiteralPath $laterCandidateDir -File | ForEach-Object { $_.Name } | Sort-Object)
+    $expected8 = @('build-provenance.json', 'KingmakerDiceRoller-0.2.0.zip', 'KingmakerDiceRoller.dll', 'native-ui-contracts.json', 'package-manifest.json', 'package-validation.json', 'respec-contracts.json', 'runtime-contracts.json', 'source-qualification.json') | Sort-Object
+    Add-Case 'candidate-directory-holds-the-complete-set' (($published8 -join ',') -eq ($expected8 -join ',')) ($published8 -join ', ')
     & git -C $base reset -q --hard $commit
     Copy-Item -LiteralPath $savedReceipt -Destination $receiptPath -Force
 
