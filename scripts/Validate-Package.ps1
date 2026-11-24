@@ -11,10 +11,11 @@ $root = Get-RepositoryRoot
 Assert-FileExists $PackagePath 'Package ZIP'
 # Inspect and hash one immutable private copy, so the recorded ZIP digest and the inspected DLL come from the same bytes.
 $privateDirectory = Join-Path ([IO.Path]::GetTempPath()) ('kdr-validate-' + [Guid]::NewGuid().ToString('N'))
-[void][IO.Directory]::CreateDirectory($privateDirectory)
 $inspected = Join-Path $privateDirectory 'package.zip'
-[IO.File]::Copy($PackagePath, $inspected)
 try {
+# Created and filled inside the cleanup scope: a failed copy leaves no private directory behind.
+[void][IO.Directory]::CreateDirectory($privateDirectory)
+[IO.File]::Copy($PackagePath, $inspected)
 # An explicitly supplied expected digest must be well formed; only an omitted parameter skips the comparison.
 if ($PSBoundParameters.ContainsKey('ExpectedDllSha256') -and $ExpectedDllSha256 -cnotmatch '^[0-9a-f]{64}$') {
     throw 'ExpectedDllSha256 must be a lowercase SHA-256 string.'

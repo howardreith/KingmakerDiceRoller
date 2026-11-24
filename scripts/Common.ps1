@@ -139,13 +139,44 @@ function Get-PinnedReferenceIdentities {
     }
 }
 
-# Material inputs of the production DLL: every tracked or new file under src\, the loader pin, verifier and
-# MSBuild guard, the root build properties, the manifest, the build wrapper (Build-Local.ps1 and Common.ps1, which
-# choose the MSBuild invocation), and the identity of every assembly Csc receives for the configuration, as resolved
-# by MSBuild itself. Any change invalidates an existing DLL and receipt, so packaging or qualification
-# can never reuse a build made from other inputs. The configuration is bound separately by the receipt.
-# The exact assemblies Csc receives for this configuration, from MSBuild itself (references resolved and reference
-# assemblies selected), as path-free identities: identical bytes relocated elsewhere keep the same identity.
+# Reads a compiler-input list written by the WriteCompilerReferenceList target into path-free identities (files: kind,
+# name, SHA-256; properties: name=value), in a canonical order.
+function ConvertFrom-CompilerInputList([string] $ListPath) {
+    $rootPrefix = [IO.Path]::GetFullPath($script:RepositoryRoot).TrimEnd('\') + '\'
+    return @(Get-Content -LiteralPath $ListPath -Encoding UTF8 | Where-Object { $_ } | ForEach-Object {
+        $kind, $value = $_ -split '\|', 2
+        if ($kind -ceq 'setting') { [ordered]@{ kind = $kind; name = $value; sha256 = '' } }
+        else {
+            $name = if ($value.StartsWith($rootPrefix, [StringComparison]::OrdinalIgnoreCase)) { $value.Substring($rootPrefix.Length).Replace('\', '/') } else { [IO.Path]::GetFileName($value) }
+            $digest = if (Test-Path -LiteralPath $value -PathType Leaf) { Get-Sha256 $value } else { 'absent' }
+            [ordered]@{ kind = $kind; name = $name; sha256 = $digest }
+        }
+    } | Sort-Object { $_.kind + '|' + $_.name + '|' + $_.sha256 })
+}
+
+# Canonical text of a compiler inventory (for equality checks between the receipt, the production compile and now).
+function ConvertTo-CompilerInventoryText($Inventory) {
+    return (@($Inventory | ForEach-Object { [string]$_.kind + '|' + [string]$_.name + '|' + [string]$_.sha256 }) -join "`n")
+}
+
+# Validates the shape of a recorded compiler inventory (as read back from JSON).
+function Assert-CompilerInventoryShape($Inventory) {
+    $entries = @($Inventory)
+    if ($entries.Count -eq 0) { throw 'Build receipt compiler_references is empty; rebuild first.' }
+    foreach ($entry in $entries) {
+        foreach ($field in @('kind', 'name', 'sha256')) {
+            if ($null -eq $entry -or -not $entry.PSObject.Properties[$field] -or -not ($entry.$field -is [string])) { throw "Build receipt compiler input field $field must be a string; rebuild first." }
+        }
+        $valid = if ($entry.kind -ceq 'setting') { $entry.sha256 -ceq '' -and $entry.name -cmatch '^[A-Za-z0-9_]+=' } else {
+            @('reference', 'compile', 'resource', 'analyzer', 'additional', 'editorconfig') -ccontains $entry.kind -and ($entry.sha256 -cmatch '^[0-9a-f]{64}$' -or $entry.sha256 -ceq 'absent') }
+        if (-not $valid) { throw "Build receipt compiler input is malformed: $($entry.kind) $($entry.name); rebuild first." }
+    }
+    if (@($entries | Where-Object { $_.kind -ceq 'reference' }).Count -eq 0) { throw 'Build receipt compiler inventory names no references; rebuild first.' }
+}
+
+# The compiler inputs for a configuration as MSBuild itself evaluates them: the exact references Csc receives (after
+# reference-assembly selection), source/resource/analyzer items and compile-affecting properties (including anything an
+# import such as GamePath.props sets). Needs the game assemblies and pins, not the runtime loader.
 function Get-CompilerReferenceIdentities([string] $Configuration) {
     $id = [Guid]::NewGuid().ToString('N')
     $list = Join-Path ([IO.Path]::GetTempPath()) ("kdr-compiler-references-$id.txt")
@@ -156,10 +187,8 @@ function Get-CompilerReferenceIdentities([string] $Configuration) {
     try {
         $output = $null | & (Resolve-MSBuild) $project /nologo /v:q /nr:false '/t:ResolveReferences;FindReferenceAssembliesForReferences' `
             "/p:Configuration=$Configuration" /p:Platform=AnyCPU "/p:CompilerReferenceListPath=$list" "/p:IntermediateOutputPath=$obj" 2>&1 | ForEach-Object { "$_" }
-        $exit = $LASTEXITCODE
-        if ($exit -ne 0 -or -not (Test-Path -LiteralPath $list)) { throw "Could not resolve the compiler references: $($output -join ' ')" }
-        return @(Get-Content -LiteralPath $list | Where-Object { $_ } | Sort-Object { [IO.Path]::GetFileName($_) } | ForEach-Object {
-            [ordered]@{ file = [IO.Path]::GetFileName($_); sha256 = Get-Sha256 $_ } })
+        if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $list)) { throw "Could not resolve the compiler references: $($output -join ' ')" }
+        return @(ConvertFrom-CompilerInputList $list)
     }
     finally {
         $ErrorActionPreference = $previous
@@ -168,7 +197,7 @@ function Get-CompilerReferenceIdentities([string] $Configuration) {
     }
 }
 
-function Get-BuildInputFingerprint([string] $Configuration = 'Release') {
+function Get-BuildInputFingerprint([string] $Configuration = 'Release', $CompilerInputs = $null) {
     $root = $script:RepositoryRoot
     $paths = @('src', 'Directory.Build.props', '.editorconfig', 'Info.json', 'LoaderReferences.targets',
         'scripts/loader-reference-pins.json', 'scripts/Get-PinnedLoaderReferences.ps1', 'scripts/Build-Local.ps1', 'scripts/Common.ps1')
@@ -178,7 +207,8 @@ function Get-BuildInputFingerprint([string] $Configuration = 'Release') {
         $full = Join-Path $root $file
         if (Test-Path -LiteralPath $full -PathType Leaf) { $file + "`t" + (Get-Sha256 $full) }
     })
-    foreach ($reference in (Get-CompilerReferenceIdentities $Configuration)) { $lines += 'compiler-reference:' + $reference.file + "`t" + $reference.sha256 }
+    if ($null -eq $CompilerInputs) { $CompilerInputs = @(Get-CompilerReferenceIdentities $Configuration) }
+    foreach ($input in @($CompilerInputs)) { $lines += 'compiler-' + [string]$input.kind + ':' + [string]$input.name + "`t" + [string]$input.sha256 }
     $hasher = [Security.Cryptography.SHA256]::Create()
     try { $digest = $hasher.ComputeHash([Text.Encoding]::UTF8.GetBytes(($lines -join "`n"))) }
     finally { $hasher.Dispose() }
@@ -206,7 +236,15 @@ function Assert-PinnedBuildReceipt($Receipt, [string] $DllPath, [string] $Config
     }
     if ($Receipt.dll_sha256 -ne (Get-Sha256 $DllPath)) { throw 'Build receipt does not match the mod DLL; rebuild first.' }
     if ($Configuration -and $Receipt.configuration -cne $Configuration) { throw "Build receipt is for configuration $($Receipt.configuration), not $Configuration; rebuild first." }
-    if ($Receipt.build_inputs_sha256 -cne (Get-BuildInputFingerprint $Receipt.configuration)) { throw 'Build inputs changed since this DLL was built (source, manifest or loader pins); rebuild first.' }
+    # The receipt's recorded compiler inventory (captured from the production compile) must be well formed and equal the
+    # inventory MSBuild evaluates now; the fingerprint is then computed from that same inventory.
+    if (-not $Receipt.PSObject.Properties['compiler_references']) { throw 'Build receipt has no compiler_references; rebuild first.' }
+    Assert-CompilerInventoryShape $Receipt.compiler_references
+    $currentInventory = @(Get-CompilerReferenceIdentities $Receipt.configuration)
+    if ((ConvertTo-CompilerInventoryText $Receipt.compiler_references) -cne (ConvertTo-CompilerInventoryText $currentInventory)) {
+        throw 'Build receipt compiler inputs differ from the inputs MSBuild resolves now (references, sources or compiler settings); rebuild first.'
+    }
+    if ($Receipt.build_inputs_sha256 -cne (Get-BuildInputFingerprint $Receipt.configuration $currentInventory)) { throw 'Build inputs changed since this DLL was built (source, manifest or loader pins); rebuild first.' }
     $pins = @(Get-PinnedReferenceDefinitions)
     $recorded = @($Receipt.loader_references)
     if ($recorded.Count -ne $pins.Count) { throw 'Build receipt has an unexpected loader reference count; rebuild first.' }
