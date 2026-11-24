@@ -50,7 +50,8 @@ whatever loader is installed on the build machine.
   evaluation is a `SkipCompilerExecution` pass through `PrepareResources` and `CoreCompile` in a
   fresh intermediate directory, so anything `GamePath.props` or another import sets is included):
   the effective compiler binary first (`/noconfig` is required: without it the compiler would read the
-  default `csc.rsp` beside it, whose contents the receipt cannot bind, so that mode is refused), then
+  default `csc.rsp` beside it, whose contents the receipt cannot bind, so an inventory without it is refused;
+  MSBuild's Csc task always passes it, because `Microsoft.CSharp.Core.targets` sets `NoConfig="true"`), then
   every argument in the compiler's order - options verbatim (for example `/checked+`,
   `/baseaddress:...`), references and sources (generated ones included) by name and SHA-256, and
   file-valued options (`/win32res`, `/win32icon`, `/keyfile`, `/resource`, rule sets and others) by
@@ -176,8 +177,9 @@ restaged after the staging copy (refused; the previously published package and r
 private staging left), and a failure during publication (the previous package set restored exactly);
 and, in the final review round, a tracked root `Directory.Build.targets` with a production-only overflow
 setting added after the build (stale package refused, the build refused, accepted once removed), a
-disposable compiler copy whose default `csc.rsp` names the external resource selected without
-`/noconfig` (refused at package admission and at the build), a shadowed parent `Directory.Build.props`
+disposable compiler copy whose default `csc.rsp` names the external resource, selected with `NoConfig`
+disabled (the build still passes `/noconfig` and reproduces the first DLL, so the file is not read; the
+inventory reader refuses that run's compiler list with `/noconfig` removed), a shadowed parent `Directory.Build.props`
 with an unrelated `tools/Directory.Build.targets` (the build reproduces the first DLL and the package is
 accepted), and a byte-identical Managed copy under ignored `artifacts` (the receipt names the game
 assembly repository-relatively; the build and its matching local candidate are accepted).
