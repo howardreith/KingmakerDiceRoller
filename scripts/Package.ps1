@@ -93,14 +93,23 @@ try {
     # Final agreement: the archive, the staged DLL, the validation report and the receipt describe the same bytes.
     if ((Get-Sha256 $newZip) -cne $manifest.package_sha256 -or (Get-Sha256 $stagedDll) -cne $manifest.dll_sha256 -or
         $manifest.dll_sha256 -cne $loaderReceipt.dll_sha256) { throw 'Package records disagree; the package was not accepted.' }
-    # Publish.
+    # Publish the validated set together: both records are prepared before any public file changes, the previous ZIP and
+    # records are kept aside, and they are restored if any publication step fails.
     New-Item -ItemType Directory -Force -Path $packageDir | Out-Null
     $zip = Join-Path $packageDir ([IO.Path]::GetFileName($newZip))
-    if (Test-Path -LiteralPath $zip) { Remove-Item -LiteralPath $zip -Force }
-    [IO.File]::Move($newZip, $zip)
-    if ((Get-Sha256 $zip) -cne $manifest.package_sha256) { throw 'The published package differs from the validated archive.' }
     $validation | Add-Member -NotePropertyName package -NotePropertyValue $zip -Force
-    $validation | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $packageDir 'package-validation.json') -Encoding UTF8
+    $newValidationText = Join-Path $private 'package-validation.final.json'
+    $newManifestText = Join-Path $private 'package-manifest.final.json'
+    $validation | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $newValidationText -Encoding UTF8
+    $manifest | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $newManifestText -Encoding UTF8
+    $publicSet = @($zip, (Join-Path $packageDir 'package-validation.json'), (Join-Path $packageDir 'package-manifest.json'))
+    $previous = Join-Path $private 'previous'; New-Item -ItemType Directory -Path $previous | Out-Null
+    $kept = @()
+    foreach ($file in $publicSet) { if (Test-Path -LiteralPath $file) { [IO.File]::Move($file, (Join-Path $previous ([IO.Path]::GetFileName($file)))); $kept += $file } }
+    try {
+        [IO.File]::Move($newZip, $zip)
+        if ((Get-Sha256 $zip) -cne $manifest.package_sha256) { throw 'The published package differs from the validated archive.' }
+        [IO.File]::Move($newValidationText, (Join-Path $packageDir 'package-validation.json'))
     if ($Candidate) {
         Copy-Item -LiteralPath $stagedDll -Destination (Join-Path $packageDir 'KingmakerDiceRoller.dll')
         [IO.File]::WriteAllBytes((Join-Path $packageDir 'build-provenance.json'), $receiptBytes)
@@ -110,7 +119,13 @@ try {
         }
         if ((Get-Sha256 (Join-Path $packageDir 'KingmakerDiceRoller.dll')) -cne $manifest.dll_sha256) { throw 'Candidate DLL copy disagrees with the validated archive.' }
     }
-    $manifest | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $packageDir 'package-manifest.json') -Encoding UTF8
+        [IO.File]::Move($newManifestText, (Join-Path $packageDir 'package-manifest.json'))
+    }
+    catch {
+        foreach ($file in $publicSet) { if (Test-Path -LiteralPath $file) { Remove-Item -LiteralPath $file -Force } }
+        foreach ($file in $kept) { [IO.File]::Move((Join-Path $previous ([IO.Path]::GetFileName($file))), $file) }
+        throw
+    }
 }
 finally {
     if ([IO.Directory]::Exists($private)) { [IO.Directory]::Delete($private, $true) }

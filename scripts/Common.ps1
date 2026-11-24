@@ -146,7 +146,7 @@ function Get-PinnedReferenceIdentities {
 function ConvertFrom-CompilerInputList([string] $ListPath) {
     $rootPrefix = [IO.Path]::GetFullPath($script:RepositoryRoot).TrimEnd('\') + '\'
     $lines = @(Get-Content -LiteralPath $ListPath -Encoding UTF8 | Where-Object { $_ })
-    if ($lines.Count -lt 3 -or -not $lines[0].StartsWith('intermediate|') -or -not $lines[1].StartsWith('project|')) { throw "Compiler input list is malformed: $ListPath" }
+    if ($lines.Count -lt 4 -or -not $lines[0].StartsWith('intermediate|') -or -not $lines[1].StartsWith('project|') -or -not $lines[2].StartsWith('compiler|')) { throw "Compiler input list is malformed: $ListPath" }
     $objPrefix = [IO.Path]::GetFullPath($lines[0].Substring('intermediate|'.Length)).TrimEnd('\') + '\'
     $projectDirectory = $lines[1].Substring('project|'.Length)
     # Csc arguments name files relative to the project directory.
@@ -163,9 +163,19 @@ function ConvertFrom-CompilerInputList([string] $ListPath) {
     $outputSwitches = @('out', 'pdb', 'refout', 'doc', 'errorlog', 'generatedfilesout')
     $fileSwitches = @('win32res', 'win32icon', 'win32manifest', 'keyfile', 'ruleset', 'appconfig', 'analyzer', 'a', 'additionalfile', 'analyzerconfig', 'embed', 'sourcelink', 'addmodule')
     $resourceSwitches = @('resource', 'res', 'linkresource', 'linkres')
-    $entries = foreach ($line in $lines[2..($lines.Count - 1)]) {
+    # The effective compiler binary (and, without /noconfig, the implicit csc.rsp beside it) is an input.
+    $compiler = $lines[2].Substring('compiler|'.Length)
+    $compilerEntry = [ordered]@{ kind = 'compiler'; name = [IO.Path]::GetFileName($compiler); sha256 = $(if (Test-Path -LiteralPath $compiler -PathType Leaf) { Get-Sha256 $compiler } else { 'absent' }) }
+    $cscArgs = @($lines[3..($lines.Count - 1)] | ForEach-Object { if (-not $_.StartsWith('arg|')) { throw "Compiler input list is malformed: $_" }; $_.Substring(4) })
+    $implicit = @()
+    if ($cscArgs -notcontains '/noconfig') {
+        $rsp = Join-Path (Split-Path -Parent $compiler) 'csc.rsp'
+        $implicit += [ordered]@{ kind = 'response-file'; name = 'implicit:csc.rsp'; sha256 = $(if (Test-Path -LiteralPath $rsp -PathType Leaf) { Get-Sha256 $rsp } else { 'absent' }) }
+    }
+    $entries = foreach ($line in @($cscArgs | ForEach-Object { 'arg|' + $_ })) {
         if (-not $line.StartsWith('arg|')) { throw "Compiler input list is malformed: $line" }
         $arg = $line.Substring(4)
+        if ($arg.StartsWith('@')) { [ordered]@{ kind = 'response-file'; name = '@' + (Get-InputName $arg.Substring(1)); sha256 = Get-InputDigest $arg.Substring(1) }; continue }
         $m = [regex]::Match($arg, '^[/-]([A-Za-z0-9_+-]+?)(?::(.*))?$')
         if (-not $m.Success) { [ordered]@{ kind = 'compile'; name = Get-InputName $arg; sha256 = Get-InputDigest $arg }; continue }
         $switch = $m.Groups[1].Value.ToLowerInvariant(); $value = $m.Groups[2].Value
@@ -181,7 +191,8 @@ function ConvertFrom-CompilerInputList([string] $ListPath) {
         elseif ($fileSwitches -ccontains $switch -and $value) { [ordered]@{ kind = 'file-option'; name = "/$switch" + ':' + (Get-InputName $value); sha256 = Get-InputDigest $value } }
         else { [ordered]@{ kind = 'option'; name = $arg.Replace($objPrefix.TrimEnd('\'), 'obj:'); sha256 = '' } }
     }
-    return @($entries | Sort-Object { $_.kind + '|' + $_.name + '|' + $_.sha256 })
+    # Argument order is kept: the inventory is the compiler, any implicit response file, then every argument as passed.
+    return @(@($compilerEntry) + $implicit + @($entries))
 }
 
 # Canonical text of a compiler inventory (for equality checks between the receipt, the production compile and now).
@@ -198,10 +209,12 @@ function Assert-CompilerInventoryShape($Inventory) {
             if ($null -eq $entry -or -not $entry.PSObject.Properties[$field] -or -not ($entry.$field -is [string])) { throw "Build receipt compiler input field $field must be a string; rebuild first." }
         }
         $valid = if ($entry.kind -ceq 'option' -or $entry.kind -ceq 'output') { $entry.sha256 -ceq '' -and $entry.name.Length -gt 0 } else {
-            @('reference', 'compile', 'file-option') -ccontains $entry.kind -and ($entry.sha256 -cmatch '^[0-9a-f]{64}$' -or $entry.sha256 -ceq 'absent') }
+            @('reference', 'compile', 'file-option', 'compiler', 'response-file') -ccontains $entry.kind -and ($entry.sha256 -cmatch '^[0-9a-f]{64}$' -or $entry.sha256 -ceq 'absent') }
         if (-not $valid) { throw "Build receipt compiler input is malformed: $($entry.kind) $($entry.name); rebuild first." }
     }
     if (@($entries | Where-Object { $_.kind -ceq 'reference' }).Count -eq 0) { throw 'Build receipt compiler inventory names no references; rebuild first.' }
+    # An input the helper cannot identify (a missing compiler, response file, source or file-valued input) refuses reuse.
+    if (@($entries | Where-Object { $_.sha256 -ceq 'absent' }).Count -ne 0) { throw "Build receipt compiler inventory has an unidentified input ($(@($entries | Where-Object { $_.sha256 -ceq 'absent' } | ForEach-Object { $_.name }) -join ', ')); rebuild first." }
 }
 
 # The compiler inputs for a configuration as MSBuild itself evaluates them: the exact Csc command line from a

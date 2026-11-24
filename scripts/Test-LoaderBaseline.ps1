@@ -423,6 +423,22 @@ try {
     Add-Case 'restage-refusal-preserves-published-package-and-records' ($before -notmatch 'missing' -and $before -ceq $after) "published ZIP, manifest and validation report unchanged: $($before -ceq $after)"
     $leftovers = @(Get-ChildItem -LiteralPath (Join-Path $base 'artifacts') -Directory -Force -Filter '.package-*').Count
     Add-Case 'package-private-staging-removed-after-refusal' ($leftovers -eq 0) "private package folders left: $leftovers"
+    # The receipt names the effective compiler first (the Csc tool MSBuild runs, by content), then the arguments in order.
+    $inv = @((Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json).compiler_references)
+    $roslynCsc = Join-Path (Split-Path -Parent $msbuild) 'Roslyn\csc.exe'
+    Add-Case 'receipt-records-effective-compiler-first' ($inv.Count -gt 0 -and $inv[0].kind -eq 'compiler' -and $inv[0].sha256 -eq (Get-Sha256 $roslynCsc) -and $inv[1].kind -eq 'option' -and $inv[1].name -eq '/noconfig') ("first entries: $($inv[0].kind) $($inv[0].name) $($inv[0].sha256); $($inv[1].kind) $($inv[1].name)")
+    # A failure during publication restores the previously published ZIP and records exactly.
+    Invoke-Isolated @('-File', $package) | Out-Null
+    $before = @($published | ForEach-Object { Get-Sha256 $_ }) -join ';'
+    $packageText = [IO.File]::ReadAllText($package)
+    $publishAnchor = '        [IO.File]::Move($newZip, $zip)'
+    if ($packageText.IndexOf($publishAnchor) -lt 0) { throw 'Package.ps1 publication anchor not found.' }
+    $failingPublish = Join-Path $base 'scripts\Package-instrumented.ps1'
+    [IO.File]::WriteAllText($failingPublish, $packageText.Replace($publishAnchor, $publishAnchor + "`r`n        throw 'injected failure after the new ZIP was placed'"))
+    Expect-Rejected 'package-publication-failure-rejected' (Invoke-Isolated @('-File', $failingPublish)) 'injected failure after the new ZIP was placed'
+    Remove-Item -LiteralPath $failingPublish
+    $after = @($published | ForEach-Object { if (Test-Path -LiteralPath $_) { Get-Sha256 $_ } else { 'missing' } }) -join ';'
+    Add-Case 'publication-failure-restores-previous-package-set' ($before -ceq $after) "published ZIP, manifest and validation report restored: $($before -ceq $after)"
     $savedReceipt = Join-Path $inputs 'genuine-receipt.json'
     Copy-Item -LiteralPath $receiptPath -Destination $savedReceipt -Force
     # The receipt's reference inventory equals the /reference list of the direct normal-verbosity compile above.
