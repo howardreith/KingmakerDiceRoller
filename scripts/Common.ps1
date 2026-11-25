@@ -297,14 +297,15 @@ function Assert-LocalBuildConfiguration {
     $userExtensions = Join-Path $env:LOCALAPPDATA 'Microsoft\MSBuild'
     if (Test-Path -LiteralPath $userExtensions -PathType Container) {
         $toolsVersion = if ((Resolve-MSBuild) -match '\\MSBuild\\(Current|\d+\.\d+)\\Bin\\') { $Matches[1] } else { $null }
-        $hooks = if ($toolsVersion) {
-            @(foreach ($hookDirectory in @('Imports\Microsoft.Common.props', 'Microsoft.Common.targets', 'Microsoft.CSharp.targets')) {
+        # @(...) around the whole if: an if statement that outputs nothing yields $null, not an empty array.
+        $hooks = @(if ($toolsVersion) {
+            foreach ($hookDirectory in @('Imports\Microsoft.Common.props', 'Microsoft.Common.targets', 'Microsoft.CSharp.targets')) {
                 foreach ($when in @('ImportBefore', 'ImportAfter')) {
                     $directory = Join-Path $userExtensions (Join-Path $toolsVersion (Join-Path $hookDirectory $when))
                     if (Test-Path -LiteralPath $directory -PathType Container) { Get-ChildItem -LiteralPath $directory -File -Force }
                 }
-            })
-        } else { @(Get-ChildItem -LiteralPath $userExtensions -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.FullName -match '\\Import(Before|After)\\' }) }
+            }
+        } else { Get-ChildItem -LiteralPath $userExtensions -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.FullName -match '\\Import(Before|After)\\' } })
         if ($hooks.Count -gt 0) { throw "Per-user MSBuild extension files apply to the build: $(@($hooks | ForEach-Object { $_.FullName }) -join ', ')" }
     }
 }
