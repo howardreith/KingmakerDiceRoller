@@ -1,6 +1,6 @@
 # UMM 0.31.1 baseline evidence
 
-Machine-generated outputs exported 2026-11-25 10:31 UTC for candidate commit `e89e49ef1b5635a9552692c7912b36ff5db839f2`. Each row names what produced that output (its
+Machine-generated outputs exported 2026-11-25 15:52 UTC for candidate commit `651295d83a8f44fab2b29f08cf7ff328186b4152`. Each row names what produced that output (its
 source commit, or the reused input it describes); outputs produced at another commit are identified there.
 Only local path prefixes were replaced: `<repo>` (this checkout or its temporary clone root), `<temp>`, `<game>`
 (the Kingmaker installation, read-only), `<buildtools>`, `<reference-assemblies>`, `<dotnet>`, `<controller>` (the agent-review controller), `<dev>` (the owner's development folder), `<steam>`, `<user-profile>`, `<fleet>` (the owner's fleet mission folder,
@@ -21,7 +21,7 @@ python -c "import hashlib,subprocess,sys; print(hashlib.sha256(subprocess.check_
 | `build-local-summary.json` | 8c198e0 (result lines of that Build-Local.ps1 and Package.ps1 run) | `0953445663e1994d349b23f665dd63af72adae4a69749df1a34b0e8971af59c1` (original output, from its first export) | `6860fdfba70749dbf87a975e8b931a6b4ca8b2ca0f31b1ff1bd393cb24a5945d` |
 | `package-manifest.json` | 8c198e0 (Package.ps1 on that build) | `8d01f30711baaa0e28271068c85d2971c4f8186955556a4840e30f96dba2f4ec` (original output, from its first export) | `e210bcb2cdd0f8b8899a91f5ea54fd396e33600c6443577c4cc19f2e12b726eb` |
 | `package-validation.json` | 8c198e0 (Package.ps1 on that build) | `d8d56551bc3fde2173dba6363080a8dc3c4432f1f625ff9f5f6ee2e3da1ff23d` (original output, from its first export) | `d6bd9c6b30ec71988677dc49a7466bbebe15449443bb9ae5aaed605c7313c4f5` |
-| `loader-baseline.json` | e89e49e (temporary clone; 147/147; tooling 4effc85 + e89e49e) | `5fcf92e4c221be6a6dffa3cd768e16acf791349480f2c869620d4c07a91ee701` | `8be7dc4c24619fc43e21a46939a7d7efc61161a6bccdeec5e54efa60b9bccb55` |
+| `loader-baseline.json` | 651295d (temporary clone; 160/160; tooling 1d2f5ef + 651295d) | `bd6468ef7a485c3515b9f14913cc39ddd3a848005a6c8a10399e15be27099b11` | `61e2a57b8e6208214721fe91ad6e73b1f081c182527942b9a7a12b9982e32a39` |
 | `docs-link-check.json` | `8c198e0` | `64b18869dfa5adf15f474c7653288cbe5a513869b0f7805deaf314703a843848` (original output, from its first export) | `4846d9427e30426d3a208698e72154d2d77688d6567670604f8afbf0cff11487` |
 | `api-audit.json` | reused static audit of the unchanged candidate DLL 634f2277 | `c38d49d4eb66f8bfdaeded0c8d97ccdaaf4e31cf8466e170de3ba52a33780019` (original output, from its first export) | `9bd77723164ffb889889b7358186e33d2ec9e8f78ee686fad886e6cdb6709932` |
 | `loader-profile-inventory.json` | reused profile inventory with the unchanged DLL 634f2277 | `f361c14a69acd3985005f6f49116c29278dd138dcd41101e6be882e7f2e6c868` (original output, from its first export) | `95ee8f30aa144ab343cca54f508ae22b0d92eeb90bf6e38b5ae92e60ffcf7a24` |
