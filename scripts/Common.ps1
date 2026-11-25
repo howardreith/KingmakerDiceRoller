@@ -235,8 +235,10 @@ function Get-CompilerInventoryDifference($Recorded, $Current) {
 # - the ignored GamePath.props may only set the three path properties (no conditions, imports, items or targets);
 # - no Directory.Build.props/.targets/.rsp above the repository, and none inside it that Git does not track, nor an
 #   untracked project .user file;
+# - no explicit Import in an applicable Directory.Build.props/.targets or project .user file (the imported file's
+#   settings could change compilation without changing a fingerprinted input);
 # - no environment variable that selects additional MSBuild imports;
-# - no per-user MSBuild ImportBefore/ImportAfter extension file.
+# - no per-user MSBuild ImportBefore/ImportAfter extension file in a location the selected MSBuild toolset imports.
 # Machine-wide extension files that ship with the installed MSBuild are part of the toolchain and are not inventoried.
 function Assert-LocalBuildConfiguration {
     $root = $script:RepositoryRoot
@@ -263,12 +265,55 @@ function Assert-LocalBuildConfiguration {
         }
     }
     if (-not $ok) { throw "GamePath.props may only set $($allowedNames -join ', ') (conditions on Configuration or Platform only; no imports, items, targets, property functions or other properties)." }
-    # Only the configuration MSBuild imports for the production project applies: for each of Directory.Build.props,
-    # Directory.Build.targets and Directory.Build.rsp the first file found walking up from the project directory (one
-    # further up is shadowed; files beside other folders are not imported), and the project's own .csproj.user. An
-    # applicable file outside the checkout, or untracked inside it, is refused; tracked ones are fingerprinted inputs.
+    # Only the configuration MSBuild imports for the production project applies (Get-ApplicableBuildConfiguration). An
+    # applicable file outside the checkout, or untracked inside it, is refused; tracked ones are fingerprinted inputs. An
+    # explicit Import in one of them is refused: the imported file (for example a parent Directory.Build.targets reached
+    # with GetPathOfFileAbove) is not a fingerprinted input, so its settings could change the production compile.
     $rootPrefix = [IO.Path]::GetFullPath($root).TrimEnd('\') + '\'
-    $projectDirectory = Join-Path $root 'src\KingmakerDiceRoller'
+    foreach ($file in @(Get-ApplicableBuildConfiguration)) {
+        if (-not $file.StartsWith($rootPrefix, [StringComparison]::OrdinalIgnoreCase)) { throw "An outside $([IO.Path]::GetFileName($file)) applies to the build: $file" }
+        $relative = $file.Substring($rootPrefix.Length).Replace('\', '/')
+        $tracked = @(& git -C $root ls-files -- $relative)
+        if ($LASTEXITCODE -ne 0) { throw 'git ls-files failed while checking the local build configuration.' }
+        if ($tracked.Count -eq 0) { throw "Untracked MSBuild configuration files apply to the build: $relative" }
+        if ($file -notlike '*.rsp') {
+            [xml]$configuration = Get-Content -LiteralPath $file -Raw
+            if (@($configuration.SelectNodes("//*[local-name()='Import' or local-name()='ImportGroup']")).Count -ne 0) {
+                throw "Unsupported MSBuild import in ${relative}: the build receipt cannot bind the imported file; put the settings in $relative itself."
+            }
+        }
+    }
+    foreach ($name in @('DirectoryBuildPropsPath', 'DirectoryBuildTargetsPath', 'ImportDirectoryBuildProps', 'ImportDirectoryBuildTargets',
+            'CustomBeforeMicrosoftCommonProps', 'CustomAfterMicrosoftCommonProps', 'CustomBeforeMicrosoftCommonTargets', 'CustomAfterMicrosoftCommonTargets',
+            'CustomBeforeMicrosoftCSharpProps', 'CustomAfterMicrosoftCSharpProps', 'CustomBeforeMicrosoftCSharpTargets', 'CustomAfterMicrosoftCSharpTargets',
+            'MSBuildUserExtensionsPath', 'ImportUserLocationsByWildcardBeforeMicrosoftCommonProps', 'ImportUserLocationsByWildcardAfterMicrosoftCommonProps',
+            'ImportUserLocationsByWildcardBeforeMicrosoftCommonTargets', 'ImportUserLocationsByWildcardAfterMicrosoftCommonTargets')) {
+        if (-not [string]::IsNullOrEmpty([Environment]::GetEnvironmentVariable($name))) { throw "The environment variable $name selects MSBuild imports; unset it before building." }
+    }
+    # Per-user hooks: MSBuild imports $(MSBuildUserExtensionsPath)\$(MSBuildToolsVersion)\{Imports\Microsoft.Common.props,
+    # Microsoft.Common.targets, Microsoft.CSharp.targets}\Import{Before,After}\* for the toolset that builds the project.
+    # Hooks of other toolset versions are not imported. If the toolset version cannot be read from the selected MSBuild's
+    # path, every ImportBefore/ImportAfter file under the per-user folder is refused.
+    $userExtensions = Join-Path $env:LOCALAPPDATA 'Microsoft\MSBuild'
+    if (Test-Path -LiteralPath $userExtensions -PathType Container) {
+        $toolsVersion = if ((Resolve-MSBuild) -match '\\MSBuild\\(Current|\d+\.\d+)\\Bin\\') { $Matches[1] } else { $null }
+        $hooks = if ($toolsVersion) {
+            @(foreach ($hookDirectory in @('Imports\Microsoft.Common.props', 'Microsoft.Common.targets', 'Microsoft.CSharp.targets')) {
+                foreach ($when in @('ImportBefore', 'ImportAfter')) {
+                    $directory = Join-Path $userExtensions (Join-Path $toolsVersion (Join-Path $hookDirectory $when))
+                    if (Test-Path -LiteralPath $directory -PathType Container) { Get-ChildItem -LiteralPath $directory -File -Force }
+                }
+            })
+        } else { @(Get-ChildItem -LiteralPath $userExtensions -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.FullName -match '\\Import(Before|After)\\' }) }
+        if ($hooks.Count -gt 0) { throw "Per-user MSBuild extension files apply to the build: $(@($hooks | ForEach-Object { $_.FullName }) -join ', ')" }
+    }
+}
+
+# The configuration MSBuild imports for the production project: for each of Directory.Build.props,
+# Directory.Build.targets and Directory.Build.rsp the first file found walking up from the project directory (one further
+# up is shadowed; files beside other folders are not imported), and the project's own .csproj.user. Full paths.
+function Get-ApplicableBuildConfiguration {
+    $projectDirectory = Join-Path $script:RepositoryRoot 'src\KingmakerDiceRoller'
     $applicable = @()
     foreach ($name in @('Directory.Build.props', 'Directory.Build.targets', 'Directory.Build.rsp')) {
         $dir = $projectDirectory
@@ -281,25 +326,7 @@ function Assert-LocalBuildConfiguration {
     }
     $userFile = Join-Path $projectDirectory 'KingmakerDiceRoller.csproj.user'
     if (Test-Path -LiteralPath $userFile -PathType Leaf) { $applicable += [IO.Path]::GetFullPath($userFile) }
-    foreach ($file in $applicable) {
-        if (-not $file.StartsWith($rootPrefix, [StringComparison]::OrdinalIgnoreCase)) { throw "An outside $([IO.Path]::GetFileName($file)) applies to the build: $file" }
-        $relative = $file.Substring($rootPrefix.Length).Replace('\', '/')
-        $tracked = @(& git -C $root ls-files -- $relative)
-        if ($LASTEXITCODE -ne 0) { throw 'git ls-files failed while checking the local build configuration.' }
-        if ($tracked.Count -eq 0) { throw "Untracked MSBuild configuration files apply to the build: $relative" }
-    }
-    foreach ($name in @('DirectoryBuildPropsPath', 'DirectoryBuildTargetsPath', 'ImportDirectoryBuildProps', 'ImportDirectoryBuildTargets',
-            'CustomBeforeMicrosoftCommonProps', 'CustomAfterMicrosoftCommonProps', 'CustomBeforeMicrosoftCommonTargets', 'CustomAfterMicrosoftCommonTargets',
-            'CustomBeforeMicrosoftCSharpProps', 'CustomAfterMicrosoftCSharpProps', 'CustomBeforeMicrosoftCSharpTargets', 'CustomAfterMicrosoftCSharpTargets',
-            'MSBuildUserExtensionsPath', 'ImportUserLocationsByWildcardBeforeMicrosoftCommonProps', 'ImportUserLocationsByWildcardAfterMicrosoftCommonProps',
-            'ImportUserLocationsByWildcardBeforeMicrosoftCommonTargets', 'ImportUserLocationsByWildcardAfterMicrosoftCommonTargets')) {
-        if (-not [string]::IsNullOrEmpty([Environment]::GetEnvironmentVariable($name))) { throw "The environment variable $name selects MSBuild imports; unset it before building." }
-    }
-    $userExtensions = Join-Path $env:LOCALAPPDATA 'Microsoft\MSBuild'
-    if (Test-Path -LiteralPath $userExtensions -PathType Container) {
-        $hooks = @(Get-ChildItem -LiteralPath $userExtensions -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.FullName -match '\\Import(Before|After)\\' })
-        if ($hooks.Count -gt 0) { throw "Per-user MSBuild extension files apply to the build: $(@($hooks | ForEach-Object { $_.FullName }) -join ', ')" }
-    }
+    return $applicable
 }
 
 # Validates the shape of a recorded compiler inventory (as read back from JSON).
@@ -350,6 +377,11 @@ function Get-BuildInputFingerprint([string] $Configuration = 'Release', $Compile
         'scripts/loader-reference-pins.json', 'scripts/Get-PinnedLoaderReferences.ps1', 'scripts/Build-Local.ps1', 'scripts/Common.ps1')
     $files = @(& git -C $root ls-files --cached --others --exclude-standard -- @paths)
     if ($LASTEXITCODE -ne 0) { throw 'git ls-files failed while fingerprinting build inputs.' }
+    # A Directory.Build.props/.targets/.rsp below src that MSBuild does not import for the production project (beside
+    # another folder, or shadowed) is not a build input; the applicable ones stay (Get-ApplicableBuildConfiguration).
+    $rootPrefix = [IO.Path]::GetFullPath($root).TrimEnd('\') + '\'
+    $applicable = @(Get-ApplicableBuildConfiguration | ForEach-Object { if ($_.StartsWith($rootPrefix, [StringComparison]::OrdinalIgnoreCase)) { $_.Substring($rootPrefix.Length).Replace('\', '/') } })
+    $files = @($files | Where-Object { $_ -notmatch '^src/(.+/)?Directory\.Build\.(props|targets|rsp)$' -or $applicable -contains $_ })
     $lines = @(foreach ($file in ($files | Sort-Object -Unique)) {
         $full = Join-Path $root $file
         if (Test-Path -LiteralPath $full -PathType Leaf) { $file + "`t" + (Get-Sha256 $full) }

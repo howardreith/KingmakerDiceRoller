@@ -378,18 +378,43 @@ try {
     try { Expect-Rejected 'package-with-import-selecting-environment-variable-refused' (Invoke-Isolated @('-File', $package)) 'environment variable DirectoryBuildTargetsPath selects MSBuild imports' }
     finally { Remove-Item Env:\DirectoryBuildTargetsPath }
     Expect-Accepted 'package-after-local-configuration-restored-accepted' (Invoke-Isolated @('-File', $package)) 'Package validation passed'
-    # R6-F1: configuration MSBuild does not import for the production project does not stop a valid build. A parent
-    # Directory.Build.props above the checkout (shadowed by the tracked root one; it would enable overflow checking) and an
-    # untracked Directory.Build.targets beside another folder (tools\): Build-Local reproduces the first DLL and the
-    # package is accepted.
+    # R6-F1: configuration MSBuild does not import for the production project does not stop reuse or a valid build: a
+    # parent Directory.Build.props above the checkout (shadowed by the tracked root one; it would enable overflow
+    # checking), untracked Directory.Build.targets beside other folders (tools\ and src\Scratch\), and a per-user hook of
+    # a toolset version this build does not use (15.0, in a disposable user profile). First the existing DLL and its
+    # receipt are packaged without rebuilding; then Build-Local reproduces the first DLL and its package is accepted. A
+    # hook in the selected toolset's location (Current) is refused; the applicable untracked src\Directory.Build.targets
+    # stays refused (package-with-untracked-directory-build-targets-refused above).
     $shadowedProps = Join-Path $temp 'Directory.Build.props'
     [IO.File]::WriteAllText($shadowedProps, "<Project><PropertyGroup><CheckForOverflowUnderflow>true</CheckForOverflowUnderflow></PropertyGroup></Project>")
     $siblingTargets = Join-Path $base 'tools\Directory.Build.targets'
     [IO.File]::WriteAllText($siblingTargets, "<Project><PropertyGroup><CheckForOverflowUnderflow>true</CheckForOverflowUnderflow></PropertyGroup></Project>")
-    $unrelated = Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))
-    Add-Case 'build-with-shadowed-parent-props-and-unrelated-sibling-targets-accepted' ($unrelated.ExitCode -eq 0 -and (Get-Sha256 $dll) -eq $firstDllSha) ("exit $($unrelated.ExitCode); DLL $(Get-Sha256 $dll) (first DLL $firstDllSha)" + $(if ($unrelated.ExitCode) { '; ' + (Get-Reason $unrelated.Output) } else { '' }))
-    Expect-Accepted 'package-with-shadowed-parent-props-and-unrelated-sibling-targets-accepted' (Invoke-Isolated @('-File', $package)) 'Package validation passed'
+    $scratchTargets = Join-Path $base 'src\Scratch\Directory.Build.targets'
+    New-Item -ItemType Directory -Path (Split-Path -Parent $scratchTargets) -Force | Out-Null
+    [IO.File]::WriteAllText($scratchTargets, "<Project><PropertyGroup><CheckForOverflowUnderflow>true</CheckForOverflowUnderflow></PropertyGroup></Project>")
+    $profileLocal = Join-Path $temp 'disposable user profile\AppData\Local'
+    $inactiveHook = Join-Path $profileLocal 'Microsoft\MSBuild\15.0\Microsoft.Common.targets\ImportAfter\Overflow.targets'
+    $activeHook = Join-Path $profileLocal 'Microsoft\MSBuild\Current\Microsoft.Common.targets\ImportAfter\Overflow.targets'
+    New-Item -ItemType Directory -Path (Split-Path -Parent $inactiveHook) -Force | Out-Null
+    [IO.File]::WriteAllText($inactiveHook, "<Project><PropertyGroup><CheckForOverflowUnderflow>true</CheckForOverflowUnderflow></PropertyGroup></Project>")
+    $savedLocalAppData = $env:LOCALAPPDATA
+    $env:LOCALAPPDATA = $profileLocal
+    try {
+        $receiptBeforeReuse = Get-Sha256 $receiptPath; $dllBeforeReuse = Get-Sha256 $dll
+        $reused = Invoke-Isolated @('-File', $package)
+        Add-Case 'package-reusing-the-existing-receipt-with-unrelated-configuration-accepted' ($reused.ExitCode -eq 0 -and $reused.Output -match 'Package validation passed' -and $dllBeforeReuse -eq $firstDllSha -and (Get-Sha256 $dll) -eq $firstDllSha -and (Get-Sha256 $receiptPath) -eq $receiptBeforeReuse) ("no rebuild: DLL $dllBeforeReuse (first DLL $firstDllSha); receipt unchanged $((Get-Sha256 $receiptPath) -eq $receiptBeforeReuse); package exit $($reused.ExitCode); " + (Get-Reason $reused.Output))
+        $unrelated = Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))
+        Add-Case 'build-with-unrelated-configuration-and-inactive-user-hook-accepted' ($unrelated.ExitCode -eq 0 -and (Get-Sha256 $dll) -eq $firstDllSha) ("exit $($unrelated.ExitCode); DLL $(Get-Sha256 $dll) (first DLL $firstDllSha)" + $(if ($unrelated.ExitCode) { '; ' + (Get-Reason $unrelated.Output) } else { '' }))
+        Expect-Accepted 'package-after-build-with-unrelated-configuration-accepted' (Invoke-Isolated @('-File', $package)) 'Package validation passed'
+        New-Item -ItemType Directory -Path (Split-Path -Parent $activeHook) -Force | Out-Null
+        [IO.File]::WriteAllText($activeHook, "<Project><PropertyGroup><CheckForOverflowUnderflow>true</CheckForOverflowUnderflow></PropertyGroup></Project>")
+        Expect-Rejected 'package-with-user-hook-of-the-selected-toolset-refused' (Invoke-Isolated @('-File', $package)) 'Per-user MSBuild extension files apply to the build: .*\\Current\\Microsoft\.Common\.targets\\ImportAfter\\Overflow\.targets'
+        Remove-Item -LiteralPath $activeHook
+    }
+    finally { $env:LOCALAPPDATA = $savedLocalAppData }
     Remove-Item -LiteralPath $shadowedProps, $siblingTargets
+    Remove-Item -LiteralPath (Split-Path -Parent $scratchTargets) -Recurse -Force
+    Remove-Item -LiteralPath (Join-Path $temp 'disposable user profile') -Recurse -Force
     # R4-F1: a tracked root Directory.Build.targets with a production-only overflow setting (conditioned on a real
     # compile, so the evaluated inventory does not show it) added after the clean build: package admission refuses the old
     # receipt (the file is a fingerprinted build input) and Build-Local refuses the build (the production compile's inputs
@@ -408,6 +433,25 @@ try {
     $recovered = Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))
     Add-Case 'rebuild-after-tracked-root-targets-removed-reproduces-first-dll' ($recovered.ExitCode -eq 0 -and (Get-Sha256 $dll) -eq $firstDllSha) "exit $($recovered.ExitCode); DLL $(Get-Sha256 $dll)"
     Expect-Accepted 'package-after-tracked-root-targets-removed-accepted' (Invoke-Isolated @('-File', $package)) 'Package validation passed'
+    # R7-F1: an applicable configuration file that imports another file is refused, because the imported file is not a
+    # fingerprinted input. A tracked root Directory.Build.targets imports the parent Directory.Build.targets above the
+    # checkout (GetPathOfFileAbove); the clean build's receipt is current before the root file is added. Ordinary packaging
+    # refuses the old receipt, also after only the parent's production-only overflow setting changes, and Build-Local
+    # refuses before compiling (DLL and receipt unchanged). With the root file removed the receipt is accepted again
+    # without rebuilding; the shadowed-parent control above stays accepted.
+    $parentTargets = Join-Path $temp 'Directory.Build.targets'
+    [IO.File]::WriteAllText($parentTargets, "<Project></Project>")
+    [IO.File]::WriteAllText($rootTargets, "<Project><Import Project=`"`$([MSBuild]::GetPathOfFileAbove('Directory.Build.targets', '`$(MSBuildThisFileDirectory)../'))`" /></Project>")
+    & git -C $base add -- Directory.Build.targets
+    Expect-Rejected 'package-with-tracked-root-targets-importing-a-parent-refused' (Invoke-Isolated @('-File', $package)) 'Unsupported MSBuild import in Directory\.Build\.targets'
+    [IO.File]::WriteAllText($parentTargets, "<Project><PropertyGroup Condition=`"'`$(SkipCompilerExecution)' != 'true'`"><CheckForOverflowUnderflow>true</CheckForOverflowUnderflow></PropertyGroup></Project>")
+    Expect-Rejected 'package-reuse-after-imported-parent-production-setting-change-refused' (Invoke-Isolated @('-File', $package)) 'Unsupported MSBuild import in Directory\.Build\.targets'
+    $dllBeforeImport = Get-Sha256 $dll; $receiptBeforeImport = Get-Sha256 $receiptPath
+    Expect-Rejected 'build-with-tracked-root-targets-importing-a-parent-refused' (Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))) 'Unsupported MSBuild import in Directory\.Build\.targets'
+    Add-Case 'refused-import-build-left-dll-and-receipt' ((Get-Sha256 $dll) -eq $dllBeforeImport -and (Get-Sha256 $receiptPath) -eq $receiptBeforeImport -and $dllBeforeImport -eq $firstDllSha) "DLL $(Get-Sha256 $dll) (first DLL $firstDllSha); receipt unchanged $((Get-Sha256 $receiptPath) -eq $receiptBeforeImport)"
+    & git -C $base rm -q --cached -- Directory.Build.targets
+    Remove-Item -LiteralPath $rootTargets, $parentTargets
+    Expect-Accepted 'package-after-importing-root-targets-removed-accepted' (Invoke-Isolated @('-File', $package)) 'Package validation passed'
     # Effective compiler options from the tracked Directory.Build.props (here edited in the disposable checkout). Only the
     # overflow-checking option changes: the stale package is refused, the receipt of a matching rebuild records the
     # effective option, and the rebuilt DLL differs; removing it needs a rebuild again.
@@ -658,9 +702,11 @@ try {
     $published8 = @(Get-ChildItem -LiteralPath $laterCandidateDir -File | ForEach-Object { $_.Name } | Sort-Object)
     $expected8 = @('build-provenance.json', 'KingmakerDiceRoller-0.2.0.zip', 'KingmakerDiceRoller.dll', 'native-ui-contracts.json', 'package-manifest.json', 'package-validation.json', 'respec-contracts.json', 'runtime-contracts.json', 'source-qualification.json') | Sort-Object
     Add-Case 'candidate-directory-holds-the-complete-set' (($published8 -join ',') -eq ($expected8 -join ',')) ($published8 -join ', ')
-    # R6-F2: a Managed directory inside the checkout (a byte-identical copy under ignored artifacts): the receipt names the
-    # game assembly repository-relatively, and the clean build and its matching local candidate are accepted (the
-    # conflicting-report refusal is candidate-with-another-builds-report-refused above).
+    # R6-F2: a Managed directory inside the checkout, under ignored artifacts: a copy of the disposable Managed copy above,
+    # so its Assembly-CSharp.dll is the game's bytes while its UnityEngine.UI.dll keeps the one-bit change made for
+    # package-reuse-after-resolved-managed-reference-change-rejected. It tests the repository-local Assembly-CSharp path:
+    # the receipt names the game assembly repository-relatively, and the clean build and its matching local candidate
+    # are accepted (the conflicting-report refusal is candidate-with-another-builds-report-refused above).
     $localManaged = Join-Path $base 'artifacts\managed copy'
     Copy-Item -LiteralPath $managedCopy -Destination $localManaged -Recurse
     $gamePathBefore = [IO.File]::ReadAllText($gamePath)
