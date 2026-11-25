@@ -181,8 +181,25 @@ disposable compiler copy whose default `csc.rsp` names the external resource, se
 disabled (the build still passes `/noconfig` and reproduces the first DLL, so the file is not read; the
 inventory reader refuses that run's compiler list with `/noconfig` removed), a shadowed parent `Directory.Build.props`
 with an unrelated `tools/Directory.Build.targets` (the build reproduces the first DLL and the package is
-accepted), and a byte-identical Managed copy under ignored `artifacts` (the receipt names the game
-assembly repository-relatively; the build and its matching local candidate are accepted).
+accepted), and a repository-local Managed directory under ignored `artifacts` (the receipt names the game
+assembly repository-relatively; the build and its matching local candidate are accepted). That directory is a
+copy of the suite's disposable Managed copy: its `Assembly-CSharp.dll` is the game's bytes, but its
+`UnityEngine.UI.dll` keeps the one-bit change made earlier in the run for the resolved-managed-reference case,
+so the case tests the repository-local `Assembly-CSharp.dll` path, not a byte-identical copy of the whole folder
+(the 140/140 run at `3874fc2` used the same fixture).
+
+The owner-authorized extra round adds: an explicit `Import` in an applicable `Directory.Build.props`,
+`Directory.Build.targets` or project `.user` file is refused at package admission and before Build-Local compiles,
+because the imported file is not a fingerprinted input (a tracked root `Directory.Build.targets` importing the
+parent above the checkout: the old receipt is refused, also after only the parent's production-only overflow
+setting changes; the build is refused with the DLL and receipt unchanged; with the file removed the receipt is
+accepted again). `Directory.Build.*` files below `src` that MSBuild does not import for the production project
+are no longer fingerprinted, and only the per-user `ImportBefore`/`ImportAfter` folders of the selected MSBuild
+toolset version are checked: with a shadowed parent `Directory.Build.props`, untracked `tools/` and
+`src/Scratch/` `Directory.Build.targets` and a per-user hook for toolset 15.0 in a disposable user profile, the
+existing DLL and receipt are packaged without rebuilding, then a rebuild reproduces the first DLL and is
+packaged; a hook in the selected toolset's (`Current`) folder is refused, and an untracked
+`src/Directory.Build.targets` stays refused.
 `Package.ps1` stages, archives and validates in a folder private to the invocation, compares the
 documents read back from the validated archive with the repository files hashed before staging,
 prepares both records, and only then publishes the ZIP, validation report and manifest together, keeping
