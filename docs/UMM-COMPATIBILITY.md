@@ -200,6 +200,18 @@ toolset version are checked: with a shadowed parent `Directory.Build.props`, unt
 existing DLL and receipt are packaged without rebuilding, then a rebuild reproduces the first DLL and is
 packaged; a hook in the selected toolset's (`Current`) folder is refused, and an untracked
 `src/Directory.Build.targets` stays refused.
+
+The second extra round adds: import selectors (`DirectoryBuildPropsPath`, `DirectoryBuildTargetsPath`,
+`ImportDirectoryBuildProps`, `ImportDirectoryBuildTargets`, the `CustomBefore*`/`CustomAfter*` properties,
+`MSBuildUserExtensionsPath` and the `ImportUserLocationsByWildcard*` switches) are refused in the tracked
+configuration (the applicable `Directory.Build` files, the project `.user` file, the project file and
+`Directory.Build.rsp`) as they already were in the environment, because the receipt follows the conventional
+lookup; only an actual `Import` is refused, so an empty `ImportGroup` builds and packages; the selected MSBuild
+path is normalized before its toolset folder is read (a forward-slash `MSBUILD_EXE_PATH` finds the same toolset);
+and the applicability rule applies to the root `Directory.Build` files too, so a root file shadowed by a tracked
+`src/Directory.Build.targets` does not invalidate a receipt. Positive reuse cases package the existing DLL and its
+receipt before any rebuild; the hook fixture derives its active and inactive toolset folders from the selected
+MSBuild.
 `Package.ps1` stages, archives and validates in a folder private to the invocation, compares the
 documents read back from the validated archive with the repository files hashed before staging,
 prepares both records, and only then publishes the ZIP, validation report and manifest together, keeping
