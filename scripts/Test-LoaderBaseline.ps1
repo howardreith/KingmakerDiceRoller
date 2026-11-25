@@ -382,7 +382,9 @@ try {
     # parent Directory.Build.props above the checkout (shadowed by the tracked root one; it would enable overflow
     # checking), untracked Directory.Build.targets beside other folders (tools\ and src\Scratch\), and a per-user hook of
     # a toolset version this build does not use (in a disposable user profile). First the existing DLL and its receipt
-    # are packaged without rebuilding, with the selected MSBuild given by MSBUILD_EXE_PATH in forward slashes; then
+    # are packaged without rebuilding, with the selected MSBuild found through a forward-slash PATH entry (its path
+    # reaches the check as C:/.../Bin\MSBuild.exe; MSBUILD_EXE_PATH is not used because MSBuild itself changes its
+    # imports under it); then
     # Build-Local reproduces the first DLL and its package is accepted. A hook in the selected toolset's location is
     # refused (also with the forward-slash path); the applicable untracked src\Directory.Build.targets stays refused
     # (package-with-untracked-directory-build-targets-refused above). The toolset folder is derived from the selected
@@ -400,22 +402,24 @@ try {
     $inactiveHook = Join-Path $profileLocal ('Microsoft\MSBuild\' + $inactiveToolset + '\Microsoft.Common.targets\ImportAfter\Overflow.targets')
     $activeHook = Join-Path $profileLocal ('Microsoft\MSBuild\' + $selectedToolset + '\Microsoft.Common.targets\ImportAfter\Overflow.targets')
     $forwardSlashMSBuild = ([IO.Path]::GetFullPath($msbuild)).Replace('\', '/')
+    $forwardSlashPath = (Split-Path -Parent ([IO.Path]::GetFullPath($msbuild))).Replace('\', '/') + ';' + $env:Path
+    $savedPath = $env:Path
     New-Item -ItemType Directory -Path (Split-Path -Parent $inactiveHook) -Force | Out-Null
     [IO.File]::WriteAllText($inactiveHook, "<Project><PropertyGroup><CheckForOverflowUnderflow>true</CheckForOverflowUnderflow></PropertyGroup></Project>")
     $savedLocalAppData = $env:LOCALAPPDATA
     $env:LOCALAPPDATA = $profileLocal
     try {
         $receiptBeforeReuse = Get-Sha256 $receiptPath; $dllBeforeReuse = Get-Sha256 $dll
-        $env:MSBUILD_EXE_PATH = $forwardSlashMSBuild
-        try { $reused = Invoke-Isolated @('-File', $package) } finally { Remove-Item Env:\MSBUILD_EXE_PATH }
-        Add-Case 'package-reusing-the-existing-receipt-with-unrelated-configuration-accepted' ($reused.ExitCode -eq 0 -and $reused.Output -match 'Package validation passed' -and $dllBeforeReuse -eq $firstDllSha -and (Get-Sha256 $dll) -eq $firstDllSha -and (Get-Sha256 $receiptPath) -eq $receiptBeforeReuse) ("no rebuild; MSBUILD_EXE_PATH $forwardSlashMSBuild; selected toolset $selectedToolset, inactive hook under $inactiveToolset; DLL $dllBeforeReuse (first DLL $firstDllSha); receipt unchanged $((Get-Sha256 $receiptPath) -eq $receiptBeforeReuse); package exit $($reused.ExitCode); " + (Get-Reason $reused.Output))
+        $env:Path = $forwardSlashPath
+        try { $reused = Invoke-Isolated @('-File', $package) } finally { $env:Path = $savedPath }
+        Add-Case 'package-reusing-the-existing-receipt-with-unrelated-configuration-accepted' ($reused.ExitCode -eq 0 -and $reused.Output -match 'Package validation passed' -and $dllBeforeReuse -eq $firstDllSha -and (Get-Sha256 $dll) -eq $firstDllSha -and (Get-Sha256 $receiptPath) -eq $receiptBeforeReuse) ("no rebuild; MSBuild found through the PATH entry $(Split-Path -Parent $forwardSlashMSBuild); selected toolset $selectedToolset, inactive hook under $inactiveToolset; DLL $dllBeforeReuse (first DLL $firstDllSha); receipt unchanged $((Get-Sha256 $receiptPath) -eq $receiptBeforeReuse); package exit $($reused.ExitCode); " + (Get-Reason $reused.Output))
         $unrelated = Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))
         Add-Case 'build-with-unrelated-configuration-and-inactive-user-hook-accepted' ($unrelated.ExitCode -eq 0 -and (Get-Sha256 $dll) -eq $firstDllSha) ("exit $($unrelated.ExitCode); DLL $(Get-Sha256 $dll) (first DLL $firstDllSha)" + $(if ($unrelated.ExitCode) { '; ' + (Get-Reason $unrelated.Output) } else { '' }))
         Expect-Accepted 'package-after-build-with-unrelated-configuration-accepted' (Invoke-Isolated @('-File', $package)) 'Package validation passed'
         New-Item -ItemType Directory -Path (Split-Path -Parent $activeHook) -Force | Out-Null
         [IO.File]::WriteAllText($activeHook, "<Project><PropertyGroup><CheckForOverflowUnderflow>true</CheckForOverflowUnderflow></PropertyGroup></Project>")
-        $env:MSBUILD_EXE_PATH = $forwardSlashMSBuild
-        try { $activeRefusal = Invoke-Isolated @('-File', $package) } finally { Remove-Item Env:\MSBUILD_EXE_PATH }
+        $env:Path = $forwardSlashPath
+        try { $activeRefusal = Invoke-Isolated @('-File', $package) } finally { $env:Path = $savedPath }
         Expect-Rejected 'package-with-user-hook-of-the-selected-toolset-refused' $activeRefusal ('Per-user MSBuild extension files apply to the build: .*\\' + [regex]::Escape($selectedToolset) + '\\Microsoft\.Common\.targets\\ImportAfter\\Overflow\.targets')
         Remove-Item -LiteralPath $activeHook
     }

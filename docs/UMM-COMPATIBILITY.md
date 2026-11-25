@@ -207,7 +207,8 @@ The second extra round adds: import selectors (`DirectoryBuildPropsPath`, `Direc
 configuration (the applicable `Directory.Build` files, the project `.user` file, the project file and
 `Directory.Build.rsp`) as they already were in the environment, because the receipt follows the conventional
 lookup; only an actual `Import` is refused, so an empty `ImportGroup` builds and packages; the selected MSBuild
-path is normalized before its toolset folder is read (a forward-slash `MSBUILD_EXE_PATH` finds the same toolset);
+path is normalized before its toolset folder is read (the same MSBuild found through a forward-slash path
+entry finds the same toolset);
 and the applicability rule applies to the root `Directory.Build` files too, so a root file shadowed by a tracked
 `src/Directory.Build.targets` does not invalidate a receipt. Positive reuse cases package the existing DLL and its
 receipt before any rebuild; the hook fixture derives its active and inactive toolset folders from the selected
