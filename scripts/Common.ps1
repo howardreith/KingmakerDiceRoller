@@ -238,9 +238,12 @@ function Get-CompilerInventoryDifference($Recorded, $Current) {
 # - no explicit Import in an applicable Directory.Build.props/.targets or project .user file (the imported file's
 #   settings could change compilation without changing a fingerprinted input); an empty ImportGroup imports nothing;
 # - no import selector (DirectoryBuildTargetsPath, ImportDirectoryBuildTargets, CustomAfterMicrosoftCommonTargets, ...)
-#   that changes which files MSBuild imports, neither in the environment nor in the tracked configuration (the
-#   applicable Directory.Build files, the project .user file and the project file), because the receipt follows the
-#   conventional lookup;
+#   assigned in the environment or in the tracked configuration (the applicable Directory.Build files, the project
+#   .user file, the project file and the repository's LoaderReferences.targets), because the receipt follows the
+#   conventional lookup: a PropertyGroup property of that name, or a -p:/-property: switch in Directory.Build.rsp
+#   (mentions in comments, conditions, other values or item metadata set nothing and are allowed);
+# - no import in the project file beyond its fixed baseline imports (Microsoft.Common.props, GamePath.props,
+#   LoaderReferences.targets, Microsoft.CSharp.targets);
 # - no environment variable that selects additional MSBuild imports;
 # - no per-user MSBuild ImportBefore/ImportAfter extension file in a location the selected MSBuild toolset imports.
 # Machine-wide extension files that ship with the installed MSBuild are part of the toolchain and are not inventoried.
@@ -280,24 +283,39 @@ function Assert-LocalBuildConfiguration {
             'ImportUserLocationsByWildcardBeforeMicrosoftCommonTargets', 'ImportUserLocationsByWildcardAfterMicrosoftCommonTargets')
     $rootPrefix = [IO.Path]::GetFullPath($root).TrimEnd('\') + '\'
     $projectFile = [IO.Path]::GetFullPath((Join-Path $root 'src\KingmakerDiceRoller\KingmakerDiceRoller.csproj'))
-    foreach ($file in @(@(Get-ApplicableBuildConfiguration) + @($projectFile))) {
+    $loaderTargets = [IO.Path]::GetFullPath((Join-Path $root 'LoaderReferences.targets'))
+    # The project file's fixed baseline imports; any other import there is a file the receipt does not track.
+    $baselineImports = @('$(MSBuildToolsPath)\Microsoft.Common.props', '..\..\GamePath.props', '..\..\LoaderReferences.targets', '$(MSBuildToolsPath)\Microsoft.CSharp.targets')
+    foreach ($file in @(@(Get-ApplicableBuildConfiguration) + @($projectFile, $loaderTargets))) {
         if (-not $file.StartsWith($rootPrefix, [StringComparison]::OrdinalIgnoreCase)) { throw "An outside $([IO.Path]::GetFileName($file)) applies to the build: $file" }
         $relative = $file.Substring($rootPrefix.Length).Replace('\', '/')
         $tracked = @(& git -C $root ls-files -- $relative)
         if ($LASTEXITCODE -ne 0) { throw 'git ls-files failed while checking the local build configuration.' }
         if ($tracked.Count -eq 0) { throw "Untracked MSBuild configuration files apply to the build: $relative" }
         if ($file -like '*.rsp') {
-            $text = Get-Content -LiteralPath $file -Raw
-            foreach ($name in $selectors) { if ($text -match ('(?i)\b' + $name + '\b')) { throw "Unsupported MSBuild import selector $name in ${relative}: the build receipt follows the conventional lookup; remove it." } }
+            # Property switches only (-p:/-property:, also /p: and /property:, with name=value pairs separated by ; or ,);
+            # '#' starts a comment. Other text names no property.
+            foreach ($line in @(Get-Content -LiteralPath $file)) {
+                $code = ($line -split '#', 2)[0]
+                foreach ($switch in [regex]::Matches($code, '(?i)(?:^|\s)[-/](?:p|property):("[^"]*"|\S+)')) {
+                    foreach ($assignment in ($switch.Groups[1].Value.Trim('"') -split '[;,]')) {
+                        $name = ($assignment -split '=', 2)[0].Trim()
+                        if ($selectors -contains $name) { throw "Unsupported MSBuild import selector $name in ${relative}: the build receipt follows the conventional lookup; remove it." }
+                    }
+                }
+            }
             continue
         }
         [xml]$configuration = Get-Content -LiteralPath $file -Raw
-        foreach ($element in @($configuration.SelectNodes('//*'))) {
+        # A property declaration is an element directly inside a PropertyGroup; item metadata, values, conditions and
+        # comments that mention a selector set nothing.
+        foreach ($element in @($configuration.SelectNodes("//*[local-name()='PropertyGroup']/*"))) {
             if ($selectors -contains $element.LocalName) { throw "Unsupported MSBuild import selector $($element.LocalName) in ${relative}: the build receipt follows the conventional lookup; remove it." }
         }
-        # The project file's own imports (GamePath.props, LoaderReferences.targets, the toolchain) are its fixed inputs.
-        if ($file -ne $projectFile -and @($configuration.SelectNodes("//*[local-name()='Import']")).Count -ne 0) {
-            throw "Unsupported MSBuild import in ${relative}: the build receipt cannot bind the imported file; put the settings in $relative itself."
+        $imports = @($configuration.SelectNodes("//*[local-name()='Import']"))
+        if ($file -eq $projectFile) { $imports = @($imports | Where-Object { $baselineImports -notcontains $_.GetAttribute('Project') }) }
+        if ($imports.Count -ne 0) {
+            throw "Unsupported MSBuild import in ${relative}: the build receipt cannot bind the imported file ($($imports[0].GetAttribute('Project'))); put the settings in a tracked applicable file itself."
         }
     }
     foreach ($name in $selectors) {

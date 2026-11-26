@@ -520,6 +520,58 @@ try {
     [IO.File]::WriteAllText($selectorProps, $selectorPropsOriginal)
     Add-Case 'refused-selector-builds-left-dll-and-receipt' ((Get-Sha256 $dll) -eq $dllBeforeSelectors -and (Get-Sha256 $receiptPath) -eq $receiptBeforeSelectors) "DLL $(Get-Sha256 $dll); receipt unchanged $((Get-Sha256 $receiptPath) -eq $receiptBeforeSelectors)"
     Expect-Accepted 'package-after-selector-removed-accepted' (Invoke-Isolated @('-File', $package)) 'Package validation passed'
+    # R8-F1: the same selector assigned in the repository's LoaderReferences.targets (imported by the project) is refused
+    # at package and build admission; restoring the file restores acceptance of the unchanged receipt.
+    $loaderTargetsFile = Join-Path $base 'LoaderReferences.targets'
+    $loaderTargetsOriginal = [IO.File]::ReadAllText($loaderTargetsFile)
+    [IO.File]::WriteAllText($loaderTargetsFile, $loaderTargetsOriginal.Replace('</Project>', "  <PropertyGroup><DirectoryBuildTargetsPath>$([Security.SecurityElement]::Escape($selectedTargets))</DirectoryBuildTargetsPath></PropertyGroup>`r`n</Project>"))
+    Expect-Rejected 'package-with-selector-in-loader-references-targets-refused' (Invoke-Isolated @('-File', $package)) 'Unsupported MSBuild import selector DirectoryBuildTargetsPath in LoaderReferences\.targets'
+    Expect-Rejected 'build-with-selector-in-loader-references-targets-refused' (Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))) 'Unsupported MSBuild import selector DirectoryBuildTargetsPath in LoaderReferences\.targets'
+    [IO.File]::WriteAllText($loaderTargetsFile, $loaderTargetsOriginal)
+    Add-Case 'refused-loader-references-selector-left-dll-and-receipt' ((Get-Sha256 $dll) -eq $dllBeforeSelectors -and (Get-Sha256 $receiptPath) -eq $receiptBeforeSelectors) "DLL $(Get-Sha256 $dll); receipt unchanged $((Get-Sha256 $receiptPath) -eq $receiptBeforeSelectors)"
+    Expect-Accepted 'package-after-loader-references-selector-removed-accepted' (Invoke-Isolated @('-File', $package)) 'Package validation passed'
+    # R9-F1: with a tracked src\Directory.Build.targets and a root Directory.Build.targets, a project-file import of the
+    # root file (which the conventional lookup treats as shadowed) is refused at package and build admission; the
+    # project's baseline imports stay accepted, and without the explicit import the shadowed root file is reused above
+    # (package-reusing-the-receipt-with-shadowed-root-targets-accepted).
+    $explicitSrcTargets = Join-Path $base 'src\Directory.Build.targets'
+    [IO.File]::WriteAllText($explicitSrcTargets, '<Project></Project>')
+    & git -C $base add -- src/Directory.Build.targets
+    [IO.File]::WriteAllText($rootTargets, '<Project></Project>')
+    $projectOriginal = [IO.File]::ReadAllText($project)
+    [IO.File]::WriteAllText($project, $projectOriginal.Replace('<Import Project="..\..\LoaderReferences.targets" />', '<Import Project="..\..\LoaderReferences.targets" />' + "`r`n" + '  <Import Project="..\..\Directory.Build.targets" />'))
+    $explicitImportAdded = ([IO.File]::ReadAllText($project)) -ne $projectOriginal
+    $dllBeforeExplicit = Get-Sha256 $dll; $receiptBeforeExplicit = Get-Sha256 $receiptPath
+    $explicitPackage = Invoke-Isolated @('-File', $package)
+    Add-Case 'package-with-project-import-of-shadowed-root-targets-refused' ($explicitImportAdded -and $explicitPackage.ExitCode -ne 0 -and ($explicitPackage.Output -replace '\s+', ' ') -match 'Unsupported MSBuild import in src/KingmakerDiceRoller/KingmakerDiceRoller\.csproj') ("import added: $explicitImportAdded; " + (Get-Reason $explicitPackage.Output))
+    Expect-Rejected 'build-with-project-import-of-shadowed-root-targets-refused' (Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))) 'Unsupported MSBuild import in src/KingmakerDiceRoller/KingmakerDiceRoller\.csproj'
+    Add-Case 'refused-explicit-import-left-dll-and-receipt' ((Get-Sha256 $dll) -eq $dllBeforeExplicit -and (Get-Sha256 $receiptPath) -eq $receiptBeforeExplicit) "DLL $(Get-Sha256 $dll); receipt unchanged $((Get-Sha256 $receiptPath) -eq $receiptBeforeExplicit)"
+    [IO.File]::WriteAllText($project, $projectOriginal)
+    Remove-Item -LiteralPath $rootTargets
+    & git -C $base rm -q --cached -- src/Directory.Build.targets
+    Remove-Item -LiteralPath $explicitSrcTargets
+    Expect-Accepted 'package-after-explicit-import-removed-accepted' (Invoke-Isolated @('-File', $package)) 'Package validation passed'
+    # R9-F2: text that names a selector without assigning it builds and packages: a tracked root Directory.Build.rsp with a
+    # comment and an unrelated property whose value is a selector name, and the tracked Directory.Build.props with an XML
+    # comment, a condition reference and inert item metadata of that name. An actual -p: assignment in the response file
+    # is refused at package and build admission. The receipt saved before is accepted again after restoring.
+    $savedReceiptBeforeMentions = Join-Path $inputs 'receipt-before-selector-mentions.json'
+    Copy-Item -LiteralPath $receiptPath -Destination $savedReceiptBeforeMentions -Force
+    $rootRsp = Join-Path $base 'Directory.Build.rsp'
+    [IO.File]::WriteAllText($rootRsp, "# DirectoryBuildTargetsPath is left to the conventional lookup`r`n-p:KdrSelectorNote=DirectoryBuildTargetsPath`r`n")
+    & git -C $base add -- Directory.Build.rsp
+    [IO.File]::WriteAllText($selectorProps, $selectorPropsOriginal.Replace('</Project>', "  <!-- DirectoryBuildTargetsPath is not set here -->`r`n  <PropertyGroup Condition=`"'`$(DirectoryBuildTargetsPath)' == ''`"><KdrSelectorNote>DirectoryBuildTargetsPath</KdrSelectorNote></PropertyGroup>`r`n  <ItemGroup><KdrSelectorItem Include=`"note`"><DirectoryBuildTargetsPath>inert metadata</DirectoryBuildTargetsPath></KdrSelectorItem></ItemGroup>`r`n</Project>"))
+    $mentionBuild = Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))
+    Add-Case 'build-with-harmless-selector-mentions-reproduces-first-dll' ($mentionBuild.ExitCode -eq 0 -and (Get-Sha256 $dll) -eq $firstDllSha) ("exit $($mentionBuild.ExitCode); DLL $(Get-Sha256 $dll)" + $(if ($mentionBuild.ExitCode) { '; ' + (Get-Reason $mentionBuild.Output) } else { '' }))
+    Expect-Accepted 'package-with-harmless-selector-mentions-accepted' (Invoke-Isolated @('-File', $package)) 'Package validation passed'
+    [IO.File]::WriteAllText($rootRsp, "-p:DirectoryBuildTargetsPath=$selectedTargets`r`n")
+    Expect-Rejected 'package-with-selector-assignment-in-response-file-refused' (Invoke-Isolated @('-File', $package)) 'Unsupported MSBuild import selector DirectoryBuildTargetsPath in Directory\.Build\.rsp'
+    Expect-Rejected 'build-with-selector-assignment-in-response-file-refused' (Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))) 'Unsupported MSBuild import selector DirectoryBuildTargetsPath in Directory\.Build\.rsp'
+    [IO.File]::WriteAllText($selectorProps, $selectorPropsOriginal)
+    & git -C $base rm -q --cached -- Directory.Build.rsp
+    Remove-Item -LiteralPath $rootRsp
+    Copy-Item -LiteralPath $savedReceiptBeforeMentions -Destination $receiptPath -Force
+    Expect-Accepted 'package-with-the-receipt-before-selector-mentions-accepted-again' (Invoke-Isolated @('-File', $package)) 'Package validation passed'
     # Effective compiler options from the tracked Directory.Build.props (here edited in the disposable checkout). Only the
     # overflow-checking option changes: the stale package is refused, the receipt of a matching rebuild records the
     # effective option, and the rebuilt DLL differs; removing it needs a rebuild again.
