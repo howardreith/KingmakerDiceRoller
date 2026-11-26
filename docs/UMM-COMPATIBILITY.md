@@ -213,6 +213,13 @@ and the applicability rule applies to the root `Directory.Build` files too, so a
 `src/Directory.Build.targets` does not invalidate a receipt. Positive reuse cases package the existing DLL and its
 receipt before any rebuild; the hook fixture derives its active and inactive toolset folders from the selected
 MSBuild.
+
+The third extra round adds: the repository's `LoaderReferences.targets` is part of the same selector admission; the
+project file may import only its four baseline files (`Microsoft.Common.props`, `GamePath.props`,
+`LoaderReferences.targets`, `Microsoft.CSharp.targets`), so an explicit import of a root `Directory.Build.targets` that
+the conventional lookup treats as shadowed is refused; and a selector is refused only where it is assigned (a property
+declared in a `PropertyGroup`, or a `-p:`/`-property:` switch in `Directory.Build.rsp`), so comments, condition
+references, other property values and item metadata that merely mention one build and package normally.
 `Package.ps1` stages, archives and validates in a folder private to the invocation, compares the
 documents read back from the validated archive with the repository files hashed before staging,
 prepares both records, and only then publishes the ZIP, validation report and manifest together, keeping
