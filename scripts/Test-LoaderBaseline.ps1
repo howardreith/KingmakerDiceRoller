@@ -572,6 +572,8 @@ try {
     Remove-Item -LiteralPath $rootRsp
     Copy-Item -LiteralPath $savedReceiptBeforeMentions -Destination $receiptPath -Force
     Expect-Accepted 'package-with-the-receipt-before-selector-mentions-accepted-again' (Invoke-Isolated @('-File', $package)) 'Package validation passed'
+    $leftAfterConfigurationCases = @(& git -C $base status --porcelain --untracked-files=all)
+    Add-Case 'configuration-cases-leave-the-checkout-clean' ($leftAfterConfigurationCases.Count -eq 0) ("git status: " + $(if ($leftAfterConfigurationCases.Count) { $leftAfterConfigurationCases -join ' | ' } else { 'clean' }))
     # Effective compiler options from the tracked Directory.Build.props (here edited in the disposable checkout). Only the
     # overflow-checking option changes: the stale package is refused, the receipt of a matching rebuild records the
     # effective option, and the rebuilt DLL differs; removing it needs a rebuild again.
@@ -771,7 +773,7 @@ try {
         (Get-Sha256 (Join-Path $candidateDir 'KingmakerDiceRoller.dll')) -eq $firstDllSha -and
         (Get-Sha256 (Join-Path $candidateDir 'build-provenance.json')) -eq (Get-Sha256 $savedReceipt) -and
         $m.package_sha256 -eq (Get-Sha256 (Join-Path $candidateDir 'KingmakerDiceRoller-0.2.0.zip'))
-    Add-Case 'candidate-package-records-frozen-after-build-output-replaced' $ok ("build output replaced after staging (now $(Get-Sha256 $dll)); manifest DLL $($m.dll_sha256); loose DLL and receipt copy match; ZIP $($m.package_sha256)")
+    Add-Case 'candidate-package-records-frozen-after-build-output-replaced' $ok $(if ($m) { "build output replaced after staging (now $(Get-Sha256 $dll)); manifest DLL $($m.dll_sha256); loose DLL and receipt copy match; ZIP $($m.package_sha256)" } else { "no candidate manifest: exit $($mixed.ExitCode); " + (Get-Reason $mixed.Output) })
     Copy-Item -LiteralPath (Join-Path $candidateDir 'KingmakerDiceRoller.dll') -Destination $dll -Force
     [IO.File]::AppendAllText((Join-Path $base 'docs\UMM-COMPATIBILITY.md'), "`n<!-- loader-baseline test: documentation-only commit -->`n")
     & git -C $base -c user.name=loader-baseline-test -c user.email=loader-baseline-test@invalid commit -q -am 'test: documentation-only commit'
