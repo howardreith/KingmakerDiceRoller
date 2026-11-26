@@ -1,0 +1,43 @@
+{
+ "schema": "kdr.build-local-summary.v1",
+ "recorded_at_utc": "2026-11-24T16:01:09Z",
+ "command": "scripts/Build-Local.ps1 (Release) then scripts/Package.ps1, on a clean checkout of 8c198e0a0e314b8d0d3a09b503f076a39ada0c1b",
+ "wrapper_result_lines": [
+  "RESULT 20/20 passed",
+  "Ran 30 tests in 0.001s",
+  "OK",
+  "Build succeeded.",
+  "    0 Warning(s)",
+  "    0 Error(s)",
+  "RESULT 416/416 passed",
+  "Kingmaker contract verification passed: <repo>\\artifacts\\contracts\\runtime-contracts.json",
+  "Build succeeded.",
+  "    0 Warning(s)",
+  "    0 Error(s)",
+  "Respec installed-assembly contracts passed: 11 checks. Live UI/save qualification NOT RUN.",
+  "Native UI IL/contracts: 30/30 passed. Engine interaction/audio is NOT RUN.",
+  "Build qualification passed. DLL: <repo>\\artifacts\\bin\\Release\\KingmakerDiceRoller\\KingmakerDiceRoller.dll",
+  "SHA-256: 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee"
+ ],
+ "package_result_lines": [
+  "Package validation passed: <repo>\\artifacts\\.package-f81c285956a146aab9bd03b7fc704850\\KingmakerDiceRoller-0.2.0.zip",
+  "Packaged DLL SHA-256: 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee; MVID: 7a6d0a75-f788-47a5-83c9-fed6fb14e3ff; loader references: UnityModManager 0.31.1.0, 0Harmony12 1.2.0.1",
+  "Package: <repo>\\artifacts\\packages\\KingmakerDiceRoller-0.2.0.zip",
+  "SHA-256: b8cb456b8061fc48bfa464bd5af66f368516ab24cbb22d3d1f2c6e376d436e81"
+ ],
+ "receipt": {
+  "commit": "8c198e0a0e314b8d0d3a09b503f076a39ada0c1b",
+  "dirty": false,
+  "configuration": "Release",
+  "dll_sha256": "634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee",
+  "build_inputs_sha256": "343e5eb00b8d3281f5e7c2952562f7543f6c3ed84ac3f75e543f95be953e00ad",
+  "game_assembly_sha256": "3b6450ffec440e296e586f71c711b195aed144b28d53e1cbb29406d18fef5afb"
+ },
+ "compiler_inventory_entries": 136,
+ "compiler_inventory_first_entries": [
+  "compiler csc.exe",
+  "option /noconfig",
+  "option /nowarn:1701,1702"
+ ],
+ "note": "Structured summary of the wrapper's own result lines (selected verbatim from its console output). The direct MSBuild compile is covered by the boundary suite, not by this record."
+}
