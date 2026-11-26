@@ -1,6 +1,6 @@
 # UMM 0.31.1 baseline evidence
 
-Machine-generated outputs exported 2026-11-26 03:00 UTC for candidate commit `964536e855f351a033ba88fafa37c9c480b34aee`. Each row names what produced that output (its
+Machine-generated outputs exported 2026-11-26 03:46 UTC for candidate commit `01b403802b4762f31beaf8d5144edbdb8d69a19c`. Each row names what produced that output (its
 source commit, or the reused input it describes); outputs produced at another commit are identified there.
 Only local path prefixes were replaced: `<repo>` (this checkout or its temporary clone root), `<temp>`, `<game>`
 (the Kingmaker installation, read-only), `<buildtools>`, `<reference-assemblies>`, `<dotnet>`, `<controller>` (the agent-review controller), `<dev>` (the owner's development folder), `<steam>`, `<user-profile>`, `<fleet>` (the owner's fleet mission folder,
@@ -21,7 +21,8 @@ python -c "import hashlib,subprocess,sys; print(hashlib.sha256(subprocess.check_
 | `build-local-summary.json` | 8c198e0 (result lines of that Build-Local.ps1 and Package.ps1 run) | `0953445663e1994d349b23f665dd63af72adae4a69749df1a34b0e8971af59c1` (original output, from its first export) | `6860fdfba70749dbf87a975e8b931a6b4ca8b2ca0f31b1ff1bd393cb24a5945d` |
 | `package-manifest.json` | 8c198e0 (Package.ps1 on that build) | `8d01f30711baaa0e28271068c85d2971c4f8186955556a4840e30f96dba2f4ec` (original output, from its first export) | `e210bcb2cdd0f8b8899a91f5ea54fd396e33600c6443577c4cc19f2e12b726eb` |
 | `package-validation.json` | 8c198e0 (Package.ps1 on that build) | `d8d56551bc3fde2173dba6363080a8dc3c4432f1f625ff9f5f6ee2e3da1ff23d` (original output, from its first export) | `d6bd9c6b30ec71988677dc49a7466bbebe15449443bb9ae5aaed605c7313c4f5` |
-| `loader-baseline.json` | 964536e (temporary clone; 174/174; tooling 8eac164 + 3819333 + 964536e) | `a12e59ed6baaf77ea8cce608d902cbc65c7ba565a906f92c5146026ecc1ddb0b` | `4bac88c017dcf6d36666d6028b9271c4bbe5ffeb604681c3940033f2fc4eeff6` |
+| `loader-baseline.json` | 01b4038 (temporary clone; 185/185; tooling 4bf83f1) | `dfc032e90449033749289336ddcc6cb05ee60cfa180ea0a5fc50f40bf5551e6a` | `a9c00f726db66d0f36bd82dc6a307104fd2f6e2433302ee7d838ac090b73bbec` |
+| `rsp-reproduction.txt` | focused reproduction on the 4bf83f1 code: Directory.Build.rsp lines read by the new reader and by the installed MSBuild 17.14 | `80e3579a1077d486a0de46e75ae01925c3cdcc39ff151919633462a8e43ef757` | `fe0800b3a8487e122aab554d7b0c5262117bede5f2f21b8442c0877474b77200` |
 | `docs-link-check.json` | `8c198e0` | `64b18869dfa5adf15f474c7653288cbe5a513869b0f7805deaf314703a843848` (original output, from its first export) | `4846d9427e30426d3a208698e72154d2d77688d6567670604f8afbf0cff11487` |
 | `api-audit.json` | reused static audit of the unchanged candidate DLL 634f2277 | `c38d49d4eb66f8bfdaeded0c8d97ccdaaf4e31cf8466e170de3ba52a33780019` (original output, from its first export) | `9bd77723164ffb889889b7358186e33d2ec9e8f78ee686fad886e6cdb6709932` |
 | `loader-profile-inventory.json` | reused profile inventory with the unchanged DLL 634f2277 | `f361c14a69acd3985005f6f49116c29278dd138dcd41101e6be882e7f2e6c868` (original output, from its first export) | `95ee8f30aa144ab343cca54f508ae22b0d92eeb90bf6e38b5ae92e60ffcf7a24` |
