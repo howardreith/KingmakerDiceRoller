@@ -1,0 +1,24 @@
+<!-- agent-review:v1 enrollment=kdr-umm0311-codex-umm-0311-baseline-20261123-20261123161619-b437 key=r08-dispositions-dc222c5f18 part=1/1 sha256=dc222c5f18827b5c5742a7f169fd6c2995539bb6aa336b7da95a3b1c519b7716 -->
+### Claude Opus — finding dispositions — round 8
+
+Candidate after corrections: `8c6841a60e0580b62e10dc036e90ac48fedf96ff`
+
+- **R8-F1** — `fixed` — commits: `1d2f5ef`, `651295d`, `bb12997`, `8c6841a`
+  docs/evidence/umm-0311/loader-baseline.json (160/160 on a temporary clone of 651295d): package-with-tracked-selector-DirectoryBuildTargetsPath-refused and build-with-tracked-selector-DirectoryBuildTargetsPath-refused (the tracked root Directory.Build.props selecting another targets file that enables overflow checking: 'Unsupported MSBuild import selector DirectoryBuildTargetsPath in Directory.Build.props'), the same pair for ImportDirectoryBuildTargets, refused-selector-builds-left-dll-and-receipt, package-after-selector-removed-accepted; unused-sibling control retained (package-reusing-the-existing-receipt-with-unrelated-configuration-accepted with untracked tools/ and src/Scratch/ Directory.Build.targets).
+- **R6-F1** — `fixed` — commits: `1d2f5ef`, `651295d`, `bb12997`, `8c6841a`
+  docs/evidence/umm-0311/loader-baseline.json (160/160 on a temporary clone of 651295d): package-reusing-the-existing-receipt-with-unrelated-configuration-accepted (packaged before any rebuild, with the selected Current MSBuild found through a forward-slash PATH entry and only an inactive 15.0 hook present: the original DLL 634f2277 and unchanged receipt accepted), build-with-unrelated-configuration-and-inactive-user-hook-accepted, package-with-user-hook-of-the-selected-toolset-refused (Current hook, same forward-slash spelling); build-with-tracked-src-targets-reproduces-first-dll then package-reusing-the-receipt-with-shadowed-root-targets-accepted (an empty root Directory.Build.targets shadowed by the tracked src/Directory.Build.targets: that build's DLL and receipt packaged without rebuilding), package-with-the-receipt-before-src-targets-accepted-again; retained package-with-untracked-directory-build-targets-refused.
+- **R8-F2** — `fixed` — commits: `1d2f5ef`, `651295d`, `bb12997`, `8c6841a`
+  docs/evidence/umm-0311/loader-baseline.json (160/160 on a temporary clone of 651295d): build-with-tracked-empty-import-group-reproduces-first-dll and package-with-tracked-empty-import-group-accepted (a tracked root Directory.Build.targets holding only <ImportGroup />), package-with-import-group-holding-the-parent-import-refused ('Unsupported MSBuild import in Directory.Build.targets'), package-with-the-receipt-before-the-import-group-accepted-again; the R7-F1 import cases still pass.
+- **R8-F3** — `fixed` — commits: `1d2f5ef`
+  Optional. docs/evidence/umm-0311/loader-baseline.json (160/160 on a temporary clone of 651295d): the hook cases record the selected toolset (Current, read from the normalized selected MSBuild path) and the inactive folder (15.0) in package-reusing-the-existing-receipt-with-unrelated-configuration-accepted; the active-hook pattern uses the derived folder.
+
+**Validation (developer-reported):**
+
+| Command | Required | Result | Duration | Scope and limits |
+|---|---|---|---|---|
+| python C:/Dev/agent-review/agent_review.py verify --enrollment kdr-umm0311-codex-umm-0311-baseline-20261123-20261123161619-b437 --gate domain | yes | pass | 1.1s | Controller receipt on 8c6841a (log gate-domain-8c6841a60e05-d62db9d6340-a1275076655-20261125T155258862450Z.log; RESULT 416/416 passed). |
+| scripts/Test-LoaderBaseline.ps1 (temporary clone of 651295d, path with a space; run after a 120 s window with no Kingmaker process) | no | pass | 318s | docs/evidence/umm-0311/loader-baseline.json (160/160 on a temporary clone of 651295d). The first run on bb12997 (326 s) reported 159/160: the forward-slash case then supplied the spelling through MSBUILD_EXE_PATH, under which MSBuild itself no longer applied the root Directory.Build.props (/warn:4, /warnaserror+ and /deterministic+ were missing from the evaluated inventory), so the receipt was correctly refused as stale; 651295d supplies the same spelling through a forward-slash PATH entry (Resolve-MSBuild then returns C:/.../Bin\MSBuild.exe and the evaluated inventory is identical, checked in the worktree), with no production change. |
+| Focused probes in the worktree (1d2f5ef code) | no | pass | ~30s | Assert-LocalBuildConfiguration accepts the worktree as is; with the forward-slash Current MSBuild and only a 15.0 hook in a disposable LOCALAPPDATA it accepts; compiler inventories compared with and without the forward-slash spellings. |
+| Native checks on four loader rows | no | not_run | 0 | No disposable game harness for this repository; its runtime route installs into the live game. |
+
+_Model-generated developer response (Claude opus / high), posted by the agent-review controller through the owner's GitHub account; not a human review._
