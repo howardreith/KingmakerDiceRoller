@@ -247,6 +247,90 @@ function Get-CompilerInventoryDifference($Recorded, $Current) {
 # - no environment variable that selects additional MSBuild imports;
 # - no per-user MSBuild ImportBefore/ImportAfter extension file in a location the selected MSBuild toolset imports.
 # Machine-wide extension files that ship with the installed MSBuild are part of the toolchain and are not inventoried.
+# Response-file reading as MSBuild 17.14 does it (src/MSBuild/XMake.cs GatherResponseFileSwitch,
+# GatherCommandLineSwitches, ExtractSwitchParameters, ProcessPropertySwitch; src/Shared/QuotingUtilities.cs), limited to
+# what the configuration admission needs: which property names a Directory.Build.rsp assigns, and whether it names a
+# further response file. A line is skipped only when its first non-whitespace character is '#'; each other line has its
+# environment variables expanded and is split into arguments at unquoted whitespace.
+function ConvertFrom-MSBuildQuotedText([string] $Text) {
+    # QuotingUtilities.Unquote: removes the quoting double-quotes; returns the text and how many were removed.
+    $out = New-Object Text.StringBuilder
+    $quoted = $false; $backslashes = 0; $removed = 0
+    for ($i = 0; $i -lt $Text.Length; $i++) {
+        $c = $Text[$i]
+        if ($c -eq '\') { $backslashes++; continue }
+        if ($c -eq '"') {
+            [void]$out.Append([char]92, [int][Math]::Floor($backslashes / 2))
+            if (($backslashes % 2) -eq 0) {
+                if ($quoted -and $i -lt ($Text.Length - 1) -and $Text[$i + 1] -eq '"') { [void]$out.Append('"'); $i++ }
+                $quoted = -not $quoted; $removed++
+            }
+            else { [void]$out.Append('"') }
+            $backslashes = 0; continue
+        }
+        [void]$out.Append([char]92, $backslashes); [void]$out.Append($c); $backslashes = 0
+    }
+    [void]$out.Append([char]92, $backslashes)
+    return [pscustomobject]@{ Text = $out.ToString(); Removed = $removed }
+}
+function Split-MSBuildUnquoted([string] $Text, [char[]] $Separators = @(), [bool] $Unquote = $false) {
+    # QuotingUtilities.SplitUnquoted (no split limit, empty pieces discarded): splits at separators (whitespace when none)
+    # outside double quotes, keeping the quotes unless $Unquote.
+    $pieces = New-Object Collections.Generic.List[string]
+    $current = New-Object Text.StringBuilder
+    $quoted = $false; $backslashes = 0
+    for ($i = 0; $i -lt $Text.Length; $i++) {
+        $c = $Text[$i]
+        if ($c -eq '\') { [void]$current.Append('\'); $backslashes++; continue }
+        if ($c -eq '"') {
+            [void]$current.Append('"')
+            if (($backslashes % 2) -eq 0) {
+                if ($quoted -and $i -lt ($Text.Length - 1) -and $Text[$i + 1] -eq '"') { [void]$current.Append('"'); $i++ }
+                $quoted = -not $quoted
+            }
+            $backslashes = 0; continue
+        }
+        $isSeparator = if ($Separators.Count -eq 0) { [char]::IsWhiteSpace($c) } else { $Separators -contains $c }
+        if (-not $quoted -and $isSeparator) { $pieces.Add($current.ToString()); [void]$current.Clear() } else { [void]$current.Append($c) }
+        $backslashes = 0
+    }
+    $pieces.Add($current.ToString())
+    return @($pieces | ForEach-Object { if ($Unquote) { (ConvertFrom-MSBuildQuotedText $_).Text } else { $_ } } | Where-Object { $_.Length -gt 0 })
+}
+function Get-ResponseFileSwitchFacts([string] $Path) {
+    # The property names assigned by -p:/-property: (also with -- or /), and any argument naming a further response file.
+    $names = New-Object Collections.Generic.List[string]
+    $nested = New-Object Collections.Generic.List[string]
+    foreach ($rawLine in @(Get-Content -LiteralPath $Path)) {
+        $line = ([string]$rawLine).TrimStart()
+        if ($line.StartsWith('#', [StringComparison]::Ordinal)) { continue }
+        foreach ($argument in @(Split-MSBuildUnquoted ([Environment]::ExpandEnvironmentVariables($line)))) {
+            $unquotedArgument = ConvertFrom-MSBuildQuotedText $argument
+            $unquoted = $unquotedArgument.Text
+            if ($unquoted.Length -eq 0) { continue }
+            if ($unquoted.StartsWith('@', [StringComparison]::Ordinal)) { $nested.Add($unquoted); continue }
+            if (-not ($unquoted.StartsWith('-', [StringComparison]::Ordinal) -or $unquoted.StartsWith('/', [StringComparison]::Ordinal))) { continue }
+            $parameterIndicator = $unquoted.IndexOf(':')
+            if ($parameterIndicator -lt 0) { continue }
+            $indicatorLength = if ($unquoted.StartsWith('--', [StringComparison]::Ordinal)) { 2 } else { 1 }
+            $switchName = $unquoted.Substring($indicatorLength, $parameterIndicator - $indicatorLength)
+            if (@('p', 'property') -notcontains $switchName.ToLowerInvariant()) { continue }
+            # ExtractSwitchParameters: quoting that starts in the switch name continues into the parameters.
+            $quotedIndicator = $argument.IndexOf(':')
+            $nameRemoved = (ConvertFrom-MSBuildQuotedText ($argument.Substring(0, $quotedIndicator))).Removed
+            if (($nameRemoved % 2) -eq 0) { $parameters = $argument.Substring($quotedIndicator) }
+            else {
+                $terminal = $argument.IndexOf('"', $quotedIndicator + 1)
+                if (($unquotedArgument.Removed - $nameRemoved) -le 1 -and ($terminal -eq -1 -or $terminal -eq ($argument.Length - 1))) { $parameters = $unquoted.Substring($parameterIndicator) }
+                else { $parameters = ':"' + $argument.Substring($quotedIndicator + 1) }
+            }
+            # The property switch's parameters: split at unquoted ';' and ',' and unquoted; the name precedes the first '='.
+            foreach ($assignment in @(Split-MSBuildUnquoted ($parameters.Substring(1)) @([char]';', [char]',') $true)) { $names.Add(($assignment -split '=', 2)[0]) }
+        }
+    }
+    return [pscustomobject]@{ PropertyNames = @($names); NestedResponseFiles = @($nested) }
+}
+
 function Assert-LocalBuildConfiguration {
     $root = $script:RepositoryRoot
     $props = Join-Path $root 'GamePath.props'
@@ -293,16 +377,12 @@ function Assert-LocalBuildConfiguration {
         if ($LASTEXITCODE -ne 0) { throw 'git ls-files failed while checking the local build configuration.' }
         if ($tracked.Count -eq 0) { throw "Untracked MSBuild configuration files apply to the build: $relative" }
         if ($file -like '*.rsp') {
-            # Property switches only (-p:/-property:, also /p: and /property:, with name=value pairs separated by ; or ,);
-            # '#' starts a comment. Other text names no property.
-            foreach ($line in @(Get-Content -LiteralPath $file)) {
-                $code = ($line -split '#', 2)[0]
-                foreach ($switch in [regex]::Matches($code, '(?i)(?:^|\s)[-/](?:p|property):("[^"]*"|\S+)')) {
-                    foreach ($assignment in ($switch.Groups[1].Value.Trim('"') -split '[;,]')) {
-                        $name = ($assignment -split '=', 2)[0].Trim()
-                        if ($selectors -contains $name) { throw "Unsupported MSBuild import selector $name in ${relative}: the build receipt follows the conventional lookup; remove it." }
-                    }
-                }
+            # The property names the response file assigns, read with MSBuild's own argument and quoting rules
+            # (Get-ResponseFileSwitchFacts). A further response file could assign more and is not bound by the receipt.
+            $facts = Get-ResponseFileSwitchFacts $file
+            if ($facts.NestedResponseFiles.Count -ne 0) { throw "Unsupported nested response file $($facts.NestedResponseFiles[0]) in ${relative}: the build receipt cannot bind it; remove it." }
+            foreach ($name in $facts.PropertyNames) {
+                if ($selectors -contains $name) { throw "Unsupported MSBuild import selector $name in ${relative}: the build receipt follows the conventional lookup; remove it." }
             }
             continue
         }
@@ -313,7 +393,8 @@ function Assert-LocalBuildConfiguration {
             if ($selectors -contains $element.LocalName) { throw "Unsupported MSBuild import selector $($element.LocalName) in ${relative}: the build receipt follows the conventional lookup; remove it." }
         }
         $imports = @($configuration.SelectNodes("//*[local-name()='Import']"))
-        if ($file -eq $projectFile) { $imports = @($imports | Where-Object { $baselineImports -notcontains $_.GetAttribute('Project') }) }
+        # Separator direction is normalized for the comparison (MSBuild accepts either); the four baseline imports only.
+        if ($file -eq $projectFile) { $imports = @($imports | Where-Object { $baselineImports -notcontains $_.GetAttribute('Project').Replace('/', '\') }) }
         if ($imports.Count -ne 0) {
             throw "Unsupported MSBuild import in ${relative}: the build receipt cannot bind the imported file ($($imports[0].GetAttribute('Project'))); put the settings in a tracked applicable file itself."
         }

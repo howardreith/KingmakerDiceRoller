@@ -573,6 +573,61 @@ try {
     Remove-Item -LiteralPath $rootRsp
     Copy-Item -LiteralPath $savedReceiptBeforeMentions -Destination $receiptPath -Force
     Expect-Accepted 'package-with-the-receipt-before-selector-mentions-accepted-again' (Invoke-Isolated @('-File', $package)) 'Package validation passed'
+    # R10-F1/R9-F2: Directory.Build.rsp is read with MSBuild's own argument and quoting rules. Each fixture line is also
+    # given to the installed MSBuild (a probe project printing the effective DirectoryBuildTargetsPath and BuildNote), so
+    # the expected interpretation is MSBuild's, not the reader's.
+    $rspProbe = { param([string] $Line)
+        $probeDir = Join-Path $temp ('rsp probe ' + [Guid]::NewGuid().ToString('N').Substring(0, 8))
+        New-Item -ItemType Directory -Path $probeDir | Out-Null
+        [IO.File]::WriteAllText((Join-Path $probeDir 'Directory.Build.rsp'), $Line + "`r`n")
+        [IO.File]::WriteAllText((Join-Path $probeDir 'probe.proj'), '<Project><Target Name="Show"><Message Importance="high" Text="DBTP=[$(DirectoryBuildTargetsPath)] NOTE=[$(BuildNote)]" /></Target></Project>')
+        $shown = Invoke-MSBuildIsolated @((Join-Path $probeDir 'probe.proj'), '/t:Show')
+        Remove-Item -LiteralPath $probeDir -Recurse -Force
+        return [regex]::Match($shown.Output, 'DBTP=\[[^\]]*\] NOTE=\[[^\]]*\]').Value
+    }
+    $inlineHashLine = '-p:BuildNote=C# -p:DirectoryBuildTargetsPath=tools/frozen.targets'
+    $quotedSwitchLine = '"-p:DirectoryBuildTargetsPath=tools/frozen.targets"'
+    $quotedNoteLine = '-p:BuildNote="See -p:DirectoryBuildTargetsPath=value"'
+    $commentLine = '   # -p:DirectoryBuildTargetsPath=tools/frozen.targets'
+    $msbuildReads = [ordered]@{ A = (& $rspProbe $inlineHashLine); B = (& $rspProbe $quotedSwitchLine); C = (& $rspProbe $quotedNoteLine); D = (& $rspProbe $commentLine) }
+    $msbuildOk = $msbuildReads.A -ceq 'DBTP=[tools/frozen.targets] NOTE=[C#]' -and $msbuildReads.B -ceq 'DBTP=[tools/frozen.targets] NOTE=[]' -and
+        $msbuildReads.C -ceq 'DBTP=[] NOTE=[See -p:DirectoryBuildTargetsPath=value]' -and $msbuildReads.D -ceq 'DBTP=[] NOTE=[]'
+    Add-Case 'installed-msbuild-reads-the-response-file-fixtures' $msbuildOk ("A: $($msbuildReads.A); B: $($msbuildReads.B); C: $($msbuildReads.C); D: $($msbuildReads.D)")
+    $rsp = Join-Path $base 'Directory.Build.rsp'
+    foreach ($case in @(@{ Name = 'inline-hash-then-selector'; Line = $inlineHashLine }, @{ Name = 'whole-quoted-selector-argument'; Line = $quotedSwitchLine })) {
+        [IO.File]::WriteAllText($rsp, $case.Line + "`r`n")
+        & git -C $base add -- Directory.Build.rsp
+        Expect-Rejected "package-with-response-file-$($case.Name)-refused" (Invoke-Isolated @('-File', $package)) 'Unsupported MSBuild import selector DirectoryBuildTargetsPath in Directory\.Build\.rsp'
+        Expect-Rejected "build-with-response-file-$($case.Name)-refused" (Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))) 'Unsupported MSBuild import selector DirectoryBuildTargetsPath in Directory\.Build\.rsp'
+        & git -C $base reset -q -- Directory.Build.rsp
+        Remove-Item -LiteralPath $rsp
+    }
+    # C and D: a whole-line comment and a quoted note whose text looks like a selector switch build and package.
+    $savedReceiptBeforeQuotedNote = Join-Path $inputs 'receipt-before-quoted-note.json'
+    Copy-Item -LiteralPath $receiptPath -Destination $savedReceiptBeforeQuotedNote -Force
+    [IO.File]::WriteAllText($rsp, $commentLine + "`r`n" + $quotedNoteLine + "`r`n")
+    & git -C $base add -- Directory.Build.rsp
+    $quotedNoteBuild = Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))
+    Add-Case 'build-with-comment-and-quoted-note-response-file-reproduces-first-dll' ($quotedNoteBuild.ExitCode -eq 0 -and (Get-Sha256 $dll) -eq $firstDllSha) ("exit $($quotedNoteBuild.ExitCode); DLL $(Get-Sha256 $dll)" + $(if ($quotedNoteBuild.ExitCode) { '; ' + (Get-Reason $quotedNoteBuild.Output) } else { '' }))
+    Expect-Accepted 'package-with-comment-and-quoted-note-response-file-accepted' (Invoke-Isolated @('-File', $package)) 'Package validation passed'
+    & git -C $base reset -q -- Directory.Build.rsp
+    Remove-Item -LiteralPath $rsp
+    Copy-Item -LiteralPath $savedReceiptBeforeQuotedNote -Destination $receiptPath -Force
+    Expect-Accepted 'package-with-the-receipt-before-the-quoted-note-accepted-again' (Invoke-Isolated @('-File', $package)) 'Package validation passed'
+    # R10-F2: a baseline project import written with forward slashes (../../LoaderReferences.targets) is the same baseline
+    # import: the build reproduces the first DLL and packages. With the original spelling restored, the receipt saved
+    # before is accepted again without rebuilding; the explicit shadowed-root import stays refused above.
+    $savedReceiptBeforeSlashes = Join-Path $inputs 'receipt-before-forward-slash-import.json'
+    Copy-Item -LiteralPath $receiptPath -Destination $savedReceiptBeforeSlashes -Force
+    $slashProjectOriginal = [IO.File]::ReadAllText($project)
+    [IO.File]::WriteAllText($project, $slashProjectOriginal.Replace('<Import Project="..\..\LoaderReferences.targets" />', '<Import Project="../../LoaderReferences.targets" />'))
+    $slashSpelled = ([IO.File]::ReadAllText($project)).Contains('<Import Project="../../LoaderReferences.targets" />')
+    $slashBuild = Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))
+    Add-Case 'build-with-forward-slash-baseline-import-reproduces-first-dll' ($slashSpelled -and $slashBuild.ExitCode -eq 0 -and (Get-Sha256 $dll) -eq $firstDllSha) ("spelled ../../LoaderReferences.targets: $slashSpelled; exit $($slashBuild.ExitCode); DLL $(Get-Sha256 $dll)" + $(if ($slashBuild.ExitCode) { '; ' + (Get-Reason $slashBuild.Output) } else { '' }))
+    Expect-Accepted 'package-with-forward-slash-baseline-import-accepted' (Invoke-Isolated @('-File', $package)) 'Package validation passed'
+    & git -C $base checkout -q -- src/KingmakerDiceRoller/KingmakerDiceRoller.csproj
+    Copy-Item -LiteralPath $savedReceiptBeforeSlashes -Destination $receiptPath -Force
+    Expect-Accepted 'package-with-the-receipt-before-the-forward-slash-import-accepted-again' (Invoke-Isolated @('-File', $package)) 'Package validation passed'
     $leftAfterConfigurationCases = @(& git -C $base status --porcelain --untracked-files=all)
     Add-Case 'configuration-cases-leave-the-checkout-clean' ($leftAfterConfigurationCases.Count -eq 0) ("git status: " + $(if ($leftAfterConfigurationCases.Count) { $leftAfterConfigurationCases -join ' | ' } else { 'clean' }))
     # Effective compiler options from the tracked Directory.Build.props (here edited in the disposable checkout). Only the
