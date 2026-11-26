@@ -9,6 +9,25 @@ installed loader. Build and package receipts enforce this baseline, and
 evidence and the pending runtime checks.
 The release records below describe their original builds.
 
+## 0.2.1 UMM 0.31.1 baseline stable release
+
+PR #9 (the UMM 0.31.1 loader baseline) merged to `main` at
+`970f02129e1ec92cade046c39ba4adaf2aa64df7`; the release preparation updates
+version metadata and release documentation. Publish from a clean clone of the
+fully pushed `main` merge commit of the preparation PR:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass `
+  -File .\scripts\Publish-Release.ps1 `
+  -ReleaseNotesPath .\docs\RELEASE-NOTES-0.2.1.md `
+  -Publish `
+  -ConfirmOwnerAuthorizedPreRuntimeRelease
+```
+
+The publisher reruns source, contract, Release build, package and strict
+validation on that exact commit before tagging `v0.2.1`. Native gameplay and
+combined-stack qualification: NOT RUN.
+
 ## 0.2.0 native stats UI stable release
 
 The [v0.2.0 stable release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.2.0)

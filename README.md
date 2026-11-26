@@ -14,7 +14,7 @@ and the current evidence limits.
 
 Mr. Bard's Kingmaker Roll For Stats UI is a standalone Unity Mod Manager mod
 for Pathfinder: Kingmaker 2.1.7b. It adds an explicit rolled-ability workflow
-to the native custom-character ability page. Version 0.2.0 starts with
+to the native custom-character ability page. Version 0.2.1 starts with
 one **Roll for Stats** button, then opens a compact formula and action workspace
 within Kingmaker's ability allocator.
 
@@ -27,6 +27,15 @@ when you press **Roll**, never because a preview, race, phase, or UI object was
 rebuilt.
 
 ## Release status
+
+**0.2.1 stable release — UMM 0.31.1 loader baseline.** Version 0.2.1 lowers
+the declared Unity Mod Manager minimum to 0.31.1 and is compiled against
+hash-pinned UnityModManager 0.31.1.0 and 0Harmony12 1.2.0.1 references.
+Gameplay is unchanged from 0.2.0. A static audit found every referenced loader
+member on UMM 0.31.1, 0.32.4, 0.33.0 and 0.33.4; that is not an in-game test.
+Native gameplay and combined mod-stack runs have not been performed on any
+loader version. Offline qualification and release provenance are recorded in
+`PROJECT-STATE.md`.
 
 **0.2.0 stable release — native stats UI.** The
 [v0.2.0 release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.2.0)
@@ -203,6 +212,11 @@ creation. The current allocation and actual live budget are captured before
 Roll or Recall and restored exactly; neither 20 nor 25 is hard-coded.
 
 ## Installation
+
+For version 0.2.1, download **KingmakerDiceRoller-0.2.1.zip** from the
+[v0.2.1 release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.2.1)
+Assets and install it with Unity Mod Manager 0.31.1 or newer. Use the ZIP in
+Assets, not GitHub's automatically generated source archive.
 
 For version 0.2.0, download **KingmakerDiceRoller-0.2.0.zip** from the
 [v0.2.0 release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.2.0)

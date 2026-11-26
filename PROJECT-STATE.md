@@ -1,5 +1,50 @@
 # Project state
 
+## 0.2.1 stable release preparation (2026-11-26)
+
+On 2026-11-26 the owner authorized merging PR #9 (the UMM 0.31.1 loader
+baseline, accepted reviewed source `a9a5a0389db1b2a63bfdbecbb5c6e54e1146ee08`,
+archive head `3f6bf1499f8d71eddf62679838454f595e8f009f`) and publishing it as
+the stable patch release `0.2.1` through the guarded publisher's owner-authorized
+pre-runtime route. PR #9 merged to `main` at
+`970f02129e1ec92cade046c39ba4adaf2aa64df7`. This preparation changes version
+metadata, the repository validator's version checks, the loader-baseline test's
+candidate package name (now read from `Info.json`) and release documentation
+only. Gameplay code is unchanged from 0.2.0.
+
+## Qualification truth
+
+- Implemented: **Yes** — the UMM 0.31.1 loader baseline (PR #9) and 0.2.1
+  version metadata.
+- Source-qualified: **Yes** — the accepted UMM source passed the repository
+  validator, source oracle and 416/416 domain tests; the guarded publisher reruns
+  them on the final `main` commit before tagging.
+- Contract-qualified: **Yes** — Kingmaker, respec (11) and native-UI (30)
+  read-only contract checks against the installed 2.1.7b assemblies; rerun by
+  the publisher on the final commit.
+- Build-qualified: **Yes** — Release builds compile against the hash-pinned
+  UnityModManager 0.31.1.0 and 0Harmony12 1.2.0.1 references; the publisher
+  rebuilds the final commit.
+- Package-qualified: **Yes** — the loader-baseline boundary tests and strict
+  package validation; the publisher regenerates and validates the final ZIP and
+  records its SHA-256 in `SHA256SUMS.txt`.
+- Static loader API audit: every referenced loader member resolved on UMM
+  0.31.1, 0.32.4, the owner's 0.33.0 and 0.33.4 (static evidence only,
+  `docs/UMM-COMPATIBILITY.md`).
+- Installed: **No**.
+- Focused runtime test: **NOT RUN** — no game launch; native gameplay and
+  combined mod-stack runs were not performed on any loader version.
+- Runtime-qualified: **No** (not on 0.31.1 or any newer loader).
+- Compatibility-qualified: **No** — native newer-loader runs are not done.
+- Release-authorized: **Yes** — the owner's 2026-11-26 instruction to merge
+  and publish the accepted UMM baseline as a new stable patch release.
+- Owner-authorized pre-runtime release: **Yes** — the owner authorized stable
+  v0.2.1 on 2026-11-26 with native gameplay and combined-stack qualification
+  recorded as NOT RUN; no runtime PASS is recorded.
+- Testing-prerelease-authorized: **No** — the release is stable.
+- Publicly released: **No** — pending merge, default-branch qualification and
+  publication.
+
 ## UMM 0.31.1 baseline (2026-11-23)
 
 The current development change lowers the declared minimum from 0.32.0 to
@@ -9,7 +54,7 @@ requires a matching build receipt; the standalone ZIP validator checks the packa
 DLL's AssemblyRefs. The published 0.2.0 ZIP below is unchanged and still requires
 UMM 0.32.0. Details and reproduction: `docs/UMM-COMPATIBILITY.md`.
 
-## Qualification truth
+## UMM 0.31.1 baseline qualification truth (historical)
 
 - Implemented: **Yes** — manifest, pinned build references, resolved-input guard,
   build-input/receipt and package guards, validated private-copy install, `scripts/Test-LoaderBaseline.ps1`.
