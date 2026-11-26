@@ -568,7 +568,8 @@ try {
     Expect-Rejected 'package-with-selector-assignment-in-response-file-refused' (Invoke-Isolated @('-File', $package)) 'Unsupported MSBuild import selector DirectoryBuildTargetsPath in Directory\.Build\.rsp'
     Expect-Rejected 'build-with-selector-assignment-in-response-file-refused' (Invoke-Isolated @('-File', (Join-Path $base 'scripts\Build-Local.ps1'))) 'Unsupported MSBuild import selector DirectoryBuildTargetsPath in Directory\.Build\.rsp'
     [IO.File]::WriteAllText($selectorProps, $selectorPropsOriginal)
-    & git -C $base rm -q --cached -- Directory.Build.rsp
+    # The staged response file was changed after staging, so it is unstaged with reset (rm --cached would refuse).
+    & git -C $base reset -q -- Directory.Build.rsp
     Remove-Item -LiteralPath $rootRsp
     Copy-Item -LiteralPath $savedReceiptBeforeMentions -Destination $receiptPath -Force
     Expect-Accepted 'package-with-the-receipt-before-selector-mentions-accepted-again' (Invoke-Isolated @('-File', $package)) 'Package validation passed'
