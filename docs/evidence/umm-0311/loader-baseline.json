@@ -1,12 +1,12 @@
 {
     "schema":  "kdr.loader-baseline-tests.v4",
-    "source_commit":  "651295d83a8f44fab2b29f08cf7ff328186b4152",
+    "source_commit":  "964536e855f351a033ba88fafa37c9c480b34aee",
     "clone_build_receipt":  {
-                                "commit":  "651295d83a8f44fab2b29f08cf7ff328186b4152",
+                                "commit":  "964536e855f351a033ba88fafa37c9c480b34aee",
                                 "dirty":  false,
                                 "configuration":  "Release",
                                 "dll_sha256":  "634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee",
-                                "build_inputs_sha256":  "5381c4f5fa786965738e58ae87317091e9cea0187c2f43bbe82615845adfadbc",
+                                "build_inputs_sha256":  "8b545a592c30e61fdeba252ba2aa24f98744c09fa8cac81e1f011ee13ef5f328",
                                 "loader_references":  [
                                                           {
                                                               "file":  "UnityModManager.dll",
@@ -46,13 +46,13 @@
                                    "version":  "0.33.0.0",
                                    "sha256":  "63e5baf7b1738e4091b5fd17ccb738ecdb4d1dbf246061dfd55dc52835d52691"
                                },
-    "passed":  160,
-    "total":  160,
+    "passed":  174,
+    "total":  174,
     "cases":  [
                   {
                       "name":  "clone-build-from-detached-commit",
                       "passed":  true,
-                      "detail":  "receipt commit 651295d83a8f44fab2b29f08cf7ff328186b4152 dirty False dll 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee inputs 5381c4f5fa786965738e58ae87317091e9cea0187c2f43bbe82615845adfadbc"
+                      "detail":  "receipt commit 964536e855f351a033ba88fafa37c9c480b34aee dirty False dll 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee inputs 8b545a592c30e61fdeba252ba2aa24f98744c09fa8cac81e1f011ee13ef5f328"
                   },
                   {
                       "name":  "cache-genuine-verified",
@@ -107,12 +107,12 @@
                   {
                       "name":  "msbuild-corrupt-cache-rejected",
                       "passed":  true,
-                      "detail":  "rejected: <temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\clone with space\\LoaderReferences.targets(18,5): error MSB3073: The command \"\"powershell.exe\" -NoLogo -NoProfile -ExecutionPolicy Bypass -File \"<temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\clone with space\\scripts\\Get-PinnedLoaderReferences.ps1\" -VerifyOnly -ReferenceDirectory \"<temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\cache corrupt\"\" exited with code 1. [<temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\clone with space\\src\\KingmakerDiceRoller\\KingmakerDiceRoller.csproj]"
+                      "detail":  "rejected: <temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\clone with space\\LoaderReferences.targets(18,5): error MSB3073: The command \"\"powershell.exe\" -NoLogo -NoProfile -ExecutionPolicy Bypass -File \"<temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\clone with space\\scripts\\Get-PinnedLoaderReferences.ps1\" -VerifyOnly -ReferenceDirectory \"<temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\cache corrupt\"\" exited with code 1. [<temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\clone with space\\src\\KingmakerDiceRoller\\KingmakerDiceRoller.csproj]"
                   },
                   {
                       "name":  "msbuild-direct-compiles-against-pinned-inputs",
                       "passed":  true,
-                      "detail":  "exit 0; csc UnityModManager: <temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\clone with space\\artifacts\\references\\UnityModManager.dll; csc 0Harmony12: <temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\clone with space\\artifacts\\references\\0Harmony12.dll"
+                      "detail":  "exit 0; csc UnityModManager: <temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\clone with space\\artifacts\\references\\UnityModManager.dll; csc 0Harmony12: <temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\clone with space\\artifacts\\references\\0Harmony12.dll"
                   },
                   {
                       "name":  "incremental-build-genuine-accepted",
@@ -127,12 +127,12 @@
                   {
                       "name":  "incremental-build-after-manifest-only-change-rejected",
                       "passed":  true,
-                      "detail":  "rejected: <temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\clone with space\\LoaderReferences.targets(18,5): error MSB3073: The command \"\"powershell.exe\" -NoLogo -NoProfile -ExecutionPolicy Bypass -File \"<temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\clone with space\\scripts\\Get-PinnedLoaderReferences.ps1\" -VerifyOnly -ReferenceDirectory \"<temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\clone with space\\artifacts\\references\"\" exited with code 1. [<temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\clone with space\\src\\KingmakerDiceRoller\\KingmakerDiceRoller.csproj]"
+                      "detail":  "rejected: <temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\clone with space\\LoaderReferences.targets(18,5): error MSB3073: The command \"\"powershell.exe\" -NoLogo -NoProfile -ExecutionPolicy Bypass -File \"<temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\clone with space\\scripts\\Get-PinnedLoaderReferences.ps1\" -VerifyOnly -ReferenceDirectory \"<temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\clone with space\\artifacts\\references\"\" exited with code 1. [<temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\clone with space\\src\\KingmakerDiceRoller\\KingmakerDiceRoller.csproj]"
                   },
                   {
                       "name":  "incremental-build-after-pin-only-change-rejected",
                       "passed":  true,
-                      "detail":  "rejected: <temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\clone with space\\LoaderReferences.targets(18,5): error MSB3073: The command \"\"powershell.exe\" -NoLogo -NoProfile -ExecutionPolicy Bypass -File \"<temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\clone with space\\scripts\\Get-PinnedLoaderReferences.ps1\" -VerifyOnly -ReferenceDirectory \"<temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\clone with space\\artifacts\\references\"\" exited with code 1. [<temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\clone with space\\src\\KingmakerDiceRoller\\KingmakerDiceRoller.csproj]"
+                      "detail":  "rejected: <temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\clone with space\\LoaderReferences.targets(18,5): error MSB3073: The command \"\"powershell.exe\" -NoLogo -NoProfile -ExecutionPolicy Bypass -File \"<temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\clone with space\\scripts\\Get-PinnedLoaderReferences.ps1\" -VerifyOnly -ReferenceDirectory \"<temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\clone with space\\artifacts\\references\"\" exited with code 1. [<temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\clone with space\\src\\KingmakerDiceRoller\\KingmakerDiceRoller.csproj]"
                   },
                   {
                       "name":  "incremental-build-after-restore-accepted",
@@ -147,27 +147,27 @@
                   {
                       "name":  "resolved-input-identical-copy-elsewhere-rejected",
                       "passed":  true,
-                      "detail":  "rejected: <temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\clone with space\\LoaderReferences.targets(36,5): error : Loader compiler references must be the verified files in the pinned directory <temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\clone with space\\artifacts\\references\\; resolved: <temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\stray copy\\UnityModManager.dll [<temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\probe stray.csproj]"
+                      "detail":  "rejected: <temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\clone with space\\LoaderReferences.targets(36,5): error : Loader compiler references must be the verified files in the pinned directory <temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\clone with space\\artifacts\\references\\; resolved: <temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\stray copy\\UnityModManager.dll [<temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\probe stray.csproj]"
                   },
                   {
                       "name":  "resolved-input-same-stem-file-in-pinned-dir-rejected",
                       "passed":  true,
-                      "detail":  "rejected: <temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\clone with space\\LoaderReferences.targets(36,5): error : Loader compiler references must be the verified files in the pinned directory <temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\clone with space\\artifacts\\references\\; resolved: <temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\clone with space\\artifacts\\references\\UnityModManager.exe [<temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\probe samestem.csproj]"
+                      "detail":  "rejected: <temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\clone with space\\LoaderReferences.targets(36,5): error : Loader compiler references must be the verified files in the pinned directory <temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\clone with space\\artifacts\\references\\; resolved: <temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\clone with space\\artifacts\\references\\UnityModManager.exe [<temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\probe samestem.csproj]"
                   },
                   {
                       "name":  "resolved-input-renamed-loader-in-pinned-dir-rejected",
                       "passed":  true,
-                      "detail":  "rejected: <temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\clone with space\\LoaderReferences.targets(36,5): error : Loader compiler references must be the verified files in the pinned directory <temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\clone with space\\artifacts\\references\\; resolved: <temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\clone with space\\artifacts\\references\\umm-alias.dll [<temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\probe alias.csproj]"
+                      "detail":  "rejected: <temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\clone with space\\LoaderReferences.targets(36,5): error : Loader compiler references must be the verified files in the pinned directory <temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\clone with space\\artifacts\\references\\; resolved: <temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\clone with space\\artifacts\\references\\umm-alias.dll [<temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\probe alias.csproj]"
                   },
                   {
                       "name":  "resolved-input-umm-0.32.4-fixture-rejected",
                       "passed":  true,
-                      "detail":  "rejected: <temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\clone with space\\LoaderReferences.targets(36,5): error : Loader compiler references must be the verified files in the pinned directory <temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\clone with space\\artifacts\\references\\; resolved: <temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\inputs\\umm-0.32.4\\UnityModManager.dll [<temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\probe wrong.csproj]"
+                      "detail":  "rejected: <temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\clone with space\\LoaderReferences.targets(36,5): error : Loader compiler references must be the verified files in the pinned directory <temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\clone with space\\artifacts\\references\\; resolved: <temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\inputs\\umm-0.32.4\\UnityModManager.dll [<temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\probe wrong.csproj]"
                   },
                   {
                       "name":  "resolved-input-substituted-reference-assembly-rejected",
                       "passed":  true,
-                      "detail":  "rejected: <temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\clone with space\\LoaderReferences.targets(36,5): error : Loader compiler references must be the verified files in the pinned directory <temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\clone with space\\artifacts\\references\\; resolved: <temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\stray copy\\UnityModManager.dll [<temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\probe substituted.csproj]"
+                      "detail":  "rejected: <temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\clone with space\\LoaderReferences.targets(36,5): error : Loader compiler references must be the verified files in the pinned directory <temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\clone with space\\artifacts\\references\\; resolved: <temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\stray copy\\UnityModManager.dll [<temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\probe substituted.csproj]"
                   },
                   {
                       "name":  "receipt-matching-build-accepted",
@@ -207,7 +207,7 @@
                   {
                       "name":  "package-after-restoring-identical-inputs-accepted",
                       "passed":  true,
-                      "detail":  "accepted: Package validation passed: <temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\clone with space\\artifacts\\.package-0711c27e2784410bb5af1aaf82f1c416\\KingmakerDiceRoller-0.2.0.zip"
+                      "detail":  "accepted: Package validation passed: <temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\clone with space\\artifacts\\.package-912b8176c1eb4b738cc073cc02baba9f\\KingmakerDiceRoller-0.2.0.zip"
                   },
                   {
                       "name":  "rebuild-after-source-change-accepted",
@@ -217,7 +217,7 @@
                   {
                       "name":  "package-after-matching-rebuild-accepted",
                       "passed":  true,
-                      "detail":  "accepted: Package validation passed: <temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\clone with space\\artifacts\\.package-e3ed5d40424b4de1921042887ce818b4\\KingmakerDiceRoller-0.2.0.zip"
+                      "detail":  "accepted: Package validation passed: <temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\clone with space\\artifacts\\.package-ee5d58971e994e9f8ea6545852e50841\\KingmakerDiceRoller-0.2.0.zip"
                   },
                   {
                       "name":  "receipt-of-first-build-for-changed-dll-rejected",
@@ -257,7 +257,7 @@
                   {
                       "name":  "compiler-resolves-release-only-managed-directory",
                       "passed":  true,
-                      "detail":  "Release Csc input for UnityEngine.UI.dll: <temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\managed copy\\UnityEngine.UI.dll (GamePath.props first group still names the installation)"
+                      "detail":  "Release Csc input for UnityEngine.UI.dll: <temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\managed copy\\UnityEngine.UI.dll (GamePath.props first group still names the installation)"
                   },
                   {
                       "name":  "package-with-identical-managed-references-elsewhere-accepted",
@@ -307,7 +307,7 @@
                   {
                       "name":  "package-reusing-the-existing-receipt-with-unrelated-configuration-accepted",
                       "passed":  true,
-                      "detail":  "no rebuild; MSBuild found through the PATH entry <buildtools>\\MSBuild\\Current\\Bin; selected toolset Current, inactive hook under 15.0; DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee (first DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee); receipt unchanged True; package exit 0; Package validation passed: <temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\clone with space\\artifacts\\.package-3abfa546d0f643fd9578acb9e5993823\\KingmakerDiceRoller-0.2.0.zip"
+                      "detail":  "no rebuild; MSBuild found through the PATH entry <buildtools>\\MSBuild\\Current\\Bin; selected toolset Current, inactive hook under 15.0; DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee (first DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee); receipt unchanged True; package exit 0; Package validation passed: <temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\clone with space\\artifacts\\.package-25dd4cf3f6984e2197de568c12326a8b\\KingmakerDiceRoller-0.2.0.zip"
                   },
                   {
                       "name":  "build-with-unrelated-configuration-and-inactive-user-hook-accepted",
@@ -332,7 +332,7 @@
                   {
                       "name":  "package-reusing-the-receipt-with-shadowed-root-targets-accepted",
                       "passed":  true,
-                      "detail":  "no rebuild: receipt unchanged True; DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee; package exit 0; Package validation passed: <temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\clone with space\\artifacts\\.package-4f9b3576bec24c1fa4dfd6a2919ef6fa\\KingmakerDiceRoller-0.2.0.zip"
+                      "detail":  "no rebuild: receipt unchanged True; DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee; package exit 0; Package validation passed: <temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\clone with space\\artifacts\\.package-1900ce56e0a4439f8a413ce571764085\\KingmakerDiceRoller-0.2.0.zip"
                   },
                   {
                       "name":  "package-with-the-receipt-before-src-targets-accepted-again",
@@ -372,17 +372,17 @@
                   {
                       "name":  "package-with-tracked-root-targets-importing-a-parent-refused",
                       "passed":  true,
-                      "detail":  "rejected:     imported file; put the settings in Directory.Build.targets itself."
+                      "detail":  "rejected:   t the settings in a tracked applicable file itself."
                   },
                   {
                       "name":  "package-reuse-after-imported-parent-production-setting-change-refused",
                       "passed":  true,
-                      "detail":  "rejected:     imported file; put the settings in Directory.Build.targets itself."
+                      "detail":  "rejected:   t the settings in a tracked applicable file itself."
                   },
                   {
                       "name":  "build-with-tracked-root-targets-importing-a-parent-refused",
                       "passed":  true,
-                      "detail":  "rejected:     imported file; put the settings in Directory.Build.targets itself."
+                      "detail":  "rejected:   t the settings in a tracked applicable file itself."
                   },
                   {
                       "name":  "refused-import-build-left-dll-and-receipt",
@@ -407,7 +407,7 @@
                   {
                       "name":  "package-with-import-group-holding-the-parent-import-refused",
                       "passed":  true,
-                      "detail":  "rejected:     imported file; put the settings in Directory.Build.targets itself."
+                      "detail":  "rejected:   t the settings in a tracked applicable file itself."
                   },
                   {
                       "name":  "package-with-the-receipt-before-the-import-group-accepted-again",
@@ -443,6 +443,76 @@
                       "name":  "package-after-selector-removed-accepted",
                       "passed":  true,
                       "detail":  "accepted: Package validation passed"
+                  },
+                  {
+                      "name":  "package-with-selector-in-loader-references-targets-refused",
+                      "passed":  true,
+                      "detail":  "rejected:    s: the build receipt follows the conventional lookup; remove it."
+                  },
+                  {
+                      "name":  "build-with-selector-in-loader-references-targets-refused",
+                      "passed":  true,
+                      "detail":  "rejected:    s: the build receipt follows the conventional lookup; remove it."
+                  },
+                  {
+                      "name":  "refused-loader-references-selector-left-dll-and-receipt",
+                      "passed":  true,
+                      "detail":  "DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee; receipt unchanged True"
+                  },
+                  {
+                      "name":  "package-after-loader-references-selector-removed-accepted",
+                      "passed":  true,
+                      "detail":  "accepted: Package validation passed"
+                  },
+                  {
+                      "name":  "package-with-project-import-of-shadowed-root-targets-refused",
+                      "passed":  true,
+                      "detail":  "import added: True;   e file itself."
+                  },
+                  {
+                      "name":  "build-with-project-import-of-shadowed-root-targets-refused",
+                      "passed":  true,
+                      "detail":  "rejected:   e file itself."
+                  },
+                  {
+                      "name":  "refused-explicit-import-left-dll-and-receipt",
+                      "passed":  true,
+                      "detail":  "DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee; receipt unchanged True"
+                  },
+                  {
+                      "name":  "package-after-explicit-import-removed-accepted",
+                      "passed":  true,
+                      "detail":  "accepted: Package validation passed"
+                  },
+                  {
+                      "name":  "build-with-harmless-selector-mentions-reproduces-first-dll",
+                      "passed":  true,
+                      "detail":  "exit 0; DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee"
+                  },
+                  {
+                      "name":  "package-with-harmless-selector-mentions-accepted",
+                      "passed":  true,
+                      "detail":  "accepted: Package validation passed"
+                  },
+                  {
+                      "name":  "package-with-selector-assignment-in-response-file-refused",
+                      "passed":  true,
+                      "detail":  "rejected:    e build receipt follows the conventional lookup; remove it."
+                  },
+                  {
+                      "name":  "build-with-selector-assignment-in-response-file-refused",
+                      "passed":  true,
+                      "detail":  "rejected:    e build receipt follows the conventional lookup; remove it."
+                  },
+                  {
+                      "name":  "package-with-the-receipt-before-selector-mentions-accepted-again",
+                      "passed":  true,
+                      "detail":  "accepted: Package validation passed"
+                  },
+                  {
+                      "name":  "configuration-cases-leave-the-checkout-clean",
+                      "passed":  true,
+                      "detail":  "git status: clean"
                   },
                   {
                       "name":  "package-reuse-after-overflow-checking-change-rejected",
@@ -557,7 +627,7 @@
                   {
                       "name":  "package-publication-failure-rejected",
                       "passed":  true,
-                      "detail":  "rejected: Package validation passed: <temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\clone with space\\artifacts\\.package-2c6deba2f32d4b93abb528315fd2d6f3\\KingmakerDiceRoller-0.2.0.zip"
+                      "detail":  "rejected: Package validation passed: <temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\clone with space\\artifacts\\.package-a160642289a34ac9b201bf5984c8f226\\KingmakerDiceRoller-0.2.0.zip"
                   },
                   {
                       "name":  "publication-failure-restores-previous-package-set",
@@ -567,7 +637,7 @@
                   {
                       "name":  "held-validation-report-keeps-previous-package-set",
                       "passed":  true,
-                      "detail":  "exit 1; all three public hashes unchanged: True; Package validation passed: <temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\clone with space\\artifacts\\.package-cea9b08ab14942d9b0ac31ca06de84e1\\KingmakerDiceRoller-0.2.0.zip"
+                      "detail":  "exit 1; all three public hashes unchanged: True; Package validation passed: <temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\clone with space\\artifacts\\.package-2adb09bdbf07434aa368b5b81f1c66f1\\KingmakerDiceRoller-0.2.0.zip"
                   },
                   {
                       "name":  "retry-after-handle-closed-publishes-the-replacement",
@@ -647,7 +717,7 @@
                   {
                       "name":  "package-names-producing-build-across-commits",
                       "passed":  true,
-                      "detail":  "producing_commit 651295d83a8f44fab2b29f08cf7ff328186b4152; packaging_commit 8883c5ac076ebbdc8d17c288acc2b4f8ce0718b8; DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee"
+                      "detail":  "producing_commit 964536e855f351a033ba88fafa37c9c480b34aee; packaging_commit f06b92ecad118e3502c5b43ffff671959be81613; DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee"
                   },
                   {
                       "name":  "candidate-refuses-earlier-commit-receipt-with-identical-dll",
@@ -682,7 +752,7 @@
                   {
                       "name":  "candidate-readme-edited-after-admission-refused",
                       "passed":  true,
-                      "detail":  "   4f8ce0718b8; the package was not accepted."
+                      "detail":  "   1959be81613; the package was not accepted."
                   },
                   {
                       "name":  "competing-candidate-publisher-keeps-the-winners-files",
@@ -702,7 +772,7 @@
                   {
                       "name":  "candidate-with-repository-local-managed-directory-accepted",
                       "passed":  true,
-                      "detail":  "build exit 0; receipt game reference \u0027artifacts/managed copy/Assembly-CSharp.dll\u0027; candidate exit 0; Package validation passed: <temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\clone with space\\artifacts\\.package-5fc1f2c16d0042f7a9ee5190beb0b7bb\\KingmakerDiceRoller-0.2.0.zip"
+                      "detail":  "build exit 0; receipt game reference \u0027artifacts/managed copy/Assembly-CSharp.dll\u0027; candidate exit 0; Package validation passed: <temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\clone with space\\artifacts\\.package-30346217454640758f754e403e886053\\KingmakerDiceRoller-0.2.0.zip"
                   },
                   {
                       "name":  "package-candidate-accepted",
@@ -802,12 +872,12 @@
                   {
                       "name":  "same-host-validation-candidate-first",
                       "passed":  true,
-                      "detail":  "Package validation passed: <temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\inputs\\candidate.zip | Package SHA-256: b8cb456b8061fc48bfa464bd5af66f368516ab24cbb22d3d1f2c6e376d436e81 | Packaged DLL SHA-256: 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee; MVID: 7a6d0a75-f788-47a5-83c9-fed6fb14e3ff; loader references: UnityModManager 0.31.1.0, 0Harmony12 1.2.0.1 | ACCEPTED candidate.zip | REJECTED legacy-lowered-manifest.zip: Packaged DLL must reference pinned UnityModManager 0.31.1.0; lowering Info.json alone is not sufficient."
+                      "detail":  "Package validation passed: <temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\inputs\\candidate.zip | Package SHA-256: b8cb456b8061fc48bfa464bd5af66f368516ab24cbb22d3d1f2c6e376d436e81 | Packaged DLL SHA-256: 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee; MVID: 7a6d0a75-f788-47a5-83c9-fed6fb14e3ff; loader references: UnityModManager 0.31.1.0, 0Harmony12 1.2.0.1 | ACCEPTED candidate.zip | REJECTED legacy-lowered-manifest.zip: Packaged DLL must reference pinned UnityModManager 0.31.1.0; lowering Info.json alone is not sufficient."
                   },
                   {
                       "name":  "same-host-validation-legacy-lowered-manifest-first",
                       "passed":  true,
-                      "detail":  "REJECTED legacy-lowered-manifest.zip: Packaged DLL must reference pinned UnityModManager 0.31.1.0; lowering Info.json alone is not sufficient. | Package validation passed: <temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\inputs\\candidate.zip | Package SHA-256: b8cb456b8061fc48bfa464bd5af66f368516ab24cbb22d3d1f2c6e376d436e81 | Packaged DLL SHA-256: 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee; MVID: 7a6d0a75-f788-47a5-83c9-fed6fb14e3ff; loader references: UnityModManager 0.31.1.0, 0Harmony12 1.2.0.1 | ACCEPTED candidate.zip"
+                      "detail":  "REJECTED legacy-lowered-manifest.zip: Packaged DLL must reference pinned UnityModManager 0.31.1.0; lowering Info.json alone is not sufficient. | Package validation passed: <temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\inputs\\candidate.zip | Package SHA-256: b8cb456b8061fc48bfa464bd5af66f368516ab24cbb22d3d1f2c6e376d436e81 | Packaged DLL SHA-256: 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee; MVID: 7a6d0a75-f788-47a5-83c9-fed6fb14e3ff; loader references: UnityModManager 0.31.1.0, 0Harmony12 1.2.0.1 | ACCEPTED candidate.zip"
                   },
                   {
                       "name":  "expand-validated-package-candidate",
@@ -827,7 +897,7 @@
                   {
                       "name":  "install-whatif-valid-package-previews-target",
                       "passed":  true,
-                      "detail":  "accepted: What if: Performing the operation \"Transactionally install Kingmaker Dice Roller\" on target \"<temp>\\kdr-loader-baseline-357a36cc68f84a909ea796dac157aa71\\disposable game\\Mods\\KingmakerDiceRoller\". | WhatIf completed: package validation passed and no live files were changed."
+                      "detail":  "accepted: What if: Performing the operation \"Transactionally install Kingmaker Dice Roller\" on target \"<temp>\\kdr-loader-baseline-53f021a61bfd41d4829064120e75aff5\\disposable game\\Mods\\KingmakerDiceRoller\". | WhatIf completed: package validation passed and no live files were changed."
                   },
                   {
                       "name":  "install-whatif-invalid-package-rejected",
