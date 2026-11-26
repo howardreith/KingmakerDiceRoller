@@ -11,10 +11,12 @@ The release records below describe their original builds.
 
 ## 0.2.1 UMM 0.31.1 baseline stable release
 
-PR #9 (the UMM 0.31.1 loader baseline) merged to `main` at
-`970f02129e1ec92cade046c39ba4adaf2aa64df7`; the release preparation updates
-version metadata and release documentation. Publish from a clean clone of the
-fully pushed `main` merge commit of the preparation PR:
+The [v0.2.1 stable release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.2.1) is published from PR #10 merge commit
+`c2144c4a7df537a991120444450c1812f226d082` on `main` (PR #9, the UMM 0.31.1 loader baseline,
+merged at `970f02129e1ec92cade046c39ba4adaf2aa64df7`). The uploaded ZIP,
+downloaded asset and checksum agree on SHA-256
+`fd82faaeca919f7514616d55ea97fab29304c77da98cebb6ec3d86eb4eafb976`. It was published from a clean clone of
+the fully pushed `main` merge commit with:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass `

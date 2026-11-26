@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.2.1 - 2026-11-26 - UMM 0.31.1 loader baseline
+
+Owner-authorized stable GitHub release, merged into `main`. It is not
+runtime-qualified: native gameplay and combined mod-stack runs were not
+performed on any loader version.
+
+- Lower the declared Unity Mod Manager minimum to 0.31.1 and compile against
+  hash-pinned UnityModManager 0.31.1.0 and 0Harmony12 1.2.0.1 references; the
+  build and package checks refuse a DLL compiled against any other
+  UnityModManager.
+- Gameplay is unchanged from 0.2.0. A static audit found every referenced
+  loader member on UMM 0.31.1, 0.32.4, 0.33.0 and 0.33.4 (not an in-game test).
+
 ## 0.2.0 - 2026-10-19 - native stats UI
 
 Owner-authorized stable GitHub release, merged into `main`. It is not

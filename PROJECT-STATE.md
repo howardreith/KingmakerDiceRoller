@@ -1,6 +1,6 @@
 # Project state
 
-## 0.2.1 stable release preparation (2026-11-26)
+## 0.2.1 stable release (2026-11-26)
 
 On 2026-11-26 the owner authorized merging PR #9 (the UMM 0.31.1 loader
 baseline, accepted reviewed source `a9a5a0389db1b2a63bfdbecbb5c6e54e1146ee08`,
@@ -11,6 +11,26 @@ pre-runtime route. PR #9 merged to `main` at
 metadata, the repository validator's version checks, the loader-baseline test's
 candidate package name (now read from `Info.json`) and release documentation
 only. Gameplay code is unchanged from 0.2.0.
+
+Published 2026-11-26T13:10:44Z: [v0.2.1](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.2.1) (stable, latest). The
+preparation PR #10 merged to `main` at `c2144c4a7df537a991120444450c1812f226d082`; the
+annotated tag `v0.2.1` peels to that commit. The guarded publisher
+(`-Publish -ConfirmOwnerAuthorizedPreRuntimeRelease`) ran from a fresh clone of
+`main` and reran source, contract, Release build, package and strict validation
+on that commit. Its first invocation stopped after tagging because the notes
+path was passed without its separators; the rerun on the same commit reproduced
+the identical ZIP and DLL and created the release.
+
+- Asset `KingmakerDiceRoller-0.2.1.zip`: SHA-256 `fd82faaeca919f7514616d55ea97fab29304c77da98cebb6ec3d86eb4eafb976`
+  (six entries; manifest version 0.2.1, `ManagerVersion` 0.31.1).
+- DLL SHA-256 `fda314ab81575511718c466b9d270437c0a4c3e3275386d6a9cbde4f39b2f666`, MVID
+  `4b048122-ef3e-4978-a1fe-b1197738e7b9`; loader references UnityModManager 0.31.1.0 and
+  0Harmony12 1.2.0.1.
+- The downloaded asset matched the local artifact and `SHA256SUMS.txt`.
+- Static loader API audit of the released DLL: 7 types and 25 members resolved on
+  UMM 0.31.1, 0.32.4, the owner's 0.33.0 and 0.33.4 (static evidence only).
+- Release-preparation validation: `scripts/Test-LoaderBaseline.ps1` 185/185 on
+  `6943e3d` (the preparation branch head merged by PR #10).
 
 ## Qualification truth
 
@@ -42,8 +62,8 @@ only. Gameplay code is unchanged from 0.2.0.
   v0.2.1 on 2026-11-26 with native gameplay and combined-stack qualification
   recorded as NOT RUN; no runtime PASS is recorded.
 - Testing-prerelease-authorized: **No** — the release is stable.
-- Publicly released: **No** — pending merge, default-branch qualification and
-  publication.
+- Publicly released: **Yes** — [v0.2.1](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.2.1), stable and latest, from
+  `c2144c4`.
 
 ## UMM 0.31.1 baseline (2026-11-23)
 
