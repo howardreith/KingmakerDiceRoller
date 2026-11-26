@@ -220,6 +220,14 @@ project file may import only its four baseline files (`Microsoft.Common.props`, 
 the conventional lookup treats as shadowed is refused; and a selector is refused only where it is assigned (a property
 declared in a `PropertyGroup`, or a `-p:`/`-property:` switch in `Directory.Build.rsp`), so comments, condition
 references, other property values and item metadata that merely mention one build and package normally.
+
+The fourth extra round reads `Directory.Build.rsp` with MSBuild's own rules (as in MSBuild 17.14's `XMake.cs` and
+`QuotingUtilities.cs`): a line is skipped only when its first non-whitespace character is `#`; other lines are split
+into arguments at unquoted whitespace; a quoted switch argument is unquoted as a whole; and `-p:`/`-property:`
+parameters are split into assignments at unquoted `;` and `,`, so an inline `#` or a quoted note cannot hide or
+invent a selector assignment. A further response file named inside it is refused. The suite also gives each of its
+response-file lines to the installed MSBuild and checks the effective properties. The four baseline project imports
+match in either separator direction (`../../LoaderReferences.targets` builds and packages).
 `Package.ps1` stages, archives and validates in a folder private to the invocation, compares the
 documents read back from the validated archive with the repository files hashed before staging,
 prepares both records, and only then publishes the ZIP, validation report and manifest together, keeping
