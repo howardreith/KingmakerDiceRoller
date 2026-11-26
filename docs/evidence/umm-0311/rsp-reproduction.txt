@@ -1,0 +1,24 @@
+A inline # then real selector
+  line: -p:BuildNote=C# -p:DirectoryBuildTargetsPath=tools/frozen.targets
+  reader property names: [BuildNote, DirectoryBuildTargetsPath]
+  installed MSBuild: DBTP=[tools/frozen.targets] NOTE=[C#]
+B whole quoted selector argument
+  line: "-p:DirectoryBuildTargetsPath=tools/frozen.targets"
+  reader property names: [DirectoryBuildTargetsPath]
+  installed MSBuild: DBTP=[tools/frozen.targets] NOTE=[]
+C harmless quoted note
+  line: -p:BuildNote="See -p:DirectoryBuildTargetsPath=value"
+  reader property names: [BuildNote]
+  installed MSBuild: DBTP=[] NOTE=[See -p:DirectoryBuildTargetsPath=value]
+D whole-line comment
+  line:    # -p:DirectoryBuildTargetsPath=tools/frozen.targets
+  reader property names: []
+  installed MSBuild: DBTP=[] NOTE=[]
+E list with quoted separator
+  line: -property:BuildNote="a;b",DirectoryBuildTargetsPath=x.targets
+  reader property names: [BuildNote, DirectoryBuildTargetsPath]
+  installed MSBuild: DBTP=[x.targets] NOTE=[a;b]
+F quoted name start
+  line: "-p:BuildNote=one two" -p:Other=1
+  reader property names: [BuildNote, Other]
+  installed MSBuild: DBTP=[] NOTE=[one two]

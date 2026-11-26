@@ -1,12 +1,25 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory=$true)][string] $PackagePath,
-    [string] $ReportPath
+    [string] $ReportPath,
+    # When packaging, the DLL SHA-256 recorded by the build receipt: the archived DLL must be exactly that DLL.
+    [string] $ExpectedDllSha256
 )
 
 . (Join-Path $PSScriptRoot 'Common.ps1')
 $root = Get-RepositoryRoot
 Assert-FileExists $PackagePath 'Package ZIP'
+# Inspect and hash one immutable private copy, so the recorded ZIP digest and the inspected DLL come from the same bytes.
+$privateDirectory = Join-Path ([IO.Path]::GetTempPath()) ('kdr-validate-' + [Guid]::NewGuid().ToString('N'))
+$inspected = Join-Path $privateDirectory 'package.zip'
+try {
+# Created and filled inside the cleanup scope: a failed copy leaves no private directory behind.
+[void][IO.Directory]::CreateDirectory($privateDirectory)
+[IO.File]::Copy($PackagePath, $inspected)
+# An explicitly supplied expected digest must be well formed; only an omitted parameter skips the comparison.
+if ($PSBoundParameters.ContainsKey('ExpectedDllSha256') -and $ExpectedDllSha256 -cnotmatch '^[0-9a-f]{64}$') {
+    throw 'ExpectedDllSha256 must be a lowercase SHA-256 string.'
+}
 $PackagePath = [IO.Path]::GetFullPath($PackagePath)
 
 $expectedInfoPath = Join-Path $root 'Info.json'
@@ -28,10 +41,22 @@ $observed = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal
 $entryLengths = [ordered]@{}
 $info = $null
 $dllHeader = $null
+$dllIdentity = $null
+$dllSha256 = $null
 
-$archive = [IO.Compression.ZipFile]::OpenRead($PackagePath)
+$archive = [IO.Compression.ZipFile]::OpenRead($inspected)
 try {
-    $files = @($archive.Entries | Where-Object { $_.FullName -and -not $_.FullName.EndsWith('/') })
+    # Directory records are allowed only as empty, safe records for the package's own folders; a directory record
+    # carrying data, or any other path, is refused before files are counted.
+    foreach ($directory in @($archive.Entries | Where-Object { -not $_.FullName -or $_.FullName.EndsWith('/') -or $_.FullName.EndsWith('\') })) {
+        $directoryStream = $directory.Open()
+        try { $decodedByte = $directoryStream.ReadByte() } finally { $directoryStream.Dispose() }
+        if ($directory.Length -ne 0 -or $decodedByte -ne -1 -or
+            @('KingmakerDiceRoller/', 'KingmakerDiceRoller/licenses/') -cnotcontains $directory.FullName) {
+            throw "Unexpected or data-bearing package directory record: '$($directory.FullName)'"
+        }
+    }
+    $files = @($archive.Entries | Where-Object { $_.FullName -and -not $_.FullName.EndsWith('/') -and -not $_.FullName.EndsWith('\') })
     if ($files.Count -ne $allowed.Count) {
         throw "Package must contain exactly $($allowed.Count) files; observed $($files.Count)."
     }
@@ -57,11 +82,31 @@ try {
         elseif ($name -eq 'KingmakerDiceRoller/KingmakerDiceRoller.dll') {
             $stream = $entry.Open()
             try {
-                $first = $stream.ReadByte()
-                $second = $stream.ReadByte()
-                $dllHeader = @($first, $second)
+                $buffer = [IO.MemoryStream]::new()
+                try {
+                    $stream.CopyTo($buffer)
+                    $dllBytes = $buffer.ToArray()
+                    $dllHeader = @($dllBytes[0], $dllBytes[1])
+                    $dllIdentity = Assert-PinnedAssemblyReferences $dllBytes
+                    $dllSha256 = ([BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash($dllBytes))).Replace('-', '').ToLowerInvariant()
+                }
+                finally { $buffer.Dispose() }
             }
             finally { $stream.Dispose() }
+        }
+        else {
+            # Documentation and licence entries must be text: an assembly (or any binary) under an allowed text
+            # name is refused, so the allow-list cannot carry a loader, Harmony or game DLL by renaming it.
+            $stream = $entry.Open()
+            $buffer = [IO.MemoryStream]::new()
+            try { $stream.CopyTo($buffer); $textBytes = $buffer.ToArray() }
+            finally { $buffer.Dispose(); $stream.Dispose() }
+            if (($textBytes.Length -ge 2 -and $textBytes[0] -eq 0x4D -and $textBytes[1] -eq 0x5A) -or
+                [Array]::IndexOf($textBytes, [byte]0) -ge 0) {
+                throw "Package text entry contains binary content: $name"
+            }
+            try { [void][Text.UTF8Encoding]::new($false, $true).GetString($textBytes) }
+            catch { throw "Package text entry is not valid UTF-8 text: $name" }
         }
     }
 
@@ -74,6 +119,12 @@ finally {
 }
 
 if ($null -eq $info) { throw 'Info.json could not be read from the package.' }
+if (-not ($info.ManagerVersion -is [string]) -or $info.ManagerVersion -cne $expectedInfo.ManagerVersion -or $info.ManagerVersion -cne '0.31.1') {
+    throw "Packaged ManagerVersion '$($info.ManagerVersion)' does not match the 0.31.1 baseline."
+}
+if ($ExpectedDllSha256 -and $dllSha256 -cne $ExpectedDllSha256) {
+    throw "Archived DLL SHA-256 $dllSha256 does not match the build receipt's $ExpectedDllSha256."
+}
 if ($info.Id -ne 'KingmakerDiceRoller') { throw "Unexpected packaged UMM ID: $($info.Id)" }
 if ($info.Version -ne $expectedInfo.Version) {
     throw "Packaged version '$($info.Version)' does not match repository version '$($expectedInfo.Version)'."
@@ -96,8 +147,12 @@ if ($dllHeader.Count -ne 2 -or $dllHeader[0] -ne 0x4D -or $dllHeader[1] -ne 0x5A
 $result = [ordered]@{
     status = 'package-validated'
     package = $PackagePath
-    package_sha256 = Get-Sha256 $PackagePath
+    package_sha256 = Get-Sha256 $inspected
     version = $info.Version
+    manager_version = $info.ManagerVersion
+    dll_sha256 = $dllSha256
+    dll_mvid = $dllIdentity.Mvid
+    dll_loader_references = @($dllIdentity.LoaderReferences)
     entries = @($entryLengths.Keys)
     entry_lengths = $entryLengths
 }
@@ -108,3 +163,6 @@ if ($ReportPath) {
 }
 Write-Host "Package validation passed: $PackagePath"
 Write-Host "Package SHA-256: $($result.package_sha256)"
+Write-Host "Packaged DLL SHA-256: $dllSha256; MVID: $($dllIdentity.Mvid); loader references: $((@($dllIdentity.LoaderReferences) | ForEach-Object { $_.name + ' ' + $_.version }) -join ', ')"
+}
+finally { if ([IO.Directory]::Exists($privateDirectory)) { [IO.Directory]::Delete($privateDirectory, $true) } }

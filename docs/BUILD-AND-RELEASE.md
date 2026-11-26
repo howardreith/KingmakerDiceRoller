@@ -1,5 +1,14 @@
 # Build and release
 
+## Current loader baseline
+
+New production builds use hash-pinned UMM 0.31.1 and Harmony12 references, not the
+installed loader. Build and package receipts enforce this baseline, and
+`scripts/Test-LoaderBaseline.ps1` exercises its failure boundaries after
+`scripts/Build-Local.ps1`. See [UMM compatibility](UMM-COMPATIBILITY.md) for the
+evidence and the pending runtime checks.
+The release records below describe their original builds.
+
 ## 0.2.0 native stats UI stable release
 
 The [v0.2.0 stable release](https://github.com/howardreith/KingmakerDiceRoller/releases/tag/v0.2.0)

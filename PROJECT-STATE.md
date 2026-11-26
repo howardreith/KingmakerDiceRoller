@@ -1,5 +1,41 @@
 # Project state
 
+## UMM 0.31.1 baseline (2026-11-23)
+
+The current development change lowers the declared minimum from 0.32.0 to
+0.31.1 and pins compilation to verified upstream 0.31.1/Harmony12 bytes.
+Direct MSBuild verifies those bytes and the compiler's resolved inputs; packaging
+requires a matching build receipt; the standalone ZIP validator checks the packaged
+DLL's AssemblyRefs. The published 0.2.0 ZIP below is unchanged and still requires
+UMM 0.32.0. Details and reproduction: `docs/UMM-COMPATIBILITY.md`.
+
+## Qualification truth
+
+- Implemented: **Yes** — manifest, pinned build references, resolved-input guard,
+  build-input/receipt and package guards, validated private-copy install, `scripts/Test-LoaderBaseline.ps1`.
+- Source-qualified: **Yes** — repository validator, source oracle and 416/416 domain
+  tests passed in `Build-Local.ps1` on 2026-11-23.
+- Contract-qualified: **Yes** — Kingmaker, respec (11) and native-UI (30) contract
+  checks passed against the installed Kingmaker 2.1.7b assemblies.
+- Build-qualified: **Yes** — Release DLL `634f2277…12ee` compiled against
+  UnityModManager 0.31.1.0 and 0Harmony12 1.2.0.1 (pinned bytes).
+- Package-qualified: **Yes** for the boundary tests — every loader-baseline check passed (the current
+  count, records and producing commit are in `docs/evidence/umm-0311/`; the historical round-6 run
+  recorded 111/111),
+  including rejection of the genuine 0.33.0-compiled v0.2.0 DLL with only its
+  manifest lowered. No release candidate package was produced.
+- Static loader API audit: all references resolved on 0.31.1, 0.32.4, the owner's
+  0.33.0 and 0.33.4 (static evidence only).
+- Installed: **No**.
+- Focused runtime test: **NOT RUN** — no disposable-game harness exists; the live
+  installation is not used.
+- Runtime-qualified: **No** (not on 0.31.1 or any newer loader).
+- Compatibility-qualified: **No** — native newer-loader runs are not done.
+- Release-authorized: **No** — this task requests baseline standardization.
+- Owner-authorized pre-runtime release: **No**.
+- Testing-prerelease-authorized: **No**.
+- Publicly released: **No** — historical release records follow.
+
 ## 0.2.0 stable release
 
 On 2026-10-19 the owner requested merging the native stats UI mission branch
@@ -14,7 +50,7 @@ publisher's pre-runtime path preserves that distinction. PR #7 merged to
 `main` at `d0708fc087032bab05a80a67100da247ed282b15`, and the guarded
 publisher ran full qualification on that exact commit before publication.
 
-## Qualification truth
+## Historical 0.2.0 qualification truth
 
 - Implemented: **Yes** — native stats UI work and 0.2.0 version metadata.
 - Source-qualified: **Yes** — the 0.2.0 preparation run passed release-gate

@@ -1,0 +1,24 @@
+<!-- agent-review:v1 enrollment=kdr-umm0311-codex-umm-0311-baseline-20261123-20261123161619-b437 key=r09-dispositions-d2ed33b614 part=1/1 sha256=d2ed33b614bbc41206542bd6bb878dbc765383ed0cf25ca53c4701e7dd1ecd1e -->
+### Claude Opus — finding dispositions — round 9
+
+Candidate after corrections: `08227e76ab7075d1e7df8677289445e279134e58`
+
+- **R8-F1** — `fixed` — commits: `8eac164`, `3819333`, `964536e`, `4ed9cb4`, `08227e7`
+  docs/evidence/umm-0311/loader-baseline.json (174/174 on a temporary clone of 964536e): package-with-selector-in-loader-references-targets-refused and build-with-selector-in-loader-references-targets-refused (DirectoryBuildTargetsPath assigned in LoaderReferences.targets: 'Unsupported MSBuild import selector DirectoryBuildTargetsPath in LoaderReferences.targets'), refused-loader-references-selector-left-dll-and-receipt, package-after-loader-references-selector-removed-accepted (original configuration restored: the unchanged receipt packages); unused-sibling control retained (package-reusing-the-existing-receipt-with-unrelated-configuration-accepted, before rebuilding).
+- **R9-F1** — `fixed` — commits: `8eac164`, `3819333`, `964536e`, `4ed9cb4`, `08227e7`
+  docs/evidence/umm-0311/loader-baseline.json (174/174 on a temporary clone of 964536e): with a tracked src/Directory.Build.targets and a root Directory.Build.targets both present and the project file importing the root file: package-with-project-import-of-shadowed-root-targets-refused and build-with-project-import-of-shadowed-root-targets-refused ('Unsupported MSBuild import in src/KingmakerDiceRoller/KingmakerDiceRoller.csproj'), refused-explicit-import-left-dll-and-receipt, package-after-explicit-import-removed-accepted; the passing case without the explicit import is retained (package-reusing-the-receipt-with-shadowed-root-targets-accepted, before rebuilding).
+- **R9-F2** — `fixed` — commits: `8eac164`, `3819333`, `964536e`, `4ed9cb4`, `08227e7`
+  docs/evidence/umm-0311/loader-baseline.json (174/174 on a temporary clone of 964536e): build-with-harmless-selector-mentions-reproduces-first-dll and package-with-harmless-selector-mentions-accepted (a tracked root Directory.Build.rsp with a '#' comment and -p:KdrSelectorNote=DirectoryBuildTargetsPath, and the tracked Directory.Build.props with an XML comment, a Condition reference to $(DirectoryBuildTargetsPath), a property whose value names it and inert item metadata of that name), package-with-selector-assignment-in-response-file-refused and build-with-selector-assignment-in-response-file-refused (-p:DirectoryBuildTargetsPath=...: 'Unsupported MSBuild import selector DirectoryBuildTargetsPath in Directory.Build.rsp'), package-with-the-receipt-before-selector-mentions-accepted-again, configuration-cases-leave-the-checkout-clean; the PropertyGroup selector cases (DirectoryBuildTargetsPath and ImportDirectoryBuildTargets in Directory.Build.props) still refuse at package and build admission.
+- **R9-F3** — `deferred_optional` — commits: —
+  Optional (nonblocking): recording the child's resolved MSBuild path in the hook case. The owner's 2026-11-25 instruction keeps it optional and out of this round; left as follow-up under OWNER AMENDMENT 2 (scope freeze).
+
+**Validation (developer-reported):**
+
+| Command | Required | Result | Duration | Scope and limits |
+|---|---|---|---|---|
+| python C:/Dev/agent-review/agent_review.py verify --enrollment kdr-umm0311-codex-umm-0311-baseline-20261123-20261123161619-b437 --gate domain | yes | pass | 1.1s | Controller receipt on 08227e7 (log gate-domain-08227e76ab70-d62db9d6340-a1275076655-20261126T030105229110Z.log; RESULT 416/416 passed). |
+| scripts/Test-LoaderBaseline.ps1 (temporary clone of 964536e, path with a space; run after a 120 s window with no Kingmaker process) | no | pass | 348s | docs/evidence/umm-0311/loader-baseline.json (174/174 on a temporary clone of 964536e). Earlier runs this round: on 4ed9cb4 (286 s) every case through the new configuration cases passed (131), then the run stopped in the existing candidate case; on 3819333 (320 s) the added cleanliness check showed the cause, 'AD Directory.Build.rsp': the fixture had changed the staged response file, so git rm --cached refused to unstage it and the checkout stayed dirty, which candidate packaging correctly refuses. 964536e unstages it with git reset. No production change between the runs. |
+| Focused probe in the worktree (8eac164 code) | no | pass | ~5s | Assert-LocalBuildConfiguration accepts the unmodified worktree (the four baseline project imports and LoaderReferences.targets). |
+| Native checks on four loader rows | no | not_run | 0 | No disposable game harness for this repository; its runtime route installs into the live game. |
+
+_Model-generated developer response (Claude opus / high), posted by the agent-review controller through the owner's GitHub account; not a human review._

@@ -1,0 +1,978 @@
+{
+    "schema":  "kdr.loader-baseline-tests.v4",
+    "source_commit":  "01b403802b4762f31beaf8d5144edbdb8d69a19c",
+    "clone_build_receipt":  {
+                                "commit":  "01b403802b4762f31beaf8d5144edbdb8d69a19c",
+                                "dirty":  false,
+                                "configuration":  "Release",
+                                "dll_sha256":  "634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee",
+                                "build_inputs_sha256":  "47c2da32957acf0dde2e71b572f67b5b6399e710b10eec13962649225655bade",
+                                "loader_references":  [
+                                                          {
+                                                              "file":  "UnityModManager.dll",
+                                                              "version":  "0.31.1.0",
+                                                              "assembly_version":  "0.31.1.0",
+                                                              "sha256":  "2e038ff23ab01d538dfef792096e1f5c04802d1edac3660db20d0d54c167c2c4",
+                                                              "source":  "https://api.nuget.org/v3-flatcontainer/unitymodmanager/0.31.1/unitymodmanager.0.31.1.nupkg"
+                                                          },
+                                                          {
+                                                              "file":  "0Harmony12.dll",
+                                                              "version":  "1.2.0.1",
+                                                              "assembly_version":  "1.2.0.1",
+                                                              "sha256":  "aa1cd48317254985d8b700cc74953477d1b40c3022ce9aa4c95ed2b8327e1292",
+                                                              "source":  "https://raw.githubusercontent.com/newman55/unity-mod-manager/10cfb1cce51914a5114928c5bc6a06d1d2c31fe2/lib/Harmony/1.2/0Harmony12.dll"
+                                                          }
+                                                      ]
+                            },
+    "candidate_package_sha256":  "b8cb456b8061fc48bfa464bd5af66f368516ab24cbb22d3d1f2c6e376d436e81",
+    "candidate_validation":  {
+                                 "dll_sha256":  "634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee",
+                                 "dll_mvid":  "7a6d0a75-f788-47a5-83c9-fed6fb14e3ff",
+                                 "manager_version":  "0.31.1",
+                                 "dll_loader_references":  [
+                                                               {
+                                                                   "name":  "UnityModManager",
+                                                                   "version":  "0.31.1.0"
+                                                               },
+                                                               {
+                                                                   "name":  "0Harmony12",
+                                                                   "version":  "1.2.0.1"
+                                                               }
+                                                           ]
+                             },
+    "legacy_release_zip_sha256":  "43f99fabcdd31192ecd5deb46533c2004fa64b59a432c4b094b85290f6dadaad",
+    "wrong_loader_fixture":  "UnityModManager 0.32.4.0 1387468bc3af41c50fe51859a3bb7af4922891aa8f13a6187e7a348ceaabfd88 (NuGet package a8438e921ca7b0e5805f5a31c196ae65c90f236543885bea0146457d082c9ec9)",
+    "owner_install_measured":  {
+                                   "version":  "0.33.0.0",
+                                   "sha256":  "63e5baf7b1738e4091b5fd17ccb738ecdb4d1dbf246061dfd55dc52835d52691"
+                               },
+    "passed":  185,
+    "total":  185,
+    "cases":  [
+                  {
+                      "name":  "clone-build-from-detached-commit",
+                      "passed":  true,
+                      "detail":  "receipt commit 01b403802b4762f31beaf8d5144edbdb8d69a19c dirty False dll 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee inputs 47c2da32957acf0dde2e71b572f67b5b6399e710b10eec13962649225655bade"
+                  },
+                  {
+                      "name":  "cache-genuine-verified",
+                      "passed":  true,
+                      "detail":  "accepted"
+                  },
+                  {
+                      "name":  "cache-corrupt-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Pinned loader reference hash mismatch:"
+                  },
+                  {
+                      "name":  "cache-missing-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Pinned loader reference missing:"
+                  },
+                  {
+                      "name":  "cache-umm-0.32.4-fixture-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Pinned loader reference hash mismatch:"
+                  },
+                  {
+                      "name":  "manifest-control-accepted",
+                      "passed":  true,
+                      "detail":  "accepted"
+                  },
+                  {
+                      "name":  "pin-definition-without-harmony12-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: The pin file must define exactly: UnityModManager, 0Harmony12."
+                  },
+                  {
+                      "name":  "pin-definition-misnamed-harmony12-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: The pin file must define 0Harmony12 exactly once as 0Harmony12.dll."
+                  },
+                  {
+                      "name":  "manifest-above-compiler-reference-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Info.json ManagerVersion must equal the pinned baseline 0.31.1."
+                  },
+                  {
+                      "name":  "manifest-array-version-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Info.json ManagerVersion must equal the pinned baseline 0.31.1."
+                  },
+                  {
+                      "name":  "compiler-pin-above-minimum-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: The UnityModManager compile reference must equal the declared minimum."
+                  },
+                  {
+                      "name":  "msbuild-corrupt-cache-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: <temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\clone with space\\LoaderReferences.targets(18,5): error MSB3073: The command \"\"powershell.exe\" -NoLogo -NoProfile -ExecutionPolicy Bypass -File \"<temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\clone with space\\scripts\\Get-PinnedLoaderReferences.ps1\" -VerifyOnly -ReferenceDirectory \"<temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\cache corrupt\"\" exited with code 1. [<temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\clone with space\\src\\KingmakerDiceRoller\\KingmakerDiceRoller.csproj]"
+                  },
+                  {
+                      "name":  "msbuild-direct-compiles-against-pinned-inputs",
+                      "passed":  true,
+                      "detail":  "exit 0; csc UnityModManager: <temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\clone with space\\artifacts\\references\\UnityModManager.dll; csc 0Harmony12: <temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\clone with space\\artifacts\\references\\0Harmony12.dll"
+                  },
+                  {
+                      "name":  "incremental-build-genuine-accepted",
+                      "passed":  true,
+                      "detail":  "accepted"
+                  },
+                  {
+                      "name":  "incremental-build-up-to-date-accepted",
+                      "passed":  true,
+                      "detail":  "accepted"
+                  },
+                  {
+                      "name":  "incremental-build-after-manifest-only-change-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: <temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\clone with space\\LoaderReferences.targets(18,5): error MSB3073: The command \"\"powershell.exe\" -NoLogo -NoProfile -ExecutionPolicy Bypass -File \"<temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\clone with space\\scripts\\Get-PinnedLoaderReferences.ps1\" -VerifyOnly -ReferenceDirectory \"<temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\clone with space\\artifacts\\references\"\" exited with code 1. [<temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\clone with space\\src\\KingmakerDiceRoller\\KingmakerDiceRoller.csproj]"
+                  },
+                  {
+                      "name":  "incremental-build-after-pin-only-change-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: <temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\clone with space\\LoaderReferences.targets(18,5): error MSB3073: The command \"\"powershell.exe\" -NoLogo -NoProfile -ExecutionPolicy Bypass -File \"<temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\clone with space\\scripts\\Get-PinnedLoaderReferences.ps1\" -VerifyOnly -ReferenceDirectory \"<temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\clone with space\\artifacts\\references\"\" exited with code 1. [<temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\clone with space\\src\\KingmakerDiceRoller\\KingmakerDiceRoller.csproj]"
+                  },
+                  {
+                      "name":  "incremental-build-after-restore-accepted",
+                      "passed":  true,
+                      "detail":  "accepted"
+                  },
+                  {
+                      "name":  "resolved-input-pinned-accepted",
+                      "passed":  true,
+                      "detail":  "accepted"
+                  },
+                  {
+                      "name":  "resolved-input-identical-copy-elsewhere-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: <temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\clone with space\\LoaderReferences.targets(36,5): error : Loader compiler references must be the verified files in the pinned directory <temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\clone with space\\artifacts\\references\\; resolved: <temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\stray copy\\UnityModManager.dll [<temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\probe stray.csproj]"
+                  },
+                  {
+                      "name":  "resolved-input-same-stem-file-in-pinned-dir-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: <temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\clone with space\\LoaderReferences.targets(36,5): error : Loader compiler references must be the verified files in the pinned directory <temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\clone with space\\artifacts\\references\\; resolved: <temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\clone with space\\artifacts\\references\\UnityModManager.exe [<temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\probe samestem.csproj]"
+                  },
+                  {
+                      "name":  "resolved-input-renamed-loader-in-pinned-dir-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: <temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\clone with space\\LoaderReferences.targets(36,5): error : Loader compiler references must be the verified files in the pinned directory <temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\clone with space\\artifacts\\references\\; resolved: <temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\clone with space\\artifacts\\references\\umm-alias.dll [<temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\probe alias.csproj]"
+                  },
+                  {
+                      "name":  "resolved-input-umm-0.32.4-fixture-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: <temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\clone with space\\LoaderReferences.targets(36,5): error : Loader compiler references must be the verified files in the pinned directory <temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\clone with space\\artifacts\\references\\; resolved: <temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\inputs\\umm-0.32.4\\UnityModManager.dll [<temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\probe wrong.csproj]"
+                  },
+                  {
+                      "name":  "resolved-input-substituted-reference-assembly-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: <temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\clone with space\\LoaderReferences.targets(36,5): error : Loader compiler references must be the verified files in the pinned directory <temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\clone with space\\artifacts\\references\\; resolved: <temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\stray copy\\UnityModManager.dll [<temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\probe substituted.csproj]"
+                  },
+                  {
+                      "name":  "receipt-matching-build-accepted",
+                      "passed":  true,
+                      "detail":  "accepted"
+                  },
+                  {
+                      "name":  "receipt-other-configuration-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: ERROR: Build receipt is for configuration Release, not Debug; rebuild first."
+                  },
+                  {
+                      "name":  "package-reuse-after-production-source-change-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Build inputs changed since this DLL was built: the receipt compiler inputs differ from the inputs MSBuild resolves now"
+                  },
+                  {
+                      "name":  "package-reuse-after-reference-helper-change-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Build inputs changed since this DLL was built (source, manifest or loader pins); rebuild first."
+                  },
+                  {
+                      "name":  "package-reuse-after-msbuild-guard-change-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Build inputs changed since this DLL was built (source, manifest or loader pins); rebuild first."
+                  },
+                  {
+                      "name":  "package-reuse-after-project-file-change-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Build inputs changed since this DLL was built (source, manifest or loader pins); rebuild first."
+                  },
+                  {
+                      "name":  "qualify-package-reuse-after-source-change-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: test_liveness_match_resets_mismatch (test_domain_reference.DomainReferenceTests.test_liveness_match_resets_mismatch) ... ok"
+                  },
+                  {
+                      "name":  "package-after-restoring-identical-inputs-accepted",
+                      "passed":  true,
+                      "detail":  "accepted: Package validation passed: <temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\clone with space\\artifacts\\.package-3dd48c4b6b85471fbcb62743bd61922d\\KingmakerDiceRoller-0.2.0.zip"
+                  },
+                  {
+                      "name":  "rebuild-after-source-change-accepted",
+                      "passed":  true,
+                      "detail":  "exit 0; first DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee; changed-source DLL 27c0a839e9b41f4a208723e8cdc9e495e1745059ee6e563bf145f15c84fab274"
+                  },
+                  {
+                      "name":  "package-after-matching-rebuild-accepted",
+                      "passed":  true,
+                      "detail":  "accepted: Package validation passed: <temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\clone with space\\artifacts\\.package-77b70152e746436f8fcee15cac14b19e\\KingmakerDiceRoller-0.2.0.zip"
+                  },
+                  {
+                      "name":  "receipt-of-first-build-for-changed-dll-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: ERROR: Build receipt does not match the mod DLL; rebuild first."
+                  },
+                  {
+                      "name":  "archived-dll-vs-first-receipt-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Archived DLL SHA-256 27c0a839e9b41f4a208723e8cdc9e495e1745059ee6e563bf145f15c84fab274 does not match the build"
+                  },
+                  {
+                      "name":  "rebuild-of-committed-source-reproduces-first-dll",
+                      "passed":  true,
+                      "detail":  "DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee"
+                  },
+                  {
+                      "name":  "receipt-conflicting-observed-version-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: ERROR: Build receipt does not match pinned reference UnityModManager.dll; rebuild first."
+                  },
+                  {
+                      "name":  "receipt-without-loader-references-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: ERROR: Build receipt has no loader_references; rebuild first."
+                  },
+                  {
+                      "name":  "receipt-recording-other-loader-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: ERROR: Build receipt does not match pinned reference UnityModManager.dll; rebuild first."
+                  },
+                  {
+                      "name":  "package-reuse-after-build-wrapper-change-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Build inputs changed since this DLL was built (source, manifest or loader pins); rebuild first."
+                  },
+                  {
+                      "name":  "compiler-resolves-release-only-managed-directory",
+                      "passed":  true,
+                      "detail":  "Release Csc input for UnityEngine.UI.dll: <temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\managed copy\\UnityEngine.UI.dll (GamePath.props first group still names the installation)"
+                  },
+                  {
+                      "name":  "package-with-identical-managed-references-elsewhere-accepted",
+                      "passed":  true,
+                      "detail":  "accepted: Package validation passed"
+                  },
+                  {
+                      "name":  "package-reuse-after-resolved-managed-reference-change-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Build inputs changed since this DLL was built: the receipt compiler inputs differ from the inputs MSBuild resolves now"
+                  },
+                  {
+                      "name":  "package-with-gamepath-production-only-overflow-setting-refused",
+                      "passed":  true,
+                      "detail":  "rejected:   )."
+                  },
+                  {
+                      "name":  "build-with-gamepath-production-only-overflow-setting-refused",
+                      "passed":  true,
+                      "detail":  "rejected:   )."
+                  },
+                  {
+                      "name":  "package-with-gamepath-unconditional-overflow-setting-refused",
+                      "passed":  true,
+                      "detail":  "rejected:   )."
+                  },
+                  {
+                      "name":  "build-with-gamepath-unconditional-overflow-setting-refused",
+                      "passed":  true,
+                      "detail":  "rejected:   )."
+                  },
+                  {
+                      "name":  "package-with-untracked-directory-build-targets-refused",
+                      "passed":  true,
+                      "detail":  "rejected:     + FullyQualifiedErrorId : Untracked MSBuild configuration files apply to the build: src/Directory.Build.targets"
+                  },
+                  {
+                      "name":  "package-with-import-selecting-environment-variable-refused",
+                      "passed":  true,
+                      "detail":  "rejected:    ore building."
+                  },
+                  {
+                      "name":  "package-after-local-configuration-restored-accepted",
+                      "passed":  true,
+                      "detail":  "accepted: Package validation passed"
+                  },
+                  {
+                      "name":  "package-reusing-the-existing-receipt-with-unrelated-configuration-accepted",
+                      "passed":  true,
+                      "detail":  "no rebuild; MSBuild found through the PATH entry <buildtools>\\MSBuild\\Current\\Bin; selected toolset Current, inactive hook under 15.0; DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee (first DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee); receipt unchanged True; package exit 0; Package validation passed: <temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\clone with space\\artifacts\\.package-812130d057b3408783ff96795f6aa207\\KingmakerDiceRoller-0.2.0.zip"
+                  },
+                  {
+                      "name":  "build-with-unrelated-configuration-and-inactive-user-hook-accepted",
+                      "passed":  true,
+                      "detail":  "exit 0; DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee (first DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee)"
+                  },
+                  {
+                      "name":  "package-after-build-with-unrelated-configuration-accepted",
+                      "passed":  true,
+                      "detail":  "accepted: Package validation passed"
+                  },
+                  {
+                      "name":  "package-with-user-hook-of-the-selected-toolset-refused",
+                      "passed":  true,
+                      "detail":  "rejected:   t\\Microsoft.Common.targets\\ImportAfter\\Overflow.targets"
+                  },
+                  {
+                      "name":  "build-with-tracked-src-targets-reproduces-first-dll",
+                      "passed":  true,
+                      "detail":  "exit 0; DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee"
+                  },
+                  {
+                      "name":  "package-reusing-the-receipt-with-shadowed-root-targets-accepted",
+                      "passed":  true,
+                      "detail":  "no rebuild: receipt unchanged True; DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee; package exit 0; Package validation passed: <temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\clone with space\\artifacts\\.package-edd7ae9fbe93419ba616ce20fa0039c0\\KingmakerDiceRoller-0.2.0.zip"
+                  },
+                  {
+                      "name":  "package-with-the-receipt-before-src-targets-accepted-again",
+                      "passed":  true,
+                      "detail":  "accepted: Package validation passed"
+                  },
+                  {
+                      "name":  "package-reuse-after-tracked-root-targets-production-setting-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Build inputs changed since this DLL was built (source, manifest or loader pins); rebuild first."
+                  },
+                  {
+                      "name":  "build-with-tracked-root-targets-production-setting-refused",
+                      "passed":  true,
+                      "detail":  "rejected: test_liveness_match_resets_mismatch (test_domain_reference.DomainReferenceTests.test_liveness_match_resets_mismatch) ... ok"
+                  },
+                  {
+                      "name":  "refused-build-records-no-receipt",
+                      "passed":  true,
+                      "detail":  "receipt unchanged after the refused build: True"
+                  },
+                  {
+                      "name":  "package-of-the-refused-builds-dll-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Build receipt does not match the mod DLL; rebuild first."
+                  },
+                  {
+                      "name":  "rebuild-after-tracked-root-targets-removed-reproduces-first-dll",
+                      "passed":  true,
+                      "detail":  "exit 0; DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee"
+                  },
+                  {
+                      "name":  "package-after-tracked-root-targets-removed-accepted",
+                      "passed":  true,
+                      "detail":  "accepted: Package validation passed"
+                  },
+                  {
+                      "name":  "package-with-tracked-root-targets-importing-a-parent-refused",
+                      "passed":  true,
+                      "detail":  "rejected:   t the settings in a tracked applicable file itself."
+                  },
+                  {
+                      "name":  "package-reuse-after-imported-parent-production-setting-change-refused",
+                      "passed":  true,
+                      "detail":  "rejected:   t the settings in a tracked applicable file itself."
+                  },
+                  {
+                      "name":  "build-with-tracked-root-targets-importing-a-parent-refused",
+                      "passed":  true,
+                      "detail":  "rejected:   t the settings in a tracked applicable file itself."
+                  },
+                  {
+                      "name":  "refused-import-build-left-dll-and-receipt",
+                      "passed":  true,
+                      "detail":  "DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee (first DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee); receipt unchanged True"
+                  },
+                  {
+                      "name":  "package-after-importing-root-targets-removed-accepted",
+                      "passed":  true,
+                      "detail":  "accepted: Package validation passed"
+                  },
+                  {
+                      "name":  "build-with-tracked-empty-import-group-reproduces-first-dll",
+                      "passed":  true,
+                      "detail":  "exit 0; DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee"
+                  },
+                  {
+                      "name":  "package-with-tracked-empty-import-group-accepted",
+                      "passed":  true,
+                      "detail":  "accepted: Package validation passed"
+                  },
+                  {
+                      "name":  "package-with-import-group-holding-the-parent-import-refused",
+                      "passed":  true,
+                      "detail":  "rejected:   t the settings in a tracked applicable file itself."
+                  },
+                  {
+                      "name":  "package-with-the-receipt-before-the-import-group-accepted-again",
+                      "passed":  true,
+                      "detail":  "accepted: Package validation passed"
+                  },
+                  {
+                      "name":  "package-with-tracked-selector-DirectoryBuildTargetsPath-refused",
+                      "passed":  true,
+                      "detail":  "rejected:    the build receipt follows the conventional lookup; remove it."
+                  },
+                  {
+                      "name":  "build-with-tracked-selector-DirectoryBuildTargetsPath-refused",
+                      "passed":  true,
+                      "detail":  "rejected:    the build receipt follows the conventional lookup; remove it."
+                  },
+                  {
+                      "name":  "package-with-tracked-selector-ImportDirectoryBuildTargets-refused",
+                      "passed":  true,
+                      "detail":  "rejected:    : the build receipt follows the conventional lookup; remove it."
+                  },
+                  {
+                      "name":  "build-with-tracked-selector-ImportDirectoryBuildTargets-refused",
+                      "passed":  true,
+                      "detail":  "rejected:    : the build receipt follows the conventional lookup; remove it."
+                  },
+                  {
+                      "name":  "refused-selector-builds-left-dll-and-receipt",
+                      "passed":  true,
+                      "detail":  "DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee; receipt unchanged True"
+                  },
+                  {
+                      "name":  "package-after-selector-removed-accepted",
+                      "passed":  true,
+                      "detail":  "accepted: Package validation passed"
+                  },
+                  {
+                      "name":  "package-with-selector-in-loader-references-targets-refused",
+                      "passed":  true,
+                      "detail":  "rejected:    s: the build receipt follows the conventional lookup; remove it."
+                  },
+                  {
+                      "name":  "build-with-selector-in-loader-references-targets-refused",
+                      "passed":  true,
+                      "detail":  "rejected:    s: the build receipt follows the conventional lookup; remove it."
+                  },
+                  {
+                      "name":  "refused-loader-references-selector-left-dll-and-receipt",
+                      "passed":  true,
+                      "detail":  "DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee; receipt unchanged True"
+                  },
+                  {
+                      "name":  "package-after-loader-references-selector-removed-accepted",
+                      "passed":  true,
+                      "detail":  "accepted: Package validation passed"
+                  },
+                  {
+                      "name":  "package-with-project-import-of-shadowed-root-targets-refused",
+                      "passed":  true,
+                      "detail":  "import added: True;   e file itself."
+                  },
+                  {
+                      "name":  "build-with-project-import-of-shadowed-root-targets-refused",
+                      "passed":  true,
+                      "detail":  "rejected:   e file itself."
+                  },
+                  {
+                      "name":  "refused-explicit-import-left-dll-and-receipt",
+                      "passed":  true,
+                      "detail":  "DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee; receipt unchanged True"
+                  },
+                  {
+                      "name":  "package-after-explicit-import-removed-accepted",
+                      "passed":  true,
+                      "detail":  "accepted: Package validation passed"
+                  },
+                  {
+                      "name":  "build-with-harmless-selector-mentions-reproduces-first-dll",
+                      "passed":  true,
+                      "detail":  "exit 0; DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee"
+                  },
+                  {
+                      "name":  "package-with-harmless-selector-mentions-accepted",
+                      "passed":  true,
+                      "detail":  "accepted: Package validation passed"
+                  },
+                  {
+                      "name":  "package-with-selector-assignment-in-response-file-refused",
+                      "passed":  true,
+                      "detail":  "rejected:    e build receipt follows the conventional lookup; remove it."
+                  },
+                  {
+                      "name":  "build-with-selector-assignment-in-response-file-refused",
+                      "passed":  true,
+                      "detail":  "rejected:    e build receipt follows the conventional lookup; remove it."
+                  },
+                  {
+                      "name":  "package-with-the-receipt-before-selector-mentions-accepted-again",
+                      "passed":  true,
+                      "detail":  "accepted: Package validation passed"
+                  },
+                  {
+                      "name":  "installed-msbuild-reads-the-response-file-fixtures",
+                      "passed":  true,
+                      "detail":  "A: DBTP=[tools/frozen.targets] NOTE=[C#]; B: DBTP=[tools/frozen.targets] NOTE=[]; C: DBTP=[] NOTE=[See -p:DirectoryBuildTargetsPath=value]; D: DBTP=[] NOTE=[]"
+                  },
+                  {
+                      "name":  "package-with-response-file-inline-hash-then-selector-refused",
+                      "passed":  true,
+                      "detail":  "rejected:    e build receipt follows the conventional lookup; remove it."
+                  },
+                  {
+                      "name":  "build-with-response-file-inline-hash-then-selector-refused",
+                      "passed":  true,
+                      "detail":  "rejected:    e build receipt follows the conventional lookup; remove it."
+                  },
+                  {
+                      "name":  "package-with-response-file-whole-quoted-selector-argument-refused",
+                      "passed":  true,
+                      "detail":  "rejected:    e build receipt follows the conventional lookup; remove it."
+                  },
+                  {
+                      "name":  "build-with-response-file-whole-quoted-selector-argument-refused",
+                      "passed":  true,
+                      "detail":  "rejected:    e build receipt follows the conventional lookup; remove it."
+                  },
+                  {
+                      "name":  "build-with-comment-and-quoted-note-response-file-reproduces-first-dll",
+                      "passed":  true,
+                      "detail":  "exit 0; DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee"
+                  },
+                  {
+                      "name":  "package-with-comment-and-quoted-note-response-file-accepted",
+                      "passed":  true,
+                      "detail":  "accepted: Package validation passed"
+                  },
+                  {
+                      "name":  "package-with-the-receipt-before-the-quoted-note-accepted-again",
+                      "passed":  true,
+                      "detail":  "accepted: Package validation passed"
+                  },
+                  {
+                      "name":  "build-with-forward-slash-baseline-import-reproduces-first-dll",
+                      "passed":  true,
+                      "detail":  "spelled ../../LoaderReferences.targets: True; exit 0; DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee"
+                  },
+                  {
+                      "name":  "package-with-forward-slash-baseline-import-accepted",
+                      "passed":  true,
+                      "detail":  "accepted: Package validation passed"
+                  },
+                  {
+                      "name":  "package-with-the-receipt-before-the-forward-slash-import-accepted-again",
+                      "passed":  true,
+                      "detail":  "accepted: Package validation passed"
+                  },
+                  {
+                      "name":  "configuration-cases-leave-the-checkout-clean",
+                      "passed":  true,
+                      "detail":  "git status: clean"
+                  },
+                  {
+                      "name":  "package-reuse-after-overflow-checking-change-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Build inputs changed since this DLL was built: the receipt compiler inputs differ from the inputs MSBuild resolves now"
+                  },
+                  {
+                      "name":  "rebuild-with-overflow-checking-records-effective-option",
+                      "passed":  true,
+                      "detail":  "exit 0; receipt records /checked+; DLL 8696c8f6e4aac7ce37caa1bd79cd84aa9886ec41b8d59c78824c1f8b15fa52c0 (committed configuration 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee)"
+                  },
+                  {
+                      "name":  "package-after-matching-overflow-checking-rebuild-accepted",
+                      "passed":  true,
+                      "detail":  "accepted: Package validation passed"
+                  },
+                  {
+                      "name":  "package-reuse-after-overflow-checking-removed-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Build inputs changed since this DLL was built: the receipt compiler inputs differ from the inputs MSBuild resolves now"
+                  },
+                  {
+                      "name":  "rebuild-without-overflow-checking-reproduces-first-dll",
+                      "passed":  true,
+                      "detail":  "DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee"
+                  },
+                  {
+                      "name":  "package-reuse-after-base-address-change-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Build inputs changed since this DLL was built: the receipt compiler inputs differ from the inputs MSBuild resolves now"
+                  },
+                  {
+                      "name":  "rebuild-with-base-address-records-it",
+                      "passed":  true,
+                      "detail":  "exit 0; receipt option /baseaddress:0x11000000; DLL ead75aef6aa241f230daaad93c6f34c79cdac6e5419310e340c635aab4c2c2a1"
+                  },
+                  {
+                      "name":  "package-after-base-address-rebuild-accepted",
+                      "passed":  true,
+                      "detail":  "accepted: Package validation passed"
+                  },
+                  {
+                      "name":  "rebuild-with-external-win32-resource-records-its-content",
+                      "passed":  true,
+                      "detail":  "exit 0; receipt /win32res:external.res 366781267e4967456b0f59e96ce9a5126c8bf0e95893dd1fae16aeed5a156c8d; DLL 7d745dbd3c4774f313223f0d712e3ba55f530db16a3b3d43510c572f5dabea83"
+                  },
+                  {
+                      "name":  "package-with-external-win32-resource-accepted",
+                      "passed":  true,
+                      "detail":  "accepted: Package validation passed"
+                  },
+                  {
+                      "name":  "package-reuse-after-win32-resource-replaced-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Build inputs changed since this DLL was built: the receipt compiler inputs differ from the inputs MSBuild resolves now"
+                  },
+                  {
+                      "name":  "rebuild-after-win32-resource-replaced-changes-dll",
+                      "passed":  true,
+                      "detail":  "exit 0; DLL 0cb16ca5097d782bc4ca6ec9797effc953ea49cfd2f1c73ad87607c4b25f6735 (previous resource: 7d745dbd3c4774f313223f0d712e3ba55f530db16a3b3d43510c572f5dabea83)"
+                  },
+                  {
+                      "name":  "package-after-win32-resource-rebuild-accepted",
+                      "passed":  true,
+                      "detail":  "accepted: Package validation passed"
+                  },
+                  {
+                      "name":  "package-with-compiler-response-file-refused",
+                      "passed":  true,
+                      "detail":  "rejected:   t bind; remove it from the project or local configuration."
+                  },
+                  {
+                      "name":  "build-with-compiler-response-file-refused",
+                      "passed":  true,
+                      "detail":  "rejected:   t bind; remove it from the project or local configuration."
+                  },
+                  {
+                      "name":  "default-response-file-is-not-read-because-noconfig-is-always-passed",
+                      "passed":  true,
+                      "detail":  "build exit 0; DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee (first DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee); receipt has /noconfig: True"
+                  },
+                  {
+                      "name":  "inventory-without-noconfig-refused",
+                      "passed":  true,
+                      "detail":  "WITH-NOCONFIG READ | ERROR: Unsupported compiler mode: without /noconfig the compiler reads the default csc.rsp beside it, which the build receipt cannot bind; build with NoConfig enabled (the project default)."
+                  },
+                  {
+                      "name":  "rebuild-without-imported-options-reproduces-first-dll",
+                      "passed":  true,
+                      "detail":  "DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee"
+                  },
+                  {
+                      "name":  "package-document-restaged-before-archive-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Package files changed during staging: the archived README.md differs from the verified repository file. The package"
+                  },
+                  {
+                      "name":  "restage-refusal-preserves-published-package-and-records",
+                      "passed":  true,
+                      "detail":  "published ZIP, manifest and validation report unchanged: True"
+                  },
+                  {
+                      "name":  "package-private-staging-removed-after-refusal",
+                      "passed":  true,
+                      "detail":  "private package folders left: 0"
+                  },
+                  {
+                      "name":  "receipt-records-effective-compiler-first",
+                      "passed":  true,
+                      "detail":  "first entries: compiler csc.exe f895c265b8fa8ed9601f6d8ec87d1e2079f5e851c70d0719a90007564ae8f6ab; option /noconfig"
+                  },
+                  {
+                      "name":  "package-publication-failure-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Package validation passed: <temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\clone with space\\artifacts\\.package-ba35005286cb4f8080e1923356085373\\KingmakerDiceRoller-0.2.0.zip"
+                  },
+                  {
+                      "name":  "publication-failure-restores-previous-package-set",
+                      "passed":  true,
+                      "detail":  "published ZIP, manifest and validation report restored: True"
+                  },
+                  {
+                      "name":  "held-validation-report-keeps-previous-package-set",
+                      "passed":  true,
+                      "detail":  "exit 1; all three public hashes unchanged: True; Package validation passed: <temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\clone with space\\artifacts\\.package-bdfd711cd4424ffa939dea76ad0c9a52\\KingmakerDiceRoller-0.2.0.zip"
+                  },
+                  {
+                      "name":  "retry-after-handle-closed-publishes-the-replacement",
+                      "passed":  true,
+                      "detail":  "exit 0; ZIP 51afa75b926ca55d9d0d06c5f5968a222880162f5ab6201609882ef0b03e880b"
+                  },
+                  {
+                      "name":  "overlapping-publishers-leave-an-agreeing-set",
+                      "passed":  true,
+                      "detail":  "exits 0/0; ZIP b8cb456b8061fc48bfa464bd5af66f368516ab24cbb22d3d1f2c6e376d436e81; manifest b8cb456b8061fc48bfa464bd5af66f368516ab24cbb22d3d1f2c6e376d436e81; validation b8cb456b8061fc48bfa464bd5af66f368516ab24cbb22d3d1f2c6e376d436e81"
+                  },
+                  {
+                      "name":  "receipt-reference-inventory-equals-csc-inputs",
+                      "passed":  true,
+                      "detail":  "13 Csc /reference inputs; receipt records 13; equal: True"
+                  },
+                  {
+                      "name":  "package-receipt-with-changed-reference-digest-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Build inputs changed since this DLL was built: the receipt compiler inputs differ from the inputs MSBuild resolves now"
+                  },
+                  {
+                      "name":  "package-receipt-without-compiler-inventory-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Build receipt has no compiler_references; rebuild first."
+                  },
+                  {
+                      "name":  "package-receipt-with-folded-multiline-reference-name-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Build receipt compiler input name contains a control character: reference; rebuild first."
+                  },
+                  {
+                      "name":  "package-genuine-receipt-with-inventory-accepted",
+                      "passed":  true,
+                      "detail":  "accepted: Package validation passed"
+                  },
+                  {
+                      "name":  "package-receipt-dll-digest-array-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Build receipt dll_sha256 must be a lowercase SHA-256 string; rebuild first."
+                  },
+                  {
+                      "name":  "package-receipt-dll-digest-boolean-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Build receipt dll_sha256 must be a lowercase SHA-256 string; rebuild first."
+                  },
+                  {
+                      "name":  "package-receipt-inputs-digest-array-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Build receipt build_inputs_sha256 must be a lowercase SHA-256 string; rebuild first."
+                  },
+                  {
+                      "name":  "package-receipt-configuration-array-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Build receipt configuration must be a string; rebuild first."
+                  },
+                  {
+                      "name":  "package-receipt-loader-version-array-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Build receipt loader reference field version must be a string; rebuild first."
+                  },
+                  {
+                      "name":  "package-genuine-receipt-accepted",
+                      "passed":  true,
+                      "detail":  "accepted: Package validation passed"
+                  },
+                  {
+                      "name":  "ordinary-package-preserves-build-output-and-receipt",
+                      "passed":  true,
+                      "detail":  "DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee and receipt unchanged"
+                  },
+                  {
+                      "name":  "candidate-package-records-frozen-after-build-output-replaced",
+                      "passed":  true,
+                      "detail":  "build output replaced after staging (now cd3b60233f348bf634e76bdea44031952700054ab0f82766ebda51342823b3a5); manifest DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee; loose DLL and receipt copy match; ZIP b8cb456b8061fc48bfa464bd5af66f368516ab24cbb22d3d1f2c6e376d436e81"
+                  },
+                  {
+                      "name":  "package-names-producing-build-across-commits",
+                      "passed":  true,
+                      "detail":  "producing_commit 01b403802b4762f31beaf8d5144edbdb8d69a19c; packaging_commit 7485503ab83fd505167b70ad3e3e2c5ad4f0bd6b; DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee"
+                  },
+                  {
+                      "name":  "candidate-refuses-earlier-commit-receipt-with-identical-dll",
+                      "passed":  true,
+                      "detail":  "rejected:     + FullyQualifiedErrorId : Candidate packaging requires a matching build from the exact clean current commit."
+                  },
+                  {
+                      "name":  "candidate-refuses-when-receipt-refreshed-during-packaging",
+                      "passed":  true,
+                      "detail":  "rejected:     + FullyQualifiedErrorId : Candidate packaging requires a matching build from the exact clean current commit."
+                  },
+                  {
+                      "name":  "package-receipt-commit-array-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Build receipt commit must be a 40-character lowercase commit SHA; rebuild first."
+                  },
+                  {
+                      "name":  "package-receipt-dirty-string-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Build receipt dirty must be a JSON Boolean; rebuild first."
+                  },
+                  {
+                      "name":  "candidate-with-missing-report-leaves-no-commit-directory",
+                      "passed":  true,
+                      "detail":  "exit 1; commit directory present: False"
+                  },
+                  {
+                      "name":  "candidate-with-another-builds-report-refused",
+                      "passed":  true,
+                      "detail":  "The qualification report respec-contracts.json does not describe this build (dll_sha256 is"
+                  },
+                  {
+                      "name":  "candidate-readme-edited-after-admission-refused",
+                      "passed":  true,
+                      "detail":  "   c5ad4f0bd6b; the package was not accepted."
+                  },
+                  {
+                      "name":  "competing-candidate-publisher-keeps-the-winners-files",
+                      "passed":  true,
+                      "detail":  "exit 1; destination holds: winner.txt"
+                  },
+                  {
+                      "name":  "candidate-accepted-after-build-at-current-commit",
+                      "passed":  true,
+                      "detail":  "accepted: Package validation passed"
+                  },
+                  {
+                      "name":  "candidate-directory-holds-the-complete-set",
+                      "passed":  true,
+                      "detail":  "build-provenance.json, KingmakerDiceRoller.dll, KingmakerDiceRoller-0.2.0.zip, native-ui-contracts.json, package-manifest.json, package-validation.json, respec-contracts.json, runtime-contracts.json, source-qualification.json"
+                  },
+                  {
+                      "name":  "candidate-with-repository-local-managed-directory-accepted",
+                      "passed":  true,
+                      "detail":  "build exit 0; receipt game reference \u0027artifacts/managed copy/Assembly-CSharp.dll\u0027; candidate exit 0; Package validation passed: <temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\clone with space\\artifacts\\.package-0a198922b5cd4d8aa4a9f30b6d10155a\\KingmakerDiceRoller-0.2.0.zip"
+                  },
+                  {
+                      "name":  "package-candidate-accepted",
+                      "passed":  true,
+                      "detail":  "accepted: Packaged DLL SHA-256: 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee; MVID: 7a6d0a75-f788-47a5-83c9-fed6fb14e3ff; loader references: UnityModManager 0.31.1.0, 0Harmony12 1.2.0.1"
+                  },
+                  {
+                      "name":  "package-candidate-matches-receipt-dll",
+                      "passed":  true,
+                      "detail":  "accepted: Package validation passed"
+                  },
+                  {
+                      "name":  "package-extra-harmony-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Package must contain exactly 6 files; observed 7."
+                  },
+                  {
+                      "name":  "package-swapped-in-loader-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Unexpected package entry: KingmakerDiceRoller/UnityModManager.dll"
+                  },
+                  {
+                      "name":  "package-swapped-in-game-assembly-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Unexpected package entry: KingmakerDiceRoller/Assembly-CSharp-firstpass.dll"
+                  },
+                  {
+                      "name":  "package-data-bearing-directory-record-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Unexpected or data-bearing package directory record: \u0027KingmakerDiceRoller/extra/\u0027"
+                  },
+                  {
+                      "name":  "package-own-directory-record-with-data-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Unexpected or data-bearing package directory record: \u0027KingmakerDiceRoller/\u0027"
+                  },
+                  {
+                      "name":  "package-level0-deflate-empty-directory-accepted",
+                      "passed":  true,
+                      "detail":  "writer exit 0: FIXTURE files=6 dirs=KingmakerDiceRoller/licenses/,8,5,0; accepted"
+                  },
+                  {
+                      "name":  "level0-fixture-generation-failure-fails-the-case",
+                      "passed":  true,
+                      "detail":  "writer exit 1; fixture accepted as valid: False"
+                  },
+                  {
+                      "name":  "validator-copy-failure-reported-and-cleaned",
+                      "passed":  true,
+                      "detail":  "exit 1:     + FullyQualifiedErrorId : IOException,Validate-Package.ps1; kdr-validate-* directories unchanged: True"
+                  },
+                  {
+                      "name":  "validator-report-pairs-zip-digest-with-its-own-dll",
+                      "passed":  true,
+                      "detail":  "caller file replaced after the snapshot: report ZIP b8cb456b8061fc48bfa464bd5af66f368516ab24cbb22d3d1f2c6e376d436e81 with DLL 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee"
+                  },
+                  {
+                      "name":  "validator-explicit-empty-expected-digest-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: ERROR: ExpectedDllSha256 must be a lowercase SHA-256 string."
+                  },
+                  {
+                      "name":  "package-harmony-bytes-under-readme-name-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Package text entry contains binary content: KingmakerDiceRoller/README.md"
+                  },
+                  {
+                      "name":  "package-loader-bytes-under-licence-name-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Package text entry contains binary content: KingmakerDiceRoller/licenses/UPSTREAM-WOTR-DICE-ROLLER-MIT.txt"
+                  },
+                  {
+                      "name":  "package-manager-version-array-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Packaged ManagerVersion \u00270.31.1\u0027 does not match the 0.31.1 baseline."
+                  },
+                  {
+                      "name":  "package-manager-version-boolean-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Packaged ManagerVersion \u0027True\u0027 does not match the 0.31.1 baseline."
+                  },
+                  {
+                      "name":  "package-manager-version-number-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Packaged ManagerVersion \u00270.31\u0027 does not match the 0.31.1 baseline."
+                  },
+                  {
+                      "name":  "legacy-release-references-umm-0.33.0",
+                      "passed":  true,
+                      "detail":  "genuine v0.2.0 ZIP 43f99fabcdd31192ecd5deb46533c2004fa64b59a432c4b094b85290f6dadaad; its DLL references UnityModManager 0.33.0.0"
+                  },
+                  {
+                      "name":  "package-legacy-0.33.0-dll-with-lowered-manifest-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Packaged DLL must reference pinned UnityModManager 0.31.1.0; lowering Info.json alone is not sufficient."
+                  },
+                  {
+                      "name":  "same-host-validation-candidate-first",
+                      "passed":  true,
+                      "detail":  "Package validation passed: <temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\inputs\\candidate.zip | Package SHA-256: b8cb456b8061fc48bfa464bd5af66f368516ab24cbb22d3d1f2c6e376d436e81 | Packaged DLL SHA-256: 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee; MVID: 7a6d0a75-f788-47a5-83c9-fed6fb14e3ff; loader references: UnityModManager 0.31.1.0, 0Harmony12 1.2.0.1 | ACCEPTED candidate.zip | REJECTED legacy-lowered-manifest.zip: Packaged DLL must reference pinned UnityModManager 0.31.1.0; lowering Info.json alone is not sufficient."
+                  },
+                  {
+                      "name":  "same-host-validation-legacy-lowered-manifest-first",
+                      "passed":  true,
+                      "detail":  "REJECTED legacy-lowered-manifest.zip: Packaged DLL must reference pinned UnityModManager 0.31.1.0; lowering Info.json alone is not sufficient. | Package validation passed: <temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\inputs\\candidate.zip | Package SHA-256: b8cb456b8061fc48bfa464bd5af66f368516ab24cbb22d3d1f2c6e376d436e81 | Packaged DLL SHA-256: 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee; MVID: 7a6d0a75-f788-47a5-83c9-fed6fb14e3ff; loader references: UnityModManager 0.31.1.0, 0Harmony12 1.2.0.1 | ACCEPTED candidate.zip"
+                  },
+                  {
+                      "name":  "expand-validated-package-candidate",
+                      "passed":  true,
+                      "detail":  "returned validated DLL SHA-256: 634f22775c62bb34461fb202d85ab9d088f4e1cb1bd062e959812c8bcf9b12ee"
+                  },
+                  {
+                      "name":  "expand-validated-package-legacy-rejected",
+                      "passed":  true,
+                      "detail":  "rejected before extraction: ERROR: Packaged DLL must reference pinned UnityModManager 0.31.1.0; lowering Info.json alone is not sufficient."
+                  },
+                  {
+                      "name":  "install-uses-validated-private-copy",
+                      "passed":  true,
+                      "detail":  "Install.ps1 extracts only via Expand-ValidatedPackage, before any live Mods path (Install.ps1 itself is not executed)"
+                  },
+                  {
+                      "name":  "install-whatif-valid-package-previews-target",
+                      "passed":  true,
+                      "detail":  "accepted: What if: Performing the operation \"Transactionally install Kingmaker Dice Roller\" on target \"<temp>\\kdr-loader-baseline-230f82ae03e849deab1332b0547a8db7\\disposable game\\Mods\\KingmakerDiceRoller\". | WhatIf completed: package validation passed and no live files were changed."
+                  },
+                  {
+                      "name":  "install-whatif-invalid-package-rejected",
+                      "passed":  true,
+                      "detail":  "rejected: Packaged DLL must reference pinned UnityModManager 0.31.1.0; lowering Info.json alone is not sufficient."
+                  },
+                  {
+                      "name":  "install-whatif-leaves-mods-and-temp-unchanged",
+                      "passed":  true,
+                      "detail":  "disposable Mods unchanged; no leftover KingmakerDiceRoller-* temporary folders"
+                  },
+                  {
+                      "name":  "legacy-input-preserved",
+                      "passed":  true,
+                      "detail":  "private copy and any supplied original still 43f99fabcdd31192ecd5deb46533c2004fa64b59a432c4b094b85290f6dadaad"
+                  },
+                  {
+                      "name":  "repository-package-outputs-untouched",
+                      "passed":  true,
+                      "detail":  "artifacts\\packages before = after: KingmakerDiceRoller-0.2.0.zip=b8cb456b8061fc48bfa464bd5af66f368516ab24cbb22d3d1f2c6e376d436e81, package-manifest.json=8d01f30711baaa0e28271068c85d2971c4f8186955556a4840e30f96dba2f4ec, package-validation.json=d8d56551bc3fde2173dba6363080a8dc3c4432f1f625ff9f5f6ee2e3da1ff23d"
+                  }
+              ]
+}

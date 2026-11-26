@@ -1,5 +1,17 @@
 # Mr. Bard's Kingmaker Roll For Stats UI
 
+## Unity Mod Manager baseline
+
+The development baseline is **UMM 0.31.1**, also declared in `Info.json`.
+Production builds use hash-pinned 0.31.1 references independently of the loader
+installed on the developer's machine, and the package validator refuses a DLL compiled
+against any other UnityModManager. The baseline build and package checks pass; in-game
+validation on 0.31.1 and newer loaders has not been run. Already published ZIPs are
+unchanged.
+Newer loaders are separate compatibility targets, not a reason to raise the minimum.
+See [the loader compatibility plan](docs/UMM-COMPATIBILITY.md) for the required checks
+and the current evidence limits.
+
 Mr. Bard's Kingmaker Roll For Stats UI is a standalone Unity Mod Manager mod
 for Pathfinder: Kingmaker 2.1.7b. It adds an explicit rolled-ability workflow
 to the native custom-character ability page. Version 0.2.0 starts with
