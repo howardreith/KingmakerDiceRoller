@@ -31,7 +31,7 @@ $sourcePackagesBefore = @(Get-ChildItem -LiteralPath (Join-Path $source 'artifac
 $temp = Join-Path ([IO.Path]::GetTempPath()) ('kdr-loader-baseline-' + [Guid]::NewGuid().ToString('N'))
 $base = Join-Path $temp 'clone with space'
 # The candidate's own package name follows the committed Info.json version (the legacy v0.2.0 fixture is separate).
-$candidateZip = 'KingmakerDiceRoller-' + [string](Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\Info.json') | ConvertFrom-Json).Version + '.zip'
+$currentPackageName = 'KingmakerDiceRoller-' + [string](Get-Content -Raw -LiteralPath (Join-Path $PSScriptRoot '..\Info.json') | ConvertFrom-Json).Version + '.zip'
 $inputs = Join-Path $temp 'inputs'
 New-Item -ItemType Directory -Path $inputs -Force | Out-Null
 $cases = [Collections.Generic.List[object]]::new()
@@ -715,7 +715,7 @@ try {
     # A document restaged after the staging copy cannot reach a published package, and the refusal keeps the previously
     # published package and records unchanged.
     Invoke-Isolated @('-File', $package) | Out-Null
-    $published = @((Join-Path $base "artifacts\packages\$candidateZip"), (Join-Path $base 'artifacts\packages\package-manifest.json'), (Join-Path $base 'artifacts\packages\package-validation.json'))
+    $published = @((Join-Path $base "artifacts\packages\$currentPackageName"), (Join-Path $base 'artifacts\packages\package-manifest.json'), (Join-Path $base 'artifacts\packages\package-validation.json'))
     $before = @($published | ForEach-Object { if (Test-Path -LiteralPath $_) { Get-Sha256 $_ } else { 'missing' } }) -join ';'
     $packageText = [IO.File]::ReadAllText($package)
     $stageAnchor = "    foreach (`$entry in `$documents.Keys) { [IO.File]::WriteAllBytes((Join-Path `$stage `$documents[`$entry]), [byte[]]`$documentBytes[`$entry]) }"
@@ -830,7 +830,7 @@ try {
     $ok = $mixed.ExitCode -eq 0 -and $m -and (Get-Sha256 $dll) -ne $firstDllSha -and $m.dll_sha256 -eq $firstDllSha -and
         (Get-Sha256 (Join-Path $candidateDir 'KingmakerDiceRoller.dll')) -eq $firstDllSha -and
         (Get-Sha256 (Join-Path $candidateDir 'build-provenance.json')) -eq (Get-Sha256 $savedReceipt) -and
-        $m.package_sha256 -eq (Get-Sha256 (Join-Path $candidateDir $candidateZip))
+        $m.package_sha256 -eq (Get-Sha256 (Join-Path $candidateDir $currentPackageName))
     Add-Case 'candidate-package-records-frozen-after-build-output-replaced' $ok $(if ($m) { "build output replaced after staging (now $(Get-Sha256 $dll)); manifest DLL $($m.dll_sha256); loose DLL and receipt copy match; ZIP $($m.package_sha256)" } else { "no candidate manifest: exit $($mixed.ExitCode); " + (Get-Reason $mixed.Output) })
     Copy-Item -LiteralPath (Join-Path $candidateDir 'KingmakerDiceRoller.dll') -Destination $dll -Force
     [IO.File]::AppendAllText((Join-Path $base 'docs\UMM-COMPATIBILITY.md'), "`n<!-- loader-baseline test: documentation-only commit -->`n")
@@ -880,7 +880,7 @@ try {
     Remove-Item -LiteralPath $laterCandidateDir -Recurse -Force
     Expect-Accepted 'candidate-accepted-after-build-at-current-commit' (Invoke-Isolated @('-File', $package, '-Candidate')) 'Package validation passed'
     $published8 = @(Get-ChildItem -LiteralPath $laterCandidateDir -File | ForEach-Object { $_.Name } | Sort-Object)
-    $expected8 = @('build-provenance.json', $candidateZip, 'KingmakerDiceRoller.dll', 'native-ui-contracts.json', 'package-manifest.json', 'package-validation.json', 'respec-contracts.json', 'runtime-contracts.json', 'source-qualification.json') | Sort-Object
+    $expected8 = @('build-provenance.json', $currentPackageName, 'KingmakerDiceRoller.dll', 'native-ui-contracts.json', 'package-manifest.json', 'package-validation.json', 'respec-contracts.json', 'runtime-contracts.json', 'source-qualification.json') | Sort-Object
     Add-Case 'candidate-directory-holds-the-complete-set' (($published8 -join ',') -eq ($expected8 -join ',')) ($published8 -join ', ')
     # R6-F2: a Managed directory inside the checkout, under ignored artifacts: a copy of the disposable Managed copy above,
     # so its Assembly-CSharp.dll is the game's bytes while its UnityEngine.UI.dll keeps the one-bit change made for
